@@ -9,6 +9,7 @@ import type { ActiveEnemy, SpatialEntity } from '../core/types';
 import { globalEvents } from '../core/EventBus';
 import { globalRNG } from '../core/RNG';
 import { disposeObject3D } from '../graphics/dispose';
+import type { IEnvironment } from '../graphics/environments/IEnvironment';
 
 export interface FuelDrum extends SpatialEntity {
   type: 'crate';
@@ -360,10 +361,24 @@ export class InteractiveEnvironmentSystem {
     this.audio.playSearchlightAlert();
   }
 
-  public update(dt: number): void {
+  public update(dt: number, environment?: IEnvironment): void {
     const px = this.runState.playerPos.x;
     const pz = this.runState.playerPos.z;
     const time = this.runState.timeSeconds;
+
+    // Stage hazards and conveyor drift
+    if (environment) {
+      const cVel = environment.getConveyorVelocity?.(px, pz);
+      if (cVel) {
+        this.runState.playerPos.x += cVel.vx * dt;
+        this.runState.playerPos.z += cVel.vz * dt;
+      }
+
+      const hDmg = environment.getHazardDamage?.(px, pz, dt, true) ?? 0;
+      if (hDmg > 0 && !this.runState.godMode && this.runState.invulnerabilityTimer <= 0) {
+        this.runState.takeDamage(hDmg);
+      }
+    }
 
     // 1. Re-insert active fuel drums into grid so weapon hits detect them
     for (const drum of this.fuelDrums) {

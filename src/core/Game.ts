@@ -159,8 +159,8 @@ export class Game implements RunControllerHost, InputRouterHost, DebugAPIHost {
     this.waveDirector.update(dt);
     this.pickupSystem.update(dt);
     this.particles.update(dt);
-    this.environment.update(this.runState.playerPos.x, this.runState.playerPos.z);
-    this.interactiveEnv.update(dt);
+    this.environment.update(this.runState.playerPos.x, this.runState.playerPos.z, dt);
+    this.interactiveEnv.update(dt, this.environment);
     this.environment.obstacleColliders.push(...this.interactiveEnv.getCarColliders());
 
     const isLowHp = this.runState.hp > 0 && (this.runState.hp / this.runState.maxHp) < 0.25;
