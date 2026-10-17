@@ -24,6 +24,26 @@ export default tseslint.config(
     }
   },
   {
+    files: ['tests/**/p11_*'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "CallExpression[callee.object.name='globalEvents'][callee.property.name='emit']",
+          message: 'Wiring tests must not call globalEvents.emit(...) for domain events.'
+        },
+        {
+          selector: "CallExpression[callee.name='readFileSync']",
+          message: 'Wiring tests must not use readFileSync.'
+        },
+        {
+          selector: "CallExpression[callee.property.name='readFileSync']",
+          message: 'Wiring tests must not use readFileSync.'
+        }
+      ]
+    }
+  },
+  {
     ignores: ['dist/**', 'node_modules/**', 'test-results/**', 'playwright-report/**', 'coverage/**']
   }
 );

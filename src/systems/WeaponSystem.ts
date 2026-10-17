@@ -380,7 +380,8 @@ export class WeaponSystem {
     baseDamage: number,
     knockback = 0,
     hitDir?: { x: number; z: number },
-    weaponId?: WeaponId
+    weaponId?: WeaponId,
+    forcedCrit?: boolean
   ): boolean {
     if (entity.type === 'crate') {
       globalEvents.emit('crate:destroyed', { crateId: entity.id, x: entity.x, z: entity.z });
@@ -389,7 +390,7 @@ export class WeaponSystem {
     if (entity.type !== 'enemy') return false;
 
     const enemy = entity as ActiveEnemy;
-    const isCrit = globalRNG.chance(this.runState.computedStats.critChance);
+    const isCrit = forcedCrit !== undefined ? forcedCrit : globalRNG.chance(this.runState.computedStats.critChance);
     const vulnMult = 1 / Math.max(0.4, enemy.armorStripMultiplier);
     const critMult = this.runState.computedStats.critMultiplier ?? 1.75;
     let finalDamage = Math.max(1, Math.round(baseDamage * vulnMult * (isCrit ? critMult : 1.0)));

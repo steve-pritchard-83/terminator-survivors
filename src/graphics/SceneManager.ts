@@ -61,6 +61,14 @@ export class SceneManager {
     this.screenShakeScale = Math.max(0, Math.min(2.0, scale));
   }
 
+  public get shakeScale(): number {
+    return this.screenShakeScale;
+  }
+
+  public get qualityPreset(): QualityPreset {
+    return this.currentPreset;
+  }
+
   constructor(container: HTMLElement) {
     const isAutomated = typeof navigator !== 'undefined' && navigator.webdriver === true;
 

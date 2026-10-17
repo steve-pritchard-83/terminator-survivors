@@ -89,6 +89,8 @@ Follow these on **every** task. They exist so a smaller model can work safely.
 8. **Three.js hygiene:** any `Geometry`, `Material` or `Texture` created per-entity must be disposed when the entity is removed, or must come from a shared/pooled instance.
 9. **Randomness:** after Phase 1, use `globalRNG` (gameplay) or a separate `vfxRNG` (cosmetic). Do not add new `Math.random()` calls in `src/systems` or `src/state`.
 10. If a task is ambiguous, implement the smallest version that satisfies the _Acceptance criteria_ and leave a `// TODO(roadmap <task-id>):` comment describing what was skipped.
+11. **Wiring over existence (added after the Phase 0–10 audit).** A feature is only done when a player can reach it and it changes the running game. A test that emits a domain event by hand (`globalEvents.emit('boss:defeated', …)`), greps a source/config file, asserts a line count, or mocks the system under test does **not** prove a feature. See Phase 11 "Wiring test" definition.
+12. **Never claim more than you shipped.** Commit messages, `CHANGELOG.md` and `README.md` must describe what the code does today. If you implemented a smaller version, say so and leave the `TODO(roadmap …)` comment.
 
 ### Definition of Done (every task)
 
@@ -102,21 +104,22 @@ Follow these on **every** task. They exist so a smaller model can work safely.
 
 ## 4. Phase Overview
 
-| Phase | Theme                          | Goal                                                                             | Est. size |
-| ----: | ------------------------------ | -------------------------------------------------------------------------------- | --------- |
-|     0 | Foundations & asset provenance | Make the project safe to publish and easy for agents to work in                  | S         |
-|     1 | Correctness                    | Fix every bug in 2.1 with regression tests                                       | M         |
-|     2 | Performance                    | Hold 60 FPS with 600 enemies on a mid-range laptop; no memory growth across runs | M         |
-|     3 | Architecture                   | Registries for enemies/weapons, state machine, split `Game.ts`                   | L         |
-|     4 | Game feel                      | Knockback, hit-stop, telegraphs, death debris, low-HP feedback                   | M         |
-|     5 | Combat content                 | Real boss fights, elites, new enemies and weapons                                | L         |
-|     6 | Stages & modes                 | 3 new stages, endless mode, daily seeded run, threat levels                      | L         |
-|     7 | Meta-progression               | Achievements, codex, run history, deeper loadouts                                | M         |
-|     8 | UX & accessibility             | Menus, settings, remapping, tutorial, a11y                                       | M         |
-|     9 | Audio & visual polish          | Adaptive music, voice limiting, lighting, weather                                | M         |
-|    10 | Release engineering            | Lint, coverage, perf budget, telemetry, versioning                               | S         |
+| Phase | Theme                          | Goal                                                                              | Est. size |
+| ----: | ------------------------------ | --------------------------------------------------------------------------------- | --------- |
+|     0 | Foundations & asset provenance | Make the project safe to publish and easy for agents to work in                   | S         |
+|     1 | Correctness                    | Fix every bug in 2.1 with regression tests                                        | M         |
+|     2 | Performance                    | Hold 60 FPS with 600 enemies on a mid-range laptop; no memory growth across runs  | M         |
+|     3 | Architecture                   | Registries for enemies/weapons, state machine, split `Game.ts`                    | L         |
+|     4 | Game feel                      | Knockback, hit-stop, telegraphs, death debris, low-HP feedback                    | M         |
+|     5 | Combat content                 | Real boss fights, elites, new enemies and weapons                                 | L         |
+|     6 | Stages & modes                 | 3 new stages, endless mode, daily seeded run, threat levels                       | L         |
+|     7 | Meta-progression               | Achievements, codex, run history, deeper loadouts                                 | M         |
+|     8 | UX & accessibility             | Menus, settings, remapping, tutorial, a11y                                        | M         |
+|     9 | Audio & visual polish          | Adaptive music, voice limiting, lighting, weather                                 | M         |
+|    10 | Release engineering            | Lint, coverage, perf budget, telemetry, versioning                                | S         |
+|    11 | Integration & honesty pass     | Fix regressions from Phases 1–10, wire unreachable features, replace hollow tests | L         |
 
-Phases 0–3 must be done in order. Phases 4–9 may be done in any order after Phase 3. Phase 10 tasks can be pulled forward at any time.
+Phases 0–3 must be done in order. Phases 4–9 may be done in any order after Phase 3. Phase 10 tasks can be pulled forward at any time. **Phase 11 must be completed before any new feature work**; within it, follow the group order given in the phase.
 
 ---
 
@@ -582,16 +585,476 @@ Each stage: unique palette/fog, 3+ unique props, its own wave timeline and boss 
 
 ---
 
+## Phase 11 — Integration & Honesty Pass
+
+**Why this phase exists.** An audit of Phases 0–10 (commit `18851fb`, 2026-10-18) found that 34 of 69 tasks were fully done, 26 partial, 7 hollow, 1 regressed and 1 skipped. Typecheck, lint, 457 unit tests and the build all passed, yet several features cannot be reached by a player, and some changes broke the game. Most of it slipped through because tests emitted events by hand or grepped files. Overall score: **62 / 100**.
+
+### Wiring test (definition used by every task below)
+
+A **wiring test** is one of:
+
+1. **E2E wiring test:** a Playwright spec in `tests/e2e/integration/` that drives the game through real UI clicks/keys or through `window.__GAME_DEBUG__` actions which call the _same code path gameplay uses_ (P11-00 adds those actions). It asserts on `getState()`, `getSceneCensus()`, `getRuntimeSettings()`, `getSave()` or visible DOM.
+2. **Real-system unit test:** a Vitest test in `tests/unit/` that constructs the real classes involved (e.g. `RunState` + `EnemySystem` + `PickupSystem` + `SpatialHashGrid`), advances them with `update(dt)`, and asserts outcomes. Only browser APIs (WebGL, AudioContext, localStorage) may be mocked.
+
+A wiring test must **not**: call `globalEvents.emit(...)` for domain events, read source files with `readFileSync`, assert on line counts, or re-implement the formula under test. Every task's test must fail on commit `18851fb` and pass after the fix. State this in the commit body ("verified failing on 18851fb").
+
+Name files `tests/unit/p11_XX_<slug>.test.ts` or `tests/e2e/integration/p11_XX_<slug>.spec.ts`; `describe('P11-XX …')`.
+
+### Order
+
+Do **P11-00** first, then the groups in order: **A** (blockers) → **B** (settings & save) → **C** (unreachable features) → **D** (hollow content) → **E** (hygiene, tests, docs). Run `npm run build` and `npm run test:e2e` at the end of each group, not only at the end of the phase.
+
+---
+
+### P11-00 Integration harness (prerequisite)
+
+- **Files:** `src/core/DebugAPI.ts`, `src/core/types.ts` (`GameDebugAPI`), `eslint.config.js`, `playwright.config.ts`, new folder `tests/e2e/integration/`, `CLAUDE.md`.
+- **Steps:**
+  1. Extend `getState()` with `stageId`, `threats`, `isDaily`, `isEndless`, `revivalsLeft`, `invulnerabilityTimer`.
+  2. Add these debug actions. Each must route through existing gameplay code, never set fields directly unless stated:
+     - `getSceneCensus()` → `{ enemyGroupChildren, weaponGroupChildren, pickupGroupChildren, fuelDrums, cars, obstacleColliders, visibleLights }`.
+     - `getRuntimeSettings()` → `{ shakeScale, flashScale, hitStopEnabled, damageNumbersMode, qualityPreset, pixelRatio, lightsEnabled, keyBindings, bodyClasses: string[] }`, read from the live objects (`SceneManager`, `GameLoop`, `HUDView`, `InputManager`, `document.body`), **not** from the save.
+     - `getSave()` → deep clone of `SaveManager.getData()`.
+     - `damageEnemy(target: number | 'boss', amount: number, crit?: boolean)` → calls the same function weapons use (`WeaponSystem.applyDamageToTarget`).
+     - `killAllEnemies()` → `damageEnemy` on every enemy. (CLAUDE.md already documents this action but it does not exist.)
+     - `setPlayerHp(hp: number)` (direct set is fine; it is test setup).
+     - `startRunWith(config: RunConfig)` → calls the same function the UI calls (see P11-08).
+  3. ESLint: add an override for `tests/**/p11_*` that errors on `CallExpression[callee.object.name='globalEvents'][callee.property.name='emit']` and on `readFileSync`.
+  4. Add a Playwright project `integration` pointing at `tests/e2e/integration`.
+  5. Update CLAUDE.md's debug API list to match reality, and add `lint` and `format` to its command list.
+- **Acceptance:** One smoke spec `p11_00_harness.spec.ts` starts a run, calls each new action once and asserts sensible return shapes.
+
+---
+
+### Group A — Blockers (broken runs, soft-locks, unintended immortality)
+
+#### P11-01 Endless "Continue" soft-lock and double-banked results
+
+- **Bug:** after victory, Continue sets `mode = 'playing'`, but `StateMachine.ts` only allows `victory → title`. In production the transition is silently ignored, so the HUD and music start but the simulation never runs. If the transition did succeed, a later death would call `addRunResults` a second time with the full run totals and record a second history entry as a defeat.
+- **Files:** `src/core/StateMachine.ts`, `src/core/RunController.ts`, `src/state/SaveManager.ts`, `src/state/RunState.ts`.
+- **Fix:**
+  1. Allow `victory → playing` only when `runState.isEndless` is being set (add a guard callback to the transition table, or a dedicated `continueEndless()` transition).
+  2. Add `RunState.bankedKills` and `bankedScrap`, set when the victory is banked.
+  3. On endless death, bank only the difference since the victory. Write one history entry of type `'endless'` that _replaces_ the victory entry instead of adding a defeat.
+- **Wiring test (e2e):** start a run, then `startRunWith({ stageId: 'la_2029_wasteland' })`, `fastForward` to minute 10, `damageEnemy('boss', 1e9)` on the Core, click Continue. Assert `mode === 'playing'` and that `timeSeconds` increases over 1 s. Then `setPlayerHp(0)` and let it resolve. Assert `getSave().totalKills` grew by exactly the run's kills and the history gained exactly one entry.
+
+#### P11-02 Boss and special-enemy meshes stay in the scene across runs
+
+- **Bug:** every behaviour's `clear()` (`src/systems/enemies/*.ts`) disposes its meshes but does not remove them from `EnemySystem.group`. Dying with a boss alive leaves a frozen boss rendering in the next run.
+- **Files:** `src/systems/enemies/*.ts`, `src/systems/EnemySystem.ts`.
+- **Fix:** in each behaviour's `clear()`, call `ctx.group.remove(obj)` before disposing. As a backstop, `EnemySystem.clear()` removes every child of `group` that is not a shared pool mesh (`userData.shared !== true`).
+- **Wiring tests:**
+  - Unit: real `EnemySystem`; spawn one of every archetype; `clear()`; assert `group.children` contains only pool meshes.
+  - E2E: `spawnBoss('hk_tank_goliath')` and `spawnBoss('skynet_tde_core')`, abort to title, start a new run, and assert `getSceneCensus().enemyGroupChildren` equals the value from a fresh run.
+
+#### P11-03 Dead player revived at 1 HP through the vault
+
+- **Bug:** `RunController.update` returns early when mode is not `'playing'`, so death resolution is skipped. If a lethal hit and a vault pickup happen in the same tick, the vault opens with `hp === 0`, and `recalculateStats` then forces `hp = Math.max(1, …)`.
+- **Files:** `src/core/Game.ts`, `src/core/RunController.ts`, `src/systems/PickupSystem.ts`, `src/state/RunState.ts`.
+- **Fix:**
+  1. Resolve lethal damage immediately after `enemySystem.update` and before `pickupSystem.update`.
+  2. `PickupSystem.update` returns early when `hp <= 0`.
+  3. `recalculateStats` keeps `hp` at 0 when it was 0.
+- **Wiring test (unit, real systems):** place a vault on the player and a lethal enemy in contact, advance one tick. Assert the result is death (`mode === 'gameover'`), no vault modal flow, and `revivalsLeft` unchanged.
+
+#### P11-04 Revival chance can exceed 100%, and revives give no invulnerability
+
+- **Bug:** Dog Tags (up to 0.75) plus Veteran Resilience (up to 0.45) are summed with no cap, so every lethal hit revives the player. A revive also sets `invulnerabilityTimer = 0`.
+- **Files:** `src/state/RunState.ts`, `src/data/weapons.ts` (passives), `src/data/upgrades.ts` (meta upgrades), new file `src/data/balance.ts`.
+- **Fix:** add `MAX_REVIVAL_CHANCE = 0.5` and `REVIVE_INVULNERABILITY_SECONDS = 2.0` in `src/data/balance.ts`. Clamp the summed chance. Set i-frames on every revive.
+- **Wiring test (unit):** max both passives, then apply 100 lethal hits spaced past the i-frames. Assert the player dies at some point (seeded RNG) and that every revive sets `invulnerabilityTimer >= 2`.
+
+#### P11-05 Crit hit-stop stutter and dead elite hit-stop
+
+- **Bug:** `RunController` adds 0.02 s of hit-stop on **every** non-boss crit, so high crit rates stall the simulation repeatedly. The spec only asked for boss crits. The elite-death hit-stop checks `enemy.state?.isElite`, but the flag is `enemy.isElite`.
+- **Files:** `src/core/RunController.ts`, `src/core/GameLoop.ts`, `src/data/balance.ts`.
+- **Fix:** hit-stop only on boss crits, elite deaths and boss deaths, with a global cooldown of at least 0.25 s between hit-stops. Values go in `src/data/balance.ts`. Fix the elite flag check.
+- **Wiring test (e2e or real-system unit):** with crit chance forced to 1 and 200 enemies inside napalm, run 5 s of wall time. Assert simulated `timeSeconds` advanced by at least 4.5 s. Kill an elite with `damageEnemy` and assert `gameLoop.hitStopTimer > 0` on the next tick.
+
+---
+
+### Group B — Settings and save persistence
+
+#### P11-06 Apply saved settings at boot
+
+- **Bug:** shake, flash, hit-stop, damage numbers, FPS display, colour-blind mode, UI scale and CRT only take effect after the user opens Settings and saves. After the P10-02 code split, `SettingsPanel` (which applied them) is lazy-loaded. The CRT overlay also ignores `reducedMotion`.
+- **Files:** new `src/ui/SettingsApplier.ts` (not lazy), `src/ui/SettingsPanel.ts`, `src/core/Game.ts`.
+- **Fix:** move `applyCurrentSettingsToDom` into `SettingsApplier.apply(settings)`. In the `Game` constructor, once every subscriber exists, call it and emit `settings:updated` once with the saved settings. `SettingsPanel` calls the same applier.
+- **Wiring test (e2e):** seed `localStorage` with a save that has `reducedMotion: true`, `colorBlindMode: 'deuteranopia'`, `uiScale: 1.3`, then reload. Assert from `getRuntimeSettings()` that `hitStopEnabled === false`, `shakeScale === 0`, `bodyClasses` contains the colour-blind class, and the CRT overlay is hidden, all without opening Settings.
+
+#### P11-07 Key remaps, quality preset and governor respected at boot
+
+- **Bugs:**
+  - `InputManager` starts from `DEFAULT_KEY_BINDINGS` and only updates on `input:rebound`, so remaps are lost on reload. `ShiftRight` is hard-coded as dash.
+  - The saved quality preset is ignored at startup, and the 5 s auto-detect overwrites it.
+  - The FPS governor turns lights and atmosphere on or off and raises the pixel ratio beyond the chosen preset.
+  - `particleCap` is never enforced.
+  - The light pool toggles `light.visible`, which forces shader recompiles.
+- **Files:** `src/input/InputManager.ts`, `src/graphics/SceneManager.ts`, `src/graphics/qualityPresets.ts`, `src/systems/ParticleSystem.ts`, `src/graphics/DynamicLightingManager.ts`.
+- **Fix:**
+  1. Load the saved bindings in the `InputManager` constructor, and move `ShiftRight` into the defaults table.
+  2. Apply the saved preset at boot. Auto-detect runs only when the preset is `'auto'`.
+  3. The governor may only adjust pixel ratio within the preset's `[minPixelRatio, maxPixelRatio]` and never changes lights or atmosphere.
+  4. Enforce `particleCap` in `acquireParticle`.
+  5. Keep pooled lights visible and use `intensity = 0` when idle.
+- **Wiring test (e2e):** save a binding of dash = `KeyQ` and preset = `low`, reload. Press `KeyQ` and assert `isDashing`. Assert `getRuntimeSettings().qualityPreset === 'low'` after 6 s and `pixelRatio <= 1`.
+
+#### P11-08 Save migration to v3, and throttled writes
+
+- **Bugs:**
+  - `CURRENT_VERSION` is still 2 even though many fields were added. Existing players lose weapons that are now locked behind achievements, and veterans are forced into the tutorial.
+  - `recordEnemyKill` calls `save()` on every kill, which means hundreds of synchronous `JSON.stringify` + `localStorage` writes per minute.
+- **Files:** `src/state/SaveManager.ts`, `src/state/AchievementTracker.ts`, `src/core/RunController.ts`.
+- **Fix:**
+  1. Bump to v3 with a migration that fills new fields with defaults. Mark the tutorial as seen if `totalKills > 0`. Grandfather unlocks: a player with `victories > 0` gets every weapon whose unlock is achievement-gated.
+  2. Add `markDirty()` and `flush()`. Flush on run end, pause, `visibilitychange`, and every 10 s.
+- **Wiring tests (unit):** fixture JSON files for a v1 and a v2 save in `tests/fixtures/`; assert both migrate to v3 with the expected unlocks. With a real `SaveManager` and a spied `localStorage.setItem`, record 500 kills and assert at most 1 write before `flush()`.
+
+---
+
+### Group C — Wire unreachable features
+
+#### P11-09 Run configuration and deploy flow (stage select)
+
+- **Bug:** the only UI path into a run is `startRun(loadoutId)` (`Game.ts`), which always starts `la_2029_wasteland` with no threats and no daily flag.
+- **Files:** `src/core/types.ts` (new `RunConfig { loadoutId; stageId; threats: ThreatId[]; seed?: number; daily?: { dateKey: string } }`), `src/core/Game.ts`, `src/core/RunController.ts`, `src/ui/TitleScreen.ts`, new `src/ui/DeployModal.ts`, `src/data/stages.ts`.
+- **Fix:**
+  1. `Game.startRun(config: RunConfig)` replaces the positional parameters.
+  2. "Deploy" opens `DeployModal`, a 3-step flow: **stage**, then **loadout** (move the existing loadout picker in here if it lives elsewhere), then **threat levels** (shown only once a victory exists).
+  3. Replace `unlockCondition` strings in `stages.ts` with structured data, e.g. `{ type: 'victory', stageId }` or `{ type: 'none' }`, evaluated against the save. Locked stages show the requirement.
+  4. Show each stage's best time; record it per stage in the save.
+  5. The modal must use the existing `A11yHelper` dialog pattern.
+- **Wiring test (e2e):** click Deploy → pick a stage → confirm. Assert `getState().stageId`. Assert a locked stage cannot be started.
+
+#### P11-10 Stages are actually different
+
+- **Bug:** all five stages share `WAVE_TIMELINE`. Fog and palette fields are never read (`SceneManager` hard-codes fog). There is no Tech Noir stalker, and conveyors only move the player.
+- **Files:** `src/data/waves.ts` (`buildWaveTimeline(params)`), `src/data/stages.ts`, `src/graphics/SceneManager.ts`, `src/systems/WaveDirector.ts`, `src/systems/InteractiveEnvironmentSystem.ts`, `src/graphics/environments/*.ts`.
+- **Fix:**
+  1. Each stage defines its own pool weights and boss order (as specified in P6-02) through `buildWaveTimeline`.
+  2. `SceneManager.applyStage(stage)` sets background colour and fog colour and distance.
+  3. Tech Noir: an Infiltrator spawns at 0:30, takes 0 damage until minute 8, and then becomes killable.
+  4. Conveyors move enemies and pickups too, not just the player.
+- **Wiring tests:**
+  - Unit: any two stages produce different boss orders.
+  - E2E: start `tech_noir_1984`, assert an infiltrator exists at 0:31 and `damageEnemy` deals 0 damage to it before minute 8.
+
+#### P11-11 Bunker defence objective
+
+- **Bug:** `damageBunker` and `getBunkerHealth` exist but nothing calls them.
+- **Files:** `src/graphics/environments/BunkerEnvironment.ts`, `src/systems/EnemySystem.ts`, `src/core/RunController.ts`, `src/ui/HUDView.ts`, `src/data/stages.ts`.
+- **Fix:**
+  1. Enemies within the bunker radius stop and attack it, using their contact damage and cooldown.
+  2. The HUD shows a bunker HP bar.
+  3. Bunker HP reaching 0 ends the run as `gameover`, with the reason "BUNKER BREACHED".
+  4. Surviving 10 minutes counts as victory.
+- **Wiring test (e2e):** start the bunker stage and `spawnSwarm` at the bunker. Assert bunker HP drops, and the run ends when it reaches 0.
+
+#### P11-12 Daily operation, threat levels and endless leaderboard reachable
+
+- **Bugs:**
+  - `getDailyOperation` and `hasAttemptedDaily` are never called.
+  - Threats cannot be selected.
+  - The `supply_starvation` and `jammed_frequency` threats have no effect.
+  - `judgment_hour` caps the minute at 8, so the final boss (minute 10) never spawns and the run cannot be won.
+  - `endlessHighScores` is never shown.
+- **Files:** `src/ui/TitleScreen.ts`, `src/ui/DeployModal.ts`, `src/core/DailyOperation.ts`, `src/systems/WaveDirector.ts`, `src/systems/PickupSystem.ts`, `src/data/threatModifiers.ts`, `src/ui/EndRunModal.ts` (War Archives tab).
+- **Fix:**
+  1. Add a "DAILY OPERATION" title button that starts `startRun(getDailyOperation(today))`. The first attempt is recorded; later attempts that day are labelled practice.
+  2. Threats are chosen in `DeployModal`, and the chosen threats are shown on the end screen.
+  3. Implement `supply_starvation` (no medkit or heal crate rewards) and `jammed_frequency` (minimap and boss warning banner hidden; HUD shows static).
+  4. For `judgment_hour`: compress the timeline so the final boss spawns at minute 8.
+  5. Add an Endless tab to War Archives showing `endlessHighScores`.
+- **Wiring tests (e2e):**
+  - The daily button gives the same seed twice on the same day, and `getSave()` records one attempt.
+  - With `judgment_hour`, `fastForward(8 * 60)` spawns `skynet_tde_core`.
+  - With `supply_starvation`, destroying 20 crates never heals.
+
+#### P11-13 Emit `boss:defeated` and `weapon:evolved` from real code
+
+- **Bug:** neither event is emitted anywhere in `src/`; only the tests emit them. That makes 12 achievements impossible and leaves 4 weapons that can never be unlocked. Codex evolution recipes are never revealed.
+- **Files:** `src/systems/EnemySystem.ts` (or `RunController` on `enemy:killed` with `isBoss`), `src/systems/PickupSystem.ts` / `src/state/RunState.ts` (wherever `checkAndEvolveWeapon` succeeds), `tests/unit/p7_01_achievements.test.ts`, `tests/unit/p7_02_codex.test.ts`.
+- **Fix:** emit `boss:defeated { archetype, x, z }` when a boss dies, and `weapon:evolved { from, to, name }` when an evolution is applied. Rewrite the P7-01 and P7-02 tests so they no longer emit these events themselves.
+- **Wiring test (e2e):**
+  - `spawnBoss('infiltrator_csm101')` then `damageEnemy('boss', 1e9)`: assert the boss achievement is in `getSave()`.
+  - Grant a level-8 Ithaca plus its passive, then `triggerVault` and collect it: assert the evolution recipe is marked discovered in `getSave()`.
+  - Add a unit check that every achievement's trigger event has at least one emitter in `src/`. This test may scan source text; it is the one allowed exception, and it must be documented as a static check, not a behaviour test.
+
+#### P11-14 Interactables exist in every run
+
+- **Bugs:**
+  - Drums and cars spawn only in the constructor, and `startRun` clears them.
+  - `lastFlareDropTime` is never reset, so supply drops stop after the first run.
+  - Drums are inserted into the spatial grid after weapons update and the grid is cleared before the next pass, so weapons can never hit them.
+  - A drum kill emits `enemy:killed`, and the enemy is then killed again, giving double XP and double `endRun`.
+  - `Game.ts` pushes car colliders onto `obstacleColliders` every tick.
+- **Files:** `src/systems/InteractiveEnvironmentSystem.ts`, `src/core/Game.ts`, `src/core/RunController.ts`.
+- **Fix:**
+  1. Add `reset()`, which clears, respawns, and resets the flare timer; call it from `startRun`.
+  2. Insert drums into the grid during the grid rebuild step in `Game.fixedUpdate`.
+  3. Drum explosions deal damage through `applyDamageToTarget` only. They never emit `enemy:killed` themselves.
+  4. Build the collider list for each tick as `staticColliders.concat(carColliders)` into a reused array, instead of pushing onto it.
+- **Wiring test (e2e):**
+  - Start two runs in a row; assert `getSceneCensus().fuelDrums > 0` in both.
+  - `damageEnemy` on a drum: nearby enemies take damage and `kills` increases by exactly the number of enemies killed.
+  - `obstacleColliders` stays constant across 600 ticks.
+
+#### P11-15 Loadout abilities match the spec
+
+- **Gaps:**
+  - John Connor's "Rally" is only +35% Might, with no ally squad.
+  - Sapper's "Overcharge" is a single cooldown reset, not 4 s with no cooldowns.
+  - The Reprogrammed T-800 still has a dash and no regen.
+  - Sarah Connor has no unique passive.
+- **Files:** `src/core/RunController.ts`, `src/state/RunState.ts`, `src/data/upgrades.ts` (loadouts), `src/systems/weapons/AllySummon.ts`.
+- **Fix:**
+  1. Rally summons 3 temporary allies for 8 s through `AllySummon`.
+  2. Overcharge sets `cooldownMultiplier` to 0 for 4 s (respecting the floor elsewhere).
+  3. The T-800 loadout gets `canDash: false` and regen of 1 HP/s.
+  4. Sarah Connor: +1 projectile on straight-shot weapons and +15% fire rate.
+- **Wiring test (e2e per loadout):** start with the loadout and press the ability key, then assert the effect through `getState()`/`getSceneCensus()`: ally count, cooldown timers stay at 0 for 4 s, dash refused, HP regenerates.
+
+#### P11-16 Interactive tutorial
+
+- **Gap:** P8-04 asked for a guided 60-second Boot Camp; what shipped is a 6-slide slideshow.
+- **Files:** `src/ui/TutorialModal.ts` → new `src/core/TutorialRun.ts`, `src/data/tutorial.ts`.
+- **Fix:** a scripted run with no wave director. Each step shows a prompt and waits for its condition: move 5 m, aim, dash once, collect 5 gems, pick a level-up, open a pre-placed vault that evolves a weapon. Skippable; on completion it records the tutorial as seen.
+- **Wiring test (e2e):** drive the tutorial with keyboard input only and assert that each step advances only after its condition is met.
+
+---
+
+### Group D — Hollow or broken content
+
+#### P11-17 Boss attacks that do nothing
+
+- **Bugs:**
+  - **HK Aerial missile salvo:** circles are placed 3.8 m from the player with a 2.2 m hit radius, so it can never hit.
+  - **HK Tank searchlight:** the "sweep" check `inFront` compares an angle with itself, so it is always true.
+  - **T-1000 puddle:** `isPuddle` is never read, so the T-1000 stays targetable.
+  - **T-1000 regen counters:** only EMP's slow stops regen; napalm does not.
+  - **Missing telegraphs** on attacks of 15 damage or more: Tank twin cannon (18×2), Core spokes (16), T-1000 reappear (24), and Self-Destruct elite (28).
+  - **Attack timers** keep counting below 0 while the player is out of range, so attacks fire with no telegraph when the player re-enters range.
+- **Files:** `src/systems/enemies/HKAerialBehaviour.ts`, `HKTankBehaviour.ts`, `T1000Behaviour.ts`, `SkynetCoreBehaviour.ts`, `T800Behaviour.ts`, `InfiltratorBehaviour.ts`, `NewEnemyBehaviours.ts`, `src/systems/WeaponSystem.ts`, `src/systems/weapons/GroundZone.ts`, `src/data/enemies.ts`.
+- **Fix:**
+  1. **Salvo:** place one circle on the player's position and 5 within 3 m of it.
+  2. **Sweep:** use a rotating beam angle and check the player's angle against it within ±15°; the lock takes 3 s.
+  3. **T-1000 untargetable:** `applyDamageToTarget` returns false while `state.isPuddle === 1`.
+  4. **Napalm counter:** `GroundZone` sets `state.burnTimer`; T-1000 regen stops while `burnTimer > 0` or `slowTimer > 0`.
+  5. **Telegraphs:** add one to each listed attack, at least 0.4 s long.
+  6. **Timers:** clamp attack timers at 0 while out of range, and always start the telegraph before firing.
+  7. **Data:** move every boss attack damage value into `src/data/enemies.ts`.
+- **Wiring tests (real-system unit, one per behaviour):**
+  - A stationary player inside the salvo takes damage.
+  - The T-1000 in puddle form takes 0 damage from `applyDamageToTarget`.
+  - A T-800 whose player re-enters range shows a telegraph for at least 0.4 s before the bolt spawns.
+
+#### P11-18 Enemy features that do nothing
+
+- **Bugs:**
+  - **Aerostat:** the mark only plays a sound and a particle; there is no speed buff.
+  - **Hydrobots** spawn one at a time instead of as a formation of 12.
+  - **Plasma Turret** spawns at the screen edge and is teleported by the leash, so it is never a fixed emplacement.
+  - **T-1 and T-600 Minigunner** appear from minute 2; the spec says minute 3 or later.
+  - **Elite scale and tint** only work for instanced enemies.
+  - **Hydrobot meshes** allocate about 6 geometries per spawn.
+- **Files:** `src/systems/enemies/NewEnemyBehaviours.ts`, `src/systems/WaveDirector.ts`, `src/systems/EnemySystem.ts`, `src/data/waves.ts`, `src/data/enemies.ts`, `src/graphics/meshes/NewEnemyMeshes.ts`.
+- **Fix:**
+  1. **Aerostat:** enemies within 8 m of a marked player get +20% speed for 4 s (data-driven).
+  2. **Hydrobots:** WaveDirector supports `formation: { count: 12, spread: 3 }` spawns.
+  3. **Turret:** spawns at a world position 15–25 m ahead of the player, has `leashExempt: true`, and despawns once it is more than 60 m behind.
+  4. **Wave pools:** fix the T-1 and Minigunner starting minutes.
+  5. **Elites:** apply scale and tint in each behaviour's `createVisual`.
+  6. **Meshes:** share the Hydrobot geometries as static class members.
+- **Wiring tests (real-system unit):**
+  - After a mark, enemies' effective speed is 1.2× for 4 s.
+  - One hydrobot spawn event creates 12 enemies.
+  - The turret's position is unchanged after the player runs 60 m away.
+
+#### P11-19 Passive and weapon stats that do nothing or backfire
+
+- **Bugs:**
+  - `durationMultiplier` and `speedMultiplier` (Ammo Belt and others) are never read, so those passives have no effect.
+  - The K-9 bite sets `armorStripMultiplier = 1.4`, which _reduces_ damage taken by 29%.
+  - Orbiters ignore the weapon's `area` stat.
+  - With auto-aim off, Strike targets random spots, which re-introduces B6.
+- **Files:** `src/systems/weapons/*.ts`, `src/systems/WeaponSystem.ts`.
+- **Fix:**
+  1. Every pattern multiplies projectile lifetime/zone duration by `durationMultiplier` and projectile speed by `speedMultiplier`.
+  2. The K-9 bite applies a vulnerability (`armorStripMultiplier = 0.7`) so the target takes about 43% more damage.
+  3. Orbiter radius is `baseRadius * stats.area * areaMultiplier`.
+  4. Strike always uses `findNearestN`, whatever the auto-aim setting.
+- **Wiring tests (real-system unit):**
+  - With Ammo Belt at max, a napalm zone lives longer by the expected factor.
+  - A bitten Infiltrator takes more damage than an unbitten one.
+  - With auto-aim off, strikes land on enemies.
+
+#### P11-20 Audio and lighting features half-wired
+
+- **Gaps:**
+  - Nothing emits `vfx:muzzle`, so muzzle flashes never use the light pool.
+  - Only 4 of about 40 SFX call sites pass a position for stereo panning, and pan uses world dx instead of screen-space x.
+  - Music layers set `.gain.value` every frame, which causes zipper noise.
+  - "Adaptive music" is one track through three filters, while CHANGELOG calls it "multi-track".
+- **Files:** `src/systems/weapons/*.ts`, `src/systems/enemies/*.ts`, `src/audio/AudioEngine.ts`, `src/graphics/SceneManager.ts`, `CHANGELOG.md`, `README.md`.
+- **Fix:**
+  1. Weapon patterns emit `vfx:muzzle` when they fire.
+  2. Every combat SFX call passes `(x, z)`; `AudioEngine` converts this to screen-space pan through a `worldToPan` callback supplied by `SceneManager`.
+  3. Use `setTargetAtTime` for layer gains.
+  4. Rename the feature in the docs to "dynamic filter mix" until real stems exist; real stems must be cleared assets (see P0-03).
+- **Wiring test (e2e):** fire the M-25 for 1 s and assert `getSceneCensus().visibleLights > 0` at some point during it. A unit test with a mocked AudioContext asserts that an explosion at screen right produces `pan > 0.3`.
+
+---
+
+### Group E — Hygiene, tests and documentation
+
+#### P11-21 Debug API leaks and e2e build isolation
+
+- **Bugs:**
+  - `ErrorReporter.ts` reads `window.__GAME_DEBUG__`, which puts the string back into the production bundle.
+  - `scripts/start-e2e.mjs` builds the e2e version into the same `dist/` folder as production, so a deploy made after an e2e run would ship god mode.
+- **Files:** `src/core/ErrorReporter.ts`, `src/core/Game.ts`, `scripts/start-e2e.mjs`, `vite.config.ts`, `.github/workflows/ci-deploy.yml`.
+- **Fix:**
+  1. Pass a `getSeed` callback into `ErrorReporter` from `Game`.
+  2. Build e2e into `dist-e2e/` (`build.outDir` driven by an env variable) and preview that folder.
+  3. In CI, build production last, from a clean folder, and upload only `dist/`.
+  4. Add `dist-e2e/` to `.gitignore`.
+- **Acceptance:** a CI step that runs `! grep -r "__GAME_DEBUG__" dist/assets` passes. Grepping a _build artifact_ is the correct check here.
+
+#### P11-22 Engine leaks and hot-path costs
+
+- **Bugs:**
+  - `InstancedPool` growth never calls `InstancedMesh.dispose()`, so the old instance buffer leaks.
+  - Calling an `EventBus` unsubscribe twice can delete a newer listener set for the same event.
+  - `mergeOldestCore` runs an O(n²) scan per spawn.
+  - The audio retrigger gap is tracked per voice slot, not per sound.
+  - Debris spawns twice on boss death.
+  - Each debris chunk clones its material, costing up to 300 draw calls.
+  - Several later-phase subscribers drop their unsubscribe handles: `HUDView`, `SceneManager`, `PostProcessing`, `InputManager`, `GameLoop`.
+- **Files:** `src/graphics/InstancedPool.ts`, `src/core/EventBus.ts`, `src/systems/PickupSystem.ts`, `src/audio/AudioEngine.ts`, `src/systems/ParticleSystem.ts`, `src/systems/EnemySystem.ts`, plus the five subscriber files above.
+- **Fix:**
+  1. Call `oldMesh.dispose()` when an `InstancedPool` grows.
+  2. Make unsubscribe idempotent by checking that the same set instance is still registered.
+  3. Do the gem merge through a spatial-grid query.
+  4. Track the retrigger gap per sound key.
+  5. Spawn boss debris in one place only.
+  6. Use one shared debris material per tint, or an `InstancedMesh`.
+  7. Store and dispose the unsubscribe handles.
+- **Wiring tests (unit):**
+  - Growing an `InstancedPool` 4 times disposes 3 meshes.
+  - Double unsubscribe leaves a newer listener intact.
+  - Merging with 1000 cores takes under 2 ms (`performance.now()` budget, real `PickupSystem`).
+
+#### P11-23 Performance budget measured honestly
+
+- **Bugs:**
+  - `check-bundle-size.mjs` only measures `index-*.js` and skips `three-vendor`.
+  - Stage environments are imported statically, so the split chunk still loads eagerly.
+  - The perf spec makes no FPS or draw-call assertions.
+  - Its geometry-growth limit was loosened from 5% to 10%.
+- **Files:** `scripts/check-bundle-size.mjs`, `src/core/Game.ts`, `src/graphics/environments/index.ts`, `tests/e2e/perf.spec.ts`.
+- **Fix:**
+  1. The size check sums every JS file referenced by `dist/index.html` plus its `modulepreload` links.
+  2. Lazy-load stage environments with `import()` when the run starts.
+  3. The perf spec asserts draw calls ≤ 60 with 500 enemies and geometry growth ≤ 5%; FPS is logged, not asserted.
+- **Acceptance:** CI fails when initial JS exceeds the budget; set the budget to the current total + 5% and record the number in the roadmap.
+
+#### P11-24 Replace hollow tests
+
+- **Files:** every test file listed below.
+- **Fix:** rewrite each one as a wiring test. Do not delete coverage: the new test must cover the same behaviour through real code.
+
+  | Test file                                                                                  | What is wrong                                                                                                                             |
+  | ------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
+  | `p1_01_death.test.ts`                                                                      | Never checks `SaveManager.addRunResults`. Case 3 counts calls the test itself makes. Nothing covers B12 (`endRun` while a modal is open). |
+  | `p1_04_pickup_freeze.test.ts`                                                              | Re-implements the level-up emission inside the test.                                                                                      |
+  | `p1_07_vault_choice.test.ts`                                                               | Case 3 decrements the counter itself.                                                                                                     |
+  | `p1_09_render_interpolation.test.ts`                                                       | The B14 case passes without the fix.                                                                                                      |
+  | `p3_02_enemy_registry.test.ts`                                                             | Checks array lengths only; covered by P11-02.                                                                                             |
+  | `p3_04_split_game.test.ts`                                                                 | Line-count assertions and heavy mocks. Keep the line-count check as a separate static check and add behaviour tests.                      |
+  | `p7_01_achievements.test.ts`, `p7_02_codex.test.ts`                                        | Emit events by hand; covered by P11-13.                                                                                                   |
+  | `p9_03_dynamic_lighting.test.ts`                                                           | Emits `vfx:muzzle` by hand; covered by P11-20.                                                                                            |
+  | `p10_01_ci_hardening.test.ts`, `p10_04_versioning.test.ts`, `p10_05_release_audit.test.ts` | Grep config files. Delete them; CI itself is the check.                                                                                   |
+  | `combatMath.test.ts`                                                                       | The newly added case re-implements the formula inline.                                                                                    |
+
+- **Acceptance:** each rewritten test fails on `18851fb` (or on a deliberately broken local copy, if the fix already landed) and passes now. Note it in the commit body.
+
+#### P11-25 Balance: early-game survivability and data-over-code
+
+- **Observation (playtest of `18851fb`):** an idle player died at 0:14 with the starting loadout. Hydrobot swarms appear from minute 0.
+- **Hard-coded numbers to move:**
+  - into `src/data/*`: the recoil table (`WeaponSystem`), ally HP and taunt, drum damage (220), boss attack damage, Self-Destruct damage (28);
+  - into `src/data/stages.ts`: Dog patrol and MeleeSweep timings.
+- **Files:** `src/data/waves.ts`, `src/data/balance.ts`, the systems listed.
+- **Fix:**
+  1. Hydrobots appear from minute 1.
+  2. **Target:** with the default loadout and no meta upgrades, a stationary player auto-firing survives at least 45 s, and a player circling at radius 8 m survives at least 120 s.
+  3. Move the numbers listed above.
+  4. Replace `Date.now()` in the Dog patrol and `setInterval` in `MeleeSweep` with simulated time.
+- **Wiring test (real-system unit, seeded):** simulate 45 s with a stationary player and assert `hp > 0`. Run with 3 seeds.
+
+#### P11-26 UI correctness leftovers
+
+- **Bugs:**
+  - Reroll and Banish call `show()` again without `a11y.deactivate()`, so the old keydown listener stays attached and arrow keys skip cards.
+  - `EndRunModal` hides without deactivating, leaking one listener per run.
+  - `getFocusables` lets hidden elements through because of `|| el.style.display !== 'none'`.
+  - Gamepad Banish removes the first card when the Banish button itself is selected.
+  - `prevPlayerPos` is not reset in `startRun`, so the first frame of a run can jump.
+  - The `LevelUpModal` ticker uses `globalRNG` instead of `vfxRNG`.
+  - `i18n` is never imported.
+- **Files:** `src/ui/LevelUpModal.ts`, `src/ui/EndRunModal.ts`, `src/ui/A11yHelper.ts`, `src/core/Game.ts`, `src/core/RunController.ts`, `src/i18n/*`, `src/ui/TitleScreen.ts`, `src/ui/PauseModal.ts`, `src/ui/HUDView.ts`.
+- **Fix:**
+  1. `show()` deactivates any previous activation, and `hide()` always deactivates.
+  2. Fix the visibility filter in `getFocusables`.
+  3. Banish uses the last _focused card_ index.
+  4. Reset `prevPlayerPos` in `startRun`.
+  5. Switch the ticker to `vfxRNG`.
+  6. Route the title, pause, level-up and end-run strings through `t()`, and add a `pseudo` locale (wraps strings in `⟦…⟧`) behind a dev setting.
+- **Wiring tests (e2e):**
+  - After 2 rerolls, one ArrowRight press moves exactly one card.
+  - With the `pseudo` locale, the title buttons render with `⟦`.
+
+#### P11-27 Documentation and asset honesty
+
+- **Files:** `README.md`, `CHANGELOG.md`, `ASSETS.md`, `CLAUDE.md`, `src/ui/TitleScreen.ts`.
+- **Fix:**
+  1. **README:** remove the claim that the Fiedel film score is included and the "60 FPS" claim; update the interpolation note (it has shipped).
+  2. **CHANGELOG:** correct false entries (multi-track music, Lighthouse, any feature P11 found hollow), and add a 1.11.0 entry for this phase.
+  3. **ASSETS.md:** change guessed sources ("Konami", "Rocksteady / WB", "Teyon / Reef", "Sound library", "Project-owned CC0") to `UNKNOWN (suspected: …)` unless proof is linked. Icons are `UNKNOWN` until the owner confirms.
+  4. **Title screen:** add the fan-project disclaimer footer.
+  5. **P10-05:** either add real Lighthouse CI (`@lhci/cli` dev dependency plus `lighthouserc.json`; this needs owner approval for the new dependency) or remove the claim. Do not keep the grep test.
+- **Acceptance:** a human reviewer can match every README and CHANGELOG claim to code.
+- **Still open, owner action:** P0-03, replacing assets marked REPLACE, needs the owner to choose replacements.
+
+---
+
+### Phase 11 exit criteria
+
+- [ ] Every task above is DONE with a wiring test, and its commit body says the test fails on `18851fb`.
+- [ ] `npm run typecheck`, `npm run lint`, `npm run test:unit`, `npm run build`, `npm run test:e2e` (including the `integration` project) all pass.
+- [ ] Manual playtest checklist, recorded in the final commit body:
+  - deploy → stage select → threat → play to a boss → vault → evolution → achievement toast;
+  - die and start a new run, with no leftover boss mesh;
+  - win → Continue (endless) → die, with results banked once;
+  - reload with reduced motion on, and no screen shake.
+- [ ] Production `dist/` contains no `__GAME_DEBUG__`.
+
+---
+
 ## 5. Score Targets per Phase
 
-| After phase | Correctness | Perf | Content | Feel | UX/A11y | Tests | Assets/IP | Overall |
-| ----------- | :---------: | :--: | :-----: | :--: | :-----: | :---: | :-------: | :-----: |
-| Today       |      5      | 5.5  |    5    |  6   |   3.5   |   6   |     2     | **52**  |
-| 0–1         |      8      | 5.5  |    5    |  6   |   3.5   |   7   |     7     |   61    |
-| 2–3         |     8.5     | 8.5  |    5    |  6   |   3.5   |  7.5  |     7     |   67    |
-| 4–5         |     8.5     | 8.5  |   7.5   | 8.5  |    4    |   8   |     7     |   76    |
-| 6–7         |     8.5     | 8.5  |    9    | 8.5  |   4.5   |   8   |     7     |   82    |
-| 8–10        |      9      |  9   |    9    |  9   |   8.5   |   9   |     8     | **90+** |
+| After phase                        | Correctness | Perf | Content | Feel | UX/A11y | Tests |        Assets/IP         | Overall |
+| ---------------------------------- | :---------: | :--: | :-----: | :--: | :-----: | :---: | :----------------------: | :-----: |
+| Today                              |      5      | 5.5  |    5    |  6   |   3.5   |   6   |            2             | **52**  |
+| 0–1                                |      8      | 5.5  |    5    |  6   |   3.5   |   7   |            7             |   61    |
+| 2–3                                |     8.5     | 8.5  |    5    |  6   |   3.5   |  7.5  |            7             |   67    |
+| 4–5                                |     8.5     | 8.5  |   7.5   | 8.5  |    4    |   8   |            7             |   76    |
+| 6–7                                |     8.5     | 8.5  |    9    | 8.5  |   4.5   |   8   |            7             |   82    |
+| 8–10                               |      9      |  9   |    9    |  9   |   8.5   |   9   |            8             | **90+** |
+| **Audited 2026-10-18 (`18851fb`)** |     5.5     | 7.5  |    6    |  7   |    5    |   6   |           2.5            | **62**  |
+| 11                                 |     8.5     | 8.5  |    8    |  8   |   7.5   |  8.5  | 4 (owner: 8 after P0-03) |  78–82  |
+
+The audited row shows where Phases 0–10 actually landed. After Phase 11, Assets/IP remains capped until the owner completes P0-03.
 
 ---
 
@@ -604,11 +1067,14 @@ You are working in the Terminator Survivors repo (TypeScript + Three.js + Vite).
 Read CLAUDE.md and roadmap.md Section 3 (Working Rules) first.
 Implement task <TASK-ID> from roadmap.md exactly as written.
 - Only edit the files listed under the task (plus tests).
-- Add the regression test described.
-- Run: npm run typecheck && npm run test:unit
+- Add the regression test described. For Phase 11 it must be a "wiring test"
+  as defined at the top of Phase 11 (no hand-emitted events, no file greps,
+  no mocking the system under test) and must fail on commit 18851fb.
+- Run: npm run typecheck && npm run lint && npm run test:unit
 - Commit with message "<type>(<area>): <TASK-ID> <summary>".
 When finished, reply with: files changed, tests added, command output summary,
-and any TODO(roadmap) comments you left.
+how a player reaches the change in the running game, and any TODO(roadmap)
+comments you left. Do not claim anything you did not verify.
 ```
 
 For a full phase, run the tasks in the listed order, then run `npm run build` and `npm run test:e2e` once at the end of the phase.

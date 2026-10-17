@@ -397,6 +397,37 @@ export interface PerfTelemetry {
   heapMB?: number;
 }
 
+export interface SceneCensus {
+  enemyGroupChildren: number;
+  weaponGroupChildren: number;
+  pickupGroupChildren: number;
+  fuelDrums: number;
+  cars: number;
+  obstacleColliders: number;
+  visibleLights: number;
+}
+
+export interface RuntimeSettings {
+  shakeScale: number;
+  flashScale: number;
+  hitStopEnabled: boolean;
+  damageNumbersMode: DamageNumberSetting;
+  qualityPreset: QualityPreset;
+  pixelRatio: number;
+  lightsEnabled: boolean;
+  keyBindings: KeyBindings;
+  bodyClasses: string[];
+}
+
+export interface RunConfig {
+  loadoutId?: LoadoutId;
+  stageId?: StageId;
+  threats?: ThreatModifierId[];
+  seed?: number;
+  daily?: { dateKey: string };
+  isEndless?: boolean;
+}
+
 export interface GameDebugAPI {
   getState: () => {
     mode: GameMode;
@@ -417,6 +448,12 @@ export interface GameDebugAPI {
     dashCooldown: number;
     weapons: Array<{ id: WeaponId; level: number; evolved: boolean }>;
     passives: Array<{ id: PassiveId; level: number }>;
+    stageId: StageId;
+    threats: ThreatModifierId[];
+    isDaily: boolean;
+    isEndless: boolean;
+    revivalsLeft: number;
+    invulnerabilityTimer: number;
   };
   grantXp: (amount: number) => void;
   spawnBoss: (archetype: EnemyArchetypeId) => void;
@@ -428,6 +465,13 @@ export interface GameDebugAPI {
   togglePause?: () => void;
   pauseGame?: () => void;
   resumeGame?: () => void;
+  getSceneCensus: () => SceneCensus;
+  getRuntimeSettings: () => RuntimeSettings;
+  getSave: () => MetaSaveData;
+  damageEnemy: (target: number | 'boss', amount: number, crit?: boolean) => boolean;
+  killAllEnemies: () => void;
+  setPlayerHp: (hp: number) => void;
+  startRunWith: (config: RunConfig) => void;
 }
 
 declare global {

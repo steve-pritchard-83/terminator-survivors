@@ -118,6 +118,10 @@ export class PostProcessingManager {
     this.flashIntensityScale = Math.max(0, Math.min(2.0, scale));
   }
 
+  public getFlashIntensityScale(): number {
+    return this.flashIntensityScale;
+  }
+
   constructor(renderer: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.Camera) {
     this.renderer = renderer;
     this.scene = scene;

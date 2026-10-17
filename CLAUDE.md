@@ -5,6 +5,8 @@
 - `npm run dev`: Launch local Vite development server
 - `npm run build`: Compile TypeScript and bundle production PWA
 - `npm run typecheck`: Run TypeScript compiler (`tsc --noEmit`)
+- `npm run lint`: Run ESLint checks
+- `npm run format`: Format code with Prettier
 - `npm run test:unit`: Run Vitest unit tests
 - `npm run test:e2e`: Run Playwright end-to-end tests
 
@@ -23,13 +25,22 @@
 
 Exposed during gameplay on `window.__GAME_DEBUG__` for testing and Playwright specs:
 
-- `getState()`: Returns live run state (`mode`, `hp`, `xp`, `weapons`, `passives`, `playerPos`, `activeEnemies`, etc.)
+- `getState()`: Returns live run state (`mode`, `hp`, `xp`, `weapons`, `passives`, `playerPos`, `activeEnemies`, `stageId`, `threats`, `isDaily`, `isEndless`, `revivalsLeft`, `invulnerabilityTimer`, etc.)
 - `grantXp(amount)`: Adds XP directly to test level-up triggers
 - `spawnBoss(archetype)`: Spawns specific boss archetype (`hk_aerial_squadron_leader`, `hk_tank_goliath`, `t1000_prototype`, etc.)
+- `spawnSwarm(archetype, count)`: Spawns swarm of enemies around player
+- `getPerf()`: Returns performance telemetry (FPS, frame time, draw calls, geometries, textures, heap)
 - `triggerVault()`: Spawns a Boss Data Vault directly at player position
 - `fastForward(seconds)`: Fast-forwards run clock
-- `killAllEnemies()`: Clears active enemies
 - `setGodMode(enabled)`: Toggles player invulnerability
+- `togglePause()`, `pauseGame()`, `resumeGame()`: Pause flow controls
+- `getSceneCensus()`: Returns scene counts: `{ enemyGroupChildren, weaponGroupChildren, pickupGroupChildren, fuelDrums, cars, obstacleColliders, visibleLights }`
+- `getRuntimeSettings()`: Returns live runtime settings: `{ shakeScale, flashScale, hitStopEnabled, damageNumbersMode, qualityPreset, pixelRatio, lightsEnabled, keyBindings, bodyClasses }`
+- `getSave()`: Returns deep clone of `SaveManager.getData()`
+- `damageEnemy(target, amount, crit)`: Deals damage to enemy/boss/drum through `WeaponSystem.applyDamageToTarget`
+- `killAllEnemies()`: Eliminates all active enemies via `damageEnemy`
+- `setPlayerHp(hp)`: Sets player current HP
+- `startRunWith(config)`: Launches run with custom `RunConfig` (`loadoutId`, `stageId`, `threats`, `seed`, `daily`, `isEndless`)
 
 ## 4. Working Rules for Agents (from `roadmap.md`)
 

@@ -17,13 +17,19 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
+      testIgnore: /integration\//,
+      use: { ...devices['Desktop Chrome'] }
+    },
+    {
+      name: 'integration',
+      testDir: './tests/e2e/integration',
       use: { ...devices['Desktop Chrome'] }
     }
   ],
   webServer: {
     command: 'node scripts/start-e2e.mjs',
     url: 'http://localhost:4173',
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: false,
     timeout: 90000,
     env: {
       VITE_E2E: '1'

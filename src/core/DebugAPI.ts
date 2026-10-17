@@ -1,24 +1,54 @@
+import * as THREE from 'three';
 import type { RunState } from '../state/RunState';
 import type { GameLoop } from './GameLoop';
 import type { EnemySystem } from '../systems/EnemySystem';
+import type { WeaponSystem } from '../systems/WeaponSystem';
 import type { WaveDirector } from '../systems/WaveDirector';
 import type { PickupSystem } from '../systems/PickupSystem';
 import type { SceneManager } from '../graphics/SceneManager';
 import type { AudioEngine } from '../audio/AudioEngine';
 import type { RunController } from './RunController';
+import type { InputManager } from '../input/InputManager';
+import type { SaveManager } from '../state/SaveManager';
+import type { UIManager } from '../ui/UIManager';
+import type { InteractiveEnvironmentSystem } from '../systems/InteractiveEnvironmentSystem';
+import type { IEnvironment } from '../graphics/environments';
 import { globalEvents } from './EventBus';
 import { globalRNG } from './RNG';
-import type { EnemyArchetypeId, GameDebugAPI, PerfTelemetry } from './types';
+import type {
+  EnemyArchetypeId,
+  GameDebugAPI,
+  PerfTelemetry,
+  RunConfig,
+  RuntimeSettings,
+  SceneCensus,
+  SpatialEntity,
+  LoadoutId,
+  StageId
+} from './types';
 
 export interface DebugAPIHost {
   readonly runState: RunState;
   readonly gameLoop: GameLoop;
   readonly enemySystem: EnemySystem;
+  readonly weaponSystem?: WeaponSystem;
   readonly waveDirector: WaveDirector;
   readonly pickupSystem: PickupSystem;
   readonly sceneManager: SceneManager;
   readonly audioEngine: AudioEngine;
   readonly runController: RunController;
+  readonly inputManager?: InputManager;
+  readonly saveManager?: SaveManager;
+  readonly uiManager?: UIManager;
+  readonly interactiveEnv?: InteractiveEnvironmentSystem;
+  readonly environment?: IEnvironment;
+  startRun?: (
+    loadoutId: LoadoutId,
+    customSeed?: number,
+    stageId?: StageId,
+    isDaily?: boolean,
+    dailyDateKey?: string
+  ) => void;
 }
 
 export class DebugAPI {
@@ -34,7 +64,7 @@ export class DebugAPI {
   }
 
   private createAPI(): GameDebugAPI {
-    return {
+    const api: GameDebugAPI = {
       getState: () => ({
         mode: this.host.runState.mode,
         fps: this.host.gameLoop.fps,
@@ -57,7 +87,13 @@ export class DebugAPI {
           level: w.level,
           evolved: w.evolved
         })),
-        passives: Array.from(this.host.runState.passives.entries()).map(([id, level]) => ({ id, level }))
+        passives: Array.from(this.host.runState.passives.entries()).map(([id, level]) => ({ id, level })),
+        stageId: this.host.runState.stageId,
+        threats: Array.from(this.host.runState.activeThreats),
+        isDaily: this.host.runState.isDailyOperation,
+        isEndless: this.host.runState.isEndless,
+        revivalsLeft: this.host.runState.revivalsLeft,
+        invulnerabilityTimer: this.host.runState.invulnerabilityTimer
       }),
       grantXp: (amount: number) => {
         const levels = this.host.runState.addXp(amount);
@@ -110,8 +146,87 @@ export class DebugAPI {
       },
       togglePause: () => this.host.runController.togglePause(),
       pauseGame: () => this.host.runController.pauseGame(),
-      resumeGame: () => this.host.runController.resumeFromPause()
+      resumeGame: () => this.host.runController.resumeFromPause(),
+
+      getSceneCensus: (): SceneCensus => {
+        let visibleLights = 0;
+        this.host.sceneManager.scene.traverse((obj) => {
+          if (
+            (obj as THREE.PointLight).isPointLight &&
+            obj.visible &&
+            (obj as THREE.PointLight).intensity > 0
+          ) {
+            visibleLights++;
+          }
+        });
+
+        return {
+          enemyGroupChildren: this.host.enemySystem.group.children.length,
+          weaponGroupChildren: this.host.weaponSystem?.group.children.length ?? 0,
+          pickupGroupChildren: this.host.pickupSystem.group.children.length,
+          fuelDrums: this.host.interactiveEnv?.fuelDrums.length ?? 0,
+          cars: this.host.interactiveEnv?.cars.length ?? 0,
+          obstacleColliders: this.host.environment?.obstacleColliders.length ?? 0,
+          visibleLights
+        };
+      },
+
+      getRuntimeSettings: (): RuntimeSettings => {
+        const govState = this.host.sceneManager.getQualityGovernorState();
+        return {
+          shakeScale: this.host.sceneManager.shakeScale,
+          flashScale: this.host.sceneManager.postProcessing?.getFlashIntensityScale?.() ?? 1.0,
+          hitStopEnabled: this.host.gameLoop.hitStopEnabled,
+          damageNumbersMode: this.host.uiManager?.hudView.damageNumbers.getMode() ?? 'all',
+          qualityPreset: this.host.sceneManager.qualityPreset,
+          pixelRatio: govState.pixelRatio,
+          lightsEnabled: this.host.sceneManager.dynamicLighting.isEnabled(),
+          keyBindings: this.host.inputManager?.getKeyBindings() ?? ({} as any),
+          bodyClasses: typeof document !== 'undefined' ? Array.from(document.body.classList) : []
+        };
+      },
+
+      getSave: () => JSON.parse(JSON.stringify(this.host.saveManager?.getData() ?? {})),
+
+      damageEnemy: (target: number | 'boss', amount: number, crit?: boolean): boolean => {
+        let targetEntity: SpatialEntity | undefined;
+        if (target === 'boss') {
+          targetEntity = this.host.enemySystem.activeEnemies.find((e) => e.isBoss);
+        } else {
+          targetEntity = this.host.enemySystem.activeEnemies.find((e) => e.id === target);
+          if (!targetEntity) {
+            targetEntity = this.host.interactiveEnv?.fuelDrums.find((d) => d.id === target);
+          }
+        }
+        if (!targetEntity || !this.host.weaponSystem) return false;
+        return this.host.weaponSystem.applyDamageToTarget(targetEntity, amount, 0, undefined, undefined, crit);
+      },
+
+      killAllEnemies: () => {
+        const enemies = [...this.host.enemySystem.activeEnemies];
+        for (const enemy of enemies) {
+          api.damageEnemy(enemy.id, 1e9);
+        }
+      },
+
+      setPlayerHp: (hp: number) => {
+        this.host.runState.hp = hp;
+      },
+
+      startRunWith: (config: RunConfig) => {
+        const stage = config.stageId ?? 'la_2029_wasteland';
+        const loadout = config.loadoutId ?? 'reese_2029';
+        this.host.startRun?.(loadout, config.seed, stage, !!config.daily, config.daily?.dateKey ?? '');
+        if (config.threats) {
+          this.host.runState.activeThreats = new Set(config.threats);
+        }
+        if (config.isEndless) {
+          this.host.runState.isEndless = true;
+        }
+      }
     };
+
+    return api;
   }
 
   public dispose(): void {
