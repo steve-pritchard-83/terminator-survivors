@@ -1,4 +1,4 @@
-import type { BaseWeaponId, DailyAttemptRecord, LoadoutId, MetaSaveData, MetaUpgradeId } from '../core/types';
+import type { BaseWeaponId, DailyAttemptRecord, LoadoutId, MetaSaveData, MetaUpgradeId, RunHistoryRecord } from '../core/types';
 import { LOADOUTS, META_UPGRADES } from '../data/upgrades';
 import { ACHIEVEMENTS, DEFAULT_UNLOCKED_WEAPONS } from '../data/achievements';
 
@@ -63,7 +63,8 @@ export class SaveManager {
       unlockedCosmetics: [],
       bestiaryKills: {},
       discoveredWeapons: [...DEFAULT_UNLOCKED_WEAPONS],
-      discoveredEvolutions: []
+      discoveredEvolutions: [],
+      runHistory: []
     };
   }
 
@@ -204,6 +205,16 @@ export class SaveManager {
       }
     }
 
+    // 13. Validate run history (keep up to 20)
+    const runHistory: RunHistoryRecord[] = [];
+    if (Array.isArray(current.runHistory)) {
+      for (const r of current.runHistory) {
+        if (r && typeof r === 'object' && typeof r.id === 'string') {
+          runHistory.push(r as RunHistoryRecord);
+        }
+      }
+    }
+
     return {
       version: SaveManager.CURRENT_VERSION,
       alloyScrap: typeof current.alloyScrap === 'number' && current.alloyScrap >= 0 ? Math.floor(current.alloyScrap) : 0,
@@ -221,7 +232,8 @@ export class SaveManager {
       unlockedCosmetics,
       bestiaryKills,
       discoveredWeapons,
-      discoveredEvolutions
+      discoveredEvolutions,
+      runHistory: runHistory.slice(0, 20)
     };
   }
 
@@ -473,6 +485,21 @@ export class SaveManager {
 
   public isEvolutionDiscovered(evolutionId: string): boolean {
     return Boolean(this.data.discoveredEvolutions?.includes(evolutionId));
+  }
+
+  public recordRunHistory(record: RunHistoryRecord): void {
+    if (!this.data.runHistory) {
+      this.data.runHistory = [];
+    }
+    this.data.runHistory.unshift(record);
+    if (this.data.runHistory.length > 20) {
+      this.data.runHistory.length = 20;
+    }
+    this.save();
+  }
+
+  public getRunHistory(): RunHistoryRecord[] {
+    return this.data.runHistory ? [...this.data.runHistory] : [];
   }
 
   public resetProgress(): void {

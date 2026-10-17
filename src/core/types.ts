@@ -293,6 +293,23 @@ export interface MetaSaveData {
   bestiaryKills?: Record<string, number>;
   discoveredWeapons?: string[];
   discoveredEvolutions?: string[];
+  runHistory?: RunHistoryRecord[];
+}
+
+export interface RunHistoryRecord {
+  id: string;
+  date: string;
+  durationSeconds: number;
+  stageId: StageId;
+  loadoutId: LoadoutId;
+  outcome: 'victory' | 'defeat';
+  levelReached: number;
+  kills: number;
+  scrapEarned: number;
+  topWeapon?: { id: WeaponId; damage: number };
+  weaponDamageBreakdown: Record<string, number>;
+  killsByType: Record<string, number>;
+  levelUpTimeline: Array<{ level: number; timeSeconds: number; choiceTitle: string }>;
 }
 
 export interface DailyOperationConfig {

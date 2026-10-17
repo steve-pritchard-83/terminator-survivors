@@ -23,9 +23,11 @@ export class TitleScreen {
   private readonly bunkerBtn: HTMLElement;
   private readonly achievementsBtn: HTMLElement;
   private readonly codexBtn: HTMLElement;
+  private readonly historyBtn: HTMLElement;
   private readonly saveManager: SaveManager;
   private readonly audioEngine: AudioEngine;
   private readonly onStartRun: (loadoutId: LoadoutId) => void;
+  private readonly onOpenArchives?: () => void;
   private deferredInstallPrompt: BeforeInstallPromptEvent | null = null;
 
   private selectedBtnIndex = 0;
@@ -38,11 +40,13 @@ export class TitleScreen {
     root: HTMLElement,
     saveManager: SaveManager,
     audioEngine: AudioEngine,
-    onStartRun: (loadoutId: LoadoutId) => void
+    onStartRun: (loadoutId: LoadoutId) => void,
+    onOpenArchives?: () => void
   ) {
     this.saveManager = saveManager;
     this.audioEngine = audioEngine;
     this.onStartRun = onStartRun;
+    this.onOpenArchives = onOpenArchives;
 
     this.container = document.createElement('div');
     this.container.className = 'screen-layer';
@@ -67,6 +71,9 @@ export class TitleScreen {
           </button>
           <button class="btn-secondary" data-testid="btn-codex" id="btn-codex">
             TECH-COM CODEX // BESTIARY
+          </button>
+          <button class="btn-secondary" data-testid="btn-history" id="btn-history">
+            TECH-COM WAR ARCHIVES
           </button>
           <button class="btn-secondary" id="btn-install-pwa" style="display:none; border-color:var(--color-cyan); color:var(--color-cyan);">
             INSTALL APP (PWA)
@@ -151,6 +158,7 @@ export class TitleScreen {
     this.bunkerBtn = this.container.querySelector('#btn-bunker-shop')!;
     this.achievementsBtn = this.container.querySelector('#btn-achievements')!;
     this.codexBtn = this.container.querySelector('#btn-codex')!;
+    this.historyBtn = this.container.querySelector('#btn-history')!;
     this.codexModal = new CodexModal(this.container, this.saveManager, this.audioEngine);
 
     this.setupPwaInstallPrompt();
@@ -172,6 +180,12 @@ export class TitleScreen {
 
     this.codexBtn.addEventListener('click', () => {
       this.codexModal.show();
+    });
+
+    this.historyBtn.addEventListener('click', () => {
+      this.audioEngine.playHudScanOpen();
+      this.hide();
+      this.onOpenArchives?.();
     });
 
     this.container.querySelector('#btn-close-bunker')?.addEventListener('click', () => {
@@ -334,7 +348,8 @@ export class TitleScreen {
       this.startBtn,
       this.bunkerBtn,
       this.achievementsBtn,
-      this.codexBtn
+      this.codexBtn,
+      this.historyBtn
     ];
     if (this.installBtn.style.display !== 'none') {
       btns.push(this.installBtn);

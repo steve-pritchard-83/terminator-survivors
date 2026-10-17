@@ -3,6 +3,7 @@ import type {
   ActiveEnemy,
   SpatialEntity,
   WeaponDefinition,
+  WeaponId,
   WeaponLevelStats
 } from '../../core/types';
 import type { RunState } from '../../state/RunState';
@@ -51,14 +52,16 @@ export interface WeaponFireContext {
     radius: number,
     damagePerSec: number,
     duration: number,
-    knockback?: number
+    knockback?: number,
+    weaponId?: WeaponId
   ) => void;
   spawnOrbitalIonBeam: (x: number, z: number, radius: number) => void;
   applyDamageToTarget: (
     target: SpatialEntity,
     damage: number,
     knockback?: number,
-    hitDir?: { x: number; z: number }
+    hitDir?: { x: number; z: number },
+    weaponId?: WeaponId
   ) => boolean;
   emit: <K extends keyof GameEventMap>(event: K, payload: GameEventMap[K]) => void;
   rng: typeof globalRNG;

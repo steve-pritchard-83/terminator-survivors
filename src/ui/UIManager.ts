@@ -27,10 +27,16 @@ export class UIManager {
     getRunState: () => RunState
   ) {
     this.hudView = new HUDView(root);
-    this.titleScreen = new TitleScreen(root, saveManager, audioEngine, onStartRun);
+    this.endRunModal = new EndRunModal(root, saveManager, audioEngine);
+    this.titleScreen = new TitleScreen(
+      root,
+      saveManager,
+      audioEngine,
+      onStartRun,
+      () => this.endRunModal.showArchives(() => this.titleScreen.show())
+    );
     this.levelUpModal = new LevelUpModal(root);
     this.vaultModal = new VaultJackpotModal(root);
-    this.endRunModal = new EndRunModal(root);
     this.pauseModal = new PauseModal(root, saveManager, audioEngine, getRunState);
 
     // Global UI Hover Beep & Button Click WAV Sound Hooks

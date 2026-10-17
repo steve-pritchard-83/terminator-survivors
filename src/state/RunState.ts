@@ -1,6 +1,7 @@
 import type {
   ActiveWeaponSlot,
   BaseWeaponId,
+  EnemyArchetypeId,
   EvolvedWeaponId,
   GameMode,
   LoadoutId,
@@ -49,6 +50,20 @@ export class RunState {
   public kills = 0;
   public bossesKilled = 0;
   public alloyScrapEarned = 0;
+  public readonly killsByType = new Map<EnemyArchetypeId, number>();
+  public levelUpTimeline: Array<{ level: number; timeSeconds: number; choiceTitle: string }> = [];
+
+  public recordKill(archetype: EnemyArchetypeId): void {
+    this.killsByType.set(archetype, (this.killsByType.get(archetype) ?? 0) + 1);
+  }
+
+  public recordLevelUp(choiceTitle: string): void {
+    this.levelUpTimeline.push({
+      level: this.level,
+      timeSeconds: this.timeSeconds,
+      choiceTitle
+    });
+  }
 
   public playerPos = { x: 0, z: 0 };
   public playerFacing = 0; // radians
@@ -127,6 +142,8 @@ export class RunState {
     this.kills = 0;
     this.bossesKilled = 0;
     this.alloyScrapEarned = 0;
+    this.killsByType.clear();
+    this.levelUpTimeline = [];
     this.playerPos = { x: 0, z: 0 };
     this.playerFacing = 0;
     this.playerMoveAngle = 0;

@@ -47,6 +47,7 @@ interface Projectile extends PoolableUser {
 
 interface GroundZone {
   mesh: THREE.Mesh;
+  weaponId?: WeaponId;
   x: number;
   z: number;
   radius: number;
@@ -73,6 +74,8 @@ export class WeaponSystem {
   private readonly playerMesh: KyleReeseMesh;
 
   public readonly patterns: Record<WeaponPatternId, WeaponPattern>;
+  public readonly damageByWeapon = new Map<WeaponId, number>();
+  private currentFiringWeaponId: WeaponId | null = null;
   public readonly orbitersPattern: Orbiters;
   private readonly fireContext: WeaponFireContext;
 
@@ -155,12 +158,12 @@ export class WeaponSystem {
       spawnProjectile: (params) => this.spawnProjectile(params),
       spawnEmpShockwave: (x, z, maxRadius, isSupernova) =>
         this.spawnEmpShockwave(x, z, maxRadius, isSupernova),
-      spawnGroundZone: (x, z, radius, dmg, dur, knockback) =>
-        this.spawnGroundZone(x, z, radius, dmg, dur, knockback),
+      spawnGroundZone: (x, z, radius, dmg, dur, knockback, weaponId) =>
+        this.spawnGroundZone(x, z, radius, dmg, dur, knockback, weaponId),
       spawnOrbitalIonBeam: (x, z, radius) =>
         this.spawnOrbitalIonBeam(x, z, radius),
-      applyDamageToTarget: (target, damage, knockback, hitDir) =>
-        this.applyDamageToTarget(target, damage, knockback, hitDir),
+      applyDamageToTarget: (target, damage, knockback, hitDir, weaponId) =>
+        this.applyDamageToTarget(target, damage, knockback, hitDir, weaponId),
       emit: (evt, payload) => globalEvents.emit(evt, payload),
       rng: globalRNG,
       scratch: {
@@ -245,7 +248,12 @@ export class WeaponSystem {
 
     const def = ALL_WEAPONS[wId as WeaponId];
     if (def?.pattern) {
-      this.patterns[def.pattern]?.fire(def, stats, px, pz, targetAngle, this.fireContext);
+      this.currentFiringWeaponId = wId as WeaponId;
+      try {
+        this.patterns[def.pattern]?.fire(def, stats, px, pz, targetAngle, this.fireContext);
+      } finally {
+        this.currentFiringWeaponId = null;
+      }
     }
   }
 
@@ -337,7 +345,8 @@ export class WeaponSystem {
     entity: SpatialEntity,
     baseDamage: number,
     knockback = 0,
-    hitDir?: { x: number; z: number }
+    hitDir?: { x: number; z: number },
+    weaponId?: WeaponId
   ): boolean {
     if (entity.type === 'crate') {
       globalEvents.emit('crate:destroyed', { crateId: entity.id, x: entity.x, z: entity.z });
@@ -368,6 +377,14 @@ export class WeaponSystem {
 
     enemy.hp -= finalDamage;
     enemy.hitFlashTimer = isCrit ? 0.2 : 0.12;
+
+    const sourceWeaponId = weaponId ?? this.currentFiringWeaponId;
+    if (sourceWeaponId) {
+      this.damageByWeapon.set(
+        sourceWeaponId,
+        (this.damageByWeapon.get(sourceWeaponId) ?? 0) + finalDamage
+      );
+    }
 
     if (knockback > 0 && hitDir) {
       const dist = Math.hypot(hitDir.x, hitDir.z);
@@ -434,7 +451,8 @@ export class WeaponSystem {
     radius: number,
     dps: number,
     duration: number,
-    knockback = 0
+    knockback = 0,
+    weaponId?: WeaponId
   ): void {
     const outerRingGeo = new THREE.RingGeometry(radius * 0.65, radius, 28);
     outerRingGeo.rotateX(-Math.PI / 2);
@@ -468,6 +486,7 @@ export class WeaponSystem {
 
     this.groundZones.push({
       mesh,
+      weaponId: weaponId ?? this.currentFiringWeaponId ?? undefined,
       x,
       z,
       radius,
@@ -516,7 +535,13 @@ export class WeaponSystem {
           const hitDir = Math.hypot(p.vx, p.vz) > 0.001
             ? { x: p.vx, z: p.vz }
             : { x: target.x - p.x, z: target.z - p.z };
-          const hit = this.applyDamageToTarget(target, p.damage, p.knockback, hitDir);
+          const hit = this.applyDamageToTarget(
+            target,
+            p.damage,
+            p.knockback,
+            hitDir,
+            p.weaponId as WeaponId
+          );
           if (hit) {
             this.audio.playEndoHit();
             this.particles.spawnPlasmaImpact(p.x, p.y, p.z);
@@ -536,7 +561,13 @@ export class WeaponSystem {
           for (let s = 0; s < splash.length; s++) {
             const target = splash[s];
             const hitDir = { x: target.x - p.x, z: target.z - p.z };
-            this.applyDamageToTarget(target, p.damage, p.knockback, hitDir);
+            this.applyDamageToTarget(
+              target,
+              p.damage,
+              p.knockback,
+              hitDir,
+              p.weaponId as WeaponId
+            );
           }
         }
         this.releaseProjectile(p);
@@ -562,7 +593,13 @@ export class WeaponSystem {
         for (let e = 0; e < targets.length; e++) {
           const target = targets[e];
           const hitDir = { x: target.x - gz.x, z: target.z - gz.z };
-          this.applyDamageToTarget(target, gz.damagePerSec * 0.25, gz.knockback, hitDir);
+          this.applyDamageToTarget(
+            target,
+            gz.damagePerSec * 0.25,
+            gz.knockback,
+            hitDir,
+            gz.weaponId
+          );
         }
       }
 
@@ -574,7 +611,16 @@ export class WeaponSystem {
     }
   }
 
+  public getDamageByWeapon(): Record<string, number> {
+    const record: Record<string, number> = {};
+    for (const [k, v] of this.damageByWeapon.entries()) {
+      record[k] = v;
+    }
+    return record;
+  }
+
   public clear(): void {
+    this.damageByWeapon.clear();
     for (const p of this.projectiles) {
       this.releaseProjectile(p);
     }

@@ -157,7 +157,7 @@ export class DogUnit implements WeaponPattern {
       if (targetEnemy && dist < 1.4 && dog.biteCooldown <= 0) {
         dog.biteCooldown = isPack ? 0.32 : 0.52;
         const hitDir = { x: targetEnemy.x - dog.x, z: targetEnemy.z - dog.z };
-        ctx.applyDamageToTarget(targetEnemy, dmg, def.knockback, hitDir);
+        ctx.applyDamageToTarget(targetEnemy, dmg, def.knockback, hitDir, def.id);
         ctx.audio.playEndoHit();
         ctx.particles.spawnPlasmaImpact(targetEnemy.x, 0.4, targetEnemy.z);
 

@@ -28,7 +28,8 @@ export class GroundZone implements WeaponPattern {
           baseRadius * areaMult,
           dmg,
           stats.duration,
-          def.knockback
+          def.knockback,
+          def.id
         );
       }
       return;
@@ -46,7 +47,8 @@ export class GroundZone implements WeaponPattern {
         baseRadius * areaMult,
         dmg,
         stats.duration,
-        def.knockback
+        def.knockback,
+        def.id
       );
     }
   }

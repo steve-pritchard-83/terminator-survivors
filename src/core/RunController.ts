@@ -11,7 +11,7 @@ import type { ParticleSystem } from '../systems/ParticleSystem';
 import type { WaveDirector } from '../systems/WaveDirector';
 import type { InteractiveEnvironmentSystem } from '../systems/InteractiveEnvironmentSystem';
 import type { GameLoop } from './GameLoop';
-import type { LoadoutId, StageId, ThreatModifierId, UpgradeChoice, WeaponId, ActiveEnemy } from './types';
+import type { LoadoutId, StageId, ThreatModifierId, UpgradeChoice, WeaponId, ActiveEnemy, RunHistoryRecord } from './types';
 import { globalEvents } from './EventBus';
 import { globalRNG } from './RNG';
 import { computeThreatScrapMultiplier } from '../data/threatModifiers';
@@ -182,6 +182,45 @@ export class RunController {
       threatCount: this.host.runState.activeThreats.size
     });
 
+    const damageByWeapon = typeof this.host.weaponSystem?.getDamageByWeapon === 'function'
+      ? this.host.weaponSystem.getDamageByWeapon()
+      : {};
+    let topWeapon: { id: WeaponId; damage: number } | undefined = undefined;
+    let maxDmg = 0;
+    for (const [wId, dmg] of Object.entries(damageByWeapon)) {
+      if (dmg > maxDmg) {
+        maxDmg = dmg;
+        topWeapon = { id: wId as WeaponId, damage: dmg };
+      }
+    }
+
+    const killsByTypeRecord: Record<string, number> = {};
+    if (this.host.runState.killsByType) {
+      for (const [k, v] of this.host.runState.killsByType.entries()) {
+        killsByTypeRecord[k] = v;
+      }
+    }
+
+    const runRecord: RunHistoryRecord = {
+      id: `run_${Date.now()}_${globalRNG.next().toString(36).slice(2, 7)}`,
+      date: new Date().toISOString(),
+      durationSeconds: this.host.runState.timeSeconds,
+      stageId: this.host.runState.stageId,
+      loadoutId: this.host.runState.loadoutId,
+      outcome: victory ? 'victory' : 'defeat',
+      levelReached: this.host.runState.level,
+      kills: this.host.runState.kills,
+      scrapEarned: finalScrap,
+      topWeapon,
+      weaponDamageBreakdown: damageByWeapon,
+      killsByType: killsByTypeRecord,
+      levelUpTimeline: this.host.runState.levelUpTimeline ? [...this.host.runState.levelUpTimeline] : []
+    };
+
+    if (typeof this.host.saveManager?.recordRunHistory === 'function') {
+      this.host.saveManager.recordRunHistory(runRecord);
+    }
+
     this.host.uiManager.levelUpModal.hide();
     this.host.uiManager.vaultModal.hide();
     this.host.uiManager.hudView.damageNumbers.clear();
@@ -207,7 +246,8 @@ export class RunController {
             this.host.uiManager.hudView.show();
             this.host.uiManager.hudView.triggerBossWarning('CONTINUE THE WAR // ENDLESS MODE ACTIVATED');
           }
-        : undefined
+        : undefined,
+      runRecord
     );
   }
 
@@ -259,6 +299,7 @@ export class RunController {
     this.host.audioEngine.playHudScanOpen();
     this.host.uiManager.levelUpModal.show(level, choices, (choice) => {
       this.host.audioEngine.playUpgradeApplied();
+      this.host.runState.recordLevelUp(choice.title);
       this.host.runState.applyUpgrade(choice);
       this.host.inputManager.clearDashRequest();
       if (this.host.runState.pendingLevelUps > 0) {
@@ -303,6 +344,7 @@ export class RunController {
   }
 
   public handleEnemyKilled(enemy: ActiveEnemy): void {
+    this.host.runState.recordKill(enemy.archetype);
     if (enemy.isBoss) {
       this.host.runState.bossesKilled++;
       this.host.sceneManager.addScreenShake(0.75);
