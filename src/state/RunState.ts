@@ -104,6 +104,8 @@ export class RunState {
       cooldownTimer: 0
     });
 
+    this.revivalsLeft = 0;
+    this.computedStats = this.getDefaultStats();
     this.recalculateStats();
     this.hp = this.maxHp;
   }
@@ -146,10 +148,13 @@ export class RunState {
     base.cooldownMultiplier = Math.max(0.35, base.cooldownMultiplier);
 
     const hpPercent = this.maxHp > 0 ? this.hp / this.maxHp : 1;
+    const prevRevivals = this.computedStats ? this.computedStats.revivals : 0;
     this.computedStats = base;
     this.maxHp = base.maxHp;
     this.hp = Math.max(1, Math.min(this.maxHp, Math.round(this.maxHp * hpPercent)));
-    this.revivalsLeft = Math.max(this.revivalsLeft, base.revivals);
+    if (base.revivals > prevRevivals) {
+      this.revivalsLeft += base.revivals - prevRevivals;
+    }
   }
 
   public addScrap(baseAmount: number): number {
