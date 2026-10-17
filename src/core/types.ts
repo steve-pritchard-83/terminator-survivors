@@ -95,6 +95,8 @@ export type MetaUpgradeId =
   | 'plasma_accelerator'
   | 'tactical_relay'
   | 'reroll_protocol'
+  | 'banish_protocol'
+  | 'skip_protocol'
   | 'veteran_resilience';
 
 export type ThreatModifierId =
@@ -218,6 +220,8 @@ export interface PlayerComputedStats {
   revivals: number;
   revivalChance?: number;
   rerolls?: number;
+  skips?: number;
+  banishes?: number;
   lowHpDamageReduction?: number;
 }
 

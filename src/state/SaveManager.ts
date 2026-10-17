@@ -52,6 +52,8 @@ export class SaveManager {
         plasma_accelerator: 0,
         tactical_relay: 0,
         reroll_protocol: 0,
+        banish_protocol: 0,
+        skip_protocol: 0,
         veteran_resilience: 0
       },
       settings: {

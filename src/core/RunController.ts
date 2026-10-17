@@ -45,7 +45,40 @@ export class RunController {
   }
 
   private setupEvents(): void {
+    const onBlur = () => {
+      if (this.host.runState.mode === 'playing') {
+        this.pauseGame();
+      }
+    };
+    const onVisibility = () => {
+      if (document.hidden && this.host.runState.mode === 'playing') {
+        this.pauseGame();
+      }
+    };
+    const onGamepadDisconnect = () => {
+      if (this.host.runState.mode === 'playing') {
+        this.pauseGame();
+      }
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('blur', onBlur);
+      window.addEventListener('gamepaddisconnected', onGamepadDisconnect);
+    }
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', onVisibility);
+    }
+
     this.unbinds.push(
+      () => {
+        if (typeof window !== 'undefined') {
+          window.removeEventListener('blur', onBlur);
+          window.removeEventListener('gamepaddisconnected', onGamepadDisconnect);
+        }
+        if (typeof document !== 'undefined') {
+          document.removeEventListener('visibilitychange', onVisibility);
+        }
+      },
       globalEvents.on('levelup:triggered', ({ level, choices }) => {
         this.showLevelUpModal(level, choices);
       }),
@@ -300,20 +333,57 @@ export class RunController {
   public showLevelUpModal(level: number, choices: UpgradeChoice[]): void {
     this.host.runState.mode = 'levelup';
     this.host.audioEngine.playHudScanOpen();
-    this.host.uiManager.levelUpModal.show(level, choices, (choice) => {
-      this.host.audioEngine.playUpgradeApplied();
-      this.host.runState.recordLevelUp(choice.title);
-      this.host.runState.applyUpgrade(choice);
-      this.host.inputManager.clearDashRequest();
-      if (this.host.runState.pendingLevelUps > 0) {
-        this.host.runState.pendingLevelUps--;
-        this.host.audioEngine.playLevelUp();
-        const nextChoices = this.host.runState.generateUpgradeChoices();
-        this.showLevelUpModal(this.host.runState.level, nextChoices);
-      } else {
-        this.host.runState.mode = 'playing';
+    this.host.uiManager.levelUpModal.show(
+      level,
+      choices,
+      (choice) => {
+        this.host.audioEngine.playUpgradeApplied();
+        this.host.runState.recordLevelUp(choice.title);
+        this.host.runState.applyUpgrade(choice);
+        this.host.inputManager.clearDashRequest();
+        if (this.host.runState.pendingLevelUps > 0) {
+          this.host.runState.pendingLevelUps--;
+          this.host.audioEngine.playLevelUp();
+          const nextChoices = this.host.runState.generateUpgradeChoices();
+          this.showLevelUpModal(this.host.runState.level, nextChoices);
+        } else {
+          this.host.runState.mode = 'playing';
+        }
+      },
+      {
+        rerollsLeft: this.host.runState.rerollsLeft,
+        skipsLeft: this.host.runState.skipsLeft,
+        banishesLeft: this.host.runState.banishesLeft,
+        onReroll: () => {
+          if (this.host.runState.useReroll()) {
+            this.host.audioEngine.playUiClick();
+            const newChoices = this.host.runState.generateUpgradeChoices();
+            this.showLevelUpModal(level, newChoices);
+          }
+        },
+        onSkip: () => {
+          if (this.host.runState.useSkip()) {
+            this.host.audioEngine.playUiBuy();
+            this.host.inputManager.clearDashRequest();
+            if (this.host.runState.pendingLevelUps > 0) {
+              this.host.runState.pendingLevelUps--;
+              this.host.audioEngine.playLevelUp();
+              const nextChoices = this.host.runState.generateUpgradeChoices();
+              this.showLevelUpModal(this.host.runState.level, nextChoices);
+            } else {
+              this.host.runState.mode = 'playing';
+            }
+          }
+        },
+        onBanish: (choice) => {
+          if (this.host.runState.banishUpgrade(choice.id)) {
+            this.host.audioEngine.playUiError();
+            const newChoices = this.host.runState.generateUpgradeChoices();
+            this.showLevelUpModal(level, newChoices);
+          }
+        }
       }
-    });
+    );
   }
 
   public handleVaultOpened(

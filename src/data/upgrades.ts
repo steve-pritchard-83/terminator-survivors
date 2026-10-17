@@ -275,6 +275,24 @@ export const META_UPGRADES: Record<MetaUpgradeId, MetaUpgradeConfig> = {
     costMultiplier: 2.0,
     statPerLevel: { rerolls: 1 }
   },
+  banish_protocol: {
+    id: 'banish_protocol',
+    name: 'Banish Frequency Override',
+    description: '+1 upgrade banish option per level (permanently excludes an item from the run pool).',
+    maxLevel: 3,
+    baseCost: 350,
+    costMultiplier: 2.0,
+    statPerLevel: { banishes: 1 }
+  },
+  skip_protocol: {
+    id: 'skip_protocol',
+    name: 'Scavenge Skip Protocol',
+    description: '+1 level-up skip option per level (skips upgrade and yields +25 Alloy Scrap).',
+    maxLevel: 3,
+    baseCost: 250,
+    costMultiplier: 1.8,
+    statPerLevel: { skips: 1 }
+  },
   veteran_resilience: {
     id: 'veteran_resilience',
     name: 'Veteran Survival Grit',

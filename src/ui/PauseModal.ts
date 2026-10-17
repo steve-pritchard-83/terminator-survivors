@@ -2,6 +2,8 @@ import type { SaveManager } from '../state/SaveManager';
 import type { AudioEngine } from '../audio/AudioEngine';
 import type { RunState } from '../state/RunState';
 import type { GamepadManager } from '../input/GamepadManager';
+import { BASE_WEAPONS, EVOLVED_WEAPONS, PASSIVES } from '../data/weapons';
+import type { BaseWeaponId, WeaponId } from '../core/types';
 import { ModalA11y } from './A11yHelper';
 
 export class PauseModal {
@@ -39,11 +41,23 @@ export class PauseModal {
     this.container.style.display = 'none';
 
     this.container.innerHTML = `
-      <div class="t800-modal-box" style="max-width: 520px;">
+      <div class="t800-modal-box" style="max-width: 680px; max-height: 88vh; overflow-y: auto;">
         <div class="t800-header">MISSION PAUSED</div>
-        <div class="t800-ticker" style="margin-bottom:18px;">TACTICAL TELEMETRY // OVERRIDE MODE ACTIVE</div>
+        <div class="t800-ticker" style="margin-bottom:14px;">TACTICAL TELEMETRY // OVERRIDE MODE ACTIVE</div>
 
-        <div style="display:flex; flex-direction:column; gap:16px; margin-bottom:24px; font-family:var(--font-telemetry);">
+        <div style="margin-bottom:16px; border-bottom:1px solid rgba(77,210,255,0.25); padding-bottom:12px;">
+          <div style="font-family:var(--font-display); font-size:12px; color:var(--color-cyan); margin-bottom:6px; letter-spacing:1px;">
+            EQUIPPED OPERATIVE ARSENAL
+          </div>
+          <div id="pause-arsenal-list" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:6px; margin-bottom:12px;"></div>
+
+          <div style="font-family:var(--font-display); font-size:12px; color:var(--color-amber); margin-bottom:6px; letter-spacing:1px;">
+            EVOLUTION RECIPES & PROTOCOLS
+          </div>
+          <div id="pause-recipes-list" style="display:flex; flex-direction:column; gap:5px; max-height:160px; overflow-y:auto; padding-right:4px;"></div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:14px; margin-bottom:20px; font-family:var(--font-telemetry);">
           <!-- Master Volume -->
           <div class="pause-setting-row" id="pause-row-0" style="display:flex; justify-content:space-between; align-items:center; padding:4px 8px; border-radius:3px; transition:background 0.15s ease;">
             <label for="pause-slider-master" style="color:var(--color-chrome); font-size:14px; letter-spacing:1px;">MASTER AUDIO</label>
@@ -231,10 +245,111 @@ export class PauseModal {
     this.crtCheckbox.checked = settings.crtScanlines;
     this.autoAimCheckbox.checked = this.getRunState().autoAimEnabled;
 
+    this.renderArsenalAndRecipes();
+
     this.selectedRowIndex = 5; // Default focus on Resume Mission
     this.container.style.display = 'flex';
     this.updateRowHighlight();
     this.a11y.activate(this.resumeBtn);
+  }
+
+  private renderArsenalAndRecipes(): void {
+    const runState = this.getRunState();
+    const arsenalList = this.container.querySelector('#pause-arsenal-list');
+    const recipesList = this.container.querySelector('#pause-recipes-list');
+    if (!arsenalList || !recipesList) return;
+
+    arsenalList.innerHTML = '';
+    recipesList.innerHTML = '';
+
+    // 1. Equipped Arsenal
+    const weaponEntries = Array.from(runState.weapons.entries());
+    const passiveEntries = Array.from(runState.passives.entries());
+
+    if (weaponEntries.length === 0 && passiveEntries.length === 0) {
+      arsenalList.innerHTML = '<div style="font-size:12px; color:#888;">NO EQUIPMENT FIELDED</div>';
+    } else {
+      for (const [wId, slot] of weaponEntries) {
+        const baseDef = BASE_WEAPONS[wId as BaseWeaponId];
+        const evolvedDef = EVOLVED_WEAPONS[wId as keyof typeof EVOLVED_WEAPONS];
+        const name = slot.evolved ? (evolvedDef?.name ?? wId) : (baseDef?.name ?? wId);
+        const color = slot.evolved ? '#ff0055' : (baseDef?.iconColor ?? '#4dd2ff');
+        const badge = slot.evolved ? 'EVOLVED' : `LV ${slot.level}/8`;
+
+        const item = document.createElement('div');
+        item.style.cssText = 'background:rgba(15,25,35,0.7); border:1px solid rgba(77,210,255,0.25); border-radius:3px; padding:6px 10px; display:flex; justify-content:space-between; align-items:center;';
+        item.innerHTML = `
+          <div style="font-size:12px; color:#fff; display:flex; align-items:center; gap:6px;">
+            <span style="display:inline-block; width:8px; height:8px; background:${color}; border-radius:1px;"></span>
+            ${name}
+          </div>
+          <div style="font-family:var(--font-telemetry); font-size:11px; color:${slot.evolved ? '#00ff88' : 'var(--color-cyan)'}; font-weight:bold;">${badge}</div>
+        `;
+        arsenalList.appendChild(item);
+      }
+
+      for (const [pId, lv] of passiveEntries) {
+        const def = PASSIVES[pId];
+        if (!def) continue;
+        const item = document.createElement('div');
+        item.style.cssText = 'background:rgba(15,25,35,0.7); border:1px solid rgba(255,170,0,0.25); border-radius:3px; padding:6px 10px; display:flex; justify-content:space-between; align-items:center;';
+        item.innerHTML = `
+          <div style="font-size:12px; color:#fff; display:flex; align-items:center; gap:6px;">
+            <span style="display:inline-block; width:8px; height:8px; background:${def.iconColor}; border-radius:1px;"></span>
+            ${def.name}
+          </div>
+          <div style="font-family:var(--font-telemetry); font-size:11px; color:var(--color-amber); font-weight:bold;">LV ${lv}/${def.maxLevel}</div>
+        `;
+        arsenalList.appendChild(item);
+      }
+    }
+
+    // 2. Evolution Recipes
+    for (const [bId, bDef] of Object.entries(BASE_WEAPONS)) {
+      if (!bDef.pairedPassive || !bDef.evolvesInto) continue;
+      const pDef = PASSIVES[bDef.pairedPassive];
+      const eDef = EVOLVED_WEAPONS[bDef.evolvesInto];
+      if (!pDef || !eDef) continue;
+
+      const weaponSlot = runState.weapons.get(bId as WeaponId);
+      const weaponLv = weaponSlot?.level ?? 0;
+      const isEvolved = weaponSlot?.evolved ?? false;
+      const passiveLv = runState.passives.get(bDef.pairedPassive) ?? 0;
+      const isReady = weaponLv >= 8 && passiveLv >= 1 && !isEvolved;
+
+      const row = document.createElement('div');
+      row.style.cssText = `
+        background: ${isReady ? 'rgba(0,255,136,0.1)' : 'rgba(10,20,30,0.5)'};
+        border: 1px solid ${isReady ? 'rgba(0,255,136,0.5)' : 'rgba(255,255,255,0.1)'};
+        border-radius: 3px;
+        padding: 5px 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 11px;
+      `;
+
+      let statusBadge = '<span style="color:#777;">UNACQUIRED</span>';
+      if (isEvolved) {
+        statusBadge = '<span style="color:#00ff88; font-weight:bold;">✓ EVOLVED</span>';
+      } else if (isReady) {
+        statusBadge = '<span style="color:#00e5ff; font-weight:bold;">★ SYNTHESIS READY</span>';
+      } else if (weaponLv > 0 || passiveLv > 0) {
+        statusBadge = `<span style="color:var(--color-amber);">W: ${weaponLv}/8 · P: ${passiveLv}/1</span>`;
+      }
+
+      row.innerHTML = `
+        <div style="display:flex; align-items:center; gap:6px; color:#ddd;">
+          <span style="color:${weaponLv > 0 ? '#fff' : '#888'}; font-weight:${weaponLv > 0 ? 'bold' : 'normal'};">${bDef.name}</span>
+          <span style="color:#555;">+</span>
+          <span style="color:${passiveLv > 0 ? '#fff' : '#888'}; font-weight:${passiveLv > 0 ? 'bold' : 'normal'};">${pDef.name}</span>
+          <span style="color:var(--color-cyan);">➔</span>
+          <span style="color:#ff6688; font-weight:bold;">${eDef.name}</span>
+        </div>
+        <div style="font-family:var(--font-telemetry); font-size:10px;">${statusBadge}</div>
+      `;
+      recipesList.appendChild(row);
+    }
   }
 
   public updateRowHighlight(): void {

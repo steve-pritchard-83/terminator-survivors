@@ -12,9 +12,9 @@ describe('P7-05 Bunker Upgrades Rework & Refund Mechanics', () => {
     saveManager = new SaveManager();
   });
 
-  it('defines all 16 meta upgrades with valid configs', () => {
+  it('defines all 18 meta upgrades with valid configs', () => {
     const keys = Object.keys(META_UPGRADES) as MetaUpgradeId[];
-    expect(keys.length).toBe(16);
+    expect(keys.length).toBe(18);
 
     const expectedKeys: MetaUpgradeId[] = [
       'armor_vest',
@@ -32,6 +32,8 @@ describe('P7-05 Bunker Upgrades Rework & Refund Mechanics', () => {
       'plasma_accelerator',
       'tactical_relay',
       'reroll_protocol',
+      'banish_protocol',
+      'skip_protocol',
       'veteran_resilience'
     ];
 
@@ -43,9 +45,9 @@ describe('P7-05 Bunker Upgrades Rework & Refund Mechanics', () => {
     }
   });
 
-  it('initializes default save data with all 16 upgrades at 0', () => {
+  it('initializes default save data with all 18 upgrades at 0', () => {
     const data = saveManager.getData();
-    expect(Object.keys(data.upgrades).length).toBe(16);
+    expect(Object.keys(data.upgrades).length).toBe(18);
     for (const v of Object.values(data.upgrades)) {
       expect(v).toBe(0);
     }
