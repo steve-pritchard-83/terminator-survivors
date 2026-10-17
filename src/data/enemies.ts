@@ -145,6 +145,84 @@ export const ENEMY_CONFIGS: Record<EnemyArchetypeId, EnemyStatsConfig> = {
     xpValue: 1500,
     color: 0x00e5ff,
     mass: 200.0
+  },
+  t1_minigun_tracked: {
+    archetype: 't1_minigun_tracked',
+    name: 'T-1 Heavy Battlefield Chassis',
+    maxHp: 160,
+    speed: 2.0,
+    damage: 20,
+    radius: 1.4,
+    isBoss: false,
+    isFlying: false,
+    xpValue: 15,
+    color: 0x5a6068,
+    mass: 20.0
+  },
+  moto_terminator: {
+    archetype: 'moto_terminator',
+    name: 'Moto-Terminator Flanker',
+    maxHp: 75,
+    speed: 6.8,
+    damage: 22,
+    radius: 0.9,
+    isBoss: false,
+    isFlying: false,
+    xpValue: 14,
+    color: 0x2b2b30,
+    mass: 8.0
+  },
+  hydrobot_swarm: {
+    archetype: 'hydrobot_swarm',
+    name: 'Skynet Hydrobot Serpent',
+    maxHp: 12,
+    speed: 5.6,
+    damage: 8,
+    radius: 0.35,
+    isBoss: false,
+    isFlying: false,
+    xpValue: 2,
+    color: 0x3d5a73,
+    mass: 0.8
+  },
+  aerostat_scout: {
+    archetype: 'aerostat_scout',
+    name: 'Skynet Aerostat Aerial Scout',
+    maxHp: 55,
+    speed: 4.2,
+    damage: 10,
+    radius: 0.7,
+    isBoss: false,
+    isFlying: true,
+    xpValue: 8,
+    color: 0x4fc3f7,
+    mass: 3.0
+  },
+  plasma_turret: {
+    archetype: 'plasma_turret',
+    name: 'Skynet Perimeter Defense Turret',
+    maxHp: 220,
+    speed: 0,
+    damage: 25,
+    radius: 1.2,
+    isBoss: false,
+    isFlying: false,
+    xpValue: 20,
+    color: 0x37474f,
+    mass: 50.0
+  },
+  t600_minigunner: {
+    archetype: 't600_minigunner',
+    name: 'Series 600 Minigun Enforcer',
+    maxHp: 130,
+    speed: 2.1,
+    damage: 24,
+    radius: 0.85,
+    isBoss: false,
+    isFlying: false,
+    xpValue: 16,
+    color: 0x4a4642,
+    mass: 5.0
   }
 };
 

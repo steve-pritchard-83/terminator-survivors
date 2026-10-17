@@ -6,6 +6,15 @@ import { T1000Behaviour } from './T1000Behaviour';
 import { InfiltratorBehaviour } from './InfiltratorBehaviour';
 import { SkynetCoreBehaviour } from './SkynetCoreBehaviour';
 
+import {
+  T1MinigunBehaviour,
+  MotoTerminatorBehaviour,
+  HydrobotSwarmBehaviour,
+  AerostatScoutBehaviour,
+  PlasmaTurretBehaviour,
+  T600MinigunnerBehaviour
+} from './NewEnemyBehaviours';
+
 export * from './EnemyBehaviour';
 export * from './T800Behaviour';
 export * from './HKAerialBehaviour';
@@ -13,6 +22,7 @@ export * from './HKTankBehaviour';
 export * from './T1000Behaviour';
 export * from './InfiltratorBehaviour';
 export * from './SkynetCoreBehaviour';
+export * from './NewEnemyBehaviours';
 
 export function createEnemyBehaviourRegistry(): Record<string, EnemyBehaviour> {
   const hkAerial = new HKAerialBehaviour();
@@ -23,6 +33,12 @@ export function createEnemyBehaviourRegistry(): Record<string, EnemyBehaviour> {
     hk_tank_goliath: new HKTankBehaviour(),
     t1000_prototype: new T1000Behaviour(),
     infiltrator_csm101: new InfiltratorBehaviour(),
-    skynet_tde_core: new SkynetCoreBehaviour()
+    skynet_tde_core: new SkynetCoreBehaviour(),
+    t1_minigun_tracked: new T1MinigunBehaviour(),
+    moto_terminator: new MotoTerminatorBehaviour(),
+    hydrobot_swarm: new HydrobotSwarmBehaviour(),
+    aerostat_scout: new AerostatScoutBehaviour(),
+    plasma_turret: new PlasmaTurretBehaviour(),
+    t600_minigunner: new T600MinigunnerBehaviour()
   };
 }

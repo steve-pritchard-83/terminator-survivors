@@ -40,7 +40,13 @@ export type EnemyArchetypeId =
   | 'hk_tank_goliath'
   | 'hk_aerial_squadron_leader'
   | 't1000_prototype'
-  | 'skynet_tde_core';
+  | 'skynet_tde_core'
+  | 't1_minigun_tracked'
+  | 'moto_terminator'
+  | 'hydrobot_swarm'
+  | 'aerostat_scout'
+  | 'plasma_turret'
+  | 't600_minigunner';
 
 export type LoadoutId = 'reese_2029' | 'reese_1984' | 'techcom_sapper' | 'john_connor';
 

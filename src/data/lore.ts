@@ -21,3 +21,106 @@ export const LORE = {
   victoryText: `SKYNET DEFENSE GRID COLLAPSED. TIME DISPLACEMENT EQUIPMENT SECURED.\n\nSergeant Kyle Reese steps into the glowing blue displacement sphere. Destination: Los Angeles, May 12, 1984.\n\nMISSION ACCOMPLISHED.`,
   defeatText: `TERMINATED.\n\nAnother fallen soldier of the human resistance. But as long as one human draws breath, the war is never truly over.`
 } as const;
+
+export const ENEMY_CODEX: Record<
+  import('../core/types').EnemyArchetypeId,
+  { name: string; designation: string; codex: string; threat: 'LOW' | 'MEDIUM' | 'HIGH' | 'EXTREME' | 'LETHAL' }
+> = {
+  skynet_crab_drone: {
+    name: 'Skynet Recon Scuttler',
+    designation: 'M-12 Autonomous Recon Quadruped',
+    codex: 'Mass-produced scouting scuttlers designed to clear rubble and crawl into human refuge tunnels. Light titanium carapace, fast skittering stride.',
+    threat: 'LOW'
+  },
+  t600_rusted: {
+    name: 'Series 600 Heavy Walker',
+    designation: 'Cyberdyne Systems Series 600',
+    codex: 'Early battlefield infiltrators clad in crude synthetic rubber skins. Easily distinguished by their rigid lumbering gait and pungent smell. Heavy titanium core.',
+    threat: 'MEDIUM'
+  },
+  t700_scout: {
+    name: 'Series 700 Runner',
+    designation: 'Cyberdyne Systems Series 700 Endoskeleton',
+    codex: 'Bridge design between Series 600 and 800. Sleeker hydraulic musculature and reinforced leg servos designed for high-speed pursuit.',
+    threat: 'MEDIUM'
+  },
+  t800_endoskeleton: {
+    name: 'Series 800 Hyperalloy Endoskeleton',
+    designation: 'Cyberdyne Systems Series 800 Model 101',
+    codex: 'Microprocessor-controlled hyperalloy combat chassis. Frictionless pneumatic joints, armored cerebral cortex housing the neural net processor. The ultimate infantry termination platform.',
+    threat: 'HIGH'
+  },
+  hk_aerial_patrol: {
+    name: 'Hunter-Killer Aerial Gunship',
+    designation: 'Skynet VTOL Gunship Patrol Unit',
+    codex: 'Twin turbofan VTOL patrol craft armed with dual ventral plasma cannons and downward-facing searchlight tracking arrays.',
+    threat: 'HIGH'
+  },
+  infiltrator_csm101: {
+    name: 'Infiltrator Unit CSM-101',
+    designation: 'Cyberdyne Systems Model 101 Infiltration Unit',
+    codex: 'Living human tissue grown over hyperalloy endoskeleton. Capable of mimicking human speech, sweat, and breath. Relentless hunter designed to infiltrate underground resistance sanctuaries.',
+    threat: 'EXTREME'
+  },
+  hk_tank_goliath: {
+    name: 'Hunter-Killer Tank Goliath',
+    designation: 'Skynet Ground Assault Dreadnought',
+    codex: 'Massive tracked siege war machine towering over the ruins of Los Angeles. Crushes concrete and human skulls alike under triple-tread bogies while firing twin heavy plasma artillery mortars.',
+    threat: 'EXTREME'
+  },
+  hk_aerial_squadron_leader: {
+    name: 'HK-Aerial Command Gunship',
+    designation: 'Skynet Aerial Command & Control Flagship',
+    codex: 'Heavily armored flagship VTOL coordinating regional search-and-destroy sorties. Equipped with multi-vector missile salvo pods and reinforced nose armor for diving kamikaze strikes.',
+    threat: 'EXTREME'
+  },
+  t1000_prototype: {
+    name: 'Liquid Metal Prototype T-1000',
+    designation: 'Advanced Prototype Mimetic Polyalloy',
+    codex: 'Autonomous liquid metal polyalloy prototype capable of molecular morphing into solid knives and stabbing blades. Impervious to kinetic trauma and able to reform from molten puddles.',
+    threat: 'LETHAL'
+  },
+  skynet_tde_core: {
+    name: 'Skynet Time Displacement Core',
+    designation: 'Central Quantum Displacement Facility',
+    codex: 'The heart of Skynet\'s temporal installation beneath Cheyenne Mountain and LA Central. Creates gravitational singularities and rotating plasma spokes while generating the displacement sphere.',
+    threat: 'LETHAL'
+  },
+  t1_minigun_tracked: {
+    name: 'T-1 Heavy Battlefield Chassis',
+    designation: 'Cyber Research Systems T-1 Autonomous Ground Unit',
+    codex: 'First-generation combat robot originally developed before Judgment Day. Dual tank treads carry twin high-cyclic rate miniguns capable of laying down devastating sweeping bullet cones.',
+    threat: 'MEDIUM'
+  },
+  moto_terminator: {
+    name: 'Moto-Terminator Flanker',
+    designation: 'Autonomous High-Speed Interceptor Cycle',
+    codex: 'Skynet reconnaissance cycles designed for high-speed road and desert pursuit. Uses gyroscopic stabilizers to execute lightning-fast straight-line dashes through resistance flanking lines.',
+    threat: 'HIGH'
+  },
+  hydrobot_swarm: {
+    name: 'Skynet Hydrobot Serpent',
+    designation: 'Aquatic and Subterranean Autonomous Hunter',
+    codex: 'Segmented serpentine terminators operating in swarms of 12. Highly agile swimmers and burrowers that leap out of storm drains and drainage ditches with razor-sharp hydraulic clamp jaws.',
+    threat: 'LOW'
+  },
+  aerostat_scout: {
+    name: 'Skynet Aerostat Aerial Scout',
+    designation: 'Micro-UAV Sensor Drone',
+    codex: 'Compact hovering scout craft equipped with infrared sensors and laser telemetry markers. When painting resistance targets, it transmits overclock telemetry boosting nearby ground units by +20% speed.',
+    threat: 'MEDIUM'
+  },
+  plasma_turret: {
+    name: 'Skynet Perimeter Defense Turret',
+    designation: 'Static Reinforced Heavy Emplacement',
+    codex: 'Stationary armored concrete pillbox mounting dual phased plasma cannons. Locked to regional defensive perimeters with automated motion tracking and precision line telegraph targeting.',
+    threat: 'HIGH'
+  },
+  t600_minigunner: {
+    name: 'Series 600 Minigun Enforcer',
+    designation: 'Cyberdyne Series 600 Heavy Weapons Specialist',
+    codex: 'A fortified variant of the Series 600 wielding a man-portable rotary machine gun fed by a rear hyperalloy ammunition drum. Designed to pin down resistance combat squads with suppressive fire.',
+    threat: 'HIGH'
+  }
+};
+

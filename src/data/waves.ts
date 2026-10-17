@@ -33,34 +33,51 @@ export const WAVE_TIMELINE: WaveMinuteEntry[] = Array.from(
 
     if (minute < 2) {
       pool = [
-        { archetype: 'skynet_crab_drone', weight: 7 },
-        { archetype: 't600_rusted', weight: 3 }
+        { archetype: 'skynet_crab_drone', weight: 6 },
+        { archetype: 't600_rusted', weight: 3 },
+        { archetype: 'hydrobot_swarm', weight: 2 }
       ];
     } else if (minute < 4) {
       pool = [
-        { archetype: 'skynet_crab_drone', weight: 4 },
-        { archetype: 't600_rusted', weight: 4 },
-        { archetype: 't700_scout', weight: 4 }
+        { archetype: 'skynet_crab_drone', weight: 3 },
+        { archetype: 't600_rusted', weight: 3 },
+        { archetype: 't700_scout', weight: 3 },
+        { archetype: 'hydrobot_swarm', weight: 3 },
+        { archetype: 'plasma_turret', weight: 2 },
+        { archetype: 't1_minigun_tracked', weight: 2 },
+        { archetype: 'aerostat_scout', weight: 2 },
+        { archetype: 't600_minigunner', weight: 2 }
       ];
     } else if (minute < 6) {
       pool = [
-        { archetype: 't600_rusted', weight: 3 },
-        { archetype: 't700_scout', weight: 4 },
-        { archetype: 't800_endoskeleton', weight: 5 },
-        { archetype: 'hk_aerial_patrol', weight: 2 }
+        { archetype: 't700_scout', weight: 3 },
+        { archetype: 't800_endoskeleton', weight: 4 },
+        { archetype: 't1_minigun_tracked', weight: 3 },
+        { archetype: 'moto_terminator', weight: 3 },
+        { archetype: 't600_minigunner', weight: 2 },
+        { archetype: 'hk_aerial_patrol', weight: 2 },
+        { archetype: 'plasma_turret', weight: 2 },
+        { archetype: 'aerostat_scout', weight: 2 }
       ];
     } else if (minute < 8) {
       pool = [
-        { archetype: 't700_scout', weight: 3 },
-        { archetype: 't800_endoskeleton', weight: 6 },
+        { archetype: 't800_endoskeleton', weight: 5 },
+        { archetype: 'moto_terminator', weight: 4 },
+        { archetype: 't1_minigun_tracked', weight: 3 },
+        { archetype: 't600_minigunner', weight: 3 },
         { archetype: 'hk_aerial_patrol', weight: 3 },
-        { archetype: 'skynet_crab_drone', weight: 2 }
+        { archetype: 'plasma_turret', weight: 2 },
+        { archetype: 'hydrobot_swarm', weight: 2 }
       ];
     } else {
       pool = [
-        { archetype: 't800_endoskeleton', weight: 8 },
+        { archetype: 't800_endoskeleton', weight: 6 },
+        { archetype: 'moto_terminator', weight: 4 },
+        { archetype: 't1_minigun_tracked', weight: 4 },
+        { archetype: 't600_minigunner', weight: 3 },
         { archetype: 'hk_aerial_patrol', weight: 4 },
-        { archetype: 't700_scout', weight: 3 }
+        { archetype: 'plasma_turret', weight: 2 },
+        { archetype: 'aerostat_scout', weight: 2 }
       ];
     }
 

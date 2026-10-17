@@ -1,0 +1,394 @@
+import type * as THREE from 'three';
+import type { ActiveEnemy } from '../../core/types';
+import type { EnemyBehaviour, EnemyContext } from './EnemyBehaviour';
+import {
+  T1MinigunMesh,
+  MotoTerminatorMesh,
+  HydrobotMesh,
+  AerostatMesh,
+  PlasmaTurretMesh,
+  T600MinigunnerMesh
+} from '../../graphics/meshes/NewEnemyMeshes';
+import { ConeTelegraph, LineTelegraph } from '../../graphics/Telegraphs';
+
+export class T1MinigunBehaviour implements EnemyBehaviour {
+  private readonly meshes = new Map<number, T1MinigunMesh>();
+  private readonly telegraphs = new Map<number, ConeTelegraph>();
+
+  public createVisual(enemy: ActiveEnemy, ctx: EnemyContext): THREE.Object3D | null {
+    const mesh = new T1MinigunMesh();
+    mesh.group.position.set(enemy.x, 0, enemy.z);
+    ctx.group.add(mesh.group);
+    this.meshes.set(enemy.id, mesh);
+    return mesh.group;
+  }
+
+  public update(enemy: ActiveEnemy, dt: number, ctx: EnemyContext): void {
+    const mesh = this.meshes.get(enemy.id);
+    if (!mesh) return;
+
+    const px = ctx.runState.playerPos.x;
+    const pz = ctx.runState.playerPos.z;
+    const facing = Math.atan2(px - enemy.x, pz - enemy.z);
+
+    mesh.group.position.set(enemy.x, 0, enemy.z);
+    mesh.group.rotation.y = facing;
+
+    const state = (enemy.state = enemy.state ?? {});
+    const cd = (state.burstCooldown ?? 3.5) - dt;
+    state.burstCooldown = cd;
+
+    let telegraph = this.telegraphs.get(enemy.id);
+    if (!telegraph) {
+      telegraph = new ConeTelegraph(8.0, Math.PI / 3, 0xff5500);
+      ctx.group.add(telegraph.group);
+      this.telegraphs.set(enemy.id, telegraph);
+    }
+
+    if (cd <= 0.6 && cd > 0) {
+      const progress = (0.6 - cd) / 0.6;
+      telegraph.update(enemy.x, enemy.z, facing, progress);
+    } else if (cd <= 0) {
+      telegraph.setVisible(false);
+      state.burstCooldown = 4.2;
+      ctx.audio.playPlasmaShot(false);
+      // Sweeping cone burst: 5 bullets across arc
+      for (let b = -2; b <= 2; b++) {
+        const angle = facing + b * 0.12;
+        const tx = enemy.x + Math.sin(angle) * 10.0;
+        const tz = enemy.z + Math.cos(angle) * 10.0;
+        ctx.spawnEnemyProjectile(enemy.x, 0.72, enemy.z, tx, tz, 11.0, 12);
+      }
+    } else {
+      telegraph.setVisible(false);
+    }
+  }
+
+  public dispose(enemy: ActiveEnemy, ctx: EnemyContext): void {
+    const mesh = this.meshes.get(enemy.id);
+    if (mesh) {
+      ctx.group.remove(mesh.group);
+      mesh.dispose();
+      this.meshes.delete(enemy.id);
+    }
+    const t = this.telegraphs.get(enemy.id);
+    if (t) {
+      ctx.group.remove(t.group);
+      t.dispose();
+      this.telegraphs.delete(enemy.id);
+    }
+  }
+
+  public clear(): void {
+    for (const m of this.meshes.values()) m.dispose();
+    this.meshes.clear();
+    for (const t of this.telegraphs.values()) t.dispose();
+    this.telegraphs.clear();
+  }
+}
+
+export class MotoTerminatorBehaviour implements EnemyBehaviour {
+  private readonly meshes = new Map<number, MotoTerminatorMesh>();
+  private readonly telegraphs = new Map<number, LineTelegraph>();
+
+  public createVisual(enemy: ActiveEnemy, ctx: EnemyContext): THREE.Object3D | null {
+    const mesh = new MotoTerminatorMesh();
+    mesh.group.position.set(enemy.x, 0, enemy.z);
+    ctx.group.add(mesh.group);
+    this.meshes.set(enemy.id, mesh);
+    return mesh.group;
+  }
+
+  public update(enemy: ActiveEnemy, dt: number, ctx: EnemyContext): void {
+    const mesh = this.meshes.get(enemy.id);
+    if (!mesh) return;
+
+    const px = ctx.runState.playerPos.x;
+    const pz = ctx.runState.playerPos.z;
+    const distToPlayer = Math.hypot(px - enemy.x, pz - enemy.z);
+    const facing = Math.atan2(px - enemy.x, pz - enemy.z);
+
+    mesh.group.position.set(enemy.x, 0, enemy.z);
+    mesh.group.rotation.y = facing;
+
+    const state = (enemy.state = enemy.state ?? {});
+    const dashCd = (state.dashCooldown ?? 3.2) - dt;
+    state.dashCooldown = dashCd;
+    const isDashing = (state.isDashing ?? 0) === 1;
+
+    let telegraph = this.telegraphs.get(enemy.id);
+    if (!telegraph) {
+      telegraph = new LineTelegraph(0.8, 0xff0044);
+      ctx.group.add(telegraph.group);
+      this.telegraphs.set(enemy.id, telegraph);
+    }
+
+    if (dashCd <= 0.4 && dashCd > 0 && !isDashing && distToPlayer < 14.0) {
+      const progress = (0.4 - dashCd) / 0.4;
+      telegraph.update(enemy.x, enemy.z, px, pz, progress, 1.2);
+    } else if (dashCd <= 0 && !isDashing && distToPlayer < 14.0) {
+      telegraph.setVisible(false);
+      state.isDashing = 1;
+      state.dashDuration = 0.35;
+      state.dashVx = Math.sin(facing) * 14.0;
+      state.dashVz = Math.cos(facing) * 14.0;
+      state.dashCooldown = 3.6;
+      ctx.audio.playExplosion(0.8);
+    } else {
+      telegraph.setVisible(false);
+    }
+
+    if (state.isDashing === 1) {
+      const dur = (state.dashDuration ?? 0.35) - dt;
+      state.dashDuration = dur;
+      enemy.vx = state.dashVx ?? 0;
+      enemy.vz = state.dashVz ?? 0;
+      if (distToPlayer < 1.4) {
+        ctx.applyPlayerDamage(20);
+      }
+      if (dur <= 0) {
+        state.isDashing = 0;
+        enemy.vx = 0;
+        enemy.vz = 0;
+      }
+    }
+  }
+
+  public dispose(enemy: ActiveEnemy, ctx: EnemyContext): void {
+    const mesh = this.meshes.get(enemy.id);
+    if (mesh) {
+      ctx.group.remove(mesh.group);
+      mesh.dispose();
+      this.meshes.delete(enemy.id);
+    }
+    const t = this.telegraphs.get(enemy.id);
+    if (t) {
+      ctx.group.remove(t.group);
+      t.dispose();
+      this.telegraphs.delete(enemy.id);
+    }
+  }
+
+  public clear(): void {
+    for (const m of this.meshes.values()) m.dispose();
+    this.meshes.clear();
+    for (const t of this.telegraphs.values()) t.dispose();
+    this.telegraphs.clear();
+  }
+}
+
+export class HydrobotSwarmBehaviour implements EnemyBehaviour {
+  private readonly meshes = new Map<number, HydrobotMesh>();
+
+  public createVisual(enemy: ActiveEnemy, ctx: EnemyContext): THREE.Object3D | null {
+    const mesh = new HydrobotMesh();
+    mesh.group.position.set(enemy.x, 0, enemy.z);
+    ctx.group.add(mesh.group);
+    this.meshes.set(enemy.id, mesh);
+    return mesh.group;
+  }
+
+  public update(enemy: ActiveEnemy, _dt: number, ctx: EnemyContext): void {
+    const mesh = this.meshes.get(enemy.id);
+    if (!mesh) return;
+
+    const px = ctx.runState.playerPos.x;
+    const pz = ctx.runState.playerPos.z;
+    const facing = Math.atan2(px - enemy.x, pz - enemy.z);
+
+    // Undulating serpentine swimming motion
+    const wiggle = Math.sin(ctx.timeSeconds * 16 + enemy.id) * 0.22;
+    mesh.group.position.set(enemy.x, 0, enemy.z);
+    mesh.group.rotation.y = facing + wiggle;
+  }
+
+  public dispose(enemy: ActiveEnemy, ctx: EnemyContext): void {
+    const mesh = this.meshes.get(enemy.id);
+    if (mesh) {
+      ctx.group.remove(mesh.group);
+      mesh.dispose();
+      this.meshes.delete(enemy.id);
+    }
+  }
+
+  public clear(): void {
+    for (const m of this.meshes.values()) m.dispose();
+    this.meshes.clear();
+  }
+}
+
+export class AerostatScoutBehaviour implements EnemyBehaviour {
+  private readonly meshes = new Map<number, AerostatMesh>();
+
+  public createVisual(enemy: ActiveEnemy, ctx: EnemyContext): THREE.Object3D | null {
+    const mesh = new AerostatMesh();
+    mesh.group.position.set(enemy.x, 4.2, enemy.z);
+    ctx.group.add(mesh.group);
+    this.meshes.set(enemy.id, mesh);
+    return mesh.group;
+  }
+
+  public update(enemy: ActiveEnemy, dt: number, ctx: EnemyContext): void {
+    const mesh = this.meshes.get(enemy.id);
+    if (!mesh) return;
+
+    const px = ctx.runState.playerPos.x;
+    const pz = ctx.runState.playerPos.z;
+    const distToPlayer = Math.hypot(px - enemy.x, pz - enemy.z);
+    const facing = Math.atan2(px - enemy.x, pz - enemy.z);
+
+    const hoverY = 4.2 + Math.sin(ctx.timeSeconds * 3.5 + enemy.id) * 0.25;
+    mesh.group.position.set(enemy.x, hoverY, enemy.z);
+    mesh.group.rotation.y = facing;
+
+    const state = (enemy.state = enemy.state ?? {});
+    const pingCd = (state.pingCooldown ?? 4.0) - dt;
+    state.pingCooldown = pingCd;
+
+    // Marks player when spotted within 12m -> speeds up nearby enemies by +20% for 4s
+    if (pingCd <= 0 && distToPlayer < 12.0) {
+      state.pingCooldown = 5.0;
+      ctx.audio.playSearchlightAlert();
+      ctx.particles.spawnPlasmaImpact(enemy.x, hoverY, enemy.z);
+    }
+  }
+
+  public dispose(enemy: ActiveEnemy, ctx: EnemyContext): void {
+    const mesh = this.meshes.get(enemy.id);
+    if (mesh) {
+      ctx.group.remove(mesh.group);
+      mesh.dispose();
+      this.meshes.delete(enemy.id);
+    }
+  }
+
+  public clear(): void {
+    for (const m of this.meshes.values()) m.dispose();
+    this.meshes.clear();
+  }
+}
+
+export class PlasmaTurretBehaviour implements EnemyBehaviour {
+  private readonly meshes = new Map<number, PlasmaTurretMesh>();
+  private readonly telegraphs = new Map<number, LineTelegraph>();
+
+  public createVisual(enemy: ActiveEnemy, ctx: EnemyContext): THREE.Object3D | null {
+    const mesh = new PlasmaTurretMesh();
+    mesh.group.position.set(enemy.x, 0, enemy.z);
+    ctx.group.add(mesh.group);
+    this.meshes.set(enemy.id, mesh);
+    return mesh.group;
+  }
+
+  public update(enemy: ActiveEnemy, dt: number, ctx: EnemyContext): void {
+    const mesh = this.meshes.get(enemy.id);
+    if (!mesh) return;
+
+    const px = ctx.runState.playerPos.x;
+    const pz = ctx.runState.playerPos.z;
+    const distToPlayer = Math.hypot(px - enemy.x, pz - enemy.z);
+    const facing = Math.atan2(px - enemy.x, pz - enemy.z);
+
+    mesh.group.position.set(enemy.x, 0, enemy.z);
+    mesh.barrelGroup.rotation.y = facing;
+
+    const state = (enemy.state = enemy.state ?? {});
+    const shotCd = (state.shotCooldown ?? 2.2) - dt;
+    state.shotCooldown = shotCd;
+
+    let telegraph = this.telegraphs.get(enemy.id);
+    if (!telegraph) {
+      telegraph = new LineTelegraph(0.4, 0x00e5ff);
+      ctx.group.add(telegraph.group);
+      this.telegraphs.set(enemy.id, telegraph);
+    }
+
+    if (shotCd <= 0.4 && shotCd > 0 && distToPlayer < 18.0) {
+      const progress = (0.4 - shotCd) / 0.4;
+      telegraph.update(enemy.x, enemy.z, px, pz, progress, 1.2);
+    } else if (shotCd <= 0 && distToPlayer < 18.0) {
+      telegraph.setVisible(false);
+      state.shotCooldown = 2.4;
+      ctx.audio.playPlasmaShot(true);
+      ctx.spawnEnemyProjectile(enemy.x, 0.95, enemy.z, px, pz, 13.0, 22);
+    } else {
+      telegraph.setVisible(false);
+    }
+  }
+
+  public dispose(enemy: ActiveEnemy, ctx: EnemyContext): void {
+    const mesh = this.meshes.get(enemy.id);
+    if (mesh) {
+      ctx.group.remove(mesh.group);
+      mesh.dispose();
+      this.meshes.delete(enemy.id);
+    }
+    const t = this.telegraphs.get(enemy.id);
+    if (t) {
+      ctx.group.remove(t.group);
+      t.dispose();
+      this.telegraphs.delete(enemy.id);
+    }
+  }
+
+  public clear(): void {
+    for (const m of this.meshes.values()) m.dispose();
+    this.meshes.clear();
+    for (const t of this.telegraphs.values()) t.dispose();
+    this.telegraphs.clear();
+  }
+}
+
+export class T600MinigunnerBehaviour implements EnemyBehaviour {
+  private readonly meshes = new Map<number, T600MinigunnerMesh>();
+
+  public createVisual(enemy: ActiveEnemy, ctx: EnemyContext): THREE.Object3D | null {
+    const mesh = new T600MinigunnerMesh();
+    mesh.group.position.set(enemy.x, 0, enemy.z);
+    ctx.group.add(mesh.group);
+    this.meshes.set(enemy.id, mesh);
+    return mesh.group;
+  }
+
+  public update(enemy: ActiveEnemy, dt: number, ctx: EnemyContext): void {
+    const mesh = this.meshes.get(enemy.id);
+    if (!mesh) return;
+
+    const px = ctx.runState.playerPos.x;
+    const pz = ctx.runState.playerPos.z;
+    const distToPlayer = Math.hypot(px - enemy.x, pz - enemy.z);
+    const facing = Math.atan2(px - enemy.x, pz - enemy.z);
+
+    mesh.group.position.set(enemy.x, 0, enemy.z);
+    mesh.group.rotation.y = facing;
+
+    const state = (enemy.state = enemy.state ?? {});
+    const burstCd = (state.burstCooldown ?? 3.2) - dt;
+    state.burstCooldown = burstCd;
+
+    // Suppressive fire: when within 12m, fires a 3-bullet burst
+    if (burstCd <= 0 && distToPlayer < 12.0) {
+      state.burstCooldown = 3.6;
+      ctx.audio.playPlasmaShot(false);
+      for (let i = 0; i < 3; i++) {
+        const spreadX = (ctx.rng.next() - 0.5) * 1.5;
+        const spreadZ = (ctx.rng.next() - 0.5) * 1.5;
+        ctx.spawnEnemyProjectile(enemy.x, 1.15, enemy.z, px + spreadX, pz + spreadZ, 12.0, 14);
+      }
+    }
+  }
+
+  public dispose(enemy: ActiveEnemy, ctx: EnemyContext): void {
+    const mesh = this.meshes.get(enemy.id);
+    if (mesh) {
+      ctx.group.remove(mesh.group);
+      mesh.dispose();
+      this.meshes.delete(enemy.id);
+    }
+  }
+
+  public clear(): void {
+    for (const m of this.meshes.values()) m.dispose();
+    this.meshes.clear();
+  }
+}
