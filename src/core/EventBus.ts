@@ -10,6 +10,8 @@ export type GameEventMap = {
   'enemy:damaged': { x: number; z: number; damage: number; isCrit: boolean; enemyId?: number };
   'crate:destroyed': { crateId: number; x: number; z: number };
   'pickup:reward': { x: number; z: number; text: string; color: string };
+  'pickup:combo': { combo: number };
+  'pickup:combo_reset': void;
   'wave:minute': { minute: number };
   'boss:spawned': { archetype: string; name: string; maxHp: number };
   'boss:defeated': { archetype: string; x: number; z: number };

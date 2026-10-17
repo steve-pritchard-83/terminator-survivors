@@ -7,6 +7,7 @@ import type { SpatialEntity } from '../core/types';
 import { PickupMeshFactory, type GemTier, getGemTier } from '../graphics/meshes/PickupMeshes';
 import { globalEvents } from '../core/EventBus';
 import { globalRNG } from '../core/RNG';
+import type { ParticleSystem } from './ParticleSystem';
 
 export interface ActivePickup extends SpatialEntity, PoolableUser {
   mesh?: THREE.Object3D;
@@ -16,6 +17,9 @@ export interface ActivePickup extends SpatialEntity, PoolableUser {
   rotationY: number;
   xpValue: number;
   attracted: boolean;
+  attractTime: number;
+  popVx?: number;
+  popVz?: number;
 }
 
 export class PickupSystem {
@@ -25,6 +29,7 @@ export class PickupSystem {
 
   private readonly runState: RunState;
   private readonly audio: AudioEngine;
+  private readonly particles?: ParticleSystem;
 
   private readonly crystalPools: Record<GemTier, InstancedPool<ActivePickup>>;
   private readonly beamPools: Record<GemTier, InstancedPool>;
@@ -34,9 +39,10 @@ export class PickupSystem {
   private comboTimer = 0;
   private readonly unbinds: Array<() => void> = [];
 
-  constructor(runState: RunState, audio: AudioEngine) {
+  constructor(runState: RunState, audio: AudioEngine, particles?: ParticleSystem) {
     this.runState = runState;
     this.audio = audio;
+    this.particles = particles;
 
     this.crystalPools = {
       1: new InstancedPool<ActivePickup>(
@@ -125,7 +131,8 @@ export class PickupSystem {
       z,
       radius: 0.5,
       xpValue,
-      attracted: false
+      attracted: false,
+      attractTime: 0
     };
 
     pickup.poolIndex = this.crystalPools[tier].acquire(pickup);
@@ -242,6 +249,7 @@ export class PickupSystem {
       radius: 0.8,
       xpValue: 0,
       attracted: false,
+      attractTime: 0,
       mesh
     });
   }
@@ -262,6 +270,7 @@ export class PickupSystem {
       radius: 1.2,
       xpValue: 0,
       attracted: false,
+      attractTime: 0,
       mesh
     });
   }
@@ -275,7 +284,10 @@ export class PickupSystem {
 
     if (this.comboTimer > 0) {
       this.comboTimer -= dt;
-      if (this.comboTimer <= 0) this.comboCount = 0;
+      if (this.comboTimer <= 0) {
+        this.comboCount = 0;
+        globalEvents.emit('pickup:combo_reset');
+      }
     }
 
     for (let i = this.pickups.length - 1; i >= 0; i--) {
@@ -294,10 +306,35 @@ export class PickupSystem {
       if (p.kind === 'core') {
         const bobY = 0.36 + Math.sin(this.runState.timeSeconds * 4.5 + p.id) * 0.08;
         if (dist <= magnetRadius || p.attracted) {
-          p.attracted = true;
-          const pullSpeed = 16.0;
-          p.x += (dx / dist) * pullSpeed * dt;
-          p.z += (dz / dist) * pullSpeed * dt;
+          if (!p.attracted) {
+            p.attracted = true;
+            p.attractTime = 0;
+            const awayAngle = Math.atan2(-dx, -dz) + (globalRNG.next() - 0.5) * 0.6;
+            const popSpeed = 4.2;
+            p.popVx = Math.sin(awayAngle) * popSpeed;
+            p.popVz = Math.cos(awayAngle) * popSpeed;
+          }
+
+          p.attractTime += dt;
+
+          if (p.attractTime < 0.15) {
+            // Outward pop phase with smooth decay
+            const popDecay = 1.0 - p.attractTime / 0.15;
+            p.x += (p.popVx ?? 0) * popDecay * dt;
+            p.z += (p.popVz ?? 0) * popDecay * dt;
+          } else {
+            // Acceleration phase: speed = 6 + 30 * t
+            const t = p.attractTime - 0.15;
+            const speed = 6.0 + 30.0 * t;
+            const curDist = Math.max(0.01, Math.hypot(dx, dz));
+            p.x += (dx / curDist) * speed * dt;
+            p.z += (dz / curDist) * speed * dt;
+
+            // Short trail effect
+            if (this.particles && t > 0.04 && (p.id % 2 === 0)) {
+              this.particles.spawnDashAfterimage(p.x, bobY, p.z);
+            }
+          }
         }
 
         if (p.tier !== undefined) {
@@ -334,6 +371,10 @@ export class PickupSystem {
     }
   }
 
+  public getComboCount(): number {
+    return this.comboCount;
+  }
+
   private collectPickup(p: ActivePickup, index: number): void {
     this.pickups.splice(index, 1);
     if (p.mesh) {
@@ -350,6 +391,7 @@ export class PickupSystem {
       this.comboCount++;
       this.comboTimer = 1.2;
       this.audio.playPickupGem(this.comboCount);
+      globalEvents.emit('pickup:combo', { combo: this.comboCount });
       const levelsGained = this.runState.addXp(p.xpValue);
       if (levelsGained > 0) {
         this.runState.pendingLevelUps += levelsGained;

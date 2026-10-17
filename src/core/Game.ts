@@ -82,7 +82,7 @@ export class Game implements RunControllerHost, InputRouterHost, DebugAPIHost {
     this.weaponSystem = new WeaponSystem(this.runState, this.grid, this.audioEngine, this.particles, this.playerMesh);
     this.enemySystem = new EnemySystem(this.runState, this.grid, this.audioEngine, this.particles, this.endoBatch);
     this.waveDirector = new WaveDirector(this.runState, this.enemySystem);
-    this.pickupSystem = new PickupSystem(this.runState, this.audioEngine);
+    this.pickupSystem = new PickupSystem(this.runState, this.audioEngine, this.particles);
     this.sceneManager.scene.add(this.playerSystem.group, this.weaponSystem.group, this.enemySystem.group, this.pickupSystem.group);
 
     // 4. UI Layer & CRT Overlay

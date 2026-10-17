@@ -1,12 +1,14 @@
 import type { RunState } from '../state/RunState';
 import { ALL_WEAPONS, PASSIVES } from '../data/weapons';
 import { DamageNumbers } from './DamageNumbers';
+import { globalEvents } from '../core/EventBus';
 
 export class HUDView {
   public readonly container: HTMLElement;
   public readonly damageNumbers: DamageNumbers;
   private readonly xpBarContainer: HTMLElement;
   private readonly xpFill: HTMLElement;
+  private readonly comboCounterEl: HTMLElement;
   private readonly hpFill: HTMLElement;
   private readonly clockEl: HTMLElement;
   private readonly levelEl: HTMLElement;
@@ -28,6 +30,7 @@ export class HUDView {
   private lastLevel = 1;
   private xpPulseTimer: number | null = null;
   private bossWarningTimer: number | null = null;
+  private comboPopTimer: number | null = null;
 
   constructor(root: HTMLElement) {
     this.container = document.createElement('div');
@@ -40,6 +43,7 @@ export class HUDView {
         <div class="xp-bar-container" id="hud-xp-container">
           <div class="xp-bar-fill" id="hud-xp-fill"></div>
         </div>
+        <div class="hud-combo-counter" id="hud-combo-counter" data-testid="hud-combo-counter" style="display:none;">x0 DATA LINK</div>
         <div class="hud-info-row">
           <div data-testid="hud-level" id="hud-level-text">LV 01 // DN38416</div>
           <div class="hud-clock" data-testid="hud-timer" id="hud-clock-text">00:00</div>
@@ -102,9 +106,45 @@ export class HUDView {
     this.desktopHintEl = this.container.querySelector('.hud-desktop-hint')!;
     this.damageNumbers = new DamageNumbers(this.floatingTextLayer);
 
+    this.comboCounterEl = this.container.querySelector('#hud-combo-counter')!;
+
+    globalEvents.on('pickup:combo', ({ combo }) => {
+      this.updateCombo(combo);
+    });
+
+    globalEvents.on('pickup:combo_reset', () => {
+      this.resetCombo();
+    });
+
     this.pauseBtn.addEventListener('click', () => {
       this.onPauseClicked?.();
     });
+  }
+
+  public updateCombo(combo: number): void {
+    if (combo >= 2) {
+      this.comboCounterEl.textContent = `x${combo} DATA LINK`;
+      this.comboCounterEl.style.display = 'block';
+      this.comboCounterEl.classList.remove('pop');
+      void this.comboCounterEl.offsetWidth;
+      this.comboCounterEl.classList.add('pop');
+      if (this.comboPopTimer !== null) {
+        window.clearTimeout(this.comboPopTimer);
+      }
+      this.comboPopTimer = window.setTimeout(() => {
+        this.comboCounterEl.classList.remove('pop');
+        this.comboPopTimer = null;
+      }, 120);
+    }
+  }
+
+  public resetCombo(): void {
+    this.comboCounterEl.style.display = 'none';
+    this.comboCounterEl.classList.remove('pop');
+    if (this.comboPopTimer !== null) {
+      window.clearTimeout(this.comboPopTimer);
+      this.comboPopTimer = null;
+    }
   }
 
   public show(): void {
