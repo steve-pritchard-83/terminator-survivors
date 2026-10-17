@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GamepadManager, XBOX_BUTTON, XBOX_AXIS } from '../../src/input/GamepadManager';
+import { InputManager } from '../../src/input/InputManager';
 
 describe('GamepadManager - Xbox Controller & Haptics', () => {
   let manager: GamepadManager;
@@ -100,32 +101,48 @@ describe('GamepadManager - Xbox Controller & Haptics', () => {
     expect(angle).toBeCloseTo(Math.PI / 2, 2);
   });
 
-  it('triggers Combat Dive with A, B, LB, LT, and L3', () => {
+  it('triggers Combat Dive with B, LB, LT, L3 and ensures A NEVER triggers dive', () => {
     const onDash = vi.fn();
     manager.onDashCallback = onDash;
 
     const mockGp = createMockXboxGamepad();
     manager.setMockGamepadForTest(mockGp);
 
-    // Frame 1: Button A pressed
+    // Frame 1: Button A pressed (Menu confirm) -> Must NOT trigger dash!
     mockGp.buttons[XBOX_BUTTON.A] = { pressed: true, value: 1 };
+    manager.update(1 / 60);
+    expect(manager.consumeDash()).toBe(false);
+    expect(onDash).toHaveBeenCalledTimes(0);
+
+    // Frame 2: Release A
+    mockGp.buttons[XBOX_BUTTON.A] = { pressed: false, value: 0 };
+    manager.update(1 / 60);
+
+    // Frame 3: Button B pressed -> Must trigger Combat Dive!
+    mockGp.buttons[XBOX_BUTTON.B] = { pressed: true, value: 1 };
     manager.update(1 / 60);
     expect(manager.consumeDash()).toBe(true);
     expect(onDash).toHaveBeenCalledTimes(1);
 
-    // Frame 2: Hold A (no edge)
+    // Frame 4: Hold B (no edge)
     manager.update(1 / 60);
     expect(manager.consumeDash()).toBe(false);
 
-    // Frame 3: Release A
-    mockGp.buttons[XBOX_BUTTON.A] = { pressed: false, value: 0 };
+    // Frame 5: Release B
+    mockGp.buttons[XBOX_BUTTON.B] = { pressed: false, value: 0 };
     manager.update(1 / 60);
 
-    // Frame 4: LT pulled past threshold
+    // Frame 6: LT pulled past threshold
     mockGp.buttons[XBOX_BUTTON.LT] = { pressed: true, value: 0.85 };
     manager.update(1 / 60);
     expect(manager.consumeDash()).toBe(true);
     expect(onDash).toHaveBeenCalledTimes(2);
+
+    // Frame 7: clearDashRequest cancels any pending dash
+    mockGp.buttons[XBOX_BUTTON.LB] = { pressed: true, value: 1 };
+    manager.update(1 / 60);
+    manager.clearDashRequest();
+    expect(manager.consumeDash()).toBe(false);
   });
 
   it('triggers Pause with Start/Menu or View/Back button', () => {
@@ -206,5 +223,37 @@ describe('GamepadManager - Xbox Controller & Haptics', () => {
       strongMagnitude: 0.9,
       weakMagnitude: 0.7
     });
+  });
+
+  it('InputManager ignores idle mouse cursor when using controller', () => {
+    const inputManager = new InputManager();
+    const mockGp = createMockXboxGamepad();
+    inputManager.gamepadManager.setMockGamepadForTest(mockGp);
+
+    // Pretend mouse had set aim angle from stationary cursor
+    inputManager.setAimAngle(2.5);
+
+    // Left stick moves character
+    mockGp.axes[XBOX_AXIS.LEFT_X] = 0.8;
+    inputManager.update(1 / 60);
+
+    // With gamepad active and right stick neutral, getAimAngle() MUST return null (not the mouse angle!)
+    expect(inputManager.getAimAngle()).toBeNull();
+
+    // Now push right stick to aim
+    mockGp.axes[XBOX_AXIS.RIGHT_X] = 0.0;
+    mockGp.axes[XBOX_AXIS.RIGHT_Y] = 1.0; // Pointing down (Z: 1)
+    inputManager.update(1 / 60);
+
+    // Math.atan2(0, 1) = 0
+    expect(inputManager.getAimAngle()).toBeCloseTo(0, 2);
+
+    // Release right stick
+    mockGp.axes[XBOX_AXIS.RIGHT_X] = 0.0;
+    mockGp.axes[XBOX_AXIS.RIGHT_Y] = 0.0;
+    inputManager.update(1 / 60);
+
+    // Must return null, NOT snap back to mouse angle 2.5!
+    expect(inputManager.getAimAngle()).toBeNull();
   });
 });

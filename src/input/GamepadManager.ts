@@ -201,10 +201,19 @@ export class GamepadManager {
       this.currentAxes.push(gp.axes[i] || 0);
     }
 
+    // Track active user input this frame
+    const lx = this.currentAxes[XBOX_AXIS.LEFT_X] ?? 0;
+    const ly = this.currentAxes[XBOX_AXIS.LEFT_Y] ?? 0;
+    const rx = this.currentAxes[XBOX_AXIS.RIGHT_X] ?? 0;
+    const ry = this.currentAxes[XBOX_AXIS.RIGHT_Y] ?? 0;
+    const hasStickInput = Math.hypot(lx, ly) > 0.16 || Math.hypot(rx, ry) > 0.18;
+    const hasButtonInput = this.currentButtons.some(Boolean);
+    this.hasInputThisFrame = hasStickInput || hasButtonInput;
+
     // Gameplay triggers
-    // Dash: A (0), B (1), LB (4), LT (6), or L3 (10)
+    // Combat Dive / Dash: strictly Button B (1), with LB (4), LT (6), or L3 (10) as alternates.
+    // Button A (0) is NEVER used for Dash to prevent accidental dives when exiting menus/modals!
     const dashPressed =
-      this.isButtonJustPressed(XBOX_BUTTON.A) ||
       this.isButtonJustPressed(XBOX_BUTTON.B) ||
       this.isButtonJustPressed(XBOX_BUTTON.LB) ||
       this.isButtonJustPressed(XBOX_BUTTON.L3) ||
@@ -225,6 +234,16 @@ export class GamepadManager {
       this.pauseRequested = true;
       this.onPauseCallback?.();
     }
+  }
+
+  private hasInputThisFrame = false;
+
+  public hasRecentInput(): boolean {
+    return this.hasInputThisFrame;
+  }
+
+  public clearDashRequest(): void {
+    this.dashRequested = false;
   }
 
   public isButtonDown(buttonIndex: number): boolean {

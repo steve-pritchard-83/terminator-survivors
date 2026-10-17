@@ -2,6 +2,7 @@ import { GamepadManager } from './GamepadManager';
 
 export class InputManager {
   public readonly gamepadManager: GamepadManager;
+  public lastActiveDevice: 'gamepad' | 'mouse_keyboard' | 'touch' = 'mouse_keyboard';
   private keys = new Set<string>();
   private touchVec = { x: 0, z: 0 };
   private targetAimAngle: number | null = null;
@@ -50,12 +51,16 @@ export class InputManager {
 
   private onWindowPointerMove = (e: PointerEvent): void => {
     if (e.pointerType === 'mouse' && window.innerWidth > 900) {
-      this.mouseScreenPos = { x: e.clientX, y: e.clientY };
+      if (Math.abs(e.movementX) > 1 || Math.abs(e.movementY) > 1) {
+        this.lastActiveDevice = 'mouse_keyboard';
+        this.mouseScreenPos = { x: e.clientX, y: e.clientY };
+      }
     }
   };
 
   private onWindowPointerDown = (e: PointerEvent): void => {
     if (e.pointerType === 'mouse' && window.innerWidth > 900) {
+      this.lastActiveDevice = 'mouse_keyboard';
       this.mouseScreenPos = { x: e.clientX, y: e.clientY };
       if (e.button === 2) {
         // Right-click triggers Combat Dive / Dash
@@ -90,6 +95,7 @@ export class InputManager {
     touchZoneEl.addEventListener('pointerdown', (e: PointerEvent) => {
       // On desktop viewports (> 900px), ignore mouse clicks so virtual joystick doesn't pop up
       if (e.pointerType === 'mouse' && window.innerWidth > 900) return;
+      this.lastActiveDevice = 'touch';
       if (this.activePointerId !== null) return;
       this.activePointerId = e.pointerId;
       this.joystickOrigin = { x: e.clientX, y: e.clientY };
@@ -131,6 +137,7 @@ export class InputManager {
     // Mobile Dash Touch Button
     const onDash = (e: Event) => {
       e.preventDefault();
+      this.lastActiveDevice = 'touch';
       this.dashRequested = true;
       this.onDashCallback?.();
     };
@@ -140,6 +147,7 @@ export class InputManager {
   }
 
   private onKeyDown = (e: KeyboardEvent): void => {
+    this.lastActiveDevice = 'mouse_keyboard';
     this.keys.add(e.code);
     if (e.code === 'Space' || e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
       this.dashRequested = true;
@@ -168,6 +176,9 @@ export class InputManager {
 
   public update(dt: number): void {
     this.gamepadManager.update(dt);
+    if (this.gamepadManager.hasRecentInput()) {
+      this.lastActiveDevice = 'gamepad';
+    }
   }
 
   public getMovement(): { x: number; z: number } {
@@ -201,23 +212,35 @@ export class InputManager {
     return this.leftMouseDown;
   }
 
+  public isMouseAimActive(): boolean {
+    return this.lastActiveDevice === 'mouse_keyboard';
+  }
+
   public setAimAngle(angle: number | null): void {
     this.targetAimAngle = angle;
   }
 
   public getAimAngle(): number | null {
-    // Twin-stick right stick aiming takes priority when pushed
-    const gpAim = this.gamepadManager.getAimAngle();
-    if (gpAim !== null) {
-      return gpAim;
+    if (this.lastActiveDevice === 'gamepad') {
+      // Twin-stick right stick aiming returns angle ONLY when actively pushed;
+      // when sticks are released/neutral, returns null so character never snaps to idle mouse!
+      return this.gamepadManager.getAimAngle();
     }
-    return this.targetAimAngle;
+    if (this.lastActiveDevice === 'mouse_keyboard') {
+      return this.targetAimAngle;
+    }
+    return null;
   }
 
   public consumeDash(): boolean {
     const dash = this.dashRequested || this.gamepadManager.consumeDash();
     this.dashRequested = false;
     return dash;
+  }
+
+  public clearDashRequest(): void {
+    this.dashRequested = false;
+    this.gamepadManager.clearDashRequest();
   }
 
   // Playwright & Unit test helpers

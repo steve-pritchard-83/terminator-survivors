@@ -135,8 +135,8 @@ export class HUDView {
   public setGamepadActive(active: boolean, isXbox: boolean): void {
     if (active) {
       this.desktopHintEl.innerHTML = isXbox
-        ? '[LS / D-PAD] MOVE &nbsp;//&nbsp; [RS] TWIN-STICK AIM &nbsp;//&nbsp; [A / LT / LB] COMBAT DIVE &nbsp;//&nbsp; [START] PAUSE'
-        : '[STICK / D-PAD] MOVE &nbsp;//&nbsp; [RIGHT STICK] AIM &nbsp;//&nbsp; [A / TRIGGER] DIVE &nbsp;//&nbsp; [START] PAUSE';
+        ? '[LS / D-PAD] MOVE &nbsp;//&nbsp; [RS] TWIN-STICK AIM &nbsp;//&nbsp; [B / LB] COMBAT DIVE &nbsp;//&nbsp; [START] PAUSE'
+        : '[STICK / D-PAD] MOVE &nbsp;//&nbsp; [RIGHT STICK] AIM &nbsp;//&nbsp; [B / LB] COMBAT DIVE &nbsp;//&nbsp; [START] PAUSE';
       this.mobileDashBtn.style.opacity = '0.35';
     } else {
       this.desktopHintEl.innerHTML =
