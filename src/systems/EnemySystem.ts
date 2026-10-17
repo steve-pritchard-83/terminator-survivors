@@ -228,9 +228,9 @@ export class EnemySystem {
 
   private killEnemy(enemy: ActiveEnemy, index: number): void {
     this.activeEnemies.splice(index, 1);
-    this.runState.kills++;
-    this.audio.playEndoDestroy();
+    this.runState.kills++; this.audio.playEndoDestroy();
     this.particles.spawnExplosion(enemy.x, 0.5, enemy.z, enemy.isBoss ? 2.0 : 0.8);
+    this.particles.spawnEnemyDebris(enemy.x, 0.5, enemy.z, enemy.isBoss ? 8 : undefined);
     const b = this.behaviours[enemy.archetype];
     b?.onDeath?.(enemy, this.context); b?.dispose?.(enemy, this.context);
     globalEvents.emit('enemy:killed', { enemy, x: enemy.x, z: enemy.z, xp: enemy.xpValue });
