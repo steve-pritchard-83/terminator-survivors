@@ -41,6 +41,7 @@ export class Game {
 
   private activeBoss: { name: string; hp: number; maxHp: number } | null = null;
   private isPaused = false;
+  private prevPlayerPos = { x: 0, z: 0 };
 
   constructor(appContainer: HTMLElement) {
     // 1. Core State & Audio
@@ -120,7 +121,7 @@ export class Game {
     // 5. Game Loop
     this.gameLoop = new GameLoop(
       (dt) => this.fixedUpdate(dt),
-      (alpha) => this.render(alpha)
+      (alpha, dt) => this.render(alpha, dt)
     );
 
     // 6. Hook up Events
@@ -259,6 +260,8 @@ export class Game {
     const seed = (customSeed !== undefined ? customSeed : Date.now()) >>> 0;
     globalRNG.setSeed(seed);
     this.runState.initRun(loadoutId, this.saveManager.getData().upgrades, seed);
+    this.prevPlayerPos.x = this.runState.playerPos.x;
+    this.prevPlayerPos.z = this.runState.playerPos.z;
     this.runState.autoAimEnabled = this.saveManager.getData().settings.autoAim;
     this.weaponSystem.clear();
     this.enemySystem.clear();
@@ -359,10 +362,12 @@ export class Game {
       // Idle rotation in title screen
       if (this.runState.mode === 'title') {
         this.environment.update(0, 0);
-        this.sceneManager.updateCamera(0, 0, dt);
       }
       return;
     }
+
+    this.prevPlayerPos.x = this.runState.playerPos.x;
+    this.prevPlayerPos.z = this.runState.playerPos.z;
 
     // Input & Dash
     if (this.inputManager.consumeDash()) {
@@ -424,9 +429,6 @@ export class Game {
     this.particles.update(dt);
     this.environment.update(this.runState.playerPos.x, this.runState.playerPos.z);
 
-    // Camera follow
-    this.sceneManager.updateCamera(this.runState.playerPos.x, this.runState.playerPos.z, dt);
-
     // Update active boss HP telemetry
     if (this.activeBoss) {
       const boss = this.enemySystem.activeEnemies.find((e) => e.isBoss);
@@ -463,8 +465,16 @@ export class Game {
     this.sceneManager.adjustQuality(this.gameLoop.fps);
   }
 
-  private render(alpha: number): void {
-    this.sceneManager.render(GameLoop.FIXED_DT, this.runState.timeSeconds);
+  private render(alpha: number, dt = GameLoop.FIXED_DT): void {
+    if (this.runState.mode === 'playing') {
+      const interp = this.playerSystem.setInterpolatedPosition(alpha, this.prevPlayerPos);
+      this.sceneManager.updateCamera(interp.x, interp.z, dt);
+    } else if (this.runState.mode === 'title') {
+      this.sceneManager.updateCamera(0, 0, dt);
+    } else {
+      this.sceneManager.updateCamera(this.runState.playerPos.x, this.runState.playerPos.z, dt);
+    }
+    this.sceneManager.render(dt, this.runState.timeSeconds);
   }
 
   private setupDebugAPI(): void {

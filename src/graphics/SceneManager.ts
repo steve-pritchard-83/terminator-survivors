@@ -11,11 +11,16 @@ export class SceneManager {
   private readonly cameraOffset = new THREE.Vector3(0, 17.5, 12.5);
   private currentCameraTarget = new THREE.Vector3(0, 0, 0);
   private readonly tempTarget = new THREE.Vector3();
+  private readonly screenScratch = new THREE.Vector3();
   private shakeTrauma = 0;
   private readonly raycaster = new THREE.Raycaster();
   private readonly aimPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.8);
   private readonly intersectPt = new THREE.Vector3();
   private readonly ndcMouse = new THREE.Vector2();
+
+  public getCameraTarget(out: THREE.Vector3 = new THREE.Vector3()): THREE.Vector3 {
+    return out.copy(this.currentCameraTarget);
+  }
 
   public addScreenShake(trauma: number): void {
     this.shakeTrauma = Math.min(1.0, this.shakeTrauma + trauma);
@@ -126,15 +131,15 @@ export class SceneManager {
     worldZ: number
   ): { x: number; y: number } | null {
     if (typeof window === 'undefined') return null;
-    this.tempTarget.set(worldX, worldY, worldZ);
-    this.tempTarget.project(this.camera);
+    this.screenScratch.set(worldX, worldY, worldZ);
+    this.screenScratch.project(this.camera);
 
-    if (this.tempTarget.z > 1) return null;
+    if (this.screenScratch.z > 1) return null;
 
     const width = window.innerWidth || 1;
     const height = window.innerHeight || 1;
-    const x = (this.tempTarget.x * 0.5 + 0.5) * width;
-    const y = (-this.tempTarget.y * 0.5 + 0.5) * height;
+    const x = (this.screenScratch.x * 0.5 + 0.5) * width;
+    const y = (-this.screenScratch.y * 0.5 + 0.5) * height;
     return { x, y };
   }
 

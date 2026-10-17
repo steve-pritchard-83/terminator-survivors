@@ -14,9 +14,12 @@ export class GameLoop {
   private fpsTimer = 0;
 
   private readonly onUpdate: (dt: number) => void;
-  private readonly onRender: (alpha: number) => void;
+  private readonly onRender: (alpha: number, dt: number) => void;
 
-  constructor(onUpdate: (dt: number) => void, onRender: (alpha: number) => void) {
+  constructor(
+    onUpdate: (dt: number) => void,
+    onRender: (alpha: number, dt: number) => void
+  ) {
     this.onUpdate = onUpdate;
     this.onRender = onRender;
   }
@@ -68,7 +71,7 @@ export class GameLoop {
     }
 
     const alpha = this.accumulator / GameLoop.FIXED_DT;
-    this.onRender(alpha);
+    this.onRender(alpha, deltaSeconds);
 
     this.animFrameId = requestAnimationFrame(this.tick);
   };

@@ -1,4 +1,3 @@
-import * as THREE from 'three';
 import type { RunState } from '../state/RunState';
 import type { KyleReeseMesh } from '../graphics/meshes/KyleReeseMesh';
 import type { ParticleSystem } from './ParticleSystem';
@@ -13,6 +12,17 @@ export class PlayerSystem {
     this.runState = runState;
     this.playerMesh = playerMesh;
     this.particles = particles;
+  }
+
+  public setInterpolatedPosition(
+    alpha: number,
+    prevPos: { x: number; z: number }
+  ): { x: number; z: number } {
+    const clampedAlpha = Math.max(0, Math.min(1, alpha));
+    const interpX = prevPos.x + (this.runState.playerPos.x - prevPos.x) * clampedAlpha;
+    const interpZ = prevPos.z + (this.runState.playerPos.z - prevPos.z) * clampedAlpha;
+    this.playerMesh.group.position.set(interpX, 0, interpZ);
+    return { x: interpX, z: interpZ };
   }
 
   public update(
