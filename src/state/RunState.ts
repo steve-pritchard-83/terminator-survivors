@@ -31,6 +31,7 @@ export class RunState {
   public level = 1;
   public xp = 0;
   public xpToNext = getXpForNextLevel(1);
+  public pendingLevelUps = 0;
   public hp = 100;
   public maxHp = 100;
   public kills = 0;
@@ -81,6 +82,7 @@ export class RunState {
     this.level = 1;
     this.xp = 0;
     this.xpToNext = getXpForNextLevel(1);
+    this.pendingLevelUps = 0;
     this.kills = 0;
     this.bossesKilled = 0;
     this.alloyScrapEarned = 0;
@@ -163,16 +165,17 @@ export class RunState {
     return gained;
   }
 
-  public addXp(amount: number): boolean {
+  public addXp(amount: number): number {
     const gained = Math.round(amount * this.computedStats.xpGainMultiplier);
     this.xp += gained;
-    if (this.xp >= this.xpToNext) {
+    let levelsGained = 0;
+    while (this.xp >= this.xpToNext) {
       this.level++;
       this.xp -= this.xpToNext;
       this.xpToNext = getXpForNextLevel(this.level);
-      return true; // leveled up!
+      levelsGained++;
     }
-    return false;
+    return levelsGained;
   }
 
   public takeDamage(rawDamage: number): number {

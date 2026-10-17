@@ -16,7 +16,7 @@ import { WaveDirector } from '../systems/WaveDirector';
 import { PickupSystem } from '../systems/PickupSystem';
 import { UIManager } from '../ui/UIManager';
 import { globalEvents } from './EventBus';
-import type { EnemyArchetypeId, GameDebugAPI, LoadoutId } from './types';
+import type { EnemyArchetypeId, GameDebugAPI, LoadoutId, UpgradeChoice } from './types';
 
 export class Game {
   public readonly sceneManager: SceneManager;
@@ -194,7 +194,7 @@ export class Game {
       }
     });
 
-    globalEvents.on('levelup:triggered', ({ level, choices }) => {
+    const showLevelUpModal = (level: number, choices: UpgradeChoice[]): void => {
       this.isPaused = true;
       this.runState.mode = 'levelup';
       this.audioEngine.playHudScanOpen();
@@ -202,9 +202,20 @@ export class Game {
         this.audioEngine.playUpgradeApplied();
         this.runState.applyUpgrade(choice);
         this.inputManager.clearDashRequest();
-        this.isPaused = false;
-        this.runState.mode = 'playing';
+        if (this.runState.pendingLevelUps > 0) {
+          this.runState.pendingLevelUps--;
+          this.audioEngine.playLevelUp();
+          const nextChoices = this.runState.generateUpgradeChoices();
+          showLevelUpModal(this.runState.level, nextChoices);
+        } else {
+          this.isPaused = false;
+          this.runState.mode = 'playing';
+        }
       });
+    };
+
+    globalEvents.on('levelup:triggered', ({ level, choices }) => {
+      showLevelUpModal(level, choices);
     });
 
     globalEvents.on('vault:opened', ({ upgradesAwarded, evolvedWeapon, alloyBonus }) => {
@@ -426,6 +437,14 @@ export class Game {
       return;
     }
 
+    // 5. Trigger queued level-ups if playing
+    if (this.runState.mode === 'playing' && this.runState.pendingLevelUps > 0) {
+      this.runState.pendingLevelUps--;
+      this.audioEngine.playLevelUp();
+      const choices = this.runState.generateUpgradeChoices();
+      globalEvents.emit('levelup:triggered', { level: this.runState.level, choices });
+    }
+
     // Quality Governor
     this.sceneManager.adjustQuality(this.gameLoop.fps);
   }
@@ -443,6 +462,7 @@ export class Game {
         level: this.runState.level,
         xp: this.runState.xp,
         xpToNext: this.runState.xpToNext,
+        pendingLevelUps: this.runState.pendingLevelUps,
         hp: this.runState.hp,
         maxHp: this.runState.maxHp,
         kills: this.runState.kills,
@@ -459,10 +479,15 @@ export class Game {
         passives: Array.from(this.runState.passives.entries()).map(([id, level]) => ({ id, level }))
       }),
       grantXp: (amount: number) => {
-        const leveled = this.runState.addXp(amount);
-        if (leveled) {
-          const choices = this.runState.generateUpgradeChoices();
-          globalEvents.emit('levelup:triggered', { level: this.runState.level, choices });
+        const levels = this.runState.addXp(amount);
+        if (levels > 0) {
+          this.runState.pendingLevelUps += levels;
+          if (this.runState.mode === 'playing') {
+            this.runState.pendingLevelUps--;
+            this.audioEngine.playLevelUp();
+            const choices = this.runState.generateUpgradeChoices();
+            globalEvents.emit('levelup:triggered', { level: this.runState.level, choices });
+          }
         }
       },
       spawnBoss: (archetype: EnemyArchetypeId) => {

@@ -182,6 +182,7 @@ export interface GameDebugAPI {
     level: number;
     xp: number;
     xpToNext: number;
+    pendingLevelUps: number;
     hp: number;
     maxHp: number;
     kills: number;

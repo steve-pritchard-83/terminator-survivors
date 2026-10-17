@@ -153,11 +153,9 @@ export class PickupSystem {
       this.comboCount++;
       this.comboTimer = 1.2;
       this.audio.playPickupGem(this.comboCount);
-      const leveledUp = this.runState.addXp(p.xpValue);
-      if (leveledUp) {
-        this.audio.playLevelUp();
-        const choices = this.runState.generateUpgradeChoices();
-        globalEvents.emit('levelup:triggered', { level: this.runState.level, choices });
+      const levelsGained = this.runState.addXp(p.xpValue);
+      if (levelsGained > 0) {
+        this.runState.pendingLevelUps += levelsGained;
       }
     } else if (p.kind === 'crate') {
       this.audio.playExplosion(0.8);
