@@ -4,6 +4,15 @@
 @import '@fontsource/rajdhani/700.css';
 @import '@fontsource/share-tech-mono/400.css';
 
+@font-face {
+  font-family: 'Terminator Real NFI';
+  src: url('/fonts/terminator-real-nfi.otf') format('opentype'),
+       url('/fonts/terminator-real-nfi.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}
+
 :root {
   --font-display: 'Terminator Real NFI', 'Orbitron', sans-serif;
   --font-tactical: 'Rajdhani', sans-serif;

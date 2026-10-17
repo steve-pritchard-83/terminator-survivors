@@ -503,4 +503,23 @@ export class WeaponSystem {
       }
     }
   }
+
+  public clear(): void {
+    for (const p of this.projectiles) {
+      this.group.remove(p.mesh);
+    }
+    this.projectiles.length = 0;
+
+    for (const gz of this.groundZones) {
+      this.group.remove(gz.mesh);
+      gz.mesh.geometry.dispose();
+      (gz.mesh.material as THREE.Material).dispose();
+    }
+    this.groundZones.length = 0;
+
+    for (const d of this.orbitalDrones) {
+      this.group.remove(d);
+    }
+    this.orbitalDrones.length = 0;
+  }
 }

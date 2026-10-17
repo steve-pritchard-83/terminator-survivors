@@ -16,19 +16,16 @@ export interface Particle {
 export class ParticleSystem {
   public readonly group = new THREE.Group();
   private readonly particles: Particle[] = [];
-  private readonly pool: Particle[] = [];
 
-  private readonly sparkGeo = new THREE.BufferGeometry().setFromPoints([
-    new THREE.Vector3(0, 0, 0),
-    new THREE.Vector3(0, 0, 0.4)
-  ]);
-  private readonly sparkMat = new THREE.LineBasicMaterial({ color: 0xffaa00 });
-
+  private readonly unitPlaneGeo: THREE.PlaneGeometry;
   private readonly smokeMat: THREE.MeshBasicMaterial;
   private readonly fireMat: THREE.MeshBasicMaterial;
   private readonly plasmaMat: THREE.MeshBasicMaterial;
 
   constructor() {
+    this.unitPlaneGeo = new THREE.PlaneGeometry(1, 1);
+    this.unitPlaneGeo.rotateX(-Math.PI / 2);
+
     const spriteTex = ProceduralTextures.getSoftGlowSprite();
 
     this.smokeMat = new THREE.MeshBasicMaterial({
@@ -57,11 +54,8 @@ export class ParticleSystem {
   }
 
   public spawnExplosion(x: number, y: number, z: number, scale = 1.0): void {
-    const geo = new THREE.PlaneGeometry(2.4 * scale, 2.4 * scale);
-    geo.rotateX(-Math.PI / 2);
-
     for (let i = 0; i < 6; i++) {
-      const mesh = new THREE.Mesh(geo, this.fireMat.clone());
+      const mesh = new THREE.Mesh(this.unitPlaneGeo, this.fireMat.clone());
       mesh.position.set(
         x + (Math.random() - 0.5) * 0.8 * scale,
         y + 0.1 + i * 0.05,
@@ -75,17 +69,15 @@ export class ParticleSystem {
         vz: (Math.random() - 0.5) * 1.5,
         life: 0,
         maxLife: 0.45 + Math.random() * 0.25,
-        scaleStart: 0.5 * scale,
-        scaleEnd: 2.2 * scale,
+        scaleStart: 1.2 * scale,
+        scaleEnd: 5.2 * scale,
         isAdditive: true
       });
     }
 
     // Black smoke puffs rising
-    const smokeGeo = new THREE.PlaneGeometry(2.8 * scale, 2.8 * scale);
-    smokeGeo.rotateX(-Math.PI / 2);
     for (let i = 0; i < 4; i++) {
-      const sMesh = new THREE.Mesh(smokeGeo, this.smokeMat.clone());
+      const sMesh = new THREE.Mesh(this.unitPlaneGeo, this.smokeMat.clone());
       sMesh.position.set(x, y + 0.2, z);
       this.group.add(sMesh);
       this.particles.push({
@@ -95,17 +87,15 @@ export class ParticleSystem {
         vz: (Math.random() - 0.5) * 0.8,
         life: 0,
         maxLife: 0.8 + Math.random() * 0.4,
-        scaleStart: 1.0 * scale,
-        scaleEnd: 3.5 * scale,
+        scaleStart: 2.8 * scale,
+        scaleEnd: 9.8 * scale,
         isAdditive: false
       });
     }
   }
 
   public spawnPlasmaImpact(x: number, y: number, z: number): void {
-    const geo = new THREE.PlaneGeometry(1.2, 1.2);
-    geo.rotateX(-Math.PI / 2);
-    const mesh = new THREE.Mesh(geo, this.plasmaMat.clone());
+    const mesh = new THREE.Mesh(this.unitPlaneGeo, this.plasmaMat.clone());
     mesh.position.set(x, y + 0.15, z);
     this.group.add(mesh);
     this.particles.push({
@@ -115,8 +105,8 @@ export class ParticleSystem {
       vz: 0,
       life: 0,
       maxLife: 0.22,
-      scaleStart: 0.4,
-      scaleEnd: 1.8,
+      scaleStart: 0.48,
+      scaleEnd: 2.16,
       isAdditive: true
     });
   }
@@ -128,7 +118,6 @@ export class ParticleSystem {
 
       if (p.life >= p.maxLife) {
         this.group.remove(p.mesh);
-        p.mesh.geometry.dispose();
         (p.mesh.material as THREE.Material).dispose();
         this.particles.splice(i, 1);
         continue;
@@ -145,5 +134,14 @@ export class ParticleSystem {
       const mat = p.mesh.material as THREE.MeshBasicMaterial;
       mat.opacity = (1 - progress) * 0.85;
     }
+  }
+
+  public clear(): void {
+    for (let i = 0; i < this.particles.length; i++) {
+      const p = this.particles[i];
+      this.group.remove(p.mesh);
+      (p.mesh.material as THREE.Material).dispose();
+    }
+    this.particles.length = 0;
   }
 }

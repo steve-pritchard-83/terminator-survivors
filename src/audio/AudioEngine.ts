@@ -1,3 +1,39 @@
+const SFX_WAV_MANIFEST: Record<string, string[]> = {
+  plasmaLight: [
+    './audio/effects/S_PlasmaShot01.wav',
+    './audio/effects/S_PlasmaShot02.wav'
+  ],
+  plasmaHeavy: [
+    './audio/effects/S_Plasma_Aerial_New01.wav',
+    './audio/effects/S_LaserTank01.wav'
+  ],
+  shotgun: [
+    './audio/effects/S_Ithica01.wav',
+    './audio/effects/Shotgun_shot_spas.wav'
+  ],
+  explosion: [
+    './audio/effects/S_Explosion01.wav',
+    './audio/effects/plasma_explosion.wav'
+  ],
+  endoHit: [
+    './audio/effects/S_BulletHitMetal01.wav',
+    './audio/effects/S_BulletHitMetal02.wav'
+  ],
+  endoDestroy: [
+    './audio/effects/plasma_explosion.wav',
+    './audio/effects/S_Explosion01.wav'
+  ],
+  hkAlert: [
+    './audio/effects/hk_heavy1a_m.wav'
+  ],
+  combatDive: [
+    './audio/effects/S_Swing01.wav'
+  ],
+  playerHit: [
+    './audio/effects/S_BulletHitBody01.wav'
+  ]
+};
+
 export class AudioEngine {
   private ctx: AudioContext | null = null;
   private masterGain: GainNode | null = null;
@@ -7,6 +43,7 @@ export class AudioEngine {
   private musicSource: AudioBufferSourceNode | null = null;
   private musicBuffer: AudioBuffer | null = null;
   private musicAudioElement: HTMLAudioElement | null = null;
+  private readonly sfxBuffers = new Map<string, AudioBuffer[]>();
 
   private isMuted = false;
   private masterVol = 0.8;
@@ -56,9 +93,53 @@ export class AudioEngine {
 
       this.initialized = true;
       this.loadBackgroundMusic();
+      this.loadSfxWavBank();
     } catch {
       // AudioContext unavailable in test/restricted environments
     }
+  }
+
+  private async loadSfxWavBank(): Promise<void> {
+    if (!this.ctx) return;
+    for (const [category, urls] of Object.entries(SFX_WAV_MANIFEST)) {
+      const decodedList: AudioBuffer[] = [];
+      for (const url of urls) {
+        try {
+          const res = await fetch(url);
+          if (!res.ok || !this.ctx) continue;
+          const buf = await res.arrayBuffer();
+          const audioBuf = await this.ctx.decodeAudioData(buf);
+          decodedList.push(audioBuf);
+        } catch {
+          // Ignore individual WAV decode errors in headless/test mode
+        }
+      }
+      if (decodedList.length > 0) {
+        this.sfxBuffers.set(category, decodedList);
+      }
+    }
+  }
+
+  private playSample(category: string, gainValue = 0.65, playbackRate = 1.0): boolean {
+    if (!this.ctx || !this.sfxGain || this.isMuted) return false;
+    const list = this.sfxBuffers.get(category);
+    if (!list || list.length === 0) return false;
+
+    const buffer = list[Math.floor(Math.random() * list.length)];
+    const source = this.ctx.createBufferSource();
+    const gain = this.ctx.createGain();
+    source.buffer = buffer;
+    source.playbackRate.value = playbackRate * (0.95 + Math.random() * 0.1);
+    gain.gain.value = gainValue;
+
+    source.connect(gain);
+    gain.connect(this.sfxGain);
+    source.start(0);
+    source.onended = () => {
+      source.disconnect();
+      gain.disconnect();
+    };
+    return true;
   }
 
   private async loadBackgroundMusic(): Promise<void> {
@@ -134,9 +215,12 @@ export class AudioEngine {
     if (this.sfxGain) this.sfxGain.gain.value = this.sfxVol;
   }
 
-  // 12 Procedural Web Audio API SFX Generators
+  // 12 Hybrid Authentic WAV + Procedural Web Audio API SFX Generators
   public playPlasmaShot(isHeavy = false): void {
     if (!this.ctx || !this.sfxGain || this.isMuted) return;
+    if (this.playSample(isHeavy ? 'plasmaHeavy' : 'plasmaLight', isHeavy ? 0.65 : 0.5)) {
+      return;
+    }
     const now = this.ctx.currentTime;
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
@@ -163,6 +247,9 @@ export class AudioEngine {
 
   public playShotgunBlast(): void {
     if (!this.ctx || !this.sfxGain || this.isMuted) return;
+    if (this.playSample('shotgun', 0.72)) {
+      return;
+    }
     const now = this.ctx.currentTime;
     const bufferSize = this.ctx.sampleRate * 0.28;
     const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
@@ -197,6 +284,9 @@ export class AudioEngine {
 
   public playExplosion(scale = 1.0): void {
     if (!this.ctx || !this.sfxGain || this.isMuted) return;
+    if (this.playSample('explosion', Math.min(0.9, 0.55 * scale), scale > 1.3 ? 0.85 : 1.0)) {
+      return;
+    }
     const now = this.ctx.currentTime;
     const duration = Math.min(1.2, 0.5 * scale);
 
@@ -223,6 +313,7 @@ export class AudioEngine {
 
   public playEmpBlast(): void {
     if (!this.ctx || !this.sfxGain || this.isMuted) return;
+    this.playSample('plasmaHeavy', 0.45, 0.65);
     const now = this.ctx.currentTime;
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
@@ -247,6 +338,9 @@ export class AudioEngine {
 
   public playEndoHit(): void {
     if (!this.ctx || !this.sfxGain || this.isMuted) return;
+    if (this.playSample('endoHit', 0.4)) {
+      return;
+    }
     const now = this.ctx.currentTime;
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
@@ -271,6 +365,9 @@ export class AudioEngine {
 
   public playEndoDestroy(): void {
     if (!this.ctx || !this.sfxGain || this.isMuted) return;
+    if (this.playSample('endoDestroy', 0.5, 1.15)) {
+      return;
+    }
     const now = this.ctx.currentTime;
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
@@ -295,6 +392,7 @@ export class AudioEngine {
 
   public playSearchlightAlert(): void {
     if (!this.ctx || !this.sfxGain || this.isMuted) return;
+    this.playSample('hkAlert', 0.55);
     const now = this.ctx.currentTime;
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
@@ -392,6 +490,9 @@ export class AudioEngine {
 
   public playCombatDive(): void {
     if (!this.ctx || !this.sfxGain || this.isMuted) return;
+    if (this.playSample('combatDive', 0.65)) {
+      return;
+    }
     const now = this.ctx.currentTime;
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
@@ -416,6 +517,9 @@ export class AudioEngine {
 
   public playPlayerHit(): void {
     if (!this.ctx || !this.sfxGain || this.isMuted) return;
+    if (this.playSample('playerHit', 0.7)) {
+      return;
+    }
     const now = this.ctx.currentTime;
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();

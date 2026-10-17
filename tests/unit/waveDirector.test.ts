@@ -30,4 +30,64 @@ describe('Wave Timeline and Boss Director', () => {
     expect(WAVE_TIMELINE[28].boss).toBe('t1000_prototype');
     expect(WAVE_TIMELINE[30].boss).toBe('skynet_tde_core');
   });
+
+  it('batches both skynet_crab_drone and t800_endoskeleton into InstancedMeshes facing the player', async () => {
+    const { EndoskeletonBatch } = await import('../../src/graphics/meshes/EndoskeletonBatch');
+    const batch = new EndoskeletonBatch(32);
+    batch.updateBatch(
+      [
+        {
+          id: 1,
+          type: 'enemy',
+          archetype: 'skynet_crab_drone',
+          x: -5,
+          z: -5,
+          radius: 0.5,
+          hp: 18,
+          maxHp: 18,
+          speed: 4.8,
+          damage: 8,
+          isBoss: false,
+          isFlying: false,
+          xpValue: 1,
+          hitFlashTimer: 0,
+          slowTimer: 0,
+          armorStripMultiplier: 1,
+          attackCooldown: 0,
+          searchlightAngle: 0,
+          searchlightAlertTimer: 0,
+          phaseState: 0
+        },
+        {
+          id: 2,
+          type: 'enemy',
+          archetype: 't800_endoskeleton',
+          x: 10,
+          z: 0,
+          radius: 0.75,
+          hp: 95,
+          maxHp: 95,
+          speed: 2.9,
+          damage: 22,
+          isBoss: false,
+          isFlying: false,
+          xpValue: 5,
+          hitFlashTimer: 0,
+          slowTimer: 0,
+          armorStripMultiplier: 1,
+          attackCooldown: 0,
+          searchlightAngle: 0,
+          searchlightAlertTimer: 0,
+          phaseState: 0
+        }
+      ],
+      1.0,
+      20,
+      20
+    );
+    expect(batch.crabChassisInstancedMesh.count).toBe(1);
+    expect(batch.crabOpticsInstancedMesh.count).toBe(1);
+    expect(batch.chassisInstancedMesh.count).toBe(1);
+    expect(batch.opticsInstancedMesh.count).toBe(1);
+  });
 });

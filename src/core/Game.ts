@@ -128,6 +128,15 @@ export class Game {
   }
 
   private setupEvents(): void {
+    this.inputManager.onDashCallback = () => {
+      if (!this.isPaused && this.runState.mode === 'playing') {
+        this.inputManager.consumeDash();
+        if (this.runState.triggerDash()) {
+          this.audioEngine.playCombatDive();
+        }
+      }
+    };
+
     globalEvents.on('player:damaged', () => {
       this.sceneManager.postProcessing.triggerDamageFlash();
       if (this.runState.hp <= 0) {
@@ -177,8 +186,10 @@ export class Game {
 
   public startRun(loadoutId: LoadoutId): void {
     this.runState.initRun(loadoutId, this.saveManager.getData().upgrades);
+    this.weaponSystem.clear();
     this.enemySystem.clear();
     this.pickupSystem.clear();
+    this.particles.clear();
     this.waveDirector.reset();
     this.activeBoss = null;
     this.isPaused = false;

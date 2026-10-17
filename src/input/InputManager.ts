@@ -4,6 +4,7 @@ export class InputManager {
   private touchVec = { x: 0, z: 0 };
   private targetAimAngle: number | null = null;
   private dashRequested = false;
+  public onDashCallback: (() => void) | null = null;
 
   private activePointerId: number | null = null;
   private joystickOrigin = { x: 0, y: 0 };
@@ -71,6 +72,7 @@ export class InputManager {
     const onDash = (e: Event) => {
       e.preventDefault();
       this.dashRequested = true;
+      this.onDashCallback?.();
     };
     dashBtnEl.addEventListener('pointerdown', onDash);
     dashBtnEl.addEventListener('touchstart', onDash);
@@ -81,6 +83,7 @@ export class InputManager {
     this.keys.add(e.code);
     if (e.code === 'Space' || e.code === 'ShiftLeft') {
       this.dashRequested = true;
+      this.onDashCallback?.();
     }
   };
 

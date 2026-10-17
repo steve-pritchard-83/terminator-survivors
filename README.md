@@ -28,31 +28,37 @@ Available anywhere on desktop and mobile, with full progressive web app (PWA) of
 - **Cinematic Post-Processing**: Unreal bloom, cobalt-blue color grading, film grain, and an authentic red CRT scanline overlay simulating Skynet terminal telemetries.
 - **Faithful Typography & Audio**:
   - Incorporates the authentic `Terminator Real NFI` font alongside tactical Rajdhani and 6502 assembly telemetry fonts.
-  - Features Brad Fiedel’s iconic looped future war score (`backgroundmusic.mp3`) with seamless looping audio graph.
-  - Procedural Web Audio API sound synthesizer producing metallic anvil clanks, phased plasma bolts, HK jet turbine whooshes, optical servo whines, and EMP blasts with zero external audio assets.
+  - Features Brad Fiedel’s iconic looped future war score (`backgroundmusic.mp3`) with a seamless gapless Web Audio loop graph.
+  - Hybrid Audio Engine combining preloaded authentic `.wav` combat SFX (`S_PlasmaShot01.wav`, `S_Ithica01.wav`, `Shotgun_shot_spas.wav`, `S_LaserTank01.wav`, `plasma_explosion.wav`, `hk_heavy1a_m.wav`) with procedural Web Audio API synthesis.
 
-### 2. Deep Survivor Combat & Arsenal
-- **6 Base Weapons**:
-  - **Ithaca 37 Shotgun**: 12-gauge close-quarters buckshot.
-  - **M-25 Phased Plasma Rifle**: Rapid purple plasma bolts in the 40-watt range.
-  - **Improvised Pipe Bomb**: High-explosive cylindrical charges thrown at clusters.
-  - **Thermite Charge**: Incendiary canister igniting persistent ground infernos.
-  - **General Dynamics RBS-80**: Heavy tripod-mounted phased plasma cannon.
-  - **Tech-Com Microgun**: Multi-barrel ballistic lead storm.
-- **6 Tactical Passives**:
-  - Trench Coat Pockets (Speed & Dash Cooldown)
-  - Military Webbing (Projectile Amount)
-  - John Connor’s Polaroids (Damage Multiplier)
-  - Titanium Rebar Armor (Flat Damage Reduction)
-  - Tech-Com Scanner (Magnet Radius)
-  - Laser Aiming Module (Critical Strike Chance)
-- **6 Synergy Superweapons**: Max out a Level 8 weapon with its paired passive to unlock devastating military overhauls:
-  - *Trench Sweeper* (Dual combat dragonsbreath)
-  - *M95A1 Phased Pulse System* (Piercing hyper-plasma)
-  - *Seismic Breaching Charge* (Screen-shattering shockwave)
-  - *Thermite Buster* (White-hot apocalyptic inferno)
-  - *RBS-80 Dual Pulse Battery* (Alternating twin heavy beams)
-  - *Phased Microgun Vulkan* (High-cyclic plasma minigun)
+### 2. Deep Survivor Combat & Arsenal (8 Base Weapons, 8 Passives, 8 Evolutions)
+- **8 Base Weapons**:
+  - **Sawed-Off Ithaca 37**: 12-gauge close-quarters buckshot spread.
+  - **Westinghouse M-25 Plasma Rifle**: Rapid purple phased plasma bolts in the 40-watt range.
+  - **Tech-Com Pipe Bomb**: Improvised cylindrical charges with timed area detonation.
+  - **Tactical EMP Emitter**: Periodic electromagnetic shockwave that slows and strips Skynet armor.
+  - **Reprogrammed Seeker Drone**: Orbiting Tech-Com micro-drones slicing through nearby hostiles.
+  - **M79 Thumper Grenade Launcher**: High-angle lobbed 40mm fragmentation shells.
+  - **Scorched Earth Napalm Canister**: Incendiary canisters igniting lingering ground fire zones.
+  - **Bunker Laser Designator**: Calls down pinpoint orbital plasma strikes from captured satellites.
+- **8 Tactical Passives**:
+  - Bandolier Harness (+Projectile Speed & Range)
+  - Overcharged Plasma Cell (+Cooldown Reduction)
+  - Blast Compound (+Area Radius)
+  - Sarah’s Polaroid (+Max HP & Armor)
+  - Gyro-Stabilizer (+Extra Projectiles)
+  - Salvaged Endo-Servos (+Move Speed & Magnet Radius)
+  - Skynet CPU Uplink (+Critical Chance & XP Gain)
+  - Coltan Alloy Plating (+HP Regeneration & Might)
+- **8 Synergy Superweapons**: Max out a Level 8 weapon with its paired passive and open a Boss Data Vault to unlock:
+  - *DN38416 Trench Sweeper* (360-degree incendiary flechette nova)
+  - *Westinghouse M-95A1 Heavy Pulse* (Continuous piercing magenta plasma stream)
+  - *Coltan Thermite Core Buster* (Cluster pipe bombs with white-hot thermite shockwaves)
+  - *Zero-Point EMP Supernova* (Massive EMP vortex that strips armor and leeches HP)
+  - *Resistance Perimeter Defense Ring* (6 hyper-velocity plasma-tethered orbitals)
+  - *MM-1 Multi-Grenade Barrage* (360-degree carpet bombardment)
+  - *Judgment Day Firestorm Wall* (Expanding ring of 3000K plasma fire)
+  - *Skynet Orbital Ion Cannon* (Triple cascading orbital ion beams)
 
 ### 3. Skynet Threat Matrix
 - **T-800 Cyberdyne Systems Model 101 Endoskeletons**: Dual-layer InstancedMesh rendering capable of holding 650+ active chrome skeletons with glowing red optical sensors at 60 FPS.

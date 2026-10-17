@@ -174,7 +174,18 @@ export class PickupSystem {
       // Boss Data Vault
       this.audio.playVaultJackpot();
       const evolvedWeapon = this.runState.checkAndEvolveWeapon();
-      const upgradesAwarded = evolvedWeapon ? 1 : 3;
+      let upgradesAwarded = 1;
+      if (!evolvedWeapon) {
+        upgradesAwarded = 0;
+        for (let u = 0; u < 3; u++) {
+          const choices = this.runState.generateUpgradeChoices();
+          if (choices.length > 0) {
+            this.runState.applyUpgrade(choices[0]);
+            upgradesAwarded++;
+          }
+        }
+        if (upgradesAwarded === 0) upgradesAwarded = 3;
+      }
       const alloyBonus = 150;
       this.runState.alloyScrapEarned += alloyBonus;
 

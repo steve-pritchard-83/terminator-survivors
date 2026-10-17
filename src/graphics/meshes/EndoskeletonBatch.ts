@@ -7,6 +7,8 @@ export class EndoskeletonBatch {
   public readonly group = new THREE.Group();
   public readonly chassisInstancedMesh: THREE.InstancedMesh;
   public readonly opticsInstancedMesh: THREE.InstancedMesh;
+  public readonly crabChassisInstancedMesh: THREE.InstancedMesh;
+  public readonly crabOpticsInstancedMesh: THREE.InstancedMesh;
   private readonly maxCount: number;
 
   private readonly dummy = new THREE.Object3D();
@@ -83,16 +85,71 @@ export class EndoskeletonBatch {
     this.opticsInstancedMesh = new THREE.InstancedMesh(opticsGeo, opticsMat, maxCount);
     this.opticsInstancedMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
 
-    this.group.add(this.chassisInstancedMesh, this.opticsInstancedMesh);
+    // 3. Build Skynet Recon Crab Scuttler instanced mesh (quadruped spider-tank drone)
+    const crabParts: THREE.BufferGeometry[] = [
+      // Armored low-profile carapace dome
+      bakePart(new THREE.CylinderGeometry(0.28, 0.38, 0.22, 8), 0, 0.32, 0),
+      // Front sensor visor cowl
+      bakePart(new THREE.BoxGeometry(0.32, 0.14, 0.24), 0, 0.30, 0.22),
+      // 4 articulated mechanical scuttle legs
+      bakePart(new THREE.CylinderGeometry(0.035, 0.025, 0.48, 6), -0.34, 0.20, 0.22, 0.3, 0, 0.6),
+      bakePart(new THREE.CylinderGeometry(0.035, 0.025, 0.48, 6), 0.34, 0.20, 0.22, 0.3, 0, -0.6),
+      bakePart(new THREE.CylinderGeometry(0.035, 0.025, 0.48, 6), -0.34, 0.20, -0.22, -0.3, 0, 0.6),
+      bakePart(new THREE.CylinderGeometry(0.035, 0.025, 0.48, 6), 0.34, 0.20, -0.22, -0.3, 0, -0.6)
+    ];
+    const crabGeo = mergeParts(crabParts);
+    this.crabChassisInstancedMesh = new THREE.InstancedMesh(crabGeo, chassisMat, maxCount);
+    this.crabChassisInstancedMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+
+    const crabEyeGeo = bakePart(new THREE.SphereGeometry(0.06, 8, 8), 0, 0.31, 0.35);
+    this.crabOpticsInstancedMesh = new THREE.InstancedMesh(crabEyeGeo, opticsMat, maxCount);
+    this.crabOpticsInstancedMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+
+    this.group.add(
+      this.chassisInstancedMesh,
+      this.opticsInstancedMesh,
+      this.crabChassisInstancedMesh,
+      this.crabOpticsInstancedMesh
+    );
   }
 
-  public updateBatch(enemies: ActiveEnemy[], timeSeconds: number): void {
+  public updateBatch(
+    enemies: ActiveEnemy[],
+    timeSeconds: number,
+    playerX = 0,
+    playerZ = 0
+  ): void {
     let activeIndex = 0;
+    let crabIndex = 0;
 
     for (let i = 0; i < enemies.length; i++) {
-      if (activeIndex >= this.maxCount) break;
       const enemy = enemies[i];
-      // Only render humanoid endoskeletons in this instanced batch
+      const facingAngle = Math.atan2(playerX - enemy.x, playerZ - enemy.z);
+
+      if (enemy.archetype === 'skynet_crab_drone') {
+        if (crabIndex >= this.maxCount) continue;
+        const scuttleBob = Math.abs(Math.sin(timeSeconds * 16 + enemy.id)) * 0.05;
+        const scuttleTilt = Math.sin(timeSeconds * 16 + enemy.id) * 0.1;
+
+        this.dummy.position.set(enemy.x, scuttleBob, enemy.z);
+        this.dummy.rotation.set(0, facingAngle, scuttleTilt);
+        this.dummy.scale.set(1, 1, 1);
+        this.dummy.updateMatrix();
+
+        this.crabChassisInstancedMesh.setMatrixAt(crabIndex, this.dummy.matrix);
+        this.crabOpticsInstancedMesh.setMatrixAt(crabIndex, this.dummy.matrix);
+
+        if (enemy.hitFlashTimer > 0) {
+          this.dummyColor.setHex(0xffffff);
+        } else {
+          this.dummyColor.setHex(0x8a9ba8);
+        }
+        this.crabChassisInstancedMesh.setColorAt(crabIndex, this.dummyColor);
+        crabIndex++;
+        continue;
+      }
+
+      // Only render humanoid endoskeletons in the primary instanced batch
       if (
         enemy.archetype !== 't800_endoskeleton' &&
         enemy.archetype !== 't600_rusted' &&
@@ -100,11 +157,11 @@ export class EndoskeletonBatch {
       ) {
         continue;
       }
+      if (activeIndex >= this.maxCount) continue;
 
       // Animatronic mechanical limp / bob
       const bobY = Math.abs(Math.sin(timeSeconds * 8 + enemy.id)) * 0.08;
       const rollZ = Math.sin(timeSeconds * 8 + enemy.id) * 0.07;
-      const facingAngle = Math.atan2(enemy.x, enemy.z); // Facing center/player
 
       this.dummy.position.set(enemy.x, bobY, enemy.z);
       this.dummy.rotation.set(0, facingAngle, rollZ);
@@ -141,6 +198,14 @@ export class EndoskeletonBatch {
     this.opticsInstancedMesh.instanceMatrix.needsUpdate = true;
     if (this.chassisInstancedMesh.instanceColor) {
       this.chassisInstancedMesh.instanceColor.needsUpdate = true;
+    }
+
+    this.crabChassisInstancedMesh.count = crabIndex;
+    this.crabOpticsInstancedMesh.count = crabIndex;
+    this.crabChassisInstancedMesh.instanceMatrix.needsUpdate = true;
+    this.crabOpticsInstancedMesh.instanceMatrix.needsUpdate = true;
+    if (this.crabChassisInstancedMesh.instanceColor) {
+      this.crabChassisInstancedMesh.instanceColor.needsUpdate = true;
     }
   }
 }

@@ -166,15 +166,7 @@ export class EnemySystem {
         enemy.attackCooldown -= dt;
         if (enemy.attackCooldown <= 0) {
           enemy.attackCooldown = 0.55;
-          const dmgDealt = this.runState.takeDamage(enemy.damage);
-          if (dmgDealt > 0) {
-            this.audio.playPlayerHit();
-            globalEvents.emit('player:damaged', {
-              currentHp: this.runState.hp,
-              maxHp: this.runState.maxHp,
-              damage: dmgDealt
-            });
-          }
+          this.applyPlayerDamage(enemy.damage);
         }
       }
 
@@ -182,8 +174,20 @@ export class EnemySystem {
       this.updateSpecialEnemy(enemy, dt, timeSeconds, px, pz, dist);
     }
 
-    // Update Endoskeleton instanced mesh batch
-    this.endoBatch.updateBatch(this.activeEnemies, timeSeconds);
+    // Update Endoskeleton & Crab Scuttler instanced mesh batches
+    this.endoBatch.updateBatch(this.activeEnemies, timeSeconds, px, pz);
+  }
+
+  private applyPlayerDamage(rawDamage: number): void {
+    const dmgDealt = this.runState.takeDamage(rawDamage);
+    if (dmgDealt > 0) {
+      this.audio.playPlayerHit();
+      globalEvents.emit('player:damaged', {
+        currentHp: this.runState.hp,
+        maxHp: this.runState.maxHp,
+        damage: dmgDealt
+      });
+    }
   }
 
   private updateSpecialEnemy(
@@ -210,7 +214,7 @@ export class EnemySystem {
           if (enemy.searchlightAlertTimer >= 1.2) {
             this.audio.playSearchlightAlert();
             this.audio.playPlasmaShot(true);
-            this.runState.takeDamage(18);
+            this.applyPlayerDamage(18);
             enemy.searchlightAlertTimer = 0;
           }
         } else {
@@ -233,7 +237,7 @@ export class EnemySystem {
           this.audio.playExplosion(1.8);
           this.particles.spawnExplosion(px, 0.2, pz, 1.8);
           if (distToPlayer < 7.0) {
-            this.runState.takeDamage(35);
+            this.applyPlayerDamage(35);
           }
         }
 
@@ -303,5 +307,6 @@ export class EnemySystem {
     this.hkTankMeshes.clear();
     this.t1000Meshes.clear();
     this.bossMeshes.clear();
+    this.endoBatch.updateBatch([], 0, 0, 0);
   }
 }

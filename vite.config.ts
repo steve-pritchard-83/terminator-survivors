@@ -14,7 +14,20 @@ export default defineConfig({
         'icons/icon-maskable-512.png',
         'fonts/terminator-real-nfi.ttf',
         'fonts/terminator-real-nfi.otf',
-        'audio/backgroundmusic.mp3'
+        'audio/backgroundmusic.mp3',
+        'audio/effects/S_PlasmaShot01.wav',
+        'audio/effects/S_PlasmaShot02.wav',
+        'audio/effects/S_Plasma_Aerial_New01.wav',
+        'audio/effects/S_LaserTank01.wav',
+        'audio/effects/S_Ithica01.wav',
+        'audio/effects/Shotgun_shot_spas.wav',
+        'audio/effects/S_Explosion01.wav',
+        'audio/effects/plasma_explosion.wav',
+        'audio/effects/S_BulletHitMetal01.wav',
+        'audio/effects/S_BulletHitMetal02.wav',
+        'audio/effects/hk_heavy1a_m.wav',
+        'audio/effects/S_Swing01.wav',
+        'audio/effects/S_BulletHitBody01.wav'
       ],
       manifest: {
         name: 'Terminator Survivors: Los Angeles 2029 AD',
