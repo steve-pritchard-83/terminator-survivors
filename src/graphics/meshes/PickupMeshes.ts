@@ -2,68 +2,116 @@ import * as THREE from 'three';
 import { bakePart, mergeParts } from './geometryUtils';
 
 export class PickupMeshFactory {
-  private static coreGeo = mergeParts([
-    // Outer metallic titanium hex-frame
-    bakePart(new THREE.TorusGeometry(0.19, 0.035, 6, 6), 0, 0, 0, Math.PI / 2, 0, 0, 0x90a4b8),
-    // Inner glowing octahedron crystal core
-    bakePart(new THREE.OctahedronGeometry(0.15, 0), 0, 0, 0, 0, 0, 0, 0xffffff)
+  private static crystalGeo = mergeParts([
+    // Tall floating vertical diamond crystal (stretched octahedron)
+    bakePart(new THREE.OctahedronGeometry(0.16, 0).scale(1.0, 1.85, 1.0), 0, 0.12, 0, 0, 0, 0, 0xffffff),
+    // Crisp horizontal orbital stabilizer ring
+    bakePart(new THREE.TorusGeometry(0.20, 0.022, 6, 8), 0, 0.12, 0, Math.PI / 2, 0, 0, 0xd8f8ff)
   ]);
+  private static beamGeo = new THREE.CylinderGeometry(0.025, 0.11, 1.25, 8, 1, true);
+  private static groundRingGeo = new THREE.RingGeometry(0.16, 0.26, 16);
   private static crateGeo = new THREE.BoxGeometry(0.8, 0.8, 0.8);
   private static vaultGeo = new THREE.BoxGeometry(1.4, 0.9, 1.0);
 
-  private static cyanMat = new THREE.MeshStandardMaterial({
-    color: 0x00e5ff,
+  // Tier 1 XP: Vibrant Neon Emerald Green
+  private static emeraldMat = new THREE.MeshStandardMaterial({
+    color: 0x00ff66,
     vertexColors: true,
-    emissive: 0x00a8cc,
-    emissiveIntensity: 1.15,
-    metalness: 0.4,
-    roughness: 0.2
+    emissive: 0x00dd55,
+    emissiveIntensity: 1.55,
+    metalness: 0.2,
+    roughness: 0.25
+  });
+  private static emeraldBeamMat = new THREE.MeshBasicMaterial({
+    color: 0x00ff66,
+    transparent: true,
+    opacity: 0.32,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+    side: THREE.DoubleSide
   });
 
-  private static violetMat = new THREE.MeshStandardMaterial({
-    color: 0xd400ff,
+  // Tier 2 XP (xp >= 5): Vibrant Solar Gold
+  private static goldMat = new THREE.MeshStandardMaterial({
+    color: 0xffc400,
     vertexColors: true,
-    emissive: 0x9900cc,
-    emissiveIntensity: 1.35,
-    metalness: 0.4,
-    roughness: 0.2
+    emissive: 0xff9900,
+    emissiveIntensity: 1.65,
+    metalness: 0.25,
+    roughness: 0.22
+  });
+  private static goldBeamMat = new THREE.MeshBasicMaterial({
+    color: 0xffc400,
+    transparent: true,
+    opacity: 0.38,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+    side: THREE.DoubleSide
   });
 
-  private static redMat = new THREE.MeshStandardMaterial({
-    color: 0xff1e8e,
+  // Tier 3 XP (xp >= 20): High-energy Neon Magenta-Ruby
+  private static rubyMat = new THREE.MeshStandardMaterial({
+    color: 0xff0066,
     vertexColors: true,
-    emissive: 0xcc0044,
-    emissiveIntensity: 1.5,
-    metalness: 0.4,
+    emissive: 0xff0055,
+    emissiveIntensity: 1.8,
+    metalness: 0.25,
     roughness: 0.2
+  });
+  private static rubyBeamMat = new THREE.MeshBasicMaterial({
+    color: 0xff0066,
+    transparent: true,
+    opacity: 0.44,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+    side: THREE.DoubleSide
   });
 
   private static crateMat = new THREE.MeshStandardMaterial({
     color: 0x3d4734, // Olive drab army crate
-    metalness: 0.4,
-    roughness: 0.65
+    metalness: 0.3,
+    roughness: 0.72
   });
 
   private static vaultMat = new THREE.MeshStandardMaterial({
     color: 0x2b313a,
-    metalness: 0.9,
-    roughness: 0.2
+    metalness: 0.6,
+    roughness: 0.45
   });
 
-  public static createDataCore(xpValue: number): THREE.Mesh {
-    let mat = this.cyanMat;
+  public static createDataCore(xpValue: number): THREE.Group {
+    let mat = this.emeraldMat;
+    let beamMat = this.emeraldBeamMat;
     let scale = 1.0;
     if (xpValue >= 20) {
-      mat = this.redMat;
-      scale = 1.45;
+      mat = this.rubyMat;
+      beamMat = this.rubyBeamMat;
+      scale = 1.38;
     } else if (xpValue >= 5) {
-      mat = this.violetMat;
-      scale = 1.22;
+      mat = this.goldMat;
+      beamMat = this.goldBeamMat;
+      scale = 1.18;
     }
-    const mesh = new THREE.Mesh(this.coreGeo, mat);
-    mesh.scale.set(scale, scale, scale);
-    mesh.position.y = 0.32;
-    return mesh;
+
+    const group = new THREE.Group();
+
+    const crystal = new THREE.Mesh(this.crystalGeo, mat);
+    crystal.scale.set(scale, scale, scale);
+    group.add(crystal);
+
+    // Vertical holographic loot beam so XP drops are unmistakable from across the map
+    const beam = new THREE.Mesh(this.beamGeo, beamMat);
+    beam.position.y = 0.55;
+    group.add(beam);
+
+    // Ground pulse ring
+    const ring = new THREE.Mesh(this.groundRingGeo, beamMat);
+    ring.rotation.x = -Math.PI / 2;
+    ring.position.y = -0.28;
+    group.add(ring);
+
+    group.position.y = 0.35;
+    return group;
   }
 
   public static createSupplyCrate(): THREE.Group {

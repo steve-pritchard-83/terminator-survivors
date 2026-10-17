@@ -232,14 +232,51 @@ export class KyleReeseMesh {
     magTube.rotation.x = Math.PI / 2;
     magTube.position.set(0.12, -0.01, 0.62);
 
-    // Crisp Tactical Laser Sight Line (shows exact mouse aim direction)
-    const laserSightGeo = new THREE.CylinderGeometry(0.01, 0.01, 11.0, 6);
+    // Underbarrel Tactical Flashlight Housing & Glowing Lens
+    const flashlightBody = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.024, 0.022, 0.14, 8),
+      gunMat
+    );
+    flashlightBody.rotation.x = Math.PI / 2;
+    flashlightBody.position.set(0.12, -0.04, 0.72);
+
+    const flashlightLens = new THREE.Mesh(
+      new THREE.SphereGeometry(0.022, 8, 8),
+      new THREE.MeshBasicMaterial({ color: 0xe8f6ff })
+    );
+    flashlightLens.position.set(0.12, -0.04, 0.79);
+
+    // Real Dynamic Three.js SpotLight cutting through the nocturnal fog
+    const flashlightSpot = new THREE.SpotLight(0xd8ecff, 11.5, 29, Math.PI / 4.2, 0.58, 1.05);
+    flashlightSpot.position.set(0.12, 0.25, 0.75);
+    const flashlightTarget = new THREE.Object3D();
+    flashlightTarget.position.set(0.12, -0.95, 14.5);
+    this.weaponGroup.add(flashlightTarget);
+    flashlightSpot.target = flashlightTarget;
+
+    // Subtle Volumetric Flashlight Cone Beam cutting through the mist
+    const beamConeGeo = new THREE.ConeGeometry(3.2, 13.5, 24, 1, true);
+    beamConeGeo.rotateX(-Math.PI / 2);
+    beamConeGeo.translate(0.12, -0.18, 7.55);
+    const beamConeMat = new THREE.MeshBasicMaterial({
+      color: 0xaad4ff,
+      transparent: true,
+      opacity: 0.065,
+      blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+      fog: false
+    });
+    const beamConeMesh = new THREE.Mesh(beamConeGeo, beamConeMat);
+
+    // Crisp Tactical Laser Sight Line (shows exact mouse aim center)
+    const laserSightGeo = new THREE.CylinderGeometry(0.008, 0.008, 11.0, 6);
     laserSightGeo.rotateX(Math.PI / 2);
     laserSightGeo.translate(0.12, 0.04, 6.4);
     const laserSightMat = new THREE.MeshBasicMaterial({
       color: 0xff2222,
       transparent: true,
-      opacity: 0.45,
+      opacity: 0.38,
       blending: THREE.AdditiveBlending,
       depthWrite: false
     });
@@ -256,6 +293,10 @@ export class KyleReeseMesh {
       gunHandguard,
       gunBarrel,
       magTube,
+      flashlightBody,
+      flashlightLens,
+      flashlightSpot,
+      beamConeMesh,
       laserSightMesh,
       this.muzzleLight
     );

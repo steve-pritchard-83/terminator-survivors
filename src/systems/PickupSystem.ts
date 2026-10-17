@@ -48,7 +48,7 @@ export class PickupSystem {
 
   public spawnDataCore(x: number, z: number, xpValue: number): void {
     const mesh = PickupMeshFactory.createDataCore(xpValue);
-    mesh.position.set(x, 0.25, z);
+    mesh.position.set(x, 0.35, z);
     this.group.add(mesh);
 
     this.pickups.push({
@@ -118,21 +118,22 @@ export class PickupSystem {
 
     for (let i = this.pickups.length - 1; i >= 0; i--) {
       const p = this.pickups[i];
-      p.mesh.rotation.y += dt * 2.5; // Spin animation
+      p.mesh.rotation.y += dt * 2.8; // Spin animation
 
       const dx = px - p.x;
       const dz = pz - p.z;
       const dist = Math.hypot(dx, dz);
 
-      // Magnet attraction for data cores
+      // Magnet attraction & floating bob for data cores
       if (p.kind === 'core') {
+        const bobY = 0.36 + Math.sin(this.runState.timeSeconds * 4.5 + p.id) * 0.08;
         if (dist <= magnetRadius || p.attracted) {
           p.attracted = true;
           const pullSpeed = 16.0;
           p.x += (dx / dist) * pullSpeed * dt;
           p.z += (dz / dist) * pullSpeed * dt;
-          p.mesh.position.set(p.x, 0.25, p.z);
         }
+        p.mesh.position.set(p.x, bobY, p.z);
       }
 
       // Collect pickup if player reaches it

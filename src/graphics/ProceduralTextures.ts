@@ -84,13 +84,13 @@ export class ProceduralTextures {
     const ctx = this.get2DContext(canvas);
 
     if (ctx) {
-      // Bright Cameron cobalt-silver sky dome gradient for chrome specular reflections
+      // Soft, diffused nocturnal slate-blue gradient (eliminates harsh specular metal glints)
       const grad = ctx.createLinearGradient(0, 0, 0, height);
-      grad.addColorStop(0.0, '#4a88d9');
-      grad.addColorStop(0.45, '#b8d8ff');
-      grad.addColorStop(0.5, '#ffffff'); // Horizon specular studio strip
-      grad.addColorStop(0.55, '#5a7898');
-      grad.addColorStop(1.0, '#1e2f48');
+      grad.addColorStop(0.0, '#16263b');
+      grad.addColorStop(0.42, '#2b4260');
+      grad.addColorStop(0.5, '#3b5678');
+      grad.addColorStop(0.58, '#22354d');
+      grad.addColorStop(1.0, '#0d1624');
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, width, height);
     }

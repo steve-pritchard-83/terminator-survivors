@@ -20,12 +20,12 @@ export class EndoskeletonBatch {
   constructor(maxCount = 650) {
     this.maxCount = maxCount;
 
-    const chromeBright = 0xe2eef8;
-    const chromeMid = 0xb0c2d4;
+    const chromeBright = 0xb8c6d4;
+    const chromeMid = 0x8e9eae;
     const darkSocket = 0x10161e;
-    const pistonSteel = 0x708294;
-    const gunmetal = 0x2e3846;
-    const teethIvory = 0xd8e0e8;
+    const pistonSteel = 0x5c6c7c;
+    const gunmetal = 0x2a3340;
+    const teethIvory = 0xbec8d2;
 
     // 1. Build detailed T-800 Upper Body, Skull, Ribcage, Pelvis & M-25 Rifle
     const chassisParts: THREE.BufferGeometry[] = [
@@ -117,10 +117,10 @@ export class EndoskeletonBatch {
     const chassisMat = new THREE.MeshStandardMaterial({
       color: 0xffffff,
       vertexColors: true,
-      emissive: 0x101a28,
-      emissiveIntensity: 0.22,
-      metalness: 0.72,
-      roughness: 0.24,
+      emissive: 0x0a1018,
+      emissiveIntensity: 0.12,
+      metalness: 0.48,
+      roughness: 0.48,
       normalMap: ProceduralTextures.getBrushedMetalNormal(),
       roughnessMap: ProceduralTextures.getBrushedMetalRoughness()
     });

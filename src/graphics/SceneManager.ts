@@ -18,9 +18,11 @@ export class SceneManager {
 
   constructor(container: HTMLElement) {
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x091322);
-    this.scene.fog = new THREE.FogExp2(0x0c192c, 0.011);
+    this.scene.background = new THREE.Color(0x060d18);
+    // Dense atmospheric Future War fog that masks distant geometry and frames the flashlight beam
+    this.scene.fog = new THREE.Fog(0x060d18, 14.5, 34.5);
     this.scene.environment = ProceduralTextures.getMetallicEnvMap();
+    this.scene.environmentIntensity = 0.42;
 
     const width = container.clientWidth || window.innerWidth;
     const height = container.clientHeight || window.innerHeight;
@@ -38,24 +40,24 @@ export class SceneManager {
     this.renderer.setSize(width, height);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.12;
+    this.renderer.toneMappingExposure = 1.02;
 
     container.appendChild(this.renderer.domElement);
 
-    // Balanced James Cameron Cobalt Moonlight & Directional Key/Rim Lighting for 3D Mesh Definition
-    const hemiLight = new THREE.HemisphereLight(0x78b0f0, 0x1a2636, 1.15);
+    // Moody nocturnal moonlight (low-glare so metallic surfaces don't glint harshly and flashlight pops)
+    const hemiLight = new THREE.HemisphereLight(0x5580b0, 0x101824, 0.72);
     this.scene.add(hemiLight);
 
-    const ambientLight = new THREE.AmbientLight(0x28405c, 0.85);
+    const ambientLight = new THREE.AmbientLight(0x1d2e44, 0.55);
     this.scene.add(ambientLight);
 
-    const moonLight = new THREE.DirectionalLight(0xa8d4ff, 1.85);
-    moonLight.position.set(-18, 34, -14);
+    const moonLight = new THREE.DirectionalLight(0x709cc8, 0.95);
+    moonLight.position.set(-16, 30, -14);
     this.scene.add(moonLight);
 
-    // Crisp silver-blue counter-rim light for Endoskeleton silhouettes
-    const rimLight = new THREE.DirectionalLight(0x5599ee, 1.15);
-    rimLight.position.set(20, 14, 22);
+    // Subtle counter-rim light for silhouettes emerging from the fog
+    const rimLight = new THREE.DirectionalLight(0x3d6ea8, 0.55);
+    rimLight.position.set(18, 14, 20);
     this.scene.add(rimLight);
 
     this.postProcessing = new PostProcessingManager(this.renderer, this.scene, this.camera);

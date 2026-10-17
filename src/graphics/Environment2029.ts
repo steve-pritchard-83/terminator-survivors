@@ -21,68 +21,65 @@ export class Environment2029 {
   private readonly rebarInstancedMesh: THREE.InstancedMesh;
   private readonly carInstancedMesh: THREE.InstancedMesh;
   private readonly skylineRing: THREE.Group;
+  private readonly fogMistGroup: THREE.Group;
+  private readonly fogPatches: Array<{ mesh: THREE.Mesh; ox: number; oz: number; speed: number; phase: number }> = [];
+  private fogTime = 0;
 
   constructor() {
     this.groundGeo = new THREE.PlaneGeometry(this.chunkSize, this.chunkSize, 12, 12);
     this.groundGeo.rotateX(-Math.PI / 2);
 
     this.groundMat = new THREE.MeshStandardMaterial({
-      color: 0x384b62,
+      color: 0x2b3a4d,
       map: ProceduralTextures.getWastelandGroundAlbedo(),
       bumpMap: ProceduralTextures.getWastelandGroundBump(),
       bumpScale: 0.12,
-      roughness: 0.86,
-      metalness: 0.08
+      roughness: 0.92,
+      metalness: 0.04
     });
 
-    // 1. Build sculpted anatomical skull & bone remnant geometry (vertex-colored, ZERO emissive glow)
-    const boneWeathered = 0x8d99a6;
-    const boneShadow = 0x687380;
-    const socketVoid = 0x0c1017;
+    // 1. Build dark, earthy half-buried skull remnants (blends into soil, never looks like XP drops)
+    const boneWeathered = 0x524a42;
+    const boneShadow = 0x3b352f;
+    const socketVoid = 0x0c0e12;
 
     const skullParts: THREE.BufferGeometry[] = [
       // Cranium vault
-      bakePart(new THREE.SphereGeometry(0.145, 10, 8), 0, 0.14, -0.02, 0, 0, 0, boneWeathered),
+      bakePart(new THREE.SphereGeometry(0.14, 10, 8), 0, 0.12, -0.02, 0, 0, 0, boneWeathered),
       // Brow ridge & cheekbones
-      bakePart(new THREE.BoxGeometry(0.21, 0.055, 0.12), 0, 0.16, 0.07, 0.1, 0, 0, boneWeathered),
+      bakePart(new THREE.BoxGeometry(0.20, 0.05, 0.12), 0, 0.14, 0.07, 0.1, 0, 0, boneWeathered),
       // Deep dark eye sockets L/R
-      bakePart(new THREE.SphereGeometry(0.042, 6, 6), -0.052, 0.135, 0.105, 0, 0, 0, socketVoid),
-      bakePart(new THREE.SphereGeometry(0.042, 6, 6), 0.052, 0.135, 0.105, 0, 0, 0, socketVoid),
+      bakePart(new THREE.SphereGeometry(0.042, 6, 6), -0.052, 0.115, 0.105, 0, 0, 0, socketVoid),
+      bakePart(new THREE.SphereGeometry(0.042, 6, 6), 0.052, 0.115, 0.105, 0, 0, 0, socketVoid),
       // Dark nasal cavity
-      bakePart(new THREE.BoxGeometry(0.036, 0.05, 0.06), 0, 0.10, 0.12, 0, 0, 0, socketVoid),
+      bakePart(new THREE.BoxGeometry(0.036, 0.05, 0.06), 0, 0.08, 0.12, 0, 0, 0, socketVoid),
       // Upper maxilla & jaw
-      bakePart(new THREE.BoxGeometry(0.13, 0.07, 0.13), 0, 0.055, 0.06, 0, 0, 0, boneShadow)
+      bakePart(new THREE.BoxGeometry(0.12, 0.06, 0.12), 0, 0.04, 0.06, 0, 0, 0, boneShadow)
     ];
     const skullGeo = mergeParts(skullParts);
     const skullMat = new THREE.MeshStandardMaterial({
       color: 0xffffff,
       vertexColors: true,
-      roughness: 0.82,
-      metalness: 0.05
+      roughness: 0.96,
+      metalness: 0.0
     });
 
-    // 2. Build detailed shattered Highway Overpass Column & Rubble Base (vertex-colored)
-    const concreteMid = 0x4c5c6e;
-    const concreteDark = 0x2e3946;
-    const concreteLight = 0x627488;
-    const rustedSteel = 0x4a3830;
+    // 2. Build detailed shattered Highway Overpass Column & Rubble Base (matte concrete)
+    const concreteMid = 0x3d4b5a;
+    const concreteDark = 0x26303a;
+    const concreteLight = 0x4d5d70;
+    const rustedSteel = 0x3d2e28;
 
     const rebarParts: THREE.BufferGeometry[] = [
-      // Wide octagonal pedestal footing & shattered concrete rubble slabs at base
       bakePart(new THREE.CylinderGeometry(1.15, 1.35, 0.55, 8), 0, 0.27, 0, 0, Math.PI / 8, 0, concreteDark),
       bakePart(new THREE.BoxGeometry(1.8, 0.32, 1.4), 0.25, 0.16, -0.2, 0.12, 0.4, -0.08, concreteMid),
       bakePart(new THREE.BoxGeometry(1.4, 0.28, 1.6), -0.3, 0.14, 0.25, -0.1, -0.3, 0.12, concreteDark),
-      // Lower reinforced octagonal column shaft
       bakePart(new THREE.CylinderGeometry(0.78, 0.92, 2.2, 8), 0, 1.5, 0, 0, 0, 0, concreteMid),
-      // Architectural vertical flutes / ribs
       bakePart(new THREE.BoxGeometry(1.42, 2.0, 0.36), 0, 1.5, 0, 0, 0, 0, concreteLight),
       bakePart(new THREE.BoxGeometry(0.36, 2.0, 1.42), 0, 1.5, 0, 0, 0, 0, concreteLight),
-      // Sheared upper concrete fracture blocks
       bakePart(new THREE.BoxGeometry(1.15, 1.1, 1.05), -0.08, 2.95, 0.05, 0.06, 0.2, -0.05, concreteMid),
       bakePart(new THREE.BoxGeometry(0.85, 0.85, 0.80), 0.12, 3.65, -0.08, -0.12, 0.5, 0.08, concreteDark),
-      // Exposed central structural steel H-beam core
       bakePart(new THREE.BoxGeometry(0.32, 2.6, 0.32), 0, 3.3, 0, 0.04, 0, 0.03, rustedSteel),
-      // Bent steel rebar cage rods protruding from fractured top
       bakePart(new THREE.CylinderGeometry(0.035, 0.035, 1.8, 6), -0.32, 4.2, -0.22, 0.22, 0, 0.28, rustedSteel),
       bakePart(new THREE.CylinderGeometry(0.035, 0.035, 2.1, 6), 0.28, 4.4, 0.22, -0.28, 0, -0.18, rustedSteel),
       bakePart(new THREE.CylinderGeometry(0.035, 0.035, 1.6, 6), 0.05, 4.1, 0.32, 0.38, 0, 0.12, rustedSteel),
@@ -92,46 +89,35 @@ export class Environment2029 {
     const concreteMat = new THREE.MeshStandardMaterial({
       color: 0xffffff,
       vertexColors: true,
-      roughness: 0.82,
-      metalness: 0.18
+      roughness: 0.88,
+      metalness: 0.10
     });
 
-    // 3. Build detailed 1980s Burnt-Out Sedan / Police Cruiser Wreckage (vertex-colored)
-    const bodyPaint = 0x45586c;
-    const bodyScorched = 0x2b3644;
-    const cabinInterior = 0x0e131a;
-    const chromeTrim = 0x8fa4b8;
-    const tireRubber = 0x151920;
+    // 3. Build detailed 1980s Burnt-Out Sedan Wreckage (matte scorched steel, no harsh glints)
+    const bodyPaint = 0x384758;
+    const bodyScorched = 0x242e3a;
+    const cabinInterior = 0x0c1016;
+    const chromeTrim = 0x5c6c7c;
+    const tireRubber = 0x14181e;
 
     const carParts: THREE.BufferGeometry[] = [
-      // Main lower body tub & rocker panels
       bakePart(new THREE.BoxGeometry(1.96, 0.52, 4.30), 0, 0.46, 0, 0, 0, 0, bodyPaint),
-      // Sloped front hood (slightly crumpled) & exposed dark engine bay gap
       bakePart(new THREE.BoxGeometry(1.86, 0.18, 1.35), 0, 0.74, 1.38, 0.08, 0, 0.03, bodyScorched),
       bakePart(new THREE.BoxGeometry(1.70, 0.24, 1.15), 0, 0.64, 1.40, 0, 0, 0, cabinInterior),
-      // Rear trunk deck
       bakePart(new THREE.BoxGeometry(1.88, 0.20, 1.05), 0, 0.74, -1.55, -0.05, 0, 0, bodyPaint),
-      // Front & rear heavy chrome bumpers + dark radiator grille
       bakePart(new THREE.BoxGeometry(2.06, 0.20, 0.22), 0, 0.34, 2.18, 0, 0, 0, chromeTrim),
       bakePart(new THREE.BoxGeometry(2.06, 0.20, 0.22), 0, 0.34, -2.18, 0, 0, 0, chromeTrim),
       bakePart(new THREE.BoxGeometry(1.40, 0.24, 0.12), 0, 0.56, 2.14, 0, 0, 0, cabinInterior),
-      // Headlight housings L/R
       bakePart(new THREE.BoxGeometry(0.28, 0.16, 0.12), -0.72, 0.58, 2.14, 0, 0, 0, chromeTrim),
       bakePart(new THREE.BoxGeometry(0.28, 0.16, 0.12), 0.72, 0.58, 2.14, 0, 0, 0, chromeTrim),
-      // Dark hollowed-out interior passenger cabin (gives realistic open window look)
       bakePart(new THREE.BoxGeometry(1.56, 0.48, 1.72), 0, 0.94, -0.12, 0, 0, 0, cabinInterior),
-      // Crushed roof panel supported by A, B, and C pillars
       bakePart(new THREE.BoxGeometry(1.62, 0.10, 1.65), 0, 1.22, -0.15, 0.04, 0, -0.04, bodyPaint),
-      // Front A-pillars L/R (angled windshield frame)
       bakePart(new THREE.BoxGeometry(0.10, 0.56, 0.12), -0.78, 0.96, 0.68, -0.45, 0, 0.1, bodyPaint),
       bakePart(new THREE.BoxGeometry(0.10, 0.56, 0.12), 0.78, 0.96, 0.68, -0.45, 0, -0.1, bodyPaint),
-      // Center B-pillars L/R
       bakePart(new THREE.BoxGeometry(0.10, 0.52, 0.14), -0.80, 0.96, -0.12, 0, 0, 0.08, bodyScorched),
       bakePart(new THREE.BoxGeometry(0.10, 0.52, 0.14), 0.80, 0.96, -0.12, 0, 0, -0.08, bodyScorched),
-      // Rear C-pillars L/R
       bakePart(new THREE.BoxGeometry(0.12, 0.56, 0.22), -0.78, 0.96, -0.92, 0.42, 0, 0.1, bodyPaint),
       bakePart(new THREE.BoxGeometry(0.12, 0.56, 0.22), 0.78, 0.96, -0.92, 0.42, 0, -0.1, bodyPaint),
-      // 4 Rubber Tires + Alloy Wheel Hubs
       bakePart(new THREE.CylinderGeometry(0.38, 0.38, 0.26, 12), -0.98, 0.36, 1.32, 0, 0, Math.PI / 2, tireRubber),
       bakePart(new THREE.CylinderGeometry(0.20, 0.20, 0.28, 8), -0.98, 0.36, 1.32, 0, 0, Math.PI / 2, chromeTrim),
       bakePart(new THREE.CylinderGeometry(0.38, 0.38, 0.26, 12), 0.98, 0.36, 1.32, 0, 0, Math.PI / 2, tireRubber),
@@ -145,13 +131,11 @@ export class Environment2029 {
     const carMat = new THREE.MeshStandardMaterial({
       color: 0xffffff,
       vertexColors: true,
-      metalness: 0.55,
-      roughness: 0.45,
-      normalMap: ProceduralTextures.getBrushedMetalNormal()
+      metalness: 0.28,
+      roughness: 0.68
     });
 
-    // Instanced props across 3x3 active grid (frustumCulled = false so they never disappear)
-    const totalSkulls = 900;
+    const totalSkulls = 650;
     this.skullInstancedMesh = new THREE.InstancedMesh(skullGeo, skullMat, totalSkulls);
     this.skullInstancedMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     this.skullInstancedMesh.frustumCulled = false;
@@ -168,7 +152,40 @@ export class Environment2029 {
 
     this.group.add(this.skullInstancedMesh, this.rebarInstancedMesh, this.carInstancedMesh);
 
-    // 4. Distant Wasteland Skyline Ring
+    // 4. Drifting Volumetric Low-Lying Ground Fog / Smoke Layers
+    this.fogMistGroup = new THREE.Group();
+    const mistGeo = new THREE.PlaneGeometry(16, 16);
+    mistGeo.rotateX(-Math.PI / 2);
+    const mistMat = new THREE.MeshBasicMaterial({
+      map: ProceduralTextures.getSoftGlowSprite(),
+      color: 0x1c3452,
+      transparent: true,
+      opacity: 0.18,
+      depthWrite: false,
+      side: THREE.DoubleSide
+    });
+
+    for (let m = 0; m < 28; m++) {
+      const mistMesh = new THREE.Mesh(mistGeo, mistMat);
+      const angle = (m / 28) * Math.PI * 2;
+      const dist = 6 + (m % 4) * 6.5;
+      const ox = Math.cos(angle) * dist;
+      const oz = Math.sin(angle) * dist;
+      mistMesh.position.set(ox, 0.35 + (m % 3) * 0.25, oz);
+      const s = 0.85 + (m % 3) * 0.35;
+      mistMesh.scale.set(s, 1, s);
+      this.fogMistGroup.add(mistMesh);
+      this.fogPatches.push({
+        mesh: mistMesh,
+        ox,
+        oz,
+        speed: 0.6 + (m % 5) * 0.25,
+        phase: m * 1.1
+      });
+    }
+    this.group.add(this.fogMistGroup);
+
+    // 5. Distant Wasteland Skyline Ring
     this.skylineRing = new THREE.Group();
     const refineryMat = new THREE.MeshBasicMaterial({ color: 0x050b16 });
     for (let i = 0; i < 36; i++) {
@@ -209,19 +226,18 @@ export class Environment2029 {
       const originX = c.x * this.chunkSize;
       const originZ = c.z * this.chunkSize;
 
-      // Deterministic pseudo-random seed per chunk coordinate
       const seed = Math.sin(c.x * 12.9898 + c.z * 78.233) * 43758.5453;
       const rng = (s: number) => {
         const val = Math.sin(seed + s * 17.13) * 10000;
         return val - Math.floor(val);
       };
 
-      // 1. Half-buried skulls scattered naturally across the chunk (no giant overlapping piles)
-      for (let s = 0; s < 85; s++) {
-        if (skullIdx >= 900) break;
+      // 1. Half-buried earthy skulls embedded low in the ash (subtle terrain detail)
+      for (let s = 0; s < 55; s++) {
+        if (skullIdx >= 650) break;
         const sx = originX + (rng(s * 3 + 1) - 0.5) * (this.chunkSize - 6);
         const sz = originZ + (rng(s * 5 + 2) - 0.5) * (this.chunkSize - 6);
-        const sy = -0.02 + rng(s * 7) * 0.04;
+        const sy = -0.04 + rng(s * 7) * 0.02;
 
         dummy.position.set(sx, sy, sz);
         dummy.rotation.set(
@@ -229,7 +245,7 @@ export class Environment2029 {
           rng(s * 13) * Math.PI * 2,
           (rng(s * 17) - 0.5) * 0.45
         );
-        const sc = 0.9 + rng(s * 19) * 0.35;
+        const sc = 0.65 + rng(s * 19) * 0.22;
         dummy.scale.set(sc, sc, sc);
         dummy.updateMatrix();
         this.skullInstancedMesh.setMatrixAt(skullIdx++, dummy.matrix);
@@ -273,11 +289,18 @@ export class Environment2029 {
   }
 
   public update(playerX: number, playerZ: number): void {
+    this.fogTime += 0.016;
     const curChunkX = Math.round(playerX / this.chunkSize);
     const curChunkZ = Math.round(playerZ / this.chunkSize);
 
-    // Follow skyline ring with camera
+    // Follow skyline ring and animate drifting ground fog around player
     this.skylineRing.position.set(playerX, 0, playerZ);
+    this.fogMistGroup.position.set(playerX, 0, playerZ);
+    for (let i = 0; i < this.fogPatches.length; i++) {
+      const p = this.fogPatches[i];
+      p.mesh.position.x = p.ox + Math.sin(this.fogTime * p.speed + p.phase) * 3.5;
+      p.mesh.position.z = p.oz + Math.cos(this.fogTime * p.speed * 0.8 + p.phase) * 3.5;
+    }
 
     let needsRepopulate = false;
     for (let i = 0; i < this.chunks.length; i++) {
