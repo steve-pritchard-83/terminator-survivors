@@ -129,6 +129,7 @@ export class EnemySystem {
       slowTimer: 0,
       armorStripMultiplier: 1.0,
       attackCooldown: 0,
+      chargeTimer: 0,
       searchlightAngle: 0,
       searchlightAlertTimer: 0,
       phaseState: 0
@@ -251,6 +252,9 @@ export class EnemySystem {
       if (enemy.slowTimer > 0) {
         enemy.slowTimer -= dt;
       }
+      if (enemy.attackCooldown > 0) {
+        enemy.attackCooldown = Math.max(0, enemy.attackCooldown - dt);
+      }
 
       const effectiveSpeed = enemy.speed * (enemy.slowTimer > 0 ? 0.6 : 1.0);
 
@@ -310,7 +314,6 @@ export class EnemySystem {
 
       // Damage player if in contact radius
       if (dist < enemy.radius + 0.55) {
-        enemy.attackCooldown -= dt;
         if (enemy.attackCooldown <= 0) {
           enemy.attackCooldown = 0.55;
           this.applyPlayerDamage(enemy.damage);
@@ -409,9 +412,9 @@ export class EnemySystem {
         tank.group.rotation.y = Math.atan2(px - enemy.x, pz - enemy.z);
         const targetAngle = Math.atan2(px - enemy.x, pz - enemy.z);
 
-        enemy.attackCooldown += dt;
+        enemy.chargeTimer = (enemy.chargeTimer ?? 0) + dt;
         let coords = this.tankTargetCoords.get(enemy.id);
-        if (!coords || enemy.attackCooldown <= dt * 1.5) {
+        if (!coords || enemy.chargeTimer <= dt * 1.5) {
           coords = { x: px, z: pz };
           this.tankTargetCoords.set(enemy.id, coords);
         }
@@ -424,12 +427,12 @@ export class EnemySystem {
         }
         reticle.visible = true;
         reticle.position.set(coords.x, 0.05, coords.z);
-        const chargeProgress = Math.min(1, enemy.attackCooldown / 3.0);
+        const chargeProgress = Math.min(1, enemy.chargeTimer / 3.0);
         reticle.scale.set(chargeProgress, 1, chargeProgress);
         (reticle.material as THREE.MeshBasicMaterial).opacity = 0.25 + 0.65 * chargeProgress;
 
-        if (enemy.attackCooldown >= 3.0) {
-          enemy.attackCooldown = 0;
+        if (enemy.chargeTimer >= 3.0) {
+          enemy.chargeTimer = 0;
           this.audio.playExplosion(1.8);
           this.particles.spawnExplosion(coords.x, 0.2, coords.z, 2.0);
           const blastDist = Math.hypot(px - coords.x, pz - coords.z);

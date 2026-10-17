@@ -132,6 +132,7 @@ export interface ActiveEnemy extends SpatialEntity {
   slowTimer: number;
   armorStripMultiplier: number;
   attackCooldown: number;
+  chargeTimer?: number;
   searchlightAngle: number;
   searchlightAlertTimer: number;
   phaseState: number;
