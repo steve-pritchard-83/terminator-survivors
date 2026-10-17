@@ -24,7 +24,7 @@ export default defineConfig({
         theme_color: '#050d1a',
         background_color: '#050d1a',
         display: 'standalone',
-        orientation: 'any',
+        orientation: 'landscape',
         start_url: './',
         icons: [
           { src: 'icons/favicon.png', sizes: '64x64', type: 'image/png' },

@@ -55,7 +55,7 @@ export class HUDView {
         <div class="joystick-knob" id="joystick-knob"></div>
       </div>
       <div class="btn-mobile-dash" data-testid="btn-mobile-dash" id="btn-mobile-dash">DASH</div>
-      <div style="position:absolute; bottom:14px; left:18px; font-family:var(--font-telemetry); font-size:12px; color:rgba(77, 210, 255, 0.78); text-shadow:0 0 6px rgba(77, 210, 255, 0.4); pointer-events:none; letter-spacing:1px;">
+      <div class="hud-desktop-hint">
         [WASD / L-CLICK] MOVE &nbsp;//&nbsp; [MOUSE] LASER AIM &nbsp;//&nbsp; [SPACE / R-CLICK] DIVE
       </div>
     `;

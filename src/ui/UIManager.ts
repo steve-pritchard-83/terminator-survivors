@@ -59,5 +59,36 @@ export class UIManager {
     if (touchZone && joystickBase && joystickKnob && dashBtn) {
       inputManager.setupTouchControls(touchZone, joystickBase, joystickKnob, dashBtn);
     }
+
+    // 7. Mobile Portrait-to-Landscape Enforcer Overlay
+    this.setupLandscapeEnforcer(root);
+  }
+
+  private setupLandscapeEnforcer(root: HTMLElement): void {
+    if (typeof window === 'undefined' || navigator.webdriver === true) return;
+
+    const overlay = document.createElement('div');
+    overlay.id = 'landscape-enforcer';
+    overlay.className = 'landscape-enforcer';
+    overlay.innerHTML = `
+      <div class="landscape-phone-icon">📱↻</div>
+      <div class="t800-header" style="font-size:20px; margin-top:12px;">ROTATE DEVICE TO LANDSCAPE</div>
+      <div style="font-family:var(--font-telemetry); font-size:13px; color:var(--color-cyan); max-width:300px; text-align:center; line-height:1.5;">
+        TECH-COM TACTICAL HUD REQUIRES WIDESCREEN LANDSCAPE ORIENTATION TO ENGAGE SKYNET FORCES.
+      </div>
+    `;
+    root.appendChild(overlay);
+
+    const checkOrientation = () => {
+      const isMobileTouch =
+        /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) ||
+        (window.matchMedia?.('(pointer: coarse)')?.matches ?? false);
+      const isPortrait = window.innerHeight > window.innerWidth;
+      overlay.style.display = isMobileTouch && isPortrait ? 'flex' : 'none';
+    };
+
+    window.addEventListener('resize', checkOrientation);
+    window.addEventListener('orientationchange', checkOrientation);
+    checkOrientation();
   }
 }
