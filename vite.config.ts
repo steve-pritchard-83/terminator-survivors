@@ -3,6 +3,9 @@ import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
   base: './',
+  define: {
+    'import.meta.env.VITE_E2E': JSON.stringify(process.env.VITE_E2E ?? '')
+  },
   plugins: [
     VitePWA({
       registerType: 'autoUpdate',

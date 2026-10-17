@@ -21,9 +21,12 @@ export default defineConfig({
     }
   ],
   webServer: {
-    command: 'npm run preview -- --port 4173 --strictPort',
+    command: 'node scripts/start-e2e.mjs',
     url: 'http://localhost:4173',
     reuseExistingServer: !process.env.CI,
-    timeout: 60000
+    timeout: 90000,
+    env: {
+      VITE_E2E: '1'
+    }
   }
 });

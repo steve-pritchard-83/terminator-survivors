@@ -54,7 +54,7 @@ describe('P3-04 Split Game.ts into RunController, InputRouter, DebugAPI', () => 
   });
 
   afterEach(() => {
-    game.debugAPI.dispose();
+    game.debugAPI?.dispose();
     game.runController.dispose();
   });
 

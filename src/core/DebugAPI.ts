@@ -22,12 +22,14 @@ export interface DebugAPIHost {
 }
 
 export class DebugAPI {
-  public readonly api: GameDebugAPI;
+  public readonly api?: GameDebugAPI;
 
   constructor(private readonly host: DebugAPIHost) {
-    this.api = this.createAPI();
-    if (typeof window !== 'undefined') {
-      window.__GAME_DEBUG__ = this.api;
+    if (import.meta.env.DEV || import.meta.env.VITE_E2E === '1') {
+      this.api = this.createAPI();
+      if (typeof window !== 'undefined') {
+        window.__GAME_DEBUG__ = this.api;
+      }
     }
   }
 
@@ -113,8 +115,10 @@ export class DebugAPI {
   }
 
   public dispose(): void {
-    if (typeof window !== 'undefined' && window.__GAME_DEBUG__ === this.api) {
-      delete window.__GAME_DEBUG__;
+    if (import.meta.env.DEV || import.meta.env.VITE_E2E === '1') {
+      if (typeof window !== 'undefined' && window.__GAME_DEBUG__ === this.api) {
+        delete window.__GAME_DEBUG__;
+      }
     }
   }
 }

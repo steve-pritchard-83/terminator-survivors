@@ -41,7 +41,7 @@ export class Game implements RunControllerHost, InputRouterHost, DebugAPIHost {
   public readonly uiManager: UIManager;
   public readonly runController: RunController;
   public readonly inputRouter: InputRouter;
-  public readonly debugAPI: DebugAPI;
+  public readonly debugAPI?: DebugAPI;
 
   private prevPlayerPos = { x: 0, z: 0 };
 
@@ -107,7 +107,9 @@ export class Game implements RunControllerHost, InputRouterHost, DebugAPIHost {
       (dt) => this.fixedUpdate(dt),
       (alpha, dt) => this.render(alpha, dt)
     );
-    this.debugAPI = new DebugAPI(this);
+    if (import.meta.env.DEV || import.meta.env.VITE_E2E === '1') {
+      this.debugAPI = new DebugAPI(this);
+    }
     this.gameLoop.start();
   }
 
@@ -174,7 +176,7 @@ export class Game implements RunControllerHost, InputRouterHost, DebugAPIHost {
   public dispose(): void {
     this.gameLoop.stop();
     this.runController.dispose();
-    this.debugAPI.dispose();
+    this.debugAPI?.dispose();
     this.pickupSystem.dispose();
   }
 }
