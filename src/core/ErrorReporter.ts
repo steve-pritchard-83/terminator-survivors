@@ -1,3 +1,5 @@
+import { APP_VERSION } from './version';
+
 export interface FaultReport {
   timestamp: string;
   version: string;
@@ -24,7 +26,7 @@ export class ErrorReporter {
   private lastReport: FaultReport | null = null;
 
   constructor(options: ErrorReporterOptions = {}) {
-    this.version = options.version ?? '1.10.0';
+    this.version = options.version ?? APP_VERSION;
     this.getSeed = options.getSeed ?? (() => {
       const debugApi = (typeof window !== 'undefined' ? (window as any).__GAME_DEBUG__ : null);
       if (debugApi?.getSeed) {

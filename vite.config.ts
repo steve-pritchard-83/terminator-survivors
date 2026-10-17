@@ -1,10 +1,21 @@
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
+import { execSync } from 'node:child_process';
+import packageJson from './package.json';
+
+let commitHash = 'f4b929d';
+try {
+  commitHash = execSync('git rev-parse --short HEAD').toString().trim();
+} catch {
+  // fallback
+}
 
 export default defineConfig({
   base: './',
   define: {
-    'import.meta.env.VITE_E2E': JSON.stringify(process.env.VITE_E2E ?? '')
+    'import.meta.env.VITE_E2E': JSON.stringify(process.env.VITE_E2E ?? ''),
+    __APP_VERSION__: JSON.stringify(packageJson.version),
+    __BUILD_HASH__: JSON.stringify(commitHash)
   },
   plugins: [
     VitePWA({

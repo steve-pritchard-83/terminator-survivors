@@ -8,6 +8,7 @@ import { TutorialModal } from './TutorialModal';
 import type { LoadoutId, MetaUpgradeId } from '../core/types';
 import type { GamepadManager } from '../input/GamepadManager';
 import { ModalA11y } from './A11yHelper';
+import { APP_VERSION, BUILD_HASH } from '../core/version';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -98,6 +99,9 @@ export class TitleScreen {
           </button>
           <div id="title-controller-hint" style="font-family:var(--font-telemetry); font-size:12px; color:var(--color-cyan); margin-top:8px; text-align:center; display:none;">
             [D-PAD / ARROWS] SELECT &nbsp;//&nbsp; [ENTER / A / START] DEPLOY
+          </div>
+          <div class="title-version-watermark" data-testid="title-version-watermark" id="title-version-watermark">
+            v${APP_VERSION} [${BUILD_HASH}] // RESISTANCE PROTOCOL
           </div>
         </div>
       </div>

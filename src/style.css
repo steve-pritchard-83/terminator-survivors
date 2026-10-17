@@ -503,6 +503,18 @@ select:focus-visible,
   gap: 10px;
 }
 
+.title-version-watermark {
+  font-family: var(--font-telemetry);
+  font-size: 11px;
+  color: var(--color-chrome);
+  opacity: 0.7;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-top: 6px;
+  text-align: center;
+  user-select: none;
+}
+
 .btn-primary {
   padding: 14px 38px;
   font-family: var(--font-display);
