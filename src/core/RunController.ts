@@ -411,6 +411,7 @@ export class RunController {
 
   public handleBossSpawned(name: string, maxHp: number): void {
     this.activeBoss = { name, hp: maxHp, maxHp };
+    this.host.audioEngine.playBossStinger();
     this.host.audioEngine.playSearchlightAlert();
     this.host.sceneManager.addScreenShake(0.65);
     this.host.uiManager.hudView.triggerBossWarning(name);
@@ -534,6 +535,14 @@ export class RunController {
     }
 
     this.host.uiManager.hudView.update(this.host.runState, this.activeBoss);
+
+    if (this.host.runState.mode === 'playing') {
+      this.host.audioEngine.updateMusicIntensity(
+        this.host.enemySystem.activeEnemies.length,
+        Boolean(this.activeBoss),
+        dt
+      );
+    }
 
     const lethalStatus = this.host.runState.resolveLethalDamage();
     if (lethalStatus === 'revived') {

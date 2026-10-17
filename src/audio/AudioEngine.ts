@@ -30,6 +30,11 @@ export const SFX_WAV_MANIFEST: Record<string, string[]> = {
     './audio/effects/S_Alterted.wav',
     './audio/effects/hk_heavy1a_m.wav'
   ],
+  bossStinger: [
+    './audio/effects/S_Splash_Screen_Drums_x1.wav',
+    './audio/effects/hk_heavy1a_m.wav',
+    './audio/effects/S_TurretAlarm.wav'
+  ],
   pickupGem: ['./audio/effects/S_LootPickupStuff.wav', './audio/effects/S_LootPickupQuest.wav'],
   levelUp: [
     './audio/effects/S_ExpLevel.wav',
@@ -105,6 +110,19 @@ export class AudioEngine {
   private sfxGain: GainNode | null = null;
   private compressor: DynamicsCompressorNode | null = null;
 
+  // Adaptive music intensity layers
+  private calmGain: GainNode | null = null;
+  private combatGain: GainNode | null = null;
+  private bossGain: GainNode | null = null;
+  private calmFilter: BiquadFilterNode | null = null;
+  private combatFilter: BiquadFilterNode | null = null;
+  private bossFilter: BiquadFilterNode | null = null;
+
+  private calmLevel = 1.0;
+  private combatLevel = 0.15;
+  private bossLevel = 0.0;
+  private intensityLayer: 'calm' | 'combat' | 'boss' = 'calm';
+
   private musicSource: AudioBufferSourceNode | null = null;
   private musicBuffer: AudioBuffer | null = null;
   private musicAudioElement: HTMLAudioElement | null = null;
@@ -164,6 +182,38 @@ export class AudioEngine {
       this.masterGain.gain.value = this.masterVol;
       this.musicGain.gain.value = this.musicVol;
       this.sfxGain.gain.value = this.sfxVol;
+
+      // Setup adaptive music layers
+      this.calmGain = this.ctx.createGain();
+      this.combatGain = this.ctx.createGain();
+      this.bossGain = this.ctx.createGain();
+
+      this.calmGain.gain.value = this.calmLevel;
+      this.combatGain.gain.value = this.combatLevel;
+      this.bossGain.gain.value = this.bossLevel;
+
+      if (typeof this.ctx.createBiquadFilter === 'function') {
+        this.calmFilter = this.ctx.createBiquadFilter();
+        this.calmFilter.type = 'lowpass';
+        this.calmFilter.frequency.value = 650;
+
+        this.combatFilter = this.ctx.createBiquadFilter();
+        this.combatFilter.type = 'peaking';
+        this.combatFilter.frequency.value = 2200;
+        this.combatFilter.gain.value = 3.5;
+
+        this.bossFilter = this.ctx.createBiquadFilter();
+        this.bossFilter.type = 'highpass';
+        this.bossFilter.frequency.value = 400;
+
+        this.calmFilter.connect(this.calmGain);
+        this.combatFilter.connect(this.combatGain);
+        this.bossFilter.connect(this.bossGain);
+      }
+
+      this.calmGain.connect(this.musicGain);
+      this.combatGain.connect(this.musicGain);
+      this.bossGain.connect(this.musicGain);
 
       if (typeof this.ctx.createDynamicsCompressor === 'function') {
         this.compressor = this.ctx.createDynamicsCompressor();
@@ -368,7 +418,19 @@ export class AudioEngine {
     const source = this.ctx.createBufferSource();
     source.buffer = this.musicBuffer;
     source.loop = true;
-    source.connect(this.musicGain);
+
+    if (this.calmFilter && this.combatFilter && this.bossFilter) {
+      source.connect(this.calmFilter);
+      source.connect(this.combatFilter);
+      source.connect(this.bossFilter);
+    } else if (this.calmGain && this.combatGain && this.bossGain) {
+      source.connect(this.calmGain);
+      source.connect(this.combatGain);
+      source.connect(this.bossGain);
+    } else {
+      source.connect(this.musicGain);
+    }
+
     source.start(0);
     this.musicSource = source;
   }
@@ -384,6 +446,66 @@ export class AudioEngine {
     if (this.musicAudioElement) {
       this.musicAudioElement.pause();
     }
+    this.intensityLayer = 'calm';
+    this.calmLevel = 1.0;
+    this.combatLevel = 0.15;
+    this.bossLevel = 0.0;
+    if (this.calmGain) this.calmGain.gain.value = 1.0;
+    if (this.combatGain) this.combatGain.gain.value = 0.15;
+    if (this.bossGain) this.bossGain.gain.value = 0.0;
+  }
+
+  public getMusicIntensity(): {
+    layer: 'calm' | 'combat' | 'boss';
+    calm: number;
+    combat: number;
+    boss: number;
+  } {
+    return {
+      layer: this.intensityLayer,
+      calm: this.calmLevel,
+      combat: this.combatLevel,
+      boss: this.bossLevel
+    };
+  }
+
+  public updateMusicIntensity(enemyCount: number, hasBoss: boolean, dt = 0.016): void {
+    let targetCalm = 1.0;
+    let targetCombat = 0.15;
+    let targetBoss = 0.0;
+
+    if (hasBoss) {
+      this.intensityLayer = 'boss';
+      targetCalm = 0.05;
+      targetCombat = 0.35;
+      targetBoss = 0.95;
+    } else if (enemyCount >= 20) {
+      this.intensityLayer = 'combat';
+      targetCalm = 0.15;
+      targetCombat = 0.9;
+      targetBoss = 0.0;
+    } else if (enemyCount >= 6) {
+      this.intensityLayer = 'combat';
+      const factor = Math.min(1, (enemyCount - 6) / 14);
+      targetCalm = 1.0 - 0.75 * factor;
+      targetCombat = 0.15 + 0.75 * factor;
+      targetBoss = 0.0;
+    } else {
+      this.intensityLayer = 'calm';
+      targetCalm = 1.0;
+      targetCombat = 0.15;
+      targetBoss = 0.0;
+    }
+
+    const blendRate = 2.5;
+    const step = Math.min(1, dt * blendRate);
+    this.calmLevel += (targetCalm - this.calmLevel) * step;
+    this.combatLevel += (targetCombat - this.combatLevel) * step;
+    this.bossLevel += (targetBoss - this.bossLevel) * step;
+
+    if (this.calmGain) this.calmGain.gain.value = this.calmLevel;
+    if (this.combatGain) this.combatGain.gain.value = this.combatLevel;
+    if (this.bossGain) this.bossGain.gain.value = this.bossLevel;
   }
 
   public setMasterVolume(v: number): void {
@@ -580,6 +702,22 @@ export class AudioEngine {
   public playEndoDestroy(): void {
     this.triggerHaptic(10, 65);
     this.playSample('endoDestroy', 0.52, 1.05);
+  }
+
+  public playBossStinger(): void {
+    this.triggerHaptic([45, 60, 45, 60, 80], 350);
+    if (this.gamepadManager) {
+      this.gamepadManager.playRumble(250, 1.0, 0.8);
+    }
+    this.intensityLayer = 'boss';
+    this.calmLevel = 0.05;
+    this.combatLevel = 0.35;
+    this.bossLevel = 1.0;
+    if (this.calmGain) this.calmGain.gain.value = 0.05;
+    if (this.combatGain) this.combatGain.gain.value = 0.35;
+    if (this.bossGain) this.bossGain.gain.value = 1.0;
+
+    this.playSample('bossStinger', 0.95, 0.9);
   }
 
   public playSearchlightAlert(): void {
