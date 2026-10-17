@@ -229,7 +229,9 @@ export class RunState {
             currentLevel: slot.level,
             nextLevel: nextLv,
             description: nextStats?.description ?? `Upgrade to Level ${nextLv}`,
-            synergyHint: def.pairedPassive ? `Synergy: ${PASSIVES[def.pairedPassive].name}` : undefined,
+            synergyHint: def.pairedPassive
+              ? `Synergy: ${PASSIVES[def.pairedPassive].name}`
+              : undefined,
             accentColor: def.iconColor
           });
         }
@@ -268,7 +270,9 @@ export class RunState {
             currentLevel: 0,
             nextLevel: 1,
             description: def.levels[0].description,
-            synergyHint: def.pairedPassive ? `Synergy: ${PASSIVES[def.pairedPassive].name}` : undefined,
+            synergyHint: def.pairedPassive
+              ? `Synergy: ${PASSIVES[def.pairedPassive].name}`
+              : undefined,
             accentColor: def.iconColor
           });
         }

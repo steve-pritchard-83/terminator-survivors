@@ -74,7 +74,12 @@ export class PlayerSystem {
 
     // Update 3D mesh
     this.playerMesh.group.position.set(nextX, 0, nextZ);
-    this.playerMesh.updateAnimation(dt, inputLen > 0.05 ? speed : 0, facing, this.runState.isDashing);
+    this.playerMesh.updateAnimation(
+      dt,
+      inputLen > 0.05 ? speed : 0,
+      facing,
+      this.runState.isDashing
+    );
 
     // Combat dive afterimage ghost trail
     if (this.runState.isDashing && this.particles) {

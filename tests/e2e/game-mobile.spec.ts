@@ -6,7 +6,9 @@ test.use({
   isMobile: true
 });
 
-test('Mobile gameplay: touch virtual joystick movement and mobile dash button', async ({ page }) => {
+test('Mobile gameplay: touch virtual joystick movement and mobile dash button', async ({
+  page
+}) => {
   await page.goto('/');
 
   await expect(page.getByTestId('btn-start-run')).toBeVisible();

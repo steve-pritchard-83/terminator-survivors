@@ -208,8 +208,7 @@ export class PauseModal {
 
     const nav = gp.getMenuNavigation(dt);
     if (nav.y !== 0) {
-      this.selectedRowIndex =
-        (this.selectedRowIndex + nav.y + this.rows.length) % this.rows.length;
+      this.selectedRowIndex = (this.selectedRowIndex + nav.y + this.rows.length) % this.rows.length;
       this.updateRowHighlight();
       gp.playRumble(25, 0.05, 0.2);
       return true;

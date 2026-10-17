@@ -45,7 +45,10 @@ export class EnemySystem {
   private readonly t1000Meshes = new Map<number, T1000Mesh>();
   private readonly infiltratorMeshes = new Map<number, InfiltratorMesh>();
   private readonly skynetCoreMeshes = new Map<number, SkynetCoreMesh>();
-  private readonly infiltratorBurstState = new Map<number, { shotsLeft: number; burstTimer: number }>();
+  private readonly infiltratorBurstState = new Map<
+    number,
+    { shotsLeft: number; burstTimer: number }
+  >();
   private readonly skynetNovaCooldown = new Map<number, number>();
 
   // Enemy projectiles & artillery reticles

@@ -30,7 +30,7 @@ export class SceneManager {
     this.scene.fog = new THREE.Fog(0x162840, 23.5, 48.0);
     if (!isAutomated) {
       this.scene.environment = ProceduralTextures.getMetallicEnvMap();
-      this.scene.environmentIntensity = 0.50;
+      this.scene.environmentIntensity = 0.5;
     }
 
     const width = container.clientWidth || window.innerWidth;
@@ -49,7 +49,7 @@ export class SceneManager {
     this.renderer.setSize(width, height);
     this.renderer.setPixelRatio(isAutomated ? 1 : Math.min(window.devicePixelRatio || 1, 2));
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.20;
+    this.renderer.toneMappingExposure = 1.2;
 
     container.appendChild(this.renderer.domElement);
 
@@ -108,10 +108,7 @@ export class SceneManager {
     this.camera.lookAt(this.currentCameraTarget);
   }
 
-  public screenToWorldGround(
-    clientX: number,
-    clientY: number
-  ): { x: number; z: number } | null {
+  public screenToWorldGround(clientX: number, clientY: number): { x: number; z: number } | null {
     const width = window.innerWidth || 1;
     const height = window.innerHeight || 1;
     this.ndcMouse.x = (clientX / width) * 2 - 1;
@@ -123,7 +120,11 @@ export class SceneManager {
     return { x: this.intersectPt.x, z: this.intersectPt.z };
   }
 
-  public worldToScreen(worldX: number, worldY: number, worldZ: number): { x: number; y: number } | null {
+  public worldToScreen(
+    worldX: number,
+    worldY: number,
+    worldZ: number
+  ): { x: number; y: number } | null {
     if (typeof window === 'undefined') return null;
     this.tempTarget.set(worldX, worldY, worldZ);
     this.tempTarget.project(this.camera);

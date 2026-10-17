@@ -4,9 +4,18 @@ import { bakePart, mergeParts } from './geometryUtils';
 export class PickupMeshFactory {
   private static crystalGeo = mergeParts([
     // Tall floating vertical diamond crystal (stretched octahedron)
-    bakePart(new THREE.OctahedronGeometry(0.16, 0).scale(1.0, 1.85, 1.0), 0, 0.12, 0, 0, 0, 0, 0xffffff),
+    bakePart(
+      new THREE.OctahedronGeometry(0.16, 0).scale(1.0, 1.85, 1.0),
+      0,
+      0.12,
+      0,
+      0,
+      0,
+      0,
+      0xffffff
+    ),
     // Crisp horizontal orbital stabilizer ring
-    bakePart(new THREE.TorusGeometry(0.20, 0.022, 6, 8), 0, 0.12, 0, Math.PI / 2, 0, 0, 0xd8f8ff)
+    bakePart(new THREE.TorusGeometry(0.2, 0.022, 6, 8), 0, 0.12, 0, Math.PI / 2, 0, 0, 0xd8f8ff)
   ]);
   private static beamGeo = new THREE.CylinderGeometry(0.025, 0.11, 1.25, 8, 1, true);
   private static groundRingGeo = new THREE.RingGeometry(0.16, 0.26, 16);

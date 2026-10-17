@@ -192,8 +192,8 @@ export class InputManager {
 
     // Combine keyboard, touch joystick, and Xbox / Gamepad controller
     const gpMove = this.gamepadManager.getMovement();
-    let finalX = kx !== 0 ? kx : (gpMove ? gpMove.x : this.touchVec.x);
-    let finalZ = kz !== 0 ? kz : (gpMove ? gpMove.z : this.touchVec.z);
+    let finalX = kx !== 0 ? kx : gpMove ? gpMove.x : this.touchVec.x;
+    let finalZ = kz !== 0 ? kz : gpMove ? gpMove.z : this.touchVec.z;
 
     const len = Math.hypot(finalX, finalZ);
     if (len > 1.0) {

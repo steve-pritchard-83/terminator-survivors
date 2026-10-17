@@ -129,7 +129,10 @@ export class KyleReeseMesh {
     coatSideR.position.set(0.18, 0.28, 0.01);
 
     // Upturned Trenchcoat Collar & Shoulder Pads
-    const collarMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.21, 0.14, 10, 1, true, 0.8, 4.7), coatMat);
+    const collarMesh = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.18, 0.21, 0.14, 10, 1, true, 0.8, 4.7),
+      coatMat
+    );
     collarMesh.position.set(0, 0.57, -0.01);
 
     const shoulderPadL = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.08, 0.28), vestMat);
@@ -144,7 +147,7 @@ export class KyleReeseMesh {
     const bandolierGroup = new THREE.Group();
     bandolierGroup.position.set(0, 0.29, 0);
     bandolierGroup.rotation.z = -0.52;
-    const strap = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.07, 0.30), bandolierMat);
+    const strap = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.07, 0.3), bandolierMat);
     bandolierGroup.add(strap);
     for (let s = -2; s <= 2; s++) {
       const shell = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.06, 6), brassMat);
@@ -166,10 +169,10 @@ export class KyleReeseMesh {
     shoulderBeacon.position.set(-0.26, 0.58, 0.02);
 
     // Flaring Trenchcoat Tails (segmented)
-    const coatTailGeo = new THREE.BoxGeometry(0.50, 0.44, 0.08);
+    const coatTailGeo = new THREE.BoxGeometry(0.5, 0.44, 0.08);
     coatTailGeo.translate(0, -0.22, -0.12);
     this.coatTails = new THREE.Mesh(coatTailGeo, coatMat);
-    this.coatTails.position.set(0, 0.10, 0);
+    this.coatTails.position.set(0, 0.1, 0);
 
     this.torsoGroup.add(
       vestMesh,
@@ -191,7 +194,7 @@ export class KyleReeseMesh {
     const neckMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.075, 0.12, 8), skinMat);
     neckMesh.position.y = -0.08;
     const headMesh = new THREE.Mesh(new THREE.SphereGeometry(0.135, 14, 12), skinMat);
-    const jawMesh = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.10, 0.16), skinMat);
+    const jawMesh = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.1, 0.16), skinMat);
     jawMesh.position.set(0, -0.04, 0.03);
     const headband = new THREE.Mesh(new THREE.CylinderGeometry(0.142, 0.142, 0.045, 12), vestMat);
     headband.position.set(0, 0.04, 0);
@@ -203,10 +206,10 @@ export class KyleReeseMesh {
 
     // 4. Two-Handed Arms & Detailed Tech-Com Weapon Assembly
     this.weaponGroup = new THREE.Group();
-    this.weaponGroup.position.set(0, 0.34, 0.10);
+    this.weaponGroup.position.set(0, 0.34, 0.1);
 
     // Right trigger arm (shoulder + forearm)
-    const rightArm = new THREE.Mesh(new THREE.CylinderGeometry(0.058, 0.048, 0.40, 8), coatMat);
+    const rightArm = new THREE.Mesh(new THREE.CylinderGeometry(0.058, 0.048, 0.4, 8), coatMat);
     rightArm.rotation.x = Math.PI / 2.4;
     rightArm.rotation.z = -0.15;
     rightArm.position.set(0.22, 0.02, 0.12);
@@ -219,7 +222,7 @@ export class KyleReeseMesh {
 
     // Detailed Rifle/Shotgun Receiver, Stock, Pump Handguard, Barrel & Cooling Shroud
     const gunReceiver = new THREE.Mesh(new THREE.BoxGeometry(0.085, 0.12, 0.52), gunMat);
-    gunReceiver.position.set(0.12, 0.02, 0.30);
+    gunReceiver.position.set(0.12, 0.02, 0.3);
 
     const gunHandguard = new THREE.Mesh(new THREE.BoxGeometry(0.095, 0.09, 0.28), bandolierMat);
     gunHandguard.position.set(0.12, -0.01, 0.48);
@@ -228,7 +231,7 @@ export class KyleReeseMesh {
     gunBarrel.rotation.x = Math.PI / 2;
     gunBarrel.position.set(0.12, 0.04, 0.66);
 
-    const magTube = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.40, 8), gunMat);
+    const magTube = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.4, 8), gunMat);
     magTube.rotation.x = Math.PI / 2;
     magTube.position.set(0.12, -0.01, 0.62);
 

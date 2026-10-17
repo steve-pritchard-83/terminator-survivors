@@ -165,16 +165,31 @@ export class PickupSystem {
       const roll = Math.random();
       if (roll < 0.4) {
         this.runState.heal(35);
-        globalEvents.emit('pickup:reward', { x: p.x, z: p.z, text: '+35 HP', color: 'var(--color-green)' });
+        globalEvents.emit('pickup:reward', {
+          x: p.x,
+          z: p.z,
+          text: '+35 HP',
+          color: 'var(--color-green)'
+        });
       } else if (roll < 0.7) {
         const gained = this.runState.addScrap(45);
-        globalEvents.emit('pickup:reward', { x: p.x, z: p.z, text: `+${gained} SCRAP`, color: 'var(--color-cyan)' });
+        globalEvents.emit('pickup:reward', {
+          x: p.x,
+          z: p.z,
+          text: `+${gained} SCRAP`,
+          color: 'var(--color-cyan)'
+        });
       } else {
         // Vacuum all cores on screen
         for (const core of this.pickups) {
           if (core.kind === 'core') core.attracted = true;
         }
-        globalEvents.emit('pickup:reward', { x: p.x, z: p.z, text: 'CORE VACUUM!', color: 'var(--color-amber)' });
+        globalEvents.emit('pickup:reward', {
+          x: p.x,
+          z: p.z,
+          text: 'CORE VACUUM!',
+          color: 'var(--color-amber)'
+        });
       }
     } else if (p.kind === 'vault') {
       // Boss Data Vault

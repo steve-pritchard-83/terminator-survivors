@@ -226,7 +226,8 @@ export const EVOLVED_WEAPONS: Record<EvolvedWeaponId, WeaponDefinition> = {
         amount: 12,
         duration: 0.6,
         pierce: 6,
-        description: 'Unleashes relentless 360-degree bursts of incendiary tungsten flechettes that ignite endoskeletons.'
+        description:
+          'Unleashes relentless 360-degree bursts of incendiary tungsten flechettes that ignite endoskeletons.'
       }
     ]
   },
@@ -247,7 +248,8 @@ export const EVOLVED_WEAPONS: Record<EvolvedWeaponId, WeaponDefinition> = {
         amount: 3,
         duration: 2.5,
         pierce: 99,
-        description: 'Triple cluster thermite charges that detonate and leave bubbling molten slag pools melting chassis armor.'
+        description:
+          'Triple cluster thermite charges that detonate and leave bubbling molten slag pools melting chassis armor.'
       }
     ]
   },
@@ -268,7 +270,8 @@ export const EVOLVED_WEAPONS: Record<EvolvedWeaponId, WeaponDefinition> = {
         amount: 2,
         duration: 1.5,
         pierce: 8,
-        description: 'Twin-linked rapid violet phased plasma laser streams that pierce rows of machines with explosive sparks.'
+        description:
+          'Twin-linked rapid violet phased plasma laser streams that pierce rows of machines with explosive sparks.'
       }
     ]
   },
@@ -289,7 +292,8 @@ export const EVOLVED_WEAPONS: Record<EvolvedWeaponId, WeaponDefinition> = {
         amount: 6,
         duration: 999,
         pierce: 99,
-        description: 'Permanent impenetrable barrier of 6 high-speed armored razor drones firing outward violet plasma arcs.'
+        description:
+          'Permanent impenetrable barrier of 6 high-speed armored razor drones firing outward violet plasma arcs.'
       }
     ]
   },
@@ -310,7 +314,8 @@ export const EVOLVED_WEAPONS: Record<EvolvedWeaponId, WeaponDefinition> = {
         amount: 1,
         duration: 0.6,
         pierce: 99,
-        description: 'Massive pulsating electromagnetic shockwave that freezes machines, permanently strips 30% armor, and restores player HP.'
+        description:
+          'Massive pulsating electromagnetic shockwave that freezes machines, permanently strips 30% armor, and restores player HP.'
       }
     ]
   },
@@ -331,7 +336,8 @@ export const EVOLVED_WEAPONS: Record<EvolvedWeaponId, WeaponDefinition> = {
         amount: 6,
         duration: 1.0,
         pierce: 99,
-        description: 'Unleashes continuous 6-round rolling 40mm artillery carpet bombardments across the wasteland.'
+        description:
+          'Unleashes continuous 6-round rolling 40mm artillery carpet bombardments across the wasteland.'
       }
     ]
   },
@@ -352,7 +358,8 @@ export const EVOLVED_WEAPONS: Record<EvolvedWeaponId, WeaponDefinition> = {
         amount: 4,
         duration: 4.5,
         pierce: 99,
-        description: 'Expanding ring-walls of chemical blue-orange fire that scorch the earth and incinerate approaching machines.'
+        description:
+          'Expanding ring-walls of chemical blue-orange fire that scorch the earth and incinerate approaching machines.'
       }
     ]
   },
@@ -373,7 +380,8 @@ export const EVOLVED_WEAPONS: Record<EvolvedWeaponId, WeaponDefinition> = {
         amount: 3,
         duration: 0.7,
         pierce: 99,
-        description: 'Sweeps colossal sky-piercing cyan-magenta orbital ion beams across enemy hordes every 1.8 seconds.'
+        description:
+          'Sweeps colossal sky-piercing cyan-magenta orbital ion beams across enemy hordes every 1.8 seconds.'
       }
     ]
   }

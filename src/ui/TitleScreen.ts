@@ -155,8 +155,10 @@ export class TitleScreen {
   private isInstalledStandalone(): boolean {
     if (typeof window === 'undefined') return false;
     const standaloneMedia = window.matchMedia?.('(display-mode: standalone)')?.matches ?? false;
-    const standaloneFullscreen = window.matchMedia?.('(display-mode: fullscreen)')?.matches ?? false;
-    const iosStandalone = (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
+    const standaloneFullscreen =
+      window.matchMedia?.('(display-mode: fullscreen)')?.matches ?? false;
+    const iosStandalone =
+      (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
     return standaloneMedia || standaloneFullscreen || iosStandalone;
   }
 
@@ -166,9 +168,12 @@ export class TitleScreen {
     if (isAutomated || this.isInstalledStandalone()) return;
 
     const isIos = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-    const isMobile = isIos || /Android|Mobile/i.test(navigator.userAgent) || window.innerWidth <= 960;
+    const isMobile =
+      isIos || /Android|Mobile/i.test(navigator.userAgent) || window.innerWidth <= 960;
     const instructionsEl = this.pwaModal.querySelector('#pwa-install-instructions')!;
-    const triggerInstallBtn = this.pwaModal.querySelector('#btn-trigger-pwa-install') as HTMLElement;
+    const triggerInstallBtn = this.pwaModal.querySelector(
+      '#btn-trigger-pwa-install'
+    ) as HTMLElement;
     const dismissModalBtn = this.pwaModal.querySelector('#btn-dismiss-pwa-modal') as HTMLElement;
 
     // Show Title Screen install button whenever not installed in standalone mode
@@ -310,21 +315,28 @@ export class TitleScreen {
     if (hintEl) {
       hintEl.style.display = gp.hasActiveController && !this.isBunkerVisible() ? 'block' : 'none';
     }
-    const bunkerHintEl = this.container.querySelector('#bunker-controller-hint') as HTMLElement | null;
+    const bunkerHintEl = this.container.querySelector(
+      '#bunker-controller-hint'
+    ) as HTMLElement | null;
     if (bunkerHintEl) {
-      bunkerHintEl.style.display = gp.hasActiveController && this.isBunkerVisible() ? 'block' : 'none';
+      bunkerHintEl.style.display =
+        gp.hasActiveController && this.isBunkerVisible() ? 'block' : 'none';
     }
 
     // 1. PWA Modal Open
     if (this.isPwaModalVisible()) {
       if (gp.isMenuCancelPressed()) {
-        const dismissBtn = this.pwaModal.querySelector('#btn-dismiss-pwa-modal') as HTMLElement | null;
+        const dismissBtn = this.pwaModal.querySelector(
+          '#btn-dismiss-pwa-modal'
+        ) as HTMLElement | null;
         dismissBtn?.click();
         gp.playRumble(40, 0.15, 0.3);
         return true;
       }
       if (gp.isMenuConfirmPressed()) {
-        const triggerBtn = this.pwaModal.querySelector('#btn-trigger-pwa-install') as HTMLElement | null;
+        const triggerBtn = this.pwaModal.querySelector(
+          '#btn-trigger-pwa-install'
+        ) as HTMLElement | null;
         triggerBtn?.click();
         gp.playRumble(60, 0.25, 0.4);
         return true;

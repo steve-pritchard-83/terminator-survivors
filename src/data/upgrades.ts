@@ -17,7 +17,8 @@ export const LOADOUTS: Record<LoadoutId, LoadoutConfig> = {
     name: 'Kyle Reese — Tech-Com Sergeant',
     callsign: 'DN38416',
     startingWeapon: 'ithaca_37',
-    description: 'Veteran guerilla fighter of the 132nd Tech-Com division. Starts with Ithaca 37 shotgun spread.',
+    description:
+      'Veteran guerilla fighter of the 132nd Tech-Com division. Starts with Ithaca 37 shotgun spread.',
     bonusStats: { moveSpeed: 0.6, bonusAmount: 0 },
     unlockRequirement: 'Available by default.',
     cost: 0
@@ -27,7 +28,8 @@ export const LOADOUTS: Record<LoadoutId, LoadoutConfig> = {
     name: 'Kyle Reese — 1984 Protector',
     callsign: 'ALLEYWAY SURVIVOR',
     startingWeapon: 'pipe_bomb',
-    description: 'Wearing the stolen trenchcoat. Increased explosive area and salvage magnet range.',
+    description:
+      'Wearing the stolen trenchcoat. Increased explosive area and salvage magnet range.',
     bonusStats: { areaMultiplier: 0.25, magnetRadius: 1.5 },
     unlockRequirement: 'Survive 4 minutes in Sector 44 or 500 Alloy Scrap.',
     cost: 500
@@ -37,7 +39,8 @@ export const LOADOUTS: Record<LoadoutId, LoadoutConfig> = {
     name: 'Tech-Com Heavy Sapper',
     callsign: 'PLASMA CORPS',
     startingWeapon: 'm25_plasma',
-    description: 'Heavy weapons specialist armed with a captured Westinghouse 40W phased plasma rifle.',
+    description:
+      'Heavy weapons specialist armed with a captured Westinghouse 40W phased plasma rifle.',
     bonusStats: { mightMultiplier: 0.15, cooldownMultiplier: -0.12 },
     unlockRequirement: 'Destroy 1 HK-Tank or 1,200 Alloy Scrap.',
     cost: 1200
@@ -47,7 +50,8 @@ export const LOADOUTS: Record<LoadoutId, LoadoutConfig> = {
     name: 'John Connor — Resistance General',
     callsign: 'TECH-COM COMMANDER',
     startingWeapon: 'seeker_drone',
-    description: 'The military mastermind of the Resistance. Starts with Seeker Drones, +1 Projectile, and +1 Revival.',
+    description:
+      'The military mastermind of the Resistance. Starts with Seeker Drones, +1 Projectile, and +1 Revival.',
     bonusStats: { bonusAmount: 1, xpGainMultiplier: 0.25, revivals: 1 },
     unlockRequirement: 'Defeat the Skynet Time Displacement Core or 3,000 Alloy Scrap.',
     cost: 3000

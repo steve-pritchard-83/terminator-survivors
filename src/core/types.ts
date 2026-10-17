@@ -54,7 +54,8 @@ export type MetaUpgradeId =
   | 'scavenger_protocol'
   | 'defibrillator';
 
-export type GameMode = 'title' | 'playing' | 'levelup' | 'vault' | 'paused' | 'gameover' | 'victory';
+export type GameMode =
+  'title' | 'playing' | 'levelup' | 'vault' | 'paused' | 'gameover' | 'victory';
 
 export interface WeaponLevelStats {
   level: number;

@@ -1,6 +1,8 @@
 import { test, expect } from '@playwright/test';
 
-test('Desktop gameplay: title, bunker shop, deploy, level up, and combat dive', async ({ page }) => {
+test('Desktop gameplay: title, bunker shop, deploy, level up, and combat dive', async ({
+  page
+}) => {
   await page.goto('/');
 
   // 1. Title Screen verification

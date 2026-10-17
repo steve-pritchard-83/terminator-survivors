@@ -21,28 +21,16 @@ export const SFX_WAV_MANIFEST: Record<string, string[]> = {
     './audio/effects/S_Explosion02.wav',
     './audio/effects/plasma_explosion.wav'
   ],
-  empBlast: [
-    './audio/effects/S_HackingDevice_On.wav',
-    './audio/effects/S_DetectiveModeOn.wav'
-  ],
-  endoHit: [
-    './audio/effects/S_BulletHitMetal01.wav',
-    './audio/effects/S_BulletHitMetal02.wav'
-  ],
-  endoDestroy: [
-    './audio/effects/plasma_explosion.wav',
-    './audio/effects/S_DoorLockBreak01.wav'
-  ],
+  empBlast: ['./audio/effects/S_HackingDevice_On.wav', './audio/effects/S_DetectiveModeOn.wav'],
+  endoHit: ['./audio/effects/S_BulletHitMetal01.wav', './audio/effects/S_BulletHitMetal02.wav'],
+  endoDestroy: ['./audio/effects/plasma_explosion.wav', './audio/effects/S_DoorLockBreak01.wav'],
   hkAlert: [
     './audio/effects/S_TurretAlarm.wav',
     './audio/effects/S_HUD_TurretAlarm2.wav',
     './audio/effects/S_Alterted.wav',
     './audio/effects/hk_heavy1a_m.wav'
   ],
-  pickupGem: [
-    './audio/effects/S_LootPickupStuff.wav',
-    './audio/effects/S_LootPickupQuest.wav'
-  ],
+  pickupGem: ['./audio/effects/S_LootPickupStuff.wav', './audio/effects/S_LootPickupQuest.wav'],
   levelUp: [
     './audio/effects/S_ExpLevel.wav',
     './audio/effects/S_NewLevel.wav',
@@ -59,30 +47,17 @@ export const SFX_WAV_MANIFEST: Record<string, string[]> = {
     './audio/effects/S_Swing01.wav',
     './audio/effects/S_Swing02.wav'
   ],
-  playerHit: [
-    './audio/effects/S_BulletHitBody01.wav',
-    './audio/effects/S_BulletHitBody02.wav'
-  ],
+  playerHit: ['./audio/effects/S_BulletHitBody01.wav', './audio/effects/S_BulletHitBody02.wav'],
   uiClick: [
     './audio/effects/S_Click.wav',
     './audio/effects/S_Click02.wav',
     './audio/effects/S_Click03.wav',
     './audio/effects/S_Click04.wav'
   ],
-  uiBeep: [
-    './audio/effects/S_ButtonBeep01.wav',
-    './audio/effects/S_ButtonBeep02.wav'
-  ],
-  uiBuy: [
-    './audio/effects/S_Buy.wav'
-  ],
-  uiError: [
-    './audio/effects/S_DetectiveModeError.wav',
-    './audio/effects/Frogger_Error.wav'
-  ],
-  uiUpgradeApplied: [
-    './audio/effects/S_WeaponUpgradesApplied.wav'
-  ],
+  uiBeep: ['./audio/effects/S_ButtonBeep01.wav', './audio/effects/S_ButtonBeep02.wav'],
+  uiBuy: ['./audio/effects/S_Buy.wav'],
+  uiError: ['./audio/effects/S_DetectiveModeError.wav', './audio/effects/Frogger_Error.wav'],
+  uiUpgradeApplied: ['./audio/effects/S_WeaponUpgradesApplied.wav'],
   uiModalOpen: [
     './audio/effects/S_HUD_DetectiveModeOnNew.wav',
     './audio/effects/S_HUD_Infiltrator_AnalysingIntelData1.wav',
@@ -92,20 +67,10 @@ export const SFX_WAV_MANIFEST: Record<string, string[]> = {
     './audio/effects/S_HUD_DetectiveModeOffNew.wav',
     './audio/effects/S_DetectiveModeOff.wav'
   ],
-  runStart: [
-    './audio/effects/S_Splash_Screen_Drums_x1.wav',
-    './audio/effects/S_NewQuest.wav'
-  ],
-  playerTerminated: [
-    './audio/effects/terminated.wav'
-  ],
-  runDefeat: [
-    './audio/effects/terminated.wav',
-    './audio/effects/S_QuestFaild.wav'
-  ],
-  runVictory: [
-    './audio/effects/S_ObjectiveComplete.wav'
-  ]
+  runStart: ['./audio/effects/S_Splash_Screen_Drums_x1.wav', './audio/effects/S_NewQuest.wav'],
+  playerTerminated: ['./audio/effects/terminated.wav'],
+  runDefeat: ['./audio/effects/terminated.wav', './audio/effects/S_QuestFaild.wav'],
+  runVictory: ['./audio/effects/S_ObjectiveComplete.wav']
 };
 
 import type { GamepadManager } from '../input/GamepadManager';

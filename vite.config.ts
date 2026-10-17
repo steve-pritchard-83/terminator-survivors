@@ -20,7 +20,8 @@ export default defineConfig({
       manifest: {
         name: 'Terminator Survivors: Los Angeles 2029 AD',
         short_name: 'T-Survivors',
-        description: 'Survive the 2029 AD Future War as Kyle Reese against Skynet Hunter-Killers and T-800 Endoskeletons.',
+        description:
+          'Survive the 2029 AD Future War as Kyle Reese against Skynet Hunter-Killers and T-800 Endoskeletons.',
         theme_color: '#050d1a',
         background_color: '#050d1a',
         display: 'standalone',
@@ -30,7 +31,12 @@ export default defineConfig({
           { src: 'icons/favicon.png', sizes: '64x64', type: 'image/png' },
           { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png' },
-          { src: 'icons/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }
+          {
+            src: 'icons/icon-maskable-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable'
+          }
         ]
       },
       workbox: {

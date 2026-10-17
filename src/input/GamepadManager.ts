@@ -219,7 +219,8 @@ export class GamepadManager {
       this.isButtonJustPressed(XBOX_BUTTON.L3) ||
       (this.buttonValues[XBOX_BUTTON.LT] !== undefined &&
         this.buttonValues[XBOX_BUTTON.LT] > 0.45 &&
-        (this.lastButtons[XBOX_BUTTON.LT] === false || this.lastButtons[XBOX_BUTTON.LT] === undefined));
+        (this.lastButtons[XBOX_BUTTON.LT] === false ||
+          this.lastButtons[XBOX_BUTTON.LT] === undefined));
 
     if (dashPressed) {
       this.dashRequested = true;
@@ -227,10 +228,7 @@ export class GamepadManager {
     }
 
     // Pause: Menu/Start (9) or View/Back (8)
-    if (
-      this.isButtonJustPressed(XBOX_BUTTON.MENU) ||
-      this.isButtonJustPressed(XBOX_BUTTON.VIEW)
-    ) {
+    if (this.isButtonJustPressed(XBOX_BUTTON.MENU) || this.isButtonJustPressed(XBOX_BUTTON.VIEW)) {
       this.pauseRequested = true;
       this.onPauseCallback?.();
     }
@@ -392,10 +390,7 @@ export class GamepadManager {
   }
 
   public isMenuCancelPressed(): boolean {
-    return (
-      this.isButtonJustPressed(XBOX_BUTTON.B) ||
-      this.isButtonJustPressed(XBOX_BUTTON.VIEW)
-    );
+    return this.isButtonJustPressed(XBOX_BUTTON.B) || this.isButtonJustPressed(XBOX_BUTTON.VIEW);
   }
 
   /**

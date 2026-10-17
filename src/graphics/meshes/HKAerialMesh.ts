@@ -67,7 +67,10 @@ export class HKAerialMesh {
     const nacelleGeo = new THREE.CylinderGeometry(0.45, 0.45, 1.6, 12);
     nacelleGeo.rotateX(Math.PI / 2);
     const leftNacelleMesh = new THREE.Mesh(nacelleGeo, hullMat);
-    const leftThrustGlow = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.1, 0.4, 12), glowCyanMat);
+    const leftThrustGlow = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.35, 0.1, 0.4, 12),
+      glowCyanMat
+    );
     leftThrustGlow.position.set(0, 0, -0.9);
     leftThrustGlow.rotateX(Math.PI / 2);
     this.leftTurbine.add(leftNacelleMesh, leftThrustGlow);
@@ -75,7 +78,10 @@ export class HKAerialMesh {
     this.rightTurbine = new THREE.Group();
     this.rightTurbine.position.set(2.6, 0.1, -0.3);
     const rightNacelleMesh = new THREE.Mesh(nacelleGeo, hullMat);
-    const rightThrustGlow = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.1, 0.4, 12), glowCyanMat);
+    const rightThrustGlow = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.35, 0.1, 0.4, 12),
+      glowCyanMat
+    );
     rightThrustGlow.position.set(0, 0, -0.9);
     rightThrustGlow.rotateX(Math.PI / 2);
     this.rightTurbine.add(rightNacelleMesh, rightThrustGlow);

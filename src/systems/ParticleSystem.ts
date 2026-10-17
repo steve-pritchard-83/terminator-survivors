@@ -76,7 +76,11 @@ export class ParticleSystem {
     this.prefillPool('dash', 20, this.dashMat);
   }
 
-  private prefillPool(type: ParticleType, count: number, templateMat: THREE.MeshBasicMaterial): void {
+  private prefillPool(
+    type: ParticleType,
+    count: number,
+    templateMat: THREE.MeshBasicMaterial
+  ): void {
     for (let i = 0; i < count; i++) {
       const mat = templateMat.clone();
       const mesh = new THREE.Mesh(this.unitPlaneGeo, mat);
@@ -106,10 +110,18 @@ export class ParticleSystem {
 
     let mat: THREE.MeshBasicMaterial;
     switch (type) {
-      case 'fire': mat = this.fireMat.clone(); break;
-      case 'smoke': mat = this.smokeMat.clone(); break;
-      case 'plasma': mat = this.plasmaMat.clone(); break;
-      case 'dash': mat = this.dashMat.clone(); break;
+      case 'fire':
+        mat = this.fireMat.clone();
+        break;
+      case 'smoke':
+        mat = this.smokeMat.clone();
+        break;
+      case 'plasma':
+        mat = this.plasmaMat.clone();
+        break;
+      case 'dash':
+        mat = this.dashMat.clone();
+        break;
     }
     const mesh = new THREE.Mesh(this.unitPlaneGeo, mat);
     this.group.add(mesh);

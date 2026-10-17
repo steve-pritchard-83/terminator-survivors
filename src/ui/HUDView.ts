@@ -145,7 +145,10 @@ export class HUDView {
     }
   }
 
-  public update(runState: RunState, activeBoss: { name: string; hp: number; maxHp: number } | null): void {
+  public update(
+    runState: RunState,
+    activeBoss: { name: string; hp: number; maxHp: number } | null
+  ): void {
     // XP bar & pickup pulse
     if (runState.xp > this.lastXp || runState.level > this.lastLevel) {
       this.xpBarContainer.classList.add('xp-pickup-pulse');

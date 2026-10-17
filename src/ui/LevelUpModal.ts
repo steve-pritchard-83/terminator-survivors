@@ -34,7 +34,11 @@ export class LevelUpModal {
     this.tickerEl = this.container.querySelector('#levelup-ticker')!;
   }
 
-  public show(level: number, choices: UpgradeChoice[], onSelect: (choice: UpgradeChoice) => void): void {
+  public show(
+    level: number,
+    choices: UpgradeChoice[],
+    onSelect: (choice: UpgradeChoice) => void
+  ): void {
     this.onSelectCallback = onSelect;
     this.container.style.display = 'flex';
     this.selectedIndex = 0;

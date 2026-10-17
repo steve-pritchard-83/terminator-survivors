@@ -57,9 +57,12 @@ export class SaveManager {
         version: 1,
         alloyScrap: typeof parsed.alloyScrap === 'number' ? parsed.alloyScrap : def.alloyScrap,
         totalKills: typeof parsed.totalKills === 'number' ? parsed.totalKills : def.totalKills,
-        bestTimeSeconds: typeof parsed.bestTimeSeconds === 'number' ? parsed.bestTimeSeconds : def.bestTimeSeconds,
+        bestTimeSeconds:
+          typeof parsed.bestTimeSeconds === 'number' ? parsed.bestTimeSeconds : def.bestTimeSeconds,
         victories: typeof parsed.victories === 'number' ? parsed.victories : def.victories,
-        unlockedLoadouts: Array.isArray(parsed.unlockedLoadouts) ? parsed.unlockedLoadouts : def.unlockedLoadouts,
+        unlockedLoadouts: Array.isArray(parsed.unlockedLoadouts)
+          ? parsed.unlockedLoadouts
+          : def.unlockedLoadouts,
         selectedLoadout: parsed.selectedLoadout ?? def.selectedLoadout,
         upgrades: {
           ...def.upgrades,

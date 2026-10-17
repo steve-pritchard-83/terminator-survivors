@@ -215,7 +215,14 @@ export class WeaponSystem {
 
   private fireWeapon(
     wId: string,
-    stats: { damage: number; speed: number; amount: number; pierce: number; area: number; duration: number },
+    stats: {
+      damage: number;
+      speed: number;
+      amount: number;
+      pierce: number;
+      area: number;
+      duration: number;
+    },
     px: number,
     pz: number,
     enemies: ActiveEnemy[],
@@ -610,7 +617,13 @@ export class WeaponSystem {
     this.projectiles.push(proj);
   }
 
-  private spawnGroundZone(x: number, z: number, radius: number, dps: number, duration: number): void {
+  private spawnGroundZone(
+    x: number,
+    z: number,
+    radius: number,
+    dps: number,
+    duration: number
+  ): void {
     const outerRingGeo = new THREE.RingGeometry(radius * 0.65, radius, 28);
     outerRingGeo.rotateX(-Math.PI / 2);
     const outerMat = new THREE.MeshBasicMaterial({

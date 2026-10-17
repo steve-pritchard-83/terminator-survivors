@@ -40,7 +40,12 @@ export class SpatialHashGrid {
     this.entityCells.set(entity.id, keys);
   }
 
-  public queryRadius(x: number, z: number, radius: number, outResults?: SpatialEntity[]): SpatialEntity[] {
+  public queryRadius(
+    x: number,
+    z: number,
+    radius: number,
+    outResults?: SpatialEntity[]
+  ): SpatialEntity[] {
     const results = outResults ?? [];
     results.length = 0;
     const seen = new Set<number>();

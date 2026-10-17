@@ -11,7 +11,8 @@ export default tseslint.config(
         'warn',
         {
           selector: "CallExpression[callee.object.name='Math'][callee.property.name='random']",
-          message: 'Math.random is discouraged in src/systems/ and src/state/. Use globalRNG or vfxRNG instead.'
+          message:
+            'Math.random is discouraged in src/systems/ and src/state/. Use globalRNG or vfxRNG instead.'
         }
       ]
     }

@@ -31,14 +31,41 @@ export class EndoskeletonBatch {
     const chassisParts: THREE.BufferGeometry[] = [
       // Sculpted cranium dome & occipital rear plate
       bakePart(new THREE.SphereGeometry(0.185, 14, 12), 0, 1.75, -0.01, 0, 0, 0, chromeBright),
-      bakePart(new THREE.CylinderGeometry(0.15, 0.12, 0.16, 10), 0, 1.66, -0.02, 0, 0, 0, chromeMid),
+      bakePart(
+        new THREE.CylinderGeometry(0.15, 0.12, 0.16, 10),
+        0,
+        1.66,
+        -0.02,
+        0,
+        0,
+        0,
+        chromeMid
+      ),
       // Heavy supraorbital brow ridge
       bakePart(new THREE.BoxGeometry(0.31, 0.065, 0.18), 0, 1.75, 0.09, 0.08, 0, 0, chromeBright),
       // Recessed dark orbital eye socket cavity (prevents glowing eyes from washing out face)
-      bakePart(new THREE.BoxGeometry(0.26, 0.075, 0.12), 0, 1.69, 0.10, 0, 0, 0, darkSocket),
+      bakePart(new THREE.BoxGeometry(0.26, 0.075, 0.12), 0, 1.69, 0.1, 0, 0, 0, darkSocket),
       // Zygomatic cheekbones L/R
-      bakePart(new THREE.BoxGeometry(0.06, 0.08, 0.16), -0.135, 1.65, 0.08, 0, 0.15, 0, chromeBright),
-      bakePart(new THREE.BoxGeometry(0.06, 0.08, 0.16), 0.135, 1.65, 0.08, 0, -0.15, 0, chromeBright),
+      bakePart(
+        new THREE.BoxGeometry(0.06, 0.08, 0.16),
+        -0.135,
+        1.65,
+        0.08,
+        0,
+        0.15,
+        0,
+        chromeBright
+      ),
+      bakePart(
+        new THREE.BoxGeometry(0.06, 0.08, 0.16),
+        0.135,
+        1.65,
+        0.08,
+        0,
+        -0.15,
+        0,
+        chromeBright
+      ),
       // Dark triangular nasal aperture
       bakePart(new THREE.BoxGeometry(0.055, 0.065, 0.08), 0, 1.64, 0.155, 0, 0, 0, darkSocket),
       // Upper maxilla & metallic teeth grille
@@ -47,50 +74,176 @@ export class EndoskeletonBatch {
       // Articulated lower mandible jawbone
       bakePart(new THREE.BoxGeometry(0.19, 0.065, 0.18), 0, 1.495, 0.07, 0.08, 0, 0, chromeBright),
       // Cheek hydraulic pistons L/R
-      bakePart(new THREE.CylinderGeometry(0.022, 0.022, 0.19, 8), -0.13, 1.58, 0.03, 0.15, 0, 0.18, pistonSteel),
-      bakePart(new THREE.CylinderGeometry(0.022, 0.022, 0.19, 8), 0.13, 1.58, 0.03, 0.15, 0, -0.18, pistonSteel),
+      bakePart(
+        new THREE.CylinderGeometry(0.022, 0.022, 0.19, 8),
+        -0.13,
+        1.58,
+        0.03,
+        0.15,
+        0,
+        0.18,
+        pistonSteel
+      ),
+      bakePart(
+        new THREE.CylinderGeometry(0.022, 0.022, 0.19, 8),
+        0.13,
+        1.58,
+        0.03,
+        0.15,
+        0,
+        -0.18,
+        pistonSteel
+      ),
 
       // Cervical spine & dual neck hydraulic dampers
-      bakePart(new THREE.CylinderGeometry(0.065, 0.075, 0.18, 10), 0, 1.43, -0.02, 0, 0, 0, pistonSteel),
-      bakePart(new THREE.CylinderGeometry(0.02, 0.02, 0.18, 6), -0.07, 1.43, 0.02, 0, 0, -0.15, chromeBright),
-      bakePart(new THREE.CylinderGeometry(0.02, 0.02, 0.18, 6), 0.07, 1.43, 0.02, 0, 0, 0.15, chromeBright),
+      bakePart(
+        new THREE.CylinderGeometry(0.065, 0.075, 0.18, 10),
+        0,
+        1.43,
+        -0.02,
+        0,
+        0,
+        0,
+        pistonSteel
+      ),
+      bakePart(
+        new THREE.CylinderGeometry(0.02, 0.02, 0.18, 6),
+        -0.07,
+        1.43,
+        0.02,
+        0,
+        0,
+        -0.15,
+        chromeBright
+      ),
+      bakePart(
+        new THREE.CylinderGeometry(0.02, 0.02, 0.18, 6),
+        0.07,
+        1.43,
+        0.02,
+        0,
+        0,
+        0.15,
+        chromeBright
+      ),
 
       // Broad armored trapezius & clavicle yoke (strong top-down silhouette)
-      bakePart(new THREE.BoxGeometry(0.70, 0.10, 0.28), 0, 1.35, -0.01, 0, 0, 0, chromeBright),
+      bakePart(new THREE.BoxGeometry(0.7, 0.1, 0.28), 0, 1.35, -0.01, 0, 0, 0, chromeBright),
       // Shoulder ball-joint rotary actuators L/R
       bakePart(new THREE.SphereGeometry(0.11, 10, 8), -0.37, 1.34, 0, 0, 0, 0, chromeMid),
       bakePart(new THREE.SphereGeometry(0.11, 10, 8), 0.37, 1.34, 0, 0, 0, 0, chromeMid),
 
       // Dark inner hydraulic chest core + breastplate sternum + 3 segmented rib arches
-      bakePart(new THREE.CylinderGeometry(0.19, 0.14, 0.44, 10), 0, 1.13, -0.01, 0, 0, 0, darkSocket),
+      bakePart(
+        new THREE.CylinderGeometry(0.19, 0.14, 0.44, 10),
+        0,
+        1.13,
+        -0.01,
+        0,
+        0,
+        0,
+        darkSocket
+      ),
       bakePart(new THREE.BoxGeometry(0.14, 0.36, 0.24), 0, 1.15, 0.03, 0, 0, 0, chromeBright),
-      bakePart(new THREE.BoxGeometry(0.50, 0.065, 0.26), 0, 1.26, 0.01, 0, 0, 0, chromeBright),
+      bakePart(new THREE.BoxGeometry(0.5, 0.065, 0.26), 0, 1.26, 0.01, 0, 0, 0, chromeBright),
       bakePart(new THREE.BoxGeometry(0.46, 0.06, 0.24), 0, 1.15, 0.01, 0, 0, 0, chromeMid),
-      bakePart(new THREE.BoxGeometry(0.40, 0.055, 0.21), 0, 1.04, 0.0, 0, 0, 0, chromeBright),
+      bakePart(new THREE.BoxGeometry(0.4, 0.055, 0.21), 0, 1.04, 0.0, 0, 0, 0, chromeBright),
 
       // Lumbar spinal vertebrae column & twin abdominal hydraulic struts
-      bakePart(new THREE.CylinderGeometry(0.06, 0.065, 0.34, 8), 0, 0.88, -0.04, 0, 0, 0, chromeMid),
-      bakePart(new THREE.CylinderGeometry(0.024, 0.024, 0.30, 6), -0.11, 0.88, 0.03, 0, 0, 0.12, pistonSteel),
-      bakePart(new THREE.CylinderGeometry(0.024, 0.024, 0.30, 6), 0.11, 0.88, 0.03, 0, 0, -0.12, pistonSteel),
+      bakePart(
+        new THREE.CylinderGeometry(0.06, 0.065, 0.34, 8),
+        0,
+        0.88,
+        -0.04,
+        0,
+        0,
+        0,
+        chromeMid
+      ),
+      bakePart(
+        new THREE.CylinderGeometry(0.024, 0.024, 0.3, 6),
+        -0.11,
+        0.88,
+        0.03,
+        0,
+        0,
+        0.12,
+        pistonSteel
+      ),
+      bakePart(
+        new THREE.CylinderGeometry(0.024, 0.024, 0.3, 6),
+        0.11,
+        0.88,
+        0.03,
+        0,
+        0,
+        -0.12,
+        pistonSteel
+      ),
 
       // Heavy pelvic H-Chassis & hip sockets
       bakePart(new THREE.BoxGeometry(0.46, 0.15, 0.25), 0, 0.72, 0, 0, 0, 0, chromeBright),
-      bakePart(new THREE.BoxGeometry(0.14, 0.20, 0.27), 0, 0.70, 0, 0, 0, 0, pistonSteel),
+      bakePart(new THREE.BoxGeometry(0.14, 0.2, 0.27), 0, 0.7, 0, 0, 0, 0, pistonSteel),
 
       // Left & Right Upper Humerus Struts & Elbow Servos
-      bakePart(new THREE.CylinderGeometry(0.055, 0.048, 0.34, 8), -0.37, 1.16, 0.04, 0.35, 0, 0.08, chromeBright),
-      bakePart(new THREE.CylinderGeometry(0.055, 0.048, 0.34, 8), 0.37, 1.16, 0.04, 0.35, 0, -0.08, chromeBright),
-      bakePart(new THREE.SphereGeometry(0.065, 8, 8), -0.35, 1.00, 0.12, 0, 0, 0, pistonSteel),
-      bakePart(new THREE.SphereGeometry(0.065, 8, 8), 0.35, 1.00, 0.12, 0, 0, 0, pistonSteel),
+      bakePart(
+        new THREE.CylinderGeometry(0.055, 0.048, 0.34, 8),
+        -0.37,
+        1.16,
+        0.04,
+        0.35,
+        0,
+        0.08,
+        chromeBright
+      ),
+      bakePart(
+        new THREE.CylinderGeometry(0.055, 0.048, 0.34, 8),
+        0.37,
+        1.16,
+        0.04,
+        0.35,
+        0,
+        -0.08,
+        chromeBright
+      ),
+      bakePart(new THREE.SphereGeometry(0.065, 8, 8), -0.35, 1.0, 0.12, 0, 0, 0, pistonSteel),
+      bakePart(new THREE.SphereGeometry(0.065, 8, 8), 0.35, 1.0, 0.12, 0, 0, 0, pistonSteel),
 
       // Left support forearm reaching across to rifle handguard
-      bakePart(new THREE.CylinderGeometry(0.045, 0.04, 0.36, 8), -0.16, 0.98, 0.26, 1.25, 0.55, 0, chromeMid),
+      bakePart(
+        new THREE.CylinderGeometry(0.045, 0.04, 0.36, 8),
+        -0.16,
+        0.98,
+        0.26,
+        1.25,
+        0.55,
+        0,
+        chromeMid
+      ),
       // Right trigger forearm
-      bakePart(new THREE.CylinderGeometry(0.045, 0.04, 0.34, 8), 0.28, 0.98, 0.25, 1.35, -0.2, 0, chromeMid),
+      bakePart(
+        new THREE.CylinderGeometry(0.045, 0.04, 0.34, 8),
+        0.28,
+        0.98,
+        0.25,
+        1.35,
+        -0.2,
+        0,
+        chromeMid
+      ),
 
       // Westinghouse M-25 40W Phased Plasma Rifle (receiver, cooling shroud, barrel, stock, magazine)
-      bakePart(new THREE.BoxGeometry(0.09, 0.13, 0.56), 0.18, 1.00, 0.38, 0, -0.08, 0, gunmetal),
-      bakePart(new THREE.CylinderGeometry(0.032, 0.032, 0.38, 8), 0.16, 1.02, 0.72, Math.PI / 2, 0, 0.08, chromeMid),
+      bakePart(new THREE.BoxGeometry(0.09, 0.13, 0.56), 0.18, 1.0, 0.38, 0, -0.08, 0, gunmetal),
+      bakePart(
+        new THREE.CylinderGeometry(0.032, 0.032, 0.38, 8),
+        0.16,
+        1.02,
+        0.72,
+        Math.PI / 2,
+        0,
+        0.08,
+        chromeMid
+      ),
       bakePart(new THREE.BoxGeometry(0.06, 0.14, 0.09), 0.18, 0.89, 0.42, 0.2, -0.08, 0, darkSocket)
     ];
 
@@ -100,14 +253,59 @@ export class EndoskeletonBatch {
     const buildLegGeo = (sideOffset: number): THREE.BufferGeometry => {
       return mergeParts([
         // Upper femur main strut + parallel hydraulic piston
-        bakePart(new THREE.CylinderGeometry(0.065, 0.055, 0.34, 8), sideOffset, -0.16, 0, 0, 0, 0, chromeBright),
-        bakePart(new THREE.CylinderGeometry(0.025, 0.025, 0.32, 6), sideOffset, -0.16, -0.055, 0, 0, 0, pistonSteel),
+        bakePart(
+          new THREE.CylinderGeometry(0.065, 0.055, 0.34, 8),
+          sideOffset,
+          -0.16,
+          0,
+          0,
+          0,
+          0,
+          chromeBright
+        ),
+        bakePart(
+          new THREE.CylinderGeometry(0.025, 0.025, 0.32, 6),
+          sideOffset,
+          -0.16,
+          -0.055,
+          0,
+          0,
+          0,
+          pistonSteel
+        ),
         // Knee actuator joint drum
-        bakePart(new THREE.SphereGeometry(0.068, 8, 8), sideOffset, -0.34, 0.01, 0, 0, 0, chromeMid),
+        bakePart(
+          new THREE.SphereGeometry(0.068, 8, 8),
+          sideOffset,
+          -0.34,
+          0.01,
+          0,
+          0,
+          0,
+          chromeMid
+        ),
         // Lower tibia shin strut
-        bakePart(new THREE.CylinderGeometry(0.052, 0.042, 0.32, 8), sideOffset, -0.50, 0, 0, 0, 0, chromeBright),
+        bakePart(
+          new THREE.CylinderGeometry(0.052, 0.042, 0.32, 8),
+          sideOffset,
+          -0.5,
+          0,
+          0,
+          0,
+          0,
+          chromeBright
+        ),
         // Skeletal mechanical foot & heel spur
-        bakePart(new THREE.BoxGeometry(0.11, 0.06, 0.24), sideOffset, -0.65, 0.04, 0, 0, 0, pistonSteel)
+        bakePart(
+          new THREE.BoxGeometry(0.11, 0.06, 0.24),
+          sideOffset,
+          -0.65,
+          0.04,
+          0,
+          0,
+          0,
+          pistonSteel
+        )
       ]);
     };
 
@@ -163,31 +361,157 @@ export class EndoskeletonBatch {
     // 4. Build Detailed 6-Legged Cyberdyne Recon Crab-Walker (spider-tank scuttler)
     const crabParts: THREE.BufferGeometry[] = [
       // Main sloped octagonal armored carapace
-      bakePart(new THREE.CylinderGeometry(0.28, 0.44, 0.20, 8), 0, 0.34, 0, 0, Math.PI / 8, 0, chromeBright),
+      bakePart(
+        new THREE.CylinderGeometry(0.28, 0.44, 0.2, 8),
+        0,
+        0.34,
+        0,
+        0,
+        Math.PI / 8,
+        0,
+        chromeBright
+      ),
       // Dorsal reactor cooling dome & spine vents
-      bakePart(new THREE.CylinderGeometry(0.16, 0.22, 0.12, 8), 0, 0.46, -0.04, 0, 0, 0, pistonSteel),
-      bakePart(new THREE.BoxGeometry(0.24, 0.08, 0.28), 0, 0.42, -0.10, -0.15, 0, 0, gunmetal),
+      bakePart(
+        new THREE.CylinderGeometry(0.16, 0.22, 0.12, 8),
+        0,
+        0.46,
+        -0.04,
+        0,
+        0,
+        0,
+        pistonSteel
+      ),
+      bakePart(new THREE.BoxGeometry(0.24, 0.08, 0.28), 0, 0.42, -0.1, -0.15, 0, 0, gunmetal),
       // Dark recessed front optical visor bay
-      bakePart(new THREE.BoxGeometry(0.34, 0.12, 0.20), 0, 0.31, 0.28, 0, 0, 0, darkSocket),
+      bakePart(new THREE.BoxGeometry(0.34, 0.12, 0.2), 0, 0.31, 0.28, 0, 0, 0, darkSocket),
       // Twin forward plasma pincer barrels
-      bakePart(new THREE.CylinderGeometry(0.028, 0.028, 0.32, 6), -0.14, 0.24, 0.40, Math.PI / 2, 0, -0.12, chromeMid),
-      bakePart(new THREE.CylinderGeometry(0.028, 0.028, 0.32, 6), 0.14, 0.24, 0.40, Math.PI / 2, 0, 0.12, chromeMid),
+      bakePart(
+        new THREE.CylinderGeometry(0.028, 0.028, 0.32, 6),
+        -0.14,
+        0.24,
+        0.4,
+        Math.PI / 2,
+        0,
+        -0.12,
+        chromeMid
+      ),
+      bakePart(
+        new THREE.CylinderGeometry(0.028, 0.028, 0.32, 6),
+        0.14,
+        0.24,
+        0.4,
+        Math.PI / 2,
+        0,
+        0.12,
+        chromeMid
+      ),
       // 6 Multi-jointed Arachnid Scuttle Legs (Upper Femur + Angled Lower Tibia)
       // Front Pair
-      bakePart(new THREE.BoxGeometry(0.32, 0.055, 0.06), -0.38, 0.32, 0.22, 0, -0.45, 0.25, pistonSteel),
-      bakePart(new THREE.CylinderGeometry(0.03, 0.015, 0.36, 6), -0.54, 0.16, 0.32, 0.2, 0, 0.35, chromeBright),
-      bakePart(new THREE.BoxGeometry(0.32, 0.055, 0.06), 0.38, 0.32, 0.22, 0, 0.45, -0.25, pistonSteel),
-      bakePart(new THREE.CylinderGeometry(0.03, 0.015, 0.36, 6), 0.54, 0.16, 0.32, 0.2, 0, -0.35, chromeBright),
+      bakePart(
+        new THREE.BoxGeometry(0.32, 0.055, 0.06),
+        -0.38,
+        0.32,
+        0.22,
+        0,
+        -0.45,
+        0.25,
+        pistonSteel
+      ),
+      bakePart(
+        new THREE.CylinderGeometry(0.03, 0.015, 0.36, 6),
+        -0.54,
+        0.16,
+        0.32,
+        0.2,
+        0,
+        0.35,
+        chromeBright
+      ),
+      bakePart(
+        new THREE.BoxGeometry(0.32, 0.055, 0.06),
+        0.38,
+        0.32,
+        0.22,
+        0,
+        0.45,
+        -0.25,
+        pistonSteel
+      ),
+      bakePart(
+        new THREE.CylinderGeometry(0.03, 0.015, 0.36, 6),
+        0.54,
+        0.16,
+        0.32,
+        0.2,
+        0,
+        -0.35,
+        chromeBright
+      ),
       // Mid Pair
       bakePart(new THREE.BoxGeometry(0.36, 0.055, 0.06), -0.44, 0.32, 0.0, 0, 0, 0.25, pistonSteel),
-      bakePart(new THREE.CylinderGeometry(0.03, 0.015, 0.36, 6), -0.62, 0.16, 0.0, 0, 0, 0.38, chromeBright),
+      bakePart(
+        new THREE.CylinderGeometry(0.03, 0.015, 0.36, 6),
+        -0.62,
+        0.16,
+        0.0,
+        0,
+        0,
+        0.38,
+        chromeBright
+      ),
       bakePart(new THREE.BoxGeometry(0.36, 0.055, 0.06), 0.44, 0.32, 0.0, 0, 0, -0.25, pistonSteel),
-      bakePart(new THREE.CylinderGeometry(0.03, 0.015, 0.36, 6), 0.62, 0.16, 0.0, 0, 0, -0.38, chromeBright),
+      bakePart(
+        new THREE.CylinderGeometry(0.03, 0.015, 0.36, 6),
+        0.62,
+        0.16,
+        0.0,
+        0,
+        0,
+        -0.38,
+        chromeBright
+      ),
       // Rear Pair
-      bakePart(new THREE.BoxGeometry(0.32, 0.055, 0.06), -0.38, 0.32, -0.22, 0, 0.45, 0.25, pistonSteel),
-      bakePart(new THREE.CylinderGeometry(0.03, 0.015, 0.36, 6), -0.54, 0.16, -0.32, -0.2, 0, 0.35, chromeBright),
-      bakePart(new THREE.BoxGeometry(0.32, 0.055, 0.06), 0.38, 0.32, -0.22, 0, -0.45, -0.25, pistonSteel),
-      bakePart(new THREE.CylinderGeometry(0.03, 0.015, 0.36, 6), 0.54, 0.16, -0.32, -0.2, 0, -0.35, chromeBright)
+      bakePart(
+        new THREE.BoxGeometry(0.32, 0.055, 0.06),
+        -0.38,
+        0.32,
+        -0.22,
+        0,
+        0.45,
+        0.25,
+        pistonSteel
+      ),
+      bakePart(
+        new THREE.CylinderGeometry(0.03, 0.015, 0.36, 6),
+        -0.54,
+        0.16,
+        -0.32,
+        -0.2,
+        0,
+        0.35,
+        chromeBright
+      ),
+      bakePart(
+        new THREE.BoxGeometry(0.32, 0.055, 0.06),
+        0.38,
+        0.32,
+        -0.22,
+        0,
+        -0.45,
+        -0.25,
+        pistonSteel
+      ),
+      bakePart(
+        new THREE.CylinderGeometry(0.03, 0.015, 0.36, 6),
+        0.54,
+        0.16,
+        -0.32,
+        -0.2,
+        0,
+        -0.35,
+        chromeBright
+      )
     ];
     const crabGeo = mergeParts(crabParts);
     this.crabChassisInstancedMesh = new THREE.InstancedMesh(crabGeo, chassisMat, maxCount);
@@ -213,12 +537,7 @@ export class EndoskeletonBatch {
     );
   }
 
-  public updateBatch(
-    enemies: ActiveEnemy[],
-    timeSeconds: number,
-    playerX = 0,
-    playerZ = 0
-  ): void {
+  public updateBatch(enemies: ActiveEnemy[], timeSeconds: number, playerX = 0, playerZ = 0): void {
     let activeIndex = 0;
     let crabIndex = 0;
 

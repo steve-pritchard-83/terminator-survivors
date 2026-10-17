@@ -87,7 +87,8 @@ export function isSoftwareOrAutomatedRenderer(renderer: THREE.WebGLRenderer): bo
 export function isMobileGpuDevice(): boolean {
   if (typeof navigator === 'undefined') return false;
   if (/iPhone|iPad|iPod|Android|Mobile/i.test(navigator.userAgent)) return true;
-  if (typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)')?.matches) return true;
+  if (typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)')?.matches)
+    return true;
   return false;
 }
 
@@ -134,7 +135,7 @@ export class PostProcessingManager {
       new THREE.Vector2(Math.max(1, size.x), Math.max(1, size.y)),
       0.42, // controlled strength (no nuclear blobs)
       0.28, // tight halo radius
-      1.35  // strict HDR threshold so skulls/cars/ground never bloom
+      1.35 // strict HDR threshold so skulls/cars/ground never bloom
     );
     if (!this.useFastPath) {
       this.composer.addPass(this.bloomPass);
@@ -164,10 +165,7 @@ export class PostProcessingManager {
       this.damageFlash = Math.max(0, this.damageFlash - dt * 2.8);
     }
     if (this.currentAberration > this.aberrationTarget) {
-      this.currentAberration = Math.max(
-        this.aberrationTarget,
-        this.currentAberration - dt * 0.03
-      );
+      this.currentAberration = Math.max(this.aberrationTarget, this.currentAberration - dt * 0.03);
     }
 
     this.gradingPass.uniforms.uTime.value = timeSeconds;

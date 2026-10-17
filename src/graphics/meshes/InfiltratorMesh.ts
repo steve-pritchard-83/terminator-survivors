@@ -162,12 +162,7 @@ export class InfiltratorMesh {
     this.group.scale.set(1.22, 1.22, 1.22);
   }
 
-  public updateAnimation(
-    dt: number,
-    speed: number,
-    facing: number,
-    isFiring = false
-  ): void {
+  public updateAnimation(dt: number, speed: number, facing: number, isFiring = false): void {
     this.group.rotation.y = facing;
 
     if (speed > 0.1) {

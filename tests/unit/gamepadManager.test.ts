@@ -50,8 +50,8 @@ describe('GamepadManager - Xbox Controller & Haptics', () => {
   it('applies radial deadzone to left stick movement', () => {
     const mockGp = createMockXboxGamepad();
     // Sub-deadzone drift (0.10)
-    mockGp.axes[XBOX_AXIS.LEFT_X] = 0.10;
-    mockGp.axes[XBOX_AXIS.LEFT_Y] = 0.10;
+    mockGp.axes[XBOX_AXIS.LEFT_X] = 0.1;
+    mockGp.axes[XBOX_AXIS.LEFT_Y] = 0.1;
     manager.setMockGamepadForTest(mockGp);
     manager.update(1 / 60);
 
@@ -174,8 +174,8 @@ describe('GamepadManager - Xbox Controller & Haptics', () => {
     expect(nav.y).toBe(0);
 
     // Advance beyond NAV_REPEAT_INITIAL_DELAY (0.28s)
-    manager.update(0.30);
-    nav = manager.getMenuNavigation(0.30);
+    manager.update(0.3);
+    nav = manager.getMenuNavigation(0.3);
     expect(nav.y).toBe(1);
   });
 

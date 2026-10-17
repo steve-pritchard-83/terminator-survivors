@@ -44,37 +44,58 @@ function chunk(type, data) {
 }
 function createIconPng(size) {
   const raw = Buffer.alloc(size * (size * 4 + 1));
-  const cx = size / 2, cy = size / 2, r = size * 0.36;
-  const eyeY = cy - size * 0.04, eyeDx = size * 0.13, eyeR = size * 0.065;
+  const cx = size / 2,
+    cy = size / 2,
+    r = size * 0.36;
+  const eyeY = cy - size * 0.04,
+    eyeDx = size * 0.13,
+    eyeR = size * 0.065;
   for (let y = 0; y < size; y++) {
     const rowStart = y * (size * 4 + 1);
     raw[rowStart] = 0;
     for (let x = 0; x < size; x++) {
       const idx = rowStart + 1 + x * 4;
-      let R = 5, G = 13, B = 26;
-      const dx = x - cx, dy = y - cy;
+      let R = 5,
+        G = 13,
+        B = 26;
+      const dx = x - cx,
+        dy = y - cy;
       const dist = Math.hypot(dx, dy);
       if (dist < r && (dy < size * 0.12 || Math.abs(dx) < size * 0.18)) {
-        R = 140; G = 156; B = 176;
+        R = 140;
+        G = 156;
+        B = 176;
       }
       const dLeft = Math.hypot(x - (cx - eyeDx), y - eyeY);
       const dRight = Math.hypot(x - (cx + eyeDx), y - eyeY);
       if (dLeft < eyeR || dRight < eyeR) {
-        R = 255; G = 18; B = 18;
+        R = 255;
+        G = 18;
+        B = 18;
       } else if (dLeft < eyeR * 1.8 || dRight < eyeR * 1.8) {
-        R = Math.min(255, R + 90); G = Math.max(0, G - 40); B = Math.max(0, B - 40);
+        R = Math.min(255, R + 90);
+        G = Math.max(0, G - 40);
+        B = Math.max(0, B - 40);
       }
-      raw[idx] = R; raw[idx + 1] = G; raw[idx + 2] = B; raw[idx + 3] = 255;
+      raw[idx] = R;
+      raw[idx + 1] = G;
+      raw[idx + 2] = B;
+      raw[idx + 3] = 255;
     }
   }
   const ihdr = Buffer.alloc(13);
-  ihdr.writeUInt32BE(size, 0); ihdr.writeUInt32BE(size, 4);
-  ihdr[8] = 8; ihdr[9] = 6; ihdr[10] = 0; ihdr[11] = 0; ihdr[12] = 0;
+  ihdr.writeUInt32BE(size, 0);
+  ihdr.writeUInt32BE(size, 4);
+  ihdr[8] = 8;
+  ihdr[9] = 6;
+  ihdr[10] = 0;
+  ihdr[11] = 0;
+  ihdr[12] = 0;
   return Buffer.concat([
     Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
     chunk('IHDR', ihdr),
     chunk('IDAT', zlib.deflateSync(raw)),
-    chunk('IEND', Buffer.alloc(0)),
+    chunk('IEND', Buffer.alloc(0))
   ]);
 }
 

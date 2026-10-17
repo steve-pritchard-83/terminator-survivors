@@ -14,7 +14,9 @@ describe('Wave Timeline and Boss Director', () => {
 
   it('demonstrates monotonically increasing HP difficulty scaling', () => {
     for (let i = 1; i < WAVE_TIMELINE.length; i++) {
-      expect(WAVE_TIMELINE[i].hpMultiplier).toBeGreaterThanOrEqual(WAVE_TIMELINE[i - 1].hpMultiplier);
+      expect(WAVE_TIMELINE[i].hpMultiplier).toBeGreaterThanOrEqual(
+        WAVE_TIMELINE[i - 1].hpMultiplier
+      );
       expect(WAVE_TIMELINE[i].damageMultiplier).toBeGreaterThanOrEqual(
         WAVE_TIMELINE[i - 1].damageMultiplier
       );

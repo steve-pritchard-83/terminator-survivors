@@ -26,7 +26,13 @@ export class Environment2029 {
   private readonly skylineRing: THREE.Group;
   private readonly horizonBeams: THREE.Mesh[] = [];
   private readonly fogMistGroup: THREE.Group;
-  private readonly fogPatches: Array<{ mesh: THREE.Mesh; ox: number; oz: number; speed: number; phase: number }> = [];
+  private readonly fogPatches: Array<{
+    mesh: THREE.Mesh;
+    ox: number;
+    oz: number;
+    speed: number;
+    phase: number;
+  }> = [];
   private fogTime = 0;
 
   constructor() {
@@ -37,7 +43,7 @@ export class Environment2029 {
       color: 0x485e78,
       map: ProceduralTextures.getWastelandGroundAlbedo(),
       bumpMap: ProceduralTextures.getWastelandGroundBump(),
-      bumpScale: 0.20,
+      bumpScale: 0.2,
       roughness: 0.88,
       metalness: 0.08
     });
@@ -51,7 +57,7 @@ export class Environment2029 {
       // Cranium vault
       bakePart(new THREE.SphereGeometry(0.14, 10, 8), 0, 0.12, -0.02, 0, 0, 0, boneWeathered),
       // Brow ridge & cheekbones
-      bakePart(new THREE.BoxGeometry(0.20, 0.05, 0.12), 0, 0.14, 0.07, 0.1, 0, 0, boneWeathered),
+      bakePart(new THREE.BoxGeometry(0.2, 0.05, 0.12), 0, 0.14, 0.07, 0.1, 0, 0, boneWeathered),
       // Deep dark eye sockets L/R
       bakePart(new THREE.SphereGeometry(0.042, 6, 6), -0.052, 0.115, 0.105, 0, 0, 0, socketVoid),
       bakePart(new THREE.SphereGeometry(0.042, 6, 6), 0.052, 0.115, 0.105, 0, 0, 0, socketVoid),
@@ -75,26 +81,107 @@ export class Environment2029 {
     const rustedSteel = 0x3d2e28;
 
     const rebarParts: THREE.BufferGeometry[] = [
-      bakePart(new THREE.CylinderGeometry(1.15, 1.35, 0.55, 8), 0, 0.27, 0, 0, Math.PI / 8, 0, concreteDark),
-      bakePart(new THREE.BoxGeometry(1.8, 0.32, 1.4), 0.25, 0.16, -0.2, 0.12, 0.4, -0.08, concreteMid),
-      bakePart(new THREE.BoxGeometry(1.4, 0.28, 1.6), -0.3, 0.14, 0.25, -0.1, -0.3, 0.12, concreteDark),
+      bakePart(
+        new THREE.CylinderGeometry(1.15, 1.35, 0.55, 8),
+        0,
+        0.27,
+        0,
+        0,
+        Math.PI / 8,
+        0,
+        concreteDark
+      ),
+      bakePart(
+        new THREE.BoxGeometry(1.8, 0.32, 1.4),
+        0.25,
+        0.16,
+        -0.2,
+        0.12,
+        0.4,
+        -0.08,
+        concreteMid
+      ),
+      bakePart(
+        new THREE.BoxGeometry(1.4, 0.28, 1.6),
+        -0.3,
+        0.14,
+        0.25,
+        -0.1,
+        -0.3,
+        0.12,
+        concreteDark
+      ),
       bakePart(new THREE.CylinderGeometry(0.78, 0.92, 2.2, 8), 0, 1.5, 0, 0, 0, 0, concreteMid),
       bakePart(new THREE.BoxGeometry(1.42, 2.0, 0.36), 0, 1.5, 0, 0, 0, 0, concreteLight),
       bakePart(new THREE.BoxGeometry(0.36, 2.0, 1.42), 0, 1.5, 0, 0, 0, 0, concreteLight),
-      bakePart(new THREE.BoxGeometry(1.15, 1.1, 1.05), -0.08, 2.95, 0.05, 0.06, 0.2, -0.05, concreteMid),
-      bakePart(new THREE.BoxGeometry(0.85, 0.85, 0.80), 0.12, 3.65, -0.08, -0.12, 0.5, 0.08, concreteDark),
+      bakePart(
+        new THREE.BoxGeometry(1.15, 1.1, 1.05),
+        -0.08,
+        2.95,
+        0.05,
+        0.06,
+        0.2,
+        -0.05,
+        concreteMid
+      ),
+      bakePart(
+        new THREE.BoxGeometry(0.85, 0.85, 0.8),
+        0.12,
+        3.65,
+        -0.08,
+        -0.12,
+        0.5,
+        0.08,
+        concreteDark
+      ),
       bakePart(new THREE.BoxGeometry(0.32, 2.6, 0.32), 0, 3.3, 0, 0.04, 0, 0.03, rustedSteel),
-      bakePart(new THREE.CylinderGeometry(0.035, 0.035, 1.8, 6), -0.32, 4.2, -0.22, 0.22, 0, 0.28, rustedSteel),
-      bakePart(new THREE.CylinderGeometry(0.035, 0.035, 2.1, 6), 0.28, 4.4, 0.22, -0.28, 0, -0.18, rustedSteel),
-      bakePart(new THREE.CylinderGeometry(0.035, 0.035, 1.6, 6), 0.05, 4.1, 0.32, 0.38, 0, 0.12, rustedSteel),
-      bakePart(new THREE.CylinderGeometry(0.035, 0.035, 1.7, 6), -0.22, 4.0, 0.26, -0.18, 0, 0.35, rustedSteel)
+      bakePart(
+        new THREE.CylinderGeometry(0.035, 0.035, 1.8, 6),
+        -0.32,
+        4.2,
+        -0.22,
+        0.22,
+        0,
+        0.28,
+        rustedSteel
+      ),
+      bakePart(
+        new THREE.CylinderGeometry(0.035, 0.035, 2.1, 6),
+        0.28,
+        4.4,
+        0.22,
+        -0.28,
+        0,
+        -0.18,
+        rustedSteel
+      ),
+      bakePart(
+        new THREE.CylinderGeometry(0.035, 0.035, 1.6, 6),
+        0.05,
+        4.1,
+        0.32,
+        0.38,
+        0,
+        0.12,
+        rustedSteel
+      ),
+      bakePart(
+        new THREE.CylinderGeometry(0.035, 0.035, 1.7, 6),
+        -0.22,
+        4.0,
+        0.26,
+        -0.18,
+        0,
+        0.35,
+        rustedSteel
+      )
     ];
     const rebarGeo = mergeParts(rebarParts);
     const concreteMat = new THREE.MeshStandardMaterial({
       color: 0xffffff,
       vertexColors: true,
       roughness: 0.88,
-      metalness: 0.10
+      metalness: 0.1
     });
 
     // 3. Build detailed 1980s Burnt-Out Sedan Wreckage (matte scorched steel, no harsh glints)
@@ -105,31 +192,121 @@ export class Environment2029 {
     const tireRubber = 0x14181e;
 
     const carParts: THREE.BufferGeometry[] = [
-      bakePart(new THREE.BoxGeometry(1.96, 0.52, 4.30), 0, 0.46, 0, 0, 0, 0, bodyPaint),
+      bakePart(new THREE.BoxGeometry(1.96, 0.52, 4.3), 0, 0.46, 0, 0, 0, 0, bodyPaint),
       bakePart(new THREE.BoxGeometry(1.86, 0.18, 1.35), 0, 0.74, 1.38, 0.08, 0, 0.03, bodyScorched),
-      bakePart(new THREE.BoxGeometry(1.70, 0.24, 1.15), 0, 0.64, 1.40, 0, 0, 0, cabinInterior),
-      bakePart(new THREE.BoxGeometry(1.88, 0.20, 1.05), 0, 0.74, -1.55, -0.05, 0, 0, bodyPaint),
-      bakePart(new THREE.BoxGeometry(2.06, 0.20, 0.22), 0, 0.34, 2.18, 0, 0, 0, chromeTrim),
-      bakePart(new THREE.BoxGeometry(2.06, 0.20, 0.22), 0, 0.34, -2.18, 0, 0, 0, chromeTrim),
-      bakePart(new THREE.BoxGeometry(1.40, 0.24, 0.12), 0, 0.56, 2.14, 0, 0, 0, cabinInterior),
+      bakePart(new THREE.BoxGeometry(1.7, 0.24, 1.15), 0, 0.64, 1.4, 0, 0, 0, cabinInterior),
+      bakePart(new THREE.BoxGeometry(1.88, 0.2, 1.05), 0, 0.74, -1.55, -0.05, 0, 0, bodyPaint),
+      bakePart(new THREE.BoxGeometry(2.06, 0.2, 0.22), 0, 0.34, 2.18, 0, 0, 0, chromeTrim),
+      bakePart(new THREE.BoxGeometry(2.06, 0.2, 0.22), 0, 0.34, -2.18, 0, 0, 0, chromeTrim),
+      bakePart(new THREE.BoxGeometry(1.4, 0.24, 0.12), 0, 0.56, 2.14, 0, 0, 0, cabinInterior),
       bakePart(new THREE.BoxGeometry(0.28, 0.16, 0.12), -0.72, 0.58, 2.14, 0, 0, 0, chromeTrim),
       bakePart(new THREE.BoxGeometry(0.28, 0.16, 0.12), 0.72, 0.58, 2.14, 0, 0, 0, chromeTrim),
       bakePart(new THREE.BoxGeometry(1.56, 0.48, 1.72), 0, 0.94, -0.12, 0, 0, 0, cabinInterior),
-      bakePart(new THREE.BoxGeometry(1.62, 0.10, 1.65), 0, 1.22, -0.15, 0.04, 0, -0.04, bodyPaint),
-      bakePart(new THREE.BoxGeometry(0.10, 0.56, 0.12), -0.78, 0.96, 0.68, -0.45, 0, 0.1, bodyPaint),
-      bakePart(new THREE.BoxGeometry(0.10, 0.56, 0.12), 0.78, 0.96, 0.68, -0.45, 0, -0.1, bodyPaint),
-      bakePart(new THREE.BoxGeometry(0.10, 0.52, 0.14), -0.80, 0.96, -0.12, 0, 0, 0.08, bodyScorched),
-      bakePart(new THREE.BoxGeometry(0.10, 0.52, 0.14), 0.80, 0.96, -0.12, 0, 0, -0.08, bodyScorched),
-      bakePart(new THREE.BoxGeometry(0.12, 0.56, 0.22), -0.78, 0.96, -0.92, 0.42, 0, 0.1, bodyPaint),
-      bakePart(new THREE.BoxGeometry(0.12, 0.56, 0.22), 0.78, 0.96, -0.92, 0.42, 0, -0.1, bodyPaint),
-      bakePart(new THREE.CylinderGeometry(0.38, 0.38, 0.26, 12), -0.98, 0.36, 1.32, 0, 0, Math.PI / 2, tireRubber),
-      bakePart(new THREE.CylinderGeometry(0.20, 0.20, 0.28, 8), -0.98, 0.36, 1.32, 0, 0, Math.PI / 2, chromeTrim),
-      bakePart(new THREE.CylinderGeometry(0.38, 0.38, 0.26, 12), 0.98, 0.36, 1.32, 0, 0, Math.PI / 2, tireRubber),
-      bakePart(new THREE.CylinderGeometry(0.20, 0.20, 0.28, 8), 0.98, 0.36, 1.32, 0, 0, Math.PI / 2, chromeTrim),
-      bakePart(new THREE.CylinderGeometry(0.38, 0.38, 0.26, 12), -0.98, 0.36, -1.32, 0, 0, Math.PI / 2, tireRubber),
-      bakePart(new THREE.CylinderGeometry(0.20, 0.20, 0.28, 8), -0.98, 0.36, -1.32, 0, 0, Math.PI / 2, chromeTrim),
-      bakePart(new THREE.CylinderGeometry(0.38, 0.38, 0.26, 12), 0.98, 0.36, -1.32, 0, 0, Math.PI / 2, tireRubber),
-      bakePart(new THREE.CylinderGeometry(0.20, 0.20, 0.28, 8), 0.98, 0.36, -1.32, 0, 0, Math.PI / 2, chromeTrim)
+      bakePart(new THREE.BoxGeometry(1.62, 0.1, 1.65), 0, 1.22, -0.15, 0.04, 0, -0.04, bodyPaint),
+      bakePart(new THREE.BoxGeometry(0.1, 0.56, 0.12), -0.78, 0.96, 0.68, -0.45, 0, 0.1, bodyPaint),
+      bakePart(new THREE.BoxGeometry(0.1, 0.56, 0.12), 0.78, 0.96, 0.68, -0.45, 0, -0.1, bodyPaint),
+      bakePart(new THREE.BoxGeometry(0.1, 0.52, 0.14), -0.8, 0.96, -0.12, 0, 0, 0.08, bodyScorched),
+      bakePart(new THREE.BoxGeometry(0.1, 0.52, 0.14), 0.8, 0.96, -0.12, 0, 0, -0.08, bodyScorched),
+      bakePart(
+        new THREE.BoxGeometry(0.12, 0.56, 0.22),
+        -0.78,
+        0.96,
+        -0.92,
+        0.42,
+        0,
+        0.1,
+        bodyPaint
+      ),
+      bakePart(
+        new THREE.BoxGeometry(0.12, 0.56, 0.22),
+        0.78,
+        0.96,
+        -0.92,
+        0.42,
+        0,
+        -0.1,
+        bodyPaint
+      ),
+      bakePart(
+        new THREE.CylinderGeometry(0.38, 0.38, 0.26, 12),
+        -0.98,
+        0.36,
+        1.32,
+        0,
+        0,
+        Math.PI / 2,
+        tireRubber
+      ),
+      bakePart(
+        new THREE.CylinderGeometry(0.2, 0.2, 0.28, 8),
+        -0.98,
+        0.36,
+        1.32,
+        0,
+        0,
+        Math.PI / 2,
+        chromeTrim
+      ),
+      bakePart(
+        new THREE.CylinderGeometry(0.38, 0.38, 0.26, 12),
+        0.98,
+        0.36,
+        1.32,
+        0,
+        0,
+        Math.PI / 2,
+        tireRubber
+      ),
+      bakePart(
+        new THREE.CylinderGeometry(0.2, 0.2, 0.28, 8),
+        0.98,
+        0.36,
+        1.32,
+        0,
+        0,
+        Math.PI / 2,
+        chromeTrim
+      ),
+      bakePart(
+        new THREE.CylinderGeometry(0.38, 0.38, 0.26, 12),
+        -0.98,
+        0.36,
+        -1.32,
+        0,
+        0,
+        Math.PI / 2,
+        tireRubber
+      ),
+      bakePart(
+        new THREE.CylinderGeometry(0.2, 0.2, 0.28, 8),
+        -0.98,
+        0.36,
+        -1.32,
+        0,
+        0,
+        Math.PI / 2,
+        chromeTrim
+      ),
+      bakePart(
+        new THREE.CylinderGeometry(0.38, 0.38, 0.26, 12),
+        0.98,
+        0.36,
+        -1.32,
+        0,
+        0,
+        Math.PI / 2,
+        tireRubber
+      ),
+      bakePart(
+        new THREE.CylinderGeometry(0.2, 0.2, 0.28, 8),
+        0.98,
+        0.36,
+        -1.32,
+        0,
+        0,
+        Math.PI / 2,
+        chromeTrim
+      )
     ];
     const carGeo = mergeParts(carParts);
     const carMat = new THREE.MeshStandardMaterial({
@@ -167,16 +344,52 @@ export class Environment2029 {
     const rubbleParts: THREE.BufferGeometry[] = [
       bakePart(new THREE.BoxGeometry(2.4, 0.38, 1.8), 0, 0.28, 0, 0.22, 0.35, -0.12, slabMid),
       bakePart(new THREE.BoxGeometry(1.5, 0.45, 1.3), 0.75, 0.22, 0.45, -0.15, 0.6, 0.2, slabDark),
-      bakePart(new THREE.BoxGeometry(0.75, 0.28, 0.65), -0.85, 0.14, -0.65, 0.3, -0.2, 0.4, slabCracked),
-      bakePart(new THREE.BoxGeometry(0.55, 0.22, 0.55), 0.3, 0.11, -0.8, -0.2, 0.5, -0.3, slabCracked),
-      bakePart(new THREE.CylinderGeometry(0.03, 0.03, 1.4, 6), -0.75, 0.7, 0.3, 0.4, 0, 0.5, rebarRust),
-      bakePart(new THREE.CylinderGeometry(0.03, 0.03, 1.1, 6), 0.55, 0.75, -0.4, -0.5, 0.3, -0.3, rebarRust)
+      bakePart(
+        new THREE.BoxGeometry(0.75, 0.28, 0.65),
+        -0.85,
+        0.14,
+        -0.65,
+        0.3,
+        -0.2,
+        0.4,
+        slabCracked
+      ),
+      bakePart(
+        new THREE.BoxGeometry(0.55, 0.22, 0.55),
+        0.3,
+        0.11,
+        -0.8,
+        -0.2,
+        0.5,
+        -0.3,
+        slabCracked
+      ),
+      bakePart(
+        new THREE.CylinderGeometry(0.03, 0.03, 1.4, 6),
+        -0.75,
+        0.7,
+        0.3,
+        0.4,
+        0,
+        0.5,
+        rebarRust
+      ),
+      bakePart(
+        new THREE.CylinderGeometry(0.03, 0.03, 1.1, 6),
+        0.55,
+        0.75,
+        -0.4,
+        -0.5,
+        0.3,
+        -0.3,
+        rebarRust
+      )
     ];
     const rubbleGeo = mergeParts(rubbleParts);
     const rubbleMat = new THREE.MeshStandardMaterial({
       color: 0xffffff,
       vertexColors: true,
-      roughness: 0.90,
+      roughness: 0.9,
       metalness: 0.12
     });
 
@@ -187,7 +400,7 @@ export class Environment2029 {
     const emberAmber = 0xff8800;
     const craterParts: THREE.BufferGeometry[] = [
       bakePart(new THREE.CylinderGeometry(2.1, 2.45, 0.14, 12), 0, 0.07, 0, 0, 0, 0, scorchDark),
-      bakePart(new THREE.CylinderGeometry(1.5, 1.95, 0.10, 12), 0, 0.04, 0, 0, 0, 0, ashBlack),
+      bakePart(new THREE.CylinderGeometry(1.5, 1.95, 0.1, 12), 0, 0.04, 0, 0, 0, 0, ashBlack),
       bakePart(new THREE.CylinderGeometry(0.65, 0.95, 0.05, 10), 0, 0.02, 0, 0, 0, 0, emberRed),
       bakePart(new THREE.BoxGeometry(0.42, 0.05, 0.42), 0, 0.03, 0, 0, 0.5, 0, emberAmber)
     ];
@@ -291,13 +504,19 @@ export class Environment2029 {
       towerGroup.add(tower);
 
       if (height > 22) {
-        const antenna = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.12, 6, 6), ruinedSteelMat);
+        const antenna = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.08, 0.12, 6, 6),
+          ruinedSteelMat
+        );
         antenna.position.set(0, height / 2 + 3, 0);
         const beacon = new THREE.Mesh(new THREE.SphereGeometry(0.18, 6, 6), beaconMat);
         beacon.position.set(0, height / 2 + 6, 0);
         towerGroup.add(antenna, beacon);
       } else if (i % 3 === 0) {
-        const roofSlab = new THREE.Mesh(new THREE.BoxGeometry(width * 1.1, 0.6, depth * 1.1), ruinedSteelMat);
+        const roofSlab = new THREE.Mesh(
+          new THREE.BoxGeometry(width * 1.1, 0.6, depth * 1.1),
+          ruinedSteelMat
+        );
         roofSlab.position.set(0, height / 2 + 0.2, 0);
         roofSlab.rotation.z = (Math.random() - 0.5) * 0.35;
         towerGroup.add(roofSlab);

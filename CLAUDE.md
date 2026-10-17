@@ -1,6 +1,7 @@
 # Terminator Survivors — Developer & Agent Guide
 
 ## 1. Quick Commands
+
 - `npm run dev`: Launch local Vite development server
 - `npm run build`: Compile TypeScript and bundle production PWA
 - `npm run typecheck`: Run TypeScript compiler (`tsc --noEmit`)
@@ -8,6 +9,7 @@
 - `npm run test:e2e`: Run Playwright end-to-end tests
 
 ## 2. Codebase Architecture (`src/`)
+
 - `src/audio`: Web Audio API synthesis, SFX trigger library, and gapless background music streamer
 - `src/core`: Game orchestrator, fixed 60Hz GameLoop, EventBus, and `window.__GAME_DEBUG__` interface
 - `src/data`: Game balance data (weapons, passives, evolutions, meta-upgrades, wave schedule) — **all balance numbers live here**
@@ -18,7 +20,9 @@
 - `src/ui`: Tactical CSM-101 HUD, TitleScreen, BunkerRequisition, LevelUpModal, VaultJackpotModal, PauseModal
 
 ## 3. Debug API (`window.__GAME_DEBUG__`)
+
 Exposed during gameplay on `window.__GAME_DEBUG__` for testing and Playwright specs:
+
 - `getState()`: Returns live run state (`mode`, `hp`, `xp`, `weapons`, `passives`, `playerPos`, `activeEnemies`, etc.)
 - `grantXp(amount)`: Adds XP directly to test level-up triggers
 - `spawnBoss(archetype)`: Spawns specific boss archetype (`hk_aerial_squadron_leader`, `hk_tank_goliath`, `t1000_prototype`, etc.)
@@ -28,8 +32,9 @@ Exposed during gameplay on `window.__GAME_DEBUG__` for testing and Playwright sp
 - `setGodMode(enabled)`: Toggles player invulnerability
 
 ## 4. Working Rules for Agents (from `roadmap.md`)
+
 1. **One task = one commit.** Format: `<type>(<area>): <task-id> <short summary>` (e.g. `fix(run): P1-02 stop revivals refilling on passive pick`).
-2. **Before starting a task**, read every file listed under *Files*. Do not edit unlisted files without justification.
+2. **Before starting a task**, read every file listed under _Files_. Do not edit unlisted files without justification.
 3. **Verification loop after every task:**
    - `npm run typecheck`
    - `npm run test:unit`

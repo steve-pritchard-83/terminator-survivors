@@ -25,7 +25,10 @@ type EventCallback<T> = (data: T) => void;
 export class EventBus {
   private readonly listeners = new Map<keyof GameEventMap, Set<EventCallback<any>>>();
 
-  public on<K extends keyof GameEventMap>(event: K, callback: EventCallback<GameEventMap[K]>): () => void {
+  public on<K extends keyof GameEventMap>(
+    event: K,
+    callback: EventCallback<GameEventMap[K]>
+  ): () => void {
     let set = this.listeners.get(event);
     if (!set) {
       set = new Set();
