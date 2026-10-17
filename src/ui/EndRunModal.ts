@@ -32,6 +32,8 @@ export class EndRunModal {
     this.audioEngine = audioEngine;
 
     this.container = document.createElement('div');
+    this.container.id = 'end-run-modal';
+    this.container.setAttribute('data-testid', 'end-run-modal');
     this.container.className = 'modal-backdrop';
     this.container.setAttribute('role', 'dialog');
     this.container.setAttribute('aria-modal', 'true');
@@ -80,7 +82,7 @@ export class EndRunModal {
         </div>
 
         <div style="display:flex; flex-direction:column; gap:10px; align-items:center; margin-top:12px;">
-          <button class="btn-primary" id="btn-continue-war" aria-label="Continue the War" style="background:var(--color-amber); border-color:#ffbb00; display:none;">
+          <button class="btn-primary" id="btn-continue-war" data-testid="btn-continue-war" aria-label="Continue the War" style="background:var(--color-amber); border-color:#ffbb00; display:none;">
             CONTINUE THE WAR (+100 ALLOY)
           </button>
           <button class="btn-primary" id="btn-return-bunker" aria-label="Return to Command">

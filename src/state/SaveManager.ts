@@ -406,7 +406,9 @@ export class SaveManager {
     scrapEarned: number,
     victory: boolean,
     bossesKilled = 0,
-    isEndless = false
+    isEndless = false,
+    endlessTotalKills?: number,
+    endlessTotalScrap?: number
   ): void {
     this.data.totalKills += kills;
     this.data.alloyScrap += scrapEarned;
@@ -421,9 +423,11 @@ export class SaveManager {
       if (!this.data.endlessHighScores) {
         this.data.endlessHighScores = { bestTimeSeconds: 0, maxKills: 0, maxScrap: 0 };
       }
+      const recordKills = endlessTotalKills ?? kills;
+      const recordScrap = endlessTotalScrap ?? scrapEarned;
       this.data.endlessHighScores.bestTimeSeconds = Math.max(this.data.endlessHighScores.bestTimeSeconds, timeSec);
-      this.data.endlessHighScores.maxKills = Math.max(this.data.endlessHighScores.maxKills, kills);
-      this.data.endlessHighScores.maxScrap = Math.max(this.data.endlessHighScores.maxScrap, scrapEarned);
+      this.data.endlessHighScores.maxKills = Math.max(this.data.endlessHighScores.maxKills, recordKills);
+      this.data.endlessHighScores.maxScrap = Math.max(this.data.endlessHighScores.maxScrap, recordScrap);
     }
 
     // Milestone Auto-Unlocks
@@ -581,9 +585,13 @@ export class SaveManager {
     if (!this.data.runHistory) {
       this.data.runHistory = [];
     }
-    this.data.runHistory.unshift(record);
-    if (this.data.runHistory.length > 20) {
-      this.data.runHistory.length = 20;
+    if (record.outcome === 'endless' && this.data.runHistory.length > 0 && this.data.runHistory[0].outcome === 'victory') {
+      this.data.runHistory[0] = record;
+    } else {
+      this.data.runHistory.unshift(record);
+      if (this.data.runHistory.length > 20) {
+        this.data.runHistory.length = 20;
+      }
     }
     this.save();
   }

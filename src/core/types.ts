@@ -361,7 +361,7 @@ export interface RunHistoryRecord {
   durationSeconds: number;
   stageId: StageId;
   loadoutId: LoadoutId;
-  outcome: 'victory' | 'defeat';
+  outcome: 'victory' | 'defeat' | 'endless';
   levelReached: number;
   kills: number;
   scrapEarned: number;

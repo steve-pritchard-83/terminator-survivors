@@ -188,13 +188,27 @@ export class RunController {
     const threatMult = computeThreatScrapMultiplier(Array.from(this.host.runState.activeThreats));
     const finalScrap = Math.round(this.host.runState.alloyScrapEarned * threatMult);
 
+    if (victory) {
+      this.host.runState.bankedKills = this.host.runState.kills;
+      this.host.runState.bankedScrap = finalScrap;
+    }
+
+    const deltaKills = this.host.runState.isEndless
+      ? Math.max(0, this.host.runState.kills - this.host.runState.bankedKills)
+      : this.host.runState.kills;
+    const deltaScrap = this.host.runState.isEndless
+      ? Math.max(0, finalScrap - this.host.runState.bankedScrap)
+      : finalScrap;
+
     this.host.saveManager.addRunResults(
-      this.host.runState.kills,
+      deltaKills,
       this.host.runState.timeSeconds,
-      finalScrap,
+      deltaScrap,
       victory,
       this.host.runState.bossesKilled,
-      this.host.runState.isEndless
+      this.host.runState.isEndless,
+      this.host.runState.kills,
+      finalScrap
     );
 
     if (this.host.runState.isDailyOperation && this.host.runState.dailyDateKey) {
@@ -237,13 +251,19 @@ export class RunController {
       }
     }
 
+    const outcome: 'victory' | 'defeat' | 'endless' = this.host.runState.isEndless
+      ? 'endless'
+      : victory
+        ? 'victory'
+        : 'defeat';
+
     const runRecord: RunHistoryRecord = {
       id: `run_${Date.now()}_${globalRNG.next().toString(36).slice(2, 7)}`,
       date: new Date().toISOString(),
       durationSeconds: this.host.runState.timeSeconds,
       stageId: this.host.runState.stageId,
       loadoutId: this.host.runState.loadoutId,
-      outcome: victory ? 'victory' : 'defeat',
+      outcome,
       levelReached: this.host.runState.level,
       kills: this.host.runState.kills,
       scrapEarned: finalScrap,
@@ -275,6 +295,7 @@ export class RunController {
       },
       victory && !this.host.runState.isEndless
         ? () => {
+            this.host.uiManager.endRunModal.hide();
             this.host.runState.isEndless = true;
             this.host.runState.mode = 'playing';
             this.host.runState.addScrap(100);

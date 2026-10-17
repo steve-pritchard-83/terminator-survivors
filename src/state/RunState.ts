@@ -38,6 +38,12 @@ export class RunState {
   }
 
   public set mode(newMode: GameMode) {
+    if (this.stateMachine.getState() === 'victory' && newMode === 'playing' && !this.isEndless) {
+      if (this.stateMachine.throwInDev) {
+        throw new Error("Illegal state transition from 'victory' to 'playing' without isEndless");
+      }
+      return;
+    }
     this.stateMachine.transition(newMode);
   }
   public timeSeconds = 0;
@@ -51,6 +57,8 @@ export class RunState {
   public kills = 0;
   public bossesKilled = 0;
   public alloyScrapEarned = 0;
+  public bankedKills = 0;
+  public bankedScrap = 0;
   public readonly killsByType = new Map<EnemyArchetypeId, number>();
   public levelUpTimeline: Array<{ level: number; timeSeconds: number; choiceTitle: string }> = [];
 
@@ -154,6 +162,8 @@ export class RunState {
     this.kills = 0;
     this.bossesKilled = 0;
     this.alloyScrapEarned = 0;
+    this.bankedKills = 0;
+    this.bankedScrap = 0;
     this.killsByType.clear();
     this.levelUpTimeline = [];
     this.playerPos = { x: 0, z: 0 };

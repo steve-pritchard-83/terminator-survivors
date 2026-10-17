@@ -11,7 +11,7 @@ export const GAME_MODE_TRANSITIONS: StateTransitionTable<GameMode> = {
   levelup: ['playing'],
   vault: ['playing'],
   gameover: ['title'],
-  victory: ['title']
+  victory: ['title', 'playing']
 };
 
 export function isDev(): boolean {
