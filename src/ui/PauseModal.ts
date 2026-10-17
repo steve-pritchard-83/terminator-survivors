@@ -2,6 +2,7 @@ import type { SaveManager } from '../state/SaveManager';
 import type { AudioEngine } from '../audio/AudioEngine';
 import type { RunState } from '../state/RunState';
 import type { GamepadManager } from '../input/GamepadManager';
+import { ModalA11y } from './A11yHelper';
 
 export class PauseModal {
   public readonly container: HTMLElement;
@@ -20,6 +21,7 @@ export class PauseModal {
 
   private selectedRowIndex = 0;
   private readonly rows: HTMLElement[] = [];
+  private readonly a11y: ModalA11y;
 
   constructor(
     root: HTMLElement,
@@ -28,8 +30,12 @@ export class PauseModal {
     private readonly getRunState: () => RunState
   ) {
     this.container = document.createElement('div');
+    this.container.id = 'pause-modal';
     this.container.className = 'modal-backdrop';
     this.container.setAttribute('data-testid', 'pause-modal');
+    this.container.setAttribute('role', 'dialog');
+    this.container.setAttribute('aria-modal', 'true');
+    this.container.setAttribute('aria-label', 'Mission Paused');
     this.container.style.display = 'none';
 
     this.container.innerHTML = `
@@ -40,43 +46,43 @@ export class PauseModal {
         <div style="display:flex; flex-direction:column; gap:16px; margin-bottom:24px; font-family:var(--font-telemetry);">
           <!-- Master Volume -->
           <div class="pause-setting-row" id="pause-row-0" style="display:flex; justify-content:space-between; align-items:center; padding:4px 8px; border-radius:3px; transition:background 0.15s ease;">
-            <label style="color:var(--color-chrome); font-size:14px; letter-spacing:1px;">MASTER AUDIO</label>
-            <input type="range" min="0" max="100" id="pause-slider-master" style="width:160px; accent-color:var(--color-cyan); cursor:pointer;" />
+            <label for="pause-slider-master" style="color:var(--color-chrome); font-size:14px; letter-spacing:1px;">MASTER AUDIO</label>
+            <input type="range" min="0" max="100" id="pause-slider-master" aria-label="Master Volume" style="width:160px; accent-color:var(--color-cyan); cursor:pointer;" />
           </div>
 
           <!-- SFX Volume -->
           <div class="pause-setting-row" id="pause-row-1" style="display:flex; justify-content:space-between; align-items:center; padding:4px 8px; border-radius:3px; transition:background 0.15s ease;">
-            <label style="color:var(--color-chrome); font-size:14px; letter-spacing:1px;">SFX WEAPONS</label>
-            <input type="range" min="0" max="100" id="pause-slider-sfx" style="width:160px; accent-color:var(--color-red); cursor:pointer;" />
+            <label for="pause-slider-sfx" style="color:var(--color-chrome); font-size:14px; letter-spacing:1px;">SFX WEAPONS</label>
+            <input type="range" min="0" max="100" id="pause-slider-sfx" aria-label="SFX Weapons Volume" style="width:160px; accent-color:var(--color-red); cursor:pointer;" />
           </div>
 
           <!-- Music Volume -->
           <div class="pause-setting-row" id="pause-row-2" style="display:flex; justify-content:space-between; align-items:center; padding:4px 8px; border-radius:3px; transition:background 0.15s ease;">
-            <label style="color:var(--color-chrome); font-size:14px; letter-spacing:1px;">SYNTHWAVE BGM</label>
-            <input type="range" min="0" max="100" id="pause-slider-music" style="width:160px; accent-color:var(--color-amber); cursor:pointer;" />
+            <label for="pause-slider-music" style="color:var(--color-chrome); font-size:14px; letter-spacing:1px;">SYNTHWAVE BGM</label>
+            <input type="range" min="0" max="100" id="pause-slider-music" aria-label="Music Volume" style="width:160px; accent-color:var(--color-amber); cursor:pointer;" />
           </div>
 
           <!-- CRT Scanlines -->
           <div class="pause-setting-row" id="pause-row-3" style="display:flex; justify-content:space-between; align-items:center; padding:4px 8px; border-radius:3px; transition:background 0.15s ease;">
-            <label style="color:var(--color-chrome); font-size:14px; letter-spacing:1px;">CRT SCANLINE EMULATION</label>
-            <input type="checkbox" id="pause-toggle-crt" style="width:20px; height:20px; accent-color:var(--color-cyan); cursor:pointer;" />
+            <label for="pause-toggle-crt" style="color:var(--color-chrome); font-size:14px; letter-spacing:1px;">CRT SCANLINE EMULATION</label>
+            <input type="checkbox" id="pause-toggle-crt" aria-label="CRT Scanline Emulation" style="width:20px; height:20px; accent-color:var(--color-cyan); cursor:pointer;" />
           </div>
 
           <!-- Auto-Aim -->
           <div class="pause-setting-row" id="pause-row-4" style="display:flex; justify-content:space-between; align-items:center; padding:4px 8px; border-radius:3px; transition:background 0.15s ease;">
-            <label style="color:var(--color-chrome); font-size:14px; letter-spacing:1px;">TARGET LOCK AUTO-AIM</label>
-            <input type="checkbox" id="pause-toggle-autoaim" style="width:20px; height:20px; accent-color:var(--color-cyan); cursor:pointer;" />
+            <label for="pause-toggle-autoaim" style="color:var(--color-chrome); font-size:14px; letter-spacing:1px;">TARGET LOCK AUTO-AIM</label>
+            <input type="checkbox" id="pause-toggle-autoaim" aria-label="Target Lock Auto-Aim" style="width:20px; height:20px; accent-color:var(--color-cyan); cursor:pointer;" />
           </div>
         </div>
 
         <div style="display:flex; gap:12px; justify-content:center; margin-top:8px;">
-          <button class="btn-primary" data-testid="btn-pause-resume" id="btn-pause-resume" style="flex:1;">RESUME MISSION</button>
-          <button class="btn-secondary" id="btn-pause-settings" style="flex:1;">ALL SETTINGS</button>
-          <button class="btn-secondary" data-testid="btn-pause-abort" id="btn-pause-abort" style="flex:1; border-color:var(--color-red); color:var(--color-red);">ABORT MISSION</button>
+          <button class="btn-primary" data-testid="btn-pause-resume" id="btn-pause-resume" aria-label="Resume Mission" style="flex:1;">RESUME MISSION</button>
+          <button class="btn-secondary" id="btn-pause-settings" aria-label="All Settings" style="flex:1;">ALL SETTINGS</button>
+          <button class="btn-secondary" data-testid="btn-pause-abort" id="btn-pause-abort" aria-label="Abort Mission" style="flex:1; border-color:var(--color-red); color:var(--color-red);">ABORT MISSION</button>
         </div>
 
         <div id="pause-controller-hint" style="font-family:var(--font-telemetry); font-size:12px; color:var(--color-cyan); margin-top:14px; text-align:center; display:none;">
-          [D-PAD] NAVIGATE / ADJUST &nbsp;//&nbsp; [A] TOGGLE &nbsp;//&nbsp; [B / START] RESUME
+          [D-PAD / ARROWS] NAVIGATE / ADJUST &nbsp;//&nbsp; [ENTER / A] TOGGLE &nbsp;//&nbsp; [ESC / B] RESUME
         </div>
       </div>
     `;
@@ -102,6 +108,54 @@ export class PauseModal {
       this.settingsBtn,
       this.abortBtn
     ];
+
+    this.a11y = new ModalA11y(this.container, {
+      onClose: () => {
+        this.resumeBtn.click();
+      },
+      onNavigate: (dir) => {
+        if (dir.y !== 0) {
+          this.selectedRowIndex = (this.selectedRowIndex + dir.y + this.rows.length) % this.rows.length;
+          this.updateRowHighlight();
+          return true;
+        }
+        if (dir.x !== 0 && this.selectedRowIndex <= 2) {
+          const slider = this.rows[this.selectedRowIndex].querySelector('input') as HTMLInputElement | null;
+          if (slider) {
+            const cur = parseInt(slider.value, 10);
+            slider.value = Math.max(0, Math.min(100, cur + dir.x * 5)).toString();
+            slider.dispatchEvent(new Event('input'));
+            return true;
+          }
+        }
+        return false;
+      },
+      onConfirm: () => {
+        if (this.selectedRowIndex === 3) {
+          this.crtCheckbox.checked = !this.crtCheckbox.checked;
+          this.crtCheckbox.dispatchEvent(new Event('change'));
+          return true;
+        }
+        if (this.selectedRowIndex === 4) {
+          this.autoAimCheckbox.checked = !this.autoAimCheckbox.checked;
+          this.autoAimCheckbox.dispatchEvent(new Event('change'));
+          return true;
+        }
+        if (this.selectedRowIndex === 5) {
+          this.resumeBtn.click();
+          return true;
+        }
+        if (this.selectedRowIndex === 6) {
+          this.settingsBtn.click();
+          return true;
+        }
+        if (this.selectedRowIndex === 7) {
+          this.abortBtn.click();
+          return true;
+        }
+        return false;
+      }
+    });
 
     this.setupListeners();
   }
@@ -180,6 +234,7 @@ export class PauseModal {
     this.selectedRowIndex = 5; // Default focus on Resume Mission
     this.container.style.display = 'flex';
     this.updateRowHighlight();
+    this.a11y.activate(this.resumeBtn);
   }
 
   public updateRowHighlight(): void {
@@ -262,6 +317,11 @@ export class PauseModal {
       }
       if (this.selectedRowIndex === 6) {
         gp.playRumble(60, 0.25, 0.4);
+        this.settingsBtn.click();
+        return true;
+      }
+      if (this.selectedRowIndex === 7) {
+        gp.playRumble(60, 0.25, 0.4);
         this.abortBtn.click();
         return true;
       }
@@ -271,6 +331,7 @@ export class PauseModal {
   }
 
   public hide(): void {
+    this.a11y.deactivate();
     this.container.style.display = 'none';
   }
 

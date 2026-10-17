@@ -8,11 +8,13 @@ import type { SaveManager } from '../state/SaveManager';
 import type { AudioEngine } from '../audio/AudioEngine';
 import { createEnemyPreviewObject } from '../graphics/meshes/EnemyTurntablePreview';
 import { disposeObject3D } from '../graphics/dispose';
+import { ModalA11y } from './A11yHelper';
 
 export class CodexModal {
   public readonly container: HTMLElement;
   private readonly saveManager: SaveManager;
   private readonly audioEngine: AudioEngine;
+  private readonly a11y: ModalA11y;
 
   private currentTab: 'bestiary' | 'armory' | 'theater' = 'bestiary';
   private selectedEnemyId: EnemyArchetypeId = 't800_endoskeleton';
@@ -38,6 +40,9 @@ export class CodexModal {
     this.container = document.createElement('div');
     this.container.className = 'modal-backdrop';
     this.container.id = 'codex-modal';
+    this.container.setAttribute('role', 'dialog');
+    this.container.setAttribute('aria-modal', 'true');
+    this.container.setAttribute('aria-label', 'Codex Archive');
     this.container.style.display = 'none';
 
     this.container.innerHTML = `
@@ -46,13 +51,13 @@ export class CodexModal {
         <div class="t800-ticker" id="codex-status-ticker">CLASSIFIED ARCHIVAL DATA // DN38416 SECURED</div>
 
         <div style="display:flex; gap:10px; margin:12px 0 14px 0; border-bottom:1px solid rgba(77,210,255,0.25); padding-bottom:8px;">
-          <button class="btn-secondary codex-tab-btn active" id="tab-codex-bestiary" style="padding:6px 16px; font-size:12px;">
+          <button class="btn-secondary codex-tab-btn active" id="tab-codex-bestiary" aria-label="Machine Bestiary Tab" style="padding:6px 16px; font-size:12px;">
             [1] MACHINE BESTIARY
           </button>
-          <button class="btn-secondary codex-tab-btn" id="tab-codex-armory" style="padding:6px 16px; font-size:12px;">
+          <button class="btn-secondary codex-tab-btn" id="tab-codex-armory" aria-label="Resistance Armory Tab" style="padding:6px 16px; font-size:12px;">
             [2] RESISTANCE ARMORY
           </button>
-          <button class="btn-secondary codex-tab-btn" id="tab-codex-theater" style="padding:6px 16px; font-size:12px;">
+          <button class="btn-secondary codex-tab-btn" id="tab-codex-theater" aria-label="Theater of War Tab" style="padding:6px 16px; font-size:12px;">
             [3] THEATER OF WAR
           </button>
         </div>
@@ -67,7 +72,7 @@ export class CodexModal {
         </div>
 
         <div style="display:flex; justify-content:center; align-items:center; gap:12px; margin-top:14px; border-top:1px solid rgba(255,255,255,0.1); padding-top:10px;">
-          <button class="btn-secondary" id="btn-close-codex" style="padding:8px 28px;">
+          <button class="btn-secondary" id="btn-close-codex" aria-label="Return to Command" style="padding:8px 28px;">
             RETURN TO COMMAND
           </button>
         </div>
@@ -80,6 +85,20 @@ export class CodexModal {
     this.canvas.width = 300;
     this.canvas.height = 200;
     this.canvas.style.cssText = 'width:100%; max-width:320px; height:200px; background:#080d14; border:1px solid var(--color-cyan); border-radius:4px; box-shadow:0 0 12px rgba(77,210,255,0.25);';
+
+    this.a11y = new ModalA11y(this.container, {
+      onClose: () => {
+        this.hide();
+      },
+      onConfirm: () => {
+        const active = document.activeElement;
+        if (active instanceof HTMLButtonElement && this.container.contains(active)) {
+          active.click();
+          return true;
+        }
+        return false;
+      }
+    });
 
     this.bindEvents();
   }
@@ -106,10 +125,12 @@ export class CodexModal {
     this.initTurntableThree();
     this.renderCurrentTab();
     this.startTurntableLoop();
+    this.a11y.activate();
   }
 
   public hide(): void {
     this.audioEngine.playHudScanClose();
+    this.a11y.deactivate();
     this.container.style.display = 'none';
     this.stopTurntableLoop();
   }
@@ -218,8 +239,10 @@ export class CodexModal {
       const kills = this.saveManager.getBestiaryKills(arch);
       const isSelected = this.selectedEnemyId === arch;
 
-      const item = document.createElement('div');
+      const item = document.createElement('button');
+      item.type = 'button';
       item.className = 'upgrade-card';
+      item.setAttribute('aria-label', `${codex.name}: Threat ${codex.threat}, ${kills} confirmed kills`);
       item.style.cssText = `
         padding: 6px 10px;
         background: ${isSelected ? 'rgba(77,210,255,0.2)' : 'rgba(15,25,35,0.7)'};
@@ -297,8 +320,10 @@ export class CodexModal {
       const isSelected = this.selectedWeaponId === wId;
       const isDiscovered = isEvo ? this.saveManager.isEvolutionDiscovered(wId) : true;
 
-      const item = document.createElement('div');
+      const item = document.createElement('button');
+      item.type = 'button';
       item.className = 'upgrade-card';
+      item.setAttribute('aria-label', `${def?.name ?? wId}: ${isEvo ? 'Evolved Superweapon' : 'Standard Weapon'}`);
       item.style.cssText = `
         padding: 6px 10px;
         background: ${isSelected ? 'rgba(77,210,255,0.2)' : 'rgba(15,25,35,0.7)'};
@@ -404,8 +429,10 @@ export class CodexModal {
       const lore = STAGE_CODEX[sId];
       const isSelected = this.selectedStageId === sId;
 
-      const item = document.createElement('div');
+      const item = document.createElement('button');
+      item.type = 'button';
       item.className = 'upgrade-card';
+      item.setAttribute('aria-label', `${cfg.name}: Era ${lore?.era ?? '2029 A.D.'}`);
       item.style.cssText = `
         padding: 6px 10px;
         background: ${isSelected ? 'rgba(77,210,255,0.2)' : 'rgba(15,25,35,0.7)'};

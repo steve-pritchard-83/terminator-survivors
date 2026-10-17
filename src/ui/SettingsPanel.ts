@@ -9,12 +9,14 @@ import {
   formatButtonLabel,
   formatKeyLabel
 } from '../data/inputDefaults';
+import { ModalA11y } from './A11yHelper';
 
 export class SettingsPanel {
   public readonly container: HTMLElement;
   private readonly saveManager: SaveManager;
   private readonly audioEngine: AudioEngine;
   private onCloseCallback?: () => void;
+  private readonly a11y: ModalA11y;
 
   // Form controls
   private masterSlider!: HTMLInputElement;
@@ -71,6 +73,44 @@ export class SettingsPanel {
     this.cacheElements();
     this.setupListeners();
     this.applyCurrentSettingsToDom(this.saveManager.getData().settings);
+
+    this.a11y = new ModalA11y(this.container, {
+      onClose: () => {
+        this.closeBtn.click();
+      },
+      onNavigate: (dir) => {
+        if (dir.y !== 0) {
+          this.selectedIndex = (this.selectedIndex + dir.y + this.selectables.length) % this.selectables.length;
+          this.updateHighlight();
+          return true;
+        }
+        const curEl = this.selectables[this.selectedIndex];
+        if (dir.x !== 0 && curEl instanceof HTMLInputElement && curEl.type === 'range') {
+          const step = Number(curEl.step) || 5;
+          const min = Number(curEl.min) || 0;
+          const max = Number(curEl.max) || 100;
+          const cur = Number(curEl.value);
+          const next = Math.max(min, Math.min(max, cur + dir.x * step));
+          curEl.value = next.toString();
+          curEl.dispatchEvent(new Event('input'));
+          return true;
+        }
+        return false;
+      },
+      onConfirm: () => {
+        const curEl = this.selectables[this.selectedIndex];
+        if (curEl instanceof HTMLInputElement && curEl.type === 'checkbox') {
+          curEl.checked = !curEl.checked;
+          curEl.dispatchEvent(new Event('change'));
+          return true;
+        }
+        if (curEl instanceof HTMLButtonElement) {
+          curEl.click();
+          return true;
+        }
+        return false;
+      }
+    });
   }
 
   private renderMarkup(): void {
@@ -87,7 +127,7 @@ export class SettingsPanel {
             <div class="settings-row" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
               <label for="setting-master" style="font-size:13px;">Master Volume</label>
               <div style="display:flex; align-items:center; gap:8px;">
-                <input type="range" id="setting-master" min="0" max="100" step="5" style="width:140px;" />
+                <input type="range" id="setting-master" aria-label="Master Volume" min="0" max="100" step="5" style="width:140px;" />
                 <span id="setting-master-val" style="font-family:var(--font-telemetry); font-size:12px; width:36px; text-align:right;">80%</span>
               </div>
             </div>
@@ -95,7 +135,7 @@ export class SettingsPanel {
             <div class="settings-row" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
               <label for="setting-music" style="font-size:13px;">Music Intensity</label>
               <div style="display:flex; align-items:center; gap:8px;">
-                <input type="range" id="setting-music" min="0" max="100" step="5" style="width:140px;" />
+                <input type="range" id="setting-music" aria-label="Music Intensity" min="0" max="100" step="5" style="width:140px;" />
                 <span id="setting-music-val" style="font-family:var(--font-telemetry); font-size:12px; width:36px; text-align:right;">70%</span>
               </div>
             </div>
@@ -103,7 +143,7 @@ export class SettingsPanel {
             <div class="settings-row" style="display:flex; justify-content:space-between; align-items:center;">
               <label for="setting-sfx" style="font-size:13px;">Sound Effects</label>
               <div style="display:flex; align-items:center; gap:8px;">
-                <input type="range" id="setting-sfx" min="0" max="100" step="5" style="width:140px;" />
+                <input type="range" id="setting-sfx" aria-label="Sound Effects" min="0" max="100" step="5" style="width:140px;" />
                 <span id="setting-sfx-val" style="font-family:var(--font-telemetry); font-size:12px; width:36px; text-align:right;">85%</span>
               </div>
             </div>
@@ -116,7 +156,7 @@ export class SettingsPanel {
             <div class="settings-row" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
               <label for="setting-shake" style="font-size:13px;">Screen Shake Intensity</label>
               <div style="display:flex; align-items:center; gap:8px;">
-                <input type="range" id="setting-shake" min="0" max="100" step="5" style="width:140px;" />
+                <input type="range" id="setting-shake" aria-label="Screen Shake Intensity" min="0" max="100" step="5" style="width:140px;" />
                 <span id="setting-shake-val" style="font-family:var(--font-telemetry); font-size:12px; width:36px; text-align:right;">100%</span>
               </div>
             </div>
@@ -124,14 +164,14 @@ export class SettingsPanel {
             <div class="settings-row" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
               <label for="setting-flash" style="font-size:13px;">Damage Flash Intensity</label>
               <div style="display:flex; align-items:center; gap:8px;">
-                <input type="range" id="setting-flash" min="0" max="100" step="5" style="width:140px;" />
+                <input type="range" id="setting-flash" aria-label="Damage Flash Intensity" min="0" max="100" step="5" style="width:140px;" />
                 <span id="setting-flash-val" style="font-family:var(--font-telemetry); font-size:12px; width:36px; text-align:right;">100%</span>
               </div>
             </div>
 
             <div class="settings-row" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
               <label for="setting-damage-numbers" style="font-size:13px;">Damage Numbers</label>
-              <select id="setting-damage-numbers" style="background:#0f1926; color:#fff; border:1px solid rgba(77,210,255,0.4); padding:4px 8px; border-radius:3px;">
+              <select id="setting-damage-numbers" aria-label="Damage Numbers" style="background:#0f1926; color:#fff; border:1px solid rgba(77,210,255,0.4); padding:4px 8px; border-radius:3px;">
                 <option value="all">ALL (Standard)</option>
                 <option value="crits">CRITICAL HITS ONLY</option>
                 <option value="off">OFF (Clean HUD)</option>
@@ -140,12 +180,12 @@ export class SettingsPanel {
 
             <div class="settings-row" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
               <label for="setting-crt" style="font-size:13px;">CRT Scanlines & Phosphor Glow</label>
-              <input type="checkbox" id="setting-crt" style="width:18px; height:18px;" />
+              <input type="checkbox" id="setting-crt" aria-label="CRT Scanlines and Phosphor Glow" style="width:18px; height:18px;" />
             </div>
 
             <div class="settings-row" style="display:flex; justify-content:space-between; align-items:center;">
               <label for="setting-autoaim" style="font-size:13px;">Auto-Aim Assist (Locks Nearest Threat)</label>
-              <input type="checkbox" id="setting-autoaim" style="width:18px; height:18px;" />
+              <input type="checkbox" id="setting-autoaim" aria-label="Auto-Aim Assist" style="width:18px; height:18px;" />
             </div>
           </div>
 
@@ -158,12 +198,12 @@ export class SettingsPanel {
                 <label for="setting-reduced-motion" style="font-size:13px; font-weight:700;">Reduced Motion</label>
                 <div style="font-size:11px; color:#88a0b8;">Disables camera shake, hit-stop, and CRT pulsing.</div>
               </div>
-              <input type="checkbox" id="setting-reduced-motion" style="width:18px; height:18px;" />
+              <input type="checkbox" id="setting-reduced-motion" aria-label="Reduced Motion" style="width:18px; height:18px;" />
             </div>
 
             <div class="settings-row" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
               <label for="setting-colorblind" style="font-size:13px;">Color-Blind Filter Palette</label>
-              <select id="setting-colorblind" style="background:#0f1926; color:#fff; border:1px solid rgba(77,210,255,0.4); padding:4px 8px; border-radius:3px;">
+              <select id="setting-colorblind" aria-label="Color-Blind Filter Palette" style="background:#0f1926; color:#fff; border:1px solid rgba(77,210,255,0.4); padding:4px 8px; border-radius:3px;">
                 <option value="none">STANDARD CYBERDYNE</option>
                 <option value="deuteranopia">DEUTERANOPIA (Green-Weak)</option>
                 <option value="protanopia">PROTANOPIA (Red-Weak)</option>
@@ -174,14 +214,14 @@ export class SettingsPanel {
             <div class="settings-row" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
               <label for="setting-ui-scale" style="font-size:13px;">UI Scale</label>
               <div style="display:flex; align-items:center; gap:8px;">
-                <input type="range" id="setting-ui-scale" min="80" max="150" step="5" style="width:140px;" />
+                <input type="range" id="setting-ui-scale" aria-label="UI Scale" min="80" max="150" step="5" style="width:140px;" />
                 <span id="setting-ui-scale-val" style="font-family:var(--font-telemetry); font-size:12px; width:36px; text-align:right;">100%</span>
               </div>
             </div>
 
             <div class="settings-row" style="display:flex; justify-content:space-between; align-items:center;">
               <label for="setting-fps" style="font-size:13px;">Show Performance Telemetry (FPS / Frame Time)</label>
-              <input type="checkbox" id="setting-fps" style="width:18px; height:18px;" />
+              <input type="checkbox" id="setting-fps" aria-label="Show Performance Telemetry" style="width:18px; height:18px;" />
             </div>
           </div>
 
@@ -189,59 +229,59 @@ export class SettingsPanel {
           <div style="border:1px solid rgba(255,0,85,0.35); border-radius:4px; padding:12px; background:rgba(10,20,32,0.6);">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
               <div style="font-family:var(--font-display); font-size:12px; color:var(--color-danger);">[TACTICAL CONTROLS & INPUT REMAPPING]</div>
-              <button class="btn-secondary" id="btn-reset-inputs" style="font-size:11px; padding:2px 8px;">RESET CONTROLS</button>
+              <button class="btn-secondary" id="btn-reset-inputs" aria-label="Reset Controls" style="font-size:11px; padding:2px 8px;">RESET CONTROLS</button>
             </div>
             <div id="remap-feedback" style="display:none; font-family:var(--font-telemetry); font-size:11px; padding:4px 8px; margin-bottom:8px; border-radius:3px; background:rgba(255,153,0,0.15); border:1px solid var(--color-amber); color:var(--color-amber);"></div>
 
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px 16px; font-size:12px;">
               <div class="settings-row" style="display:flex; justify-content:space-between; align-items:center;">
                 <span>Move Up</span>
-                <button class="remap-key-btn" data-action="moveUp" style="min-width:85px; font-family:var(--font-telemetry); font-size:11px; padding:3px 6px; background:#142233; color:#fff; border:1px solid #3d6088; cursor:pointer;">W</button>
+                <button class="remap-key-btn" data-action="moveUp" aria-label="Remap Move Up key" style="min-width:85px; font-family:var(--font-telemetry); font-size:11px; padding:3px 6px; background:#142233; color:#fff; border:1px solid #3d6088; cursor:pointer;">W</button>
               </div>
               <div class="settings-row" style="display:flex; justify-content:space-between; align-items:center;">
                 <span>Move Down</span>
-                <button class="remap-key-btn" data-action="moveDown" style="min-width:85px; font-family:var(--font-telemetry); font-size:11px; padding:3px 6px; background:#142233; color:#fff; border:1px solid #3d6088; cursor:pointer;">S</button>
+                <button class="remap-key-btn" data-action="moveDown" aria-label="Remap Move Down key" style="min-width:85px; font-family:var(--font-telemetry); font-size:11px; padding:3px 6px; background:#142233; color:#fff; border:1px solid #3d6088; cursor:pointer;">S</button>
               </div>
               <div class="settings-row" style="display:flex; justify-content:space-between; align-items:center;">
                 <span>Move Left</span>
-                <button class="remap-key-btn" data-action="moveLeft" style="min-width:85px; font-family:var(--font-telemetry); font-size:11px; padding:3px 6px; background:#142233; color:#fff; border:1px solid #3d6088; cursor:pointer;">A</button>
+                <button class="remap-key-btn" data-action="moveLeft" aria-label="Remap Move Left key" style="min-width:85px; font-family:var(--font-telemetry); font-size:11px; padding:3px 6px; background:#142233; color:#fff; border:1px solid #3d6088; cursor:pointer;">A</button>
               </div>
               <div class="settings-row" style="display:flex; justify-content:space-between; align-items:center;">
                 <span>Move Right</span>
-                <button class="remap-key-btn" data-action="moveRight" style="min-width:85px; font-family:var(--font-telemetry); font-size:11px; padding:3px 6px; background:#142233; color:#fff; border:1px solid #3d6088; cursor:pointer;">D</button>
+                <button class="remap-key-btn" data-action="moveRight" aria-label="Remap Move Right key" style="min-width:85px; font-family:var(--font-telemetry); font-size:11px; padding:3px 6px; background:#142233; color:#fff; border:1px solid #3d6088; cursor:pointer;">D</button>
               </div>
               <div class="settings-row" style="display:flex; justify-content:space-between; align-items:center;">
                 <span>Combat Dive / Dash</span>
-                <button class="remap-key-btn" data-action="dash" style="min-width:85px; font-family:var(--font-telemetry); font-size:11px; padding:3px 6px; background:#142233; color:#fff; border:1px solid #3d6088; cursor:pointer;">SPACE</button>
+                <button class="remap-key-btn" data-action="dash" aria-label="Remap Dash key" style="min-width:85px; font-family:var(--font-telemetry); font-size:11px; padding:3px 6px; background:#142233; color:#fff; border:1px solid #3d6088; cursor:pointer;">SPACE</button>
               </div>
               <div class="settings-row" style="display:flex; justify-content:space-between; align-items:center;">
                 <span>Tactical Ability / EMP</span>
-                <button class="remap-key-btn" data-action="ability" style="min-width:85px; font-family:var(--font-telemetry); font-size:11px; padding:3px 6px; background:#142233; color:#fff; border:1px solid #3d6088; cursor:pointer;">E</button>
+                <button class="remap-key-btn" data-action="ability" aria-label="Remap Ability key" style="min-width:85px; font-family:var(--font-telemetry); font-size:11px; padding:3px 6px; background:#142233; color:#fff; border:1px solid #3d6088; cursor:pointer;">E</button>
               </div>
               <div class="settings-row" style="display:flex; justify-content:space-between; align-items:center;">
                 <span>Pause / Tactical HUD</span>
-                <button class="remap-key-btn" data-action="pause" style="min-width:85px; font-family:var(--font-telemetry); font-size:11px; padding:3px 6px; background:#142233; color:#fff; border:1px solid #3d6088; cursor:pointer;">ESC</button>
+                <button class="remap-key-btn" data-action="pause" aria-label="Remap Pause key" style="min-width:85px; font-family:var(--font-telemetry); font-size:11px; padding:3px 6px; background:#142233; color:#fff; border:1px solid #3d6088; cursor:pointer;">ESC</button>
               </div>
               <div class="settings-row" style="display:flex; justify-content:space-between; align-items:center;">
                 <span>Gamepad Dash</span>
-                <button class="remap-gp-btn" data-gp-action="dash" style="min-width:85px; font-family:var(--font-telemetry); font-size:11px; padding:3px 6px; background:#142233; color:#fff; border:1px solid #3d6088; cursor:pointer;">BUTTON B</button>
+                <button class="remap-gp-btn" data-gp-action="dash" aria-label="Remap Gamepad Dash button" style="min-width:85px; font-family:var(--font-telemetry); font-size:11px; padding:3px 6px; background:#142233; color:#fff; border:1px solid #3d6088; cursor:pointer;">BUTTON B</button>
               </div>
               <div class="settings-row" style="display:flex; justify-content:space-between; align-items:center;">
                 <span>Gamepad Ability</span>
-                <button class="remap-gp-btn" data-gp-action="ability" style="min-width:85px; font-family:var(--font-telemetry); font-size:11px; padding:3px 6px; background:#142233; color:#fff; border:1px solid #3d6088; cursor:pointer;">BUTTON Y</button>
+                <button class="remap-gp-btn" data-gp-action="ability" aria-label="Remap Gamepad Ability button" style="min-width:85px; font-family:var(--font-telemetry); font-size:11px; padding:3px 6px; background:#142233; color:#fff; border:1px solid #3d6088; cursor:pointer;">BUTTON Y</button>
               </div>
               <div class="settings-row" style="display:flex; justify-content:space-between; align-items:center;">
                 <span>Gamepad Pause</span>
-                <button class="remap-gp-btn" data-gp-action="pause" style="min-width:85px; font-family:var(--font-telemetry); font-size:11px; padding:3px 6px; background:#142233; color:#fff; border:1px solid #3d6088; cursor:pointer;">START</button>
+                <button class="remap-gp-btn" data-gp-action="pause" aria-label="Remap Gamepad Pause button" style="min-width:85px; font-family:var(--font-telemetry); font-size:11px; padding:3px 6px; background:#142233; color:#fff; border:1px solid #3d6088; cursor:pointer;">START</button>
               </div>
             </div>
           </div>
         </div>
 
         <div style="display:flex; justify-content:center; align-items:center; gap:12px; margin-top:20px;">
-          <button class="btn-primary" id="btn-apply-settings" style="min-width:140px;">APPLY & SAVE</button>
-          <button class="btn-secondary" id="btn-reset-settings" style="min-width:140px;">RESET DEFAULTS</button>
-          <button class="btn-secondary" id="btn-close-settings" style="min-width:100px;">BACK</button>
+          <button class="btn-primary" id="btn-apply-settings" aria-label="Apply and Save Settings" style="min-width:140px;">APPLY & SAVE</button>
+          <button class="btn-secondary" id="btn-reset-settings" aria-label="Reset Defaults" style="min-width:140px;">RESET DEFAULTS</button>
+          <button class="btn-secondary" id="btn-close-settings" aria-label="Back to Previous Screen" style="min-width:100px;">BACK</button>
         </div>
         <div id="settings-controller-hint" style="font-family:var(--font-telemetry); font-size:12px; color:var(--color-cyan); margin-top:8px; text-align:center;">
           [D-PAD] NAVIGATE &nbsp;//&nbsp; [LEFT/RIGHT] ADJUST &nbsp;//&nbsp; [A] CONFIRM &nbsp;//&nbsp; [B] BACK
@@ -387,10 +427,12 @@ export class SettingsPanel {
     this.container.style.display = 'flex';
     this.selectedIndex = 0;
     this.updateHighlight();
+    this.a11y.activate(this.masterSlider);
   }
 
   public hide(): void {
     this.cancelListening();
+    this.a11y.deactivate();
     this.container.style.display = 'none';
   }
 

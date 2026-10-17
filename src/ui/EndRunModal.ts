@@ -8,6 +8,7 @@ import type { GamepadManager } from '../input/GamepadManager';
 import { XBOX_BUTTON } from '../input/GamepadManager';
 import type { SaveManager } from '../state/SaveManager';
 import type { AudioEngine } from '../audio/AudioEngine';
+import { ModalA11y } from './A11yHelper';
 
 type EndRunTab = 'debrief' | 'weapons' | 'casualties' | 'timeline' | 'archives';
 
@@ -24,6 +25,7 @@ export class EndRunModal {
   private onContinueCallback: (() => void) | null = null;
   private readonly saveManager?: SaveManager;
   private readonly audioEngine?: AudioEngine;
+  private readonly a11y: ModalA11y;
 
   constructor(root: HTMLElement, saveManager?: SaveManager, audioEngine?: AudioEngine) {
     this.saveManager = saveManager;
@@ -31,6 +33,9 @@ export class EndRunModal {
 
     this.container = document.createElement('div');
     this.container.className = 'modal-backdrop';
+    this.container.setAttribute('role', 'dialog');
+    this.container.setAttribute('aria-modal', 'true');
+    this.container.setAttribute('aria-label', 'Mission Debrief and Combat Record');
     this.container.style.display = 'none';
 
     this.container.innerHTML = `
@@ -39,11 +44,11 @@ export class EndRunModal {
         <div class="t800-ticker" id="end-ticker">WAR LOG // LOS ANGELES 2029</div>
 
         <div class="end-tabs" style="display:flex; justify-content:center; gap:6px; margin:12px 0 10px 0; flex-wrap:wrap;">
-          <button class="btn-secondary end-tab-btn active" data-tab="debrief" style="font-size:11px; padding:6px 12px;">[DEBRIEF]</button>
-          <button class="btn-secondary end-tab-btn" data-tab="weapons" style="font-size:11px; padding:6px 12px;">[WEAPONS]</button>
-          <button class="btn-secondary end-tab-btn" data-tab="casualties" style="font-size:11px; padding:6px 12px;">[CASUALTIES]</button>
-          <button class="btn-secondary end-tab-btn" data-tab="timeline" style="font-size:11px; padding:6px 12px;">[TIMELINE]</button>
-          <button class="btn-secondary end-tab-btn" data-tab="archives" style="font-size:11px; padding:6px 12px;">[WAR ARCHIVES]</button>
+          <button class="btn-secondary end-tab-btn active" data-tab="debrief" aria-label="Debrief Tab" style="font-size:11px; padding:6px 12px;">[DEBRIEF]</button>
+          <button class="btn-secondary end-tab-btn" data-tab="weapons" aria-label="Weapons Breakdown Tab" style="font-size:11px; padding:6px 12px;">[WEAPONS]</button>
+          <button class="btn-secondary end-tab-btn" data-tab="casualties" aria-label="Casualties Breakdown Tab" style="font-size:11px; padding:6px 12px;">[CASUALTIES]</button>
+          <button class="btn-secondary end-tab-btn" data-tab="timeline" aria-label="Timeline History Tab" style="font-size:11px; padding:6px 12px;">[TIMELINE]</button>
+          <button class="btn-secondary end-tab-btn" data-tab="archives" aria-label="War Archives Tab" style="font-size:11px; padding:6px 12px;">[WAR ARCHIVES]</button>
         </div>
 
         <div class="end-tab-content-container" style="overflow-y:auto; flex:1; min-height:200px; max-height:48vh; padding:0 8px;">
@@ -75,15 +80,15 @@ export class EndRunModal {
         </div>
 
         <div style="display:flex; flex-direction:column; gap:10px; align-items:center; margin-top:12px;">
-          <button class="btn-primary" id="btn-continue-war" style="background:var(--color-amber); border-color:#ffbb00; display:none;">
+          <button class="btn-primary" id="btn-continue-war" aria-label="Continue the War" style="background:var(--color-amber); border-color:#ffbb00; display:none;">
             CONTINUE THE WAR (+100 ALLOY)
           </button>
-          <button class="btn-primary" id="btn-return-bunker">
+          <button class="btn-primary" id="btn-return-bunker" aria-label="Return to Command">
             RETURN TO COMMAND
           </button>
         </div>
         <div id="end-controller-hint" style="font-family:var(--font-telemetry); font-size:12px; color:var(--color-cyan); margin-top:8px; display:none;">
-          [LB/RB] SWITCH TABS // [A / B / START] RETURN TO COMMAND
+          [LB/RB / ARROWS] SWITCH TABS // [ENTER / ESC / A / B] RETURN TO COMMAND
         </div>
       </div>
     `;
@@ -102,6 +107,36 @@ export class EndRunModal {
       timeline: this.container.querySelector('#tab-timeline')!,
       archives: this.container.querySelector('#tab-archives')!
     };
+
+    const tabs: EndRunTab[] = ['debrief', 'weapons', 'casualties', 'timeline', 'archives'];
+
+    this.a11y = new ModalA11y(this.container, {
+      onClose: () => {
+        const btn = this.container.querySelector('#btn-return-bunker') as HTMLElement | null;
+        btn?.click();
+      },
+      onNavigate: (dir) => {
+        if (dir.x !== 0) {
+          const curIdx = tabs.indexOf(this.activeTab);
+          const nextIdx = Math.max(0, Math.min(tabs.length - 1, curIdx + dir.x));
+          if (nextIdx !== curIdx) {
+            this.switchTab(tabs[nextIdx]);
+            return true;
+          }
+        }
+        return false;
+      },
+      onConfirm: () => {
+        const activeEl = document.activeElement;
+        if (activeEl instanceof HTMLButtonElement && this.container.contains(activeEl)) {
+          activeEl.click();
+          return true;
+        }
+        const btn = this.container.querySelector('#btn-return-bunker') as HTMLElement | null;
+        btn?.click();
+        return true;
+      }
+    });
 
     this.tabButtons.forEach((btn) => {
       btn.addEventListener('click', () => {
@@ -194,6 +229,7 @@ export class EndRunModal {
     this.renderWeaponTelemetry(details?.weaponDamageBreakdown, timeSeconds);
     this.renderCasualties(details?.killsByType);
     this.renderTimeline(details?.levelUpTimeline);
+    this.a11y.activate();
   }
 
   public showArchives(onReturn: () => void): void {
@@ -209,6 +245,7 @@ export class EndRunModal {
     if (continueBtn) continueBtn.style.display = 'none';
 
     this.switchTab('archives');
+    this.a11y.activate();
   }
 
   private renderWeaponTelemetry(damageMap?: Record<string, number>, timeSeconds = 1): void {
@@ -380,6 +417,7 @@ export class EndRunModal {
   }
 
   public hide(): void {
+    this.a11y.deactivate();
     this.container.style.display = 'none';
   }
 }

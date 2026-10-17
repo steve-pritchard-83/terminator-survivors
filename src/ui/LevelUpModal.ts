@@ -2,6 +2,7 @@ import type { UpgradeChoice } from '../core/types';
 import { LORE } from '../data/lore';
 import { globalRNG } from '../core/RNG';
 import type { GamepadManager } from '../input/GamepadManager';
+import { ModalA11y } from './A11yHelper';
 
 export class LevelUpModal {
   public readonly container: HTMLElement;
@@ -10,11 +11,16 @@ export class LevelUpModal {
   private onSelectCallback: ((choice: UpgradeChoice) => void) | null = null;
   private cards: HTMLElement[] = [];
   private selectedIndex = 0;
+  private readonly a11y: ModalA11y;
 
   constructor(root: HTMLElement) {
     this.container = document.createElement('div');
+    this.container.id = 'levelup-modal';
     this.container.className = 'modal-backdrop';
     this.container.setAttribute('data-testid', 'levelup-modal');
+    this.container.setAttribute('role', 'dialog');
+    this.container.setAttribute('aria-modal', 'true');
+    this.container.setAttribute('aria-label', 'Tactical Upgrade Selection');
     this.container.style.display = 'none';
 
     this.container.innerHTML = `
@@ -23,7 +29,7 @@ export class LevelUpModal {
         <div class="t800-ticker" id="levelup-ticker">03A0: A9 01 8D 20 D0 // SCANNING ARSENAL</div>
         <div class="upgrade-card-list" id="levelup-cards"></div>
         <div id="levelup-controller-hint" style="font-family:var(--font-telemetry); font-size:12px; color:var(--color-cyan); margin-top:8px; text-align:center; display:none;">
-          [D-PAD / LS] SELECT UPGRADE &nbsp;//&nbsp; [A / RT] CONFIRM REQUISITION
+          [D-PAD / LS / ARROWS] SELECT UPGRADE &nbsp;//&nbsp; [ENTER / A] CONFIRM REQUISITION
         </div>
       </div>
     `;
@@ -32,6 +38,23 @@ export class LevelUpModal {
 
     this.cardContainer = this.container.querySelector('#levelup-cards')!;
     this.tickerEl = this.container.querySelector('#levelup-ticker')!;
+
+    this.a11y = new ModalA11y(this.container, {
+      onNavigate: (dir) => {
+        const d = dir.y !== 0 ? dir.y : dir.x;
+        this.selectedIndex = (this.selectedIndex + d + this.cards.length) % this.cards.length;
+        this.updateCardHighlight();
+        return true;
+      },
+      onConfirm: () => {
+        const card = this.cards[this.selectedIndex];
+        if (card) {
+          card.click();
+          return true;
+        }
+        return false;
+      }
+    });
   }
 
   public show(
@@ -50,12 +73,17 @@ export class LevelUpModal {
 
     this.cardContainer.innerHTML = '';
     choices.forEach((choice, idx) => {
-      const card = document.createElement('div');
+      const card = document.createElement('button');
+      card.type = 'button';
       card.className = 'upgrade-card';
       card.setAttribute('data-testid', `upgrade-card-${idx}`);
+      card.setAttribute(
+        'aria-label',
+        `${choice.title}: ${choice.subtitle}. ${choice.description}`
+      );
 
       card.innerHTML = `
-        <div style="width:12px; height:48px; background:${choice.accentColor}; border-radius:2px;"></div>
+        <div style="width:12px; height:48px; background:${choice.accentColor}; border-radius:2px; flex-shrink:0;"></div>
         <div class="upgrade-card-info">
           <div class="upgrade-card-title">${choice.title}</div>
           <div class="upgrade-card-sub">${choice.subtitle}</div>
@@ -65,6 +93,7 @@ export class LevelUpModal {
       `;
 
       card.onclick = () => {
+        this.a11y.deactivate();
         this.container.style.display = 'none';
         this.onSelectCallback?.(choice);
       };
@@ -74,6 +103,7 @@ export class LevelUpModal {
     });
 
     this.updateCardHighlight();
+    this.a11y.activate(this.cards[0]);
   }
 
   public updateCardHighlight(): void {
@@ -117,6 +147,7 @@ export class LevelUpModal {
   }
 
   public hide(): void {
+    this.a11y.deactivate();
     this.container.style.display = 'none';
   }
 }

@@ -1,6 +1,7 @@
 import type { WeaponId } from '../core/types';
 import { ALL_WEAPONS } from '../data/weapons';
 import type { GamepadManager } from '../input/GamepadManager';
+import { ModalA11y } from './A11yHelper';
 
 export class VaultJackpotModal {
   public readonly container: HTMLElement;
@@ -8,11 +9,15 @@ export class VaultJackpotModal {
   private readonly descEl: HTMLElement;
   private readonly claimBtn: HTMLElement;
   private onClaimCallback: (() => void) | null = null;
+  private readonly a11y: ModalA11y;
 
   constructor(root: HTMLElement) {
     this.container = document.createElement('div');
     this.container.className = 'modal-backdrop';
     this.container.setAttribute('data-testid', 'vault-modal');
+    this.container.setAttribute('role', 'dialog');
+    this.container.setAttribute('aria-modal', 'true');
+    this.container.setAttribute('aria-label', 'Skynet Data Vault Decrypted');
     this.container.style.display = 'none';
 
     this.container.innerHTML = `
@@ -22,11 +27,11 @@ export class VaultJackpotModal {
         </div>
         <div class="t800-ticker">SECURITY PROTOCOL BYPASSED // REQUISITION OVERRIDE</div>
         <div id="vault-desc" style="font-size:15px; color:#fff; margin:20px 0; line-height:1.6;"></div>
-        <button class="btn-primary" data-testid="btn-claim-vault" id="btn-claim-vault" style="align-self:center;">
+        <button class="btn-primary" data-testid="btn-claim-vault" id="btn-claim-vault" aria-label="Secure Salvage" style="align-self:center;">
           SECURE SALVAGE
         </button>
         <div id="vault-controller-hint" style="font-family:var(--font-telemetry); font-size:12px; color:var(--color-cyan); margin-top:12px; display:none;">
-          [A / START] SECURE SALVAGE
+          [ENTER / SPACE / A / START] SECURE SALVAGE
         </div>
       </div>
     `;
@@ -37,7 +42,18 @@ export class VaultJackpotModal {
     this.descEl = this.container.querySelector('#vault-desc')!;
     this.claimBtn = this.container.querySelector('#btn-claim-vault')!;
 
+    this.a11y = new ModalA11y(this.container, {
+      onClose: () => {
+        this.claimBtn.click();
+      },
+      onConfirm: () => {
+        this.claimBtn.click();
+        return true;
+      }
+    });
+
     this.claimBtn.addEventListener('click', () => {
+      this.a11y.deactivate();
       this.container.style.display = 'none';
       this.onClaimCallback?.();
     });
@@ -73,6 +89,8 @@ export class VaultJackpotModal {
         <div style="color:var(--color-amber);">+${alloyBonus} ALLOY SCRAP SECURED</div>
       `;
     }
+
+    this.a11y.activate(this.claimBtn);
   }
 
   public isVisible(): boolean {
@@ -97,6 +115,7 @@ export class VaultJackpotModal {
   }
 
   public hide(): void {
+    this.a11y.deactivate();
     this.container.style.display = 'none';
   }
 }

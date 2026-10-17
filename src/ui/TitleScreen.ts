@@ -6,6 +6,7 @@ import { ACHIEVEMENTS, TOTAL_ACHIEVEMENTS } from '../data/achievements';
 import { CodexModal } from './CodexModal';
 import type { LoadoutId, MetaUpgradeId } from '../core/types';
 import type { GamepadManager } from '../input/GamepadManager';
+import { ModalA11y } from './A11yHelper';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -38,6 +39,10 @@ export class TitleScreen {
   private selectedAchievementsIndex = 0;
   private readonly onOpenSettings?: () => void;
 
+  private readonly bunkerA11y: ModalA11y;
+  private readonly achievementsA11y: ModalA11y;
+  private readonly pwaA11y: ModalA11y;
+
   constructor(
     root: HTMLElement,
     saveManager: SaveManager,
@@ -64,34 +69,34 @@ export class TitleScreen {
           ${LORE.prologue}
         </div>
         <div class="title-actions-row">
-          <button class="btn-primary" data-testid="btn-start-run" id="btn-start-run">
+          <button class="btn-primary" data-testid="btn-start-run" id="btn-start-run" aria-label="Deploy to Sector 44">
             DEPLOY TO SECTOR 44
           </button>
-          <button class="btn-secondary" data-testid="btn-bunker-shop" id="btn-bunker-shop">
+          <button class="btn-secondary" data-testid="btn-bunker-shop" id="btn-bunker-shop" aria-label="Tech-Com Bunker Requisition">
             TECH-COM BUNKER REQUISITION
           </button>
-          <button class="btn-secondary" data-testid="btn-achievements" id="btn-achievements">
+          <button class="btn-secondary" data-testid="btn-achievements" id="btn-achievements" aria-label="Tech-Com Intel Achievements">
             TECH-COM INTEL // ACHIEVEMENTS
           </button>
-          <button class="btn-secondary" data-testid="btn-codex" id="btn-codex">
+          <button class="btn-secondary" data-testid="btn-codex" id="btn-codex" aria-label="Tech-Com Codex Bestiary">
             TECH-COM CODEX // BESTIARY
           </button>
-          <button class="btn-secondary" data-testid="btn-history" id="btn-history">
+          <button class="btn-secondary" data-testid="btn-history" id="btn-history" aria-label="Tech-Com War Archives">
             TECH-COM WAR ARCHIVES
           </button>
-          <button class="btn-secondary" data-testid="btn-settings" id="btn-settings">
+          <button class="btn-secondary" data-testid="btn-settings" id="btn-settings" aria-label="Settings and Calibration">
             SETTINGS // CALIBRATION
           </button>
-          <button class="btn-secondary" id="btn-install-pwa" style="display:none; border-color:var(--color-cyan); color:var(--color-cyan);">
+          <button class="btn-secondary" id="btn-install-pwa" aria-label="Install App as PWA" style="display:none; border-color:var(--color-cyan); color:var(--color-cyan);">
             INSTALL APP (PWA)
           </button>
           <div id="title-controller-hint" style="font-family:var(--font-telemetry); font-size:12px; color:var(--color-cyan); margin-top:8px; text-align:center; display:none;">
-            [A / START] DEPLOY TO SECTOR 44 &nbsp;//&nbsp; [D-PAD] SELECT
+            [D-PAD / ARROWS] SELECT &nbsp;//&nbsp; [ENTER / A / START] DEPLOY
           </div>
         </div>
       </div>
 
-      <div class="modal-backdrop" id="pwa-install-modal" style="display:none;">
+      <div class="modal-backdrop" id="pwa-install-modal" role="dialog" aria-modal="true" aria-label="Install Tactical PWA" style="display:none;">
         <div class="t800-modal-box" style="max-width:480px; text-align:center; align-items:center;">
           <img src="./icons/icon-192.png" alt="Terminator Survivors Icon" style="width:76px; height:76px; border-radius:16px; border:2px solid var(--color-cyan); box-shadow:0 0 18px rgba(77,210,255,0.45); margin-bottom:10px;" />
           <div class="t800-header" style="font-size:20px; margin-bottom:6px;">INSTALL TACTICAL PWA</div>
@@ -100,17 +105,17 @@ export class TitleScreen {
             Install <strong>Terminator Survivors</strong> to your home screen for locked fullscreen landscape controls and offline play.
           </div>
           <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center;">
-            <button class="btn-primary" id="btn-trigger-pwa-install" style="margin-bottom:0; padding:11px 24px; font-size:14px;">
+            <button class="btn-primary" id="btn-trigger-pwa-install" aria-label="Install App Now" style="margin-bottom:0; padding:11px 24px; font-size:14px;">
               INSTALL APP NOW
             </button>
-            <button class="btn-secondary" id="btn-dismiss-pwa-modal" style="padding:11px 20px;">
+            <button class="btn-secondary" id="btn-dismiss-pwa-modal" aria-label="Continue in Browser" style="padding:11px 20px;">
               CONTINUE IN BROWSER
             </button>
           </div>
         </div>
       </div>
 
-      <div class="modal-backdrop" id="bunker-modal" style="display:none;">
+      <div class="modal-backdrop" id="bunker-modal" role="dialog" aria-modal="true" aria-label="Tech-Com Bunker Requisition" style="display:none;">
         <div class="t800-modal-box" style="max-width:760px; max-height:88vh; overflow-y:auto;">
           <div class="t800-header">TECH-COM BUNKER REQUISITION</div>
           <div class="t800-ticker" id="bunker-scrap-header">AVAILABLE ALLOY SCRAP: 0</div>
@@ -128,31 +133,31 @@ export class TitleScreen {
           <div id="bunker-upgrades-list" class="upgrade-card-list"></div>
 
           <div style="display:flex; justify-content:center; align-items:center; gap:12px; margin-top:14px;">
-            <button class="btn-secondary" id="btn-refund-upgrades" style="border-color:#ff8844; color:#ffaa66;">
+            <button class="btn-secondary" id="btn-refund-upgrades" aria-label="Refund All Alloy Scrap" style="border-color:#ff8844; color:#ffaa66;">
               REFUND ALL ALLOY
             </button>
-            <button class="btn-secondary" id="btn-close-bunker" style="align-self:center;">
+            <button class="btn-secondary" id="btn-close-bunker" aria-label="Return to Command" style="align-self:center;">
               RETURN TO COMMAND
             </button>
           </div>
           <div id="bunker-controller-hint" style="font-family:var(--font-telemetry); font-size:12px; color:var(--color-cyan); margin-top:6px; text-align:center; display:none;">
-            [D-PAD] BROWSE &nbsp;//&nbsp; [A] PURCHASE/SELECT &nbsp;//&nbsp; [B] RETURN
+            [D-PAD / ARROWS] BROWSE &nbsp;//&nbsp; [ENTER / A] PURCHASE/SELECT &nbsp;//&nbsp; [ESC / B] RETURN
           </div>
         </div>
       </div>
 
-      <div class="modal-backdrop" id="achievements-modal" style="display:none;">
+      <div class="modal-backdrop" id="achievements-modal" role="dialog" aria-modal="true" aria-label="Tech-Com Intel Achievements" style="display:none;">
         <div class="t800-modal-box" style="max-width:800px; max-height:88vh; overflow-y:auto;">
           <div class="t800-header">TECH-COM INTEL // ACHIEVEMENTS</div>
           <div class="t800-ticker" id="achievements-scrap-header">RECORDS SECURED: 0 / 40</div>
           <div id="achievements-list" class="upgrade-card-list" style="margin-top:10px; display:flex; flex-direction:column; gap:8px;"></div>
           <div style="display:flex; justify-content:center; align-items:center; gap:12px; margin-top:14px;">
-            <button class="btn-secondary" id="btn-close-achievements" style="align-self:center;">
+            <button class="btn-secondary" id="btn-close-achievements" aria-label="Return to Command" style="align-self:center;">
               RETURN TO COMMAND
             </button>
           </div>
           <div id="achievements-controller-hint" style="font-family:var(--font-telemetry); font-size:12px; color:var(--color-cyan); margin-top:6px; text-align:center; display:none;">
-            [D-PAD] BROWSE &nbsp;//&nbsp; [B] RETURN
+            [D-PAD / ARROWS] BROWSE &nbsp;//&nbsp; [ESC / B] RETURN
           </div>
         </div>
       </div>
@@ -171,6 +176,66 @@ export class TitleScreen {
     this.historyBtn = this.container.querySelector('#btn-history')!;
     this.settingsBtn = this.container.querySelector('#btn-settings')!;
     this.codexModal = new CodexModal(this.container, this.saveManager, this.audioEngine);
+
+    this.bunkerA11y = new ModalA11y(this.bunkerModal, {
+      onClose: () => {
+        this.audioEngine.playHudScanClose();
+        this.bunkerModal.style.display = 'none';
+        this.bunkerA11y.deactivate();
+        this.updateTitleButtonHighlight();
+      },
+      onNavigate: (dir) => {
+        if (this.bunkerSelectables.length === 0) return false;
+        const delta = dir.y !== 0 ? dir.y : dir.x;
+        this.selectedBunkerIndex =
+          (this.selectedBunkerIndex + delta + this.bunkerSelectables.length) %
+          this.bunkerSelectables.length;
+        this.updateBunkerHighlight();
+        this.bunkerSelectables[this.selectedBunkerIndex]?.focus();
+        return true;
+      },
+      onConfirm: () => {
+        if (this.bunkerSelectables[this.selectedBunkerIndex]) {
+          this.bunkerSelectables[this.selectedBunkerIndex].click();
+          return true;
+        }
+        return false;
+      }
+    });
+
+    this.achievementsA11y = new ModalA11y(this.achievementsModal, {
+      onClose: () => {
+        this.audioEngine.playHudScanClose();
+        this.achievementsModal.style.display = 'none';
+        this.achievementsA11y.deactivate();
+        this.updateTitleButtonHighlight();
+      },
+      onNavigate: (dir) => {
+        if (this.achievementsSelectables.length === 0) return false;
+        const delta = dir.y !== 0 ? dir.y : dir.x;
+        this.selectedAchievementsIndex =
+          (this.selectedAchievementsIndex + delta + this.achievementsSelectables.length) %
+          this.achievementsSelectables.length;
+        this.updateAchievementsHighlight();
+        this.achievementsSelectables[this.selectedAchievementsIndex]?.focus();
+        return true;
+      },
+      onConfirm: () => {
+        if (this.achievementsSelectables[this.selectedAchievementsIndex]) {
+          this.achievementsSelectables[this.selectedAchievementsIndex].click();
+          return true;
+        }
+        return false;
+      }
+    });
+
+    this.pwaA11y = new ModalA11y(this.pwaModal, {
+      onClose: () => {
+        this.audioEngine.playHudScanClose();
+        this.pwaModal.style.display = 'none';
+        this.pwaA11y.deactivate();
+      }
+    });
 
     this.setupPwaInstallPrompt();
 
@@ -208,13 +273,47 @@ export class TitleScreen {
     this.container.querySelector('#btn-close-bunker')?.addEventListener('click', () => {
       this.audioEngine.playHudScanClose();
       this.bunkerModal.style.display = 'none';
+      this.bunkerA11y.deactivate();
       this.updateTitleButtonHighlight();
     });
 
     this.container.querySelector('#btn-close-achievements')?.addEventListener('click', () => {
       this.audioEngine.playHudScanClose();
       this.achievementsModal.style.display = 'none';
+      this.achievementsA11y.deactivate();
       this.updateTitleButtonHighlight();
+    });
+
+    // Keyboard navigation for main Title Screen
+    window.addEventListener('keydown', (e: KeyboardEvent) => {
+      if (!this.isVisible()) return;
+      if (
+        this.isBunkerVisible() ||
+        this.isAchievementsVisible() ||
+        this.isPwaModalVisible() ||
+        this.codexModal.isVisible()
+      ) {
+        return;
+      }
+
+      const btns = this.getActiveTitleButtons();
+      if (btns.length === 0) return;
+
+      if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+        e.preventDefault();
+        this.selectedBtnIndex = (this.selectedBtnIndex - 1 + btns.length) % btns.length;
+        this.updateTitleButtonHighlight();
+        btns[this.selectedBtnIndex]?.focus();
+      } else if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+        e.preventDefault();
+        this.selectedBtnIndex = (this.selectedBtnIndex + 1) % btns.length;
+        this.updateTitleButtonHighlight();
+        btns[this.selectedBtnIndex]?.focus();
+      } else if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        const activeBtn = btns[this.selectedBtnIndex];
+        activeBtn?.click();
+      }
     });
 
     this.updateTitleButtonHighlight();
@@ -281,6 +380,7 @@ export class TitleScreen {
       updateModalInstructions();
       if (this.container.style.display !== 'none') {
         this.pwaModal.style.display = 'flex';
+        this.pwaA11y.activate();
       }
     });
 
@@ -288,6 +388,7 @@ export class TitleScreen {
       this.deferredInstallPrompt = null;
       this.installBtn.style.display = 'none';
       this.pwaModal.style.display = 'none';
+      this.pwaA11y.deactivate();
     });
 
     this.installBtn.addEventListener('click', () => {
@@ -296,6 +397,7 @@ export class TitleScreen {
       } else {
         updateModalInstructions();
         this.pwaModal.style.display = 'flex';
+        this.pwaA11y.activate();
       }
     });
 
@@ -306,6 +408,7 @@ export class TitleScreen {
     dismissModalBtn.addEventListener('click', () => {
       this.audioEngine.playHudScanClose();
       this.pwaModal.style.display = 'none';
+      this.pwaA11y.deactivate();
     });
 
     // Automatically prompt user to install PWA on production URL or mobile browser visit if not installed
@@ -315,6 +418,7 @@ export class TitleScreen {
     if (isProdDomain || isMobile) {
       updateModalInstructions();
       this.pwaModal.style.display = 'flex';
+      this.pwaA11y.activate();
     }
   }
 
@@ -548,6 +652,7 @@ export class TitleScreen {
     this.audioEngine.playHudScanOpen();
     this.bunkerModal.style.display = 'flex';
     this.renderBunkerContents();
+    this.bunkerA11y.activate(this.bunkerSelectables[0]);
   }
 
   private renderBunkerContents(): void {
@@ -564,8 +669,13 @@ export class TitleScreen {
       const isUnlocked = data.unlockedLoadouts.includes(lId as LoadoutId);
       const isSelected = data.selectedLoadout === lId;
 
-      const card = document.createElement('div');
+      const card = document.createElement('button');
+      card.type = 'button';
       card.setAttribute('data-loadout-card', lId);
+      card.setAttribute(
+        'aria-label',
+        `${cfg.name}, ${cfg.callsign}. Special: ${cfg.ability.name}. ${isSelected ? 'Active' : isUnlocked ? 'Select' : `Unlock: ${cfg.cost} scrap`}`
+      );
       card.style.cssText = `
         padding: 8px 10px;
         background: ${isSelected ? 'rgba(77,210,255,0.2)' : 'rgba(15,25,38,0.7)'};
@@ -608,8 +718,13 @@ export class TitleScreen {
       const cost = this.saveManager.getUpgradeCost(upId as MetaUpgradeId);
       const isMax = curLv >= cfg.maxLevel;
 
-      const card = document.createElement('div');
+      const card = document.createElement('button');
+      card.type = 'button';
       card.className = 'upgrade-card';
+      card.setAttribute(
+        'aria-label',
+        `${cfg.name}, Level ${curLv} of ${cfg.maxLevel}. ${cfg.description}. ${isMax ? 'Max Level' : `Cost: ${cost} Scrap`}`
+      );
       card.innerHTML = `
         <div class="upgrade-card-info">
           <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -668,6 +783,7 @@ export class TitleScreen {
     this.achievementsModal.style.display = 'flex';
     this.selectedAchievementsIndex = 0;
     this.renderAchievements();
+    this.achievementsA11y.activate(this.achievementsSelectables[0]);
   }
 
   private renderAchievements(): void {
@@ -684,8 +800,13 @@ export class TitleScreen {
 
     for (const ach of Object.values(ACHIEVEMENTS)) {
       const isUnlocked = unlockedIds.includes(ach.id);
-      const card = document.createElement('div');
+      const card = document.createElement('button');
+      card.type = 'button';
       card.className = 'upgrade-card';
+      card.setAttribute(
+        'aria-label',
+        `${ach.title}, ${ach.category}. ${ach.description}. ${isUnlocked ? 'Secured' : 'Locked'}`
+      );
       card.style.cssText = `
         padding: 10px 14px;
         background: ${isUnlocked ? 'rgba(10, 30, 20, 0.6)' : 'rgba(15, 20, 25, 0.6)'};

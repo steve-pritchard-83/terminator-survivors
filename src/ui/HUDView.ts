@@ -55,7 +55,7 @@ export class HUDView {
           <div>SCRAP: <span id="hud-scrap-text" style="color:var(--color-amber)">0</span></div>
           <div id="hud-dash-status" style="color:var(--color-cyan); font-size:12px; font-weight:700;">DIVE: READY</div>
           <div id="hud-ability-status" data-testid="hud-ability-status" style="color:var(--color-amber); font-size:12px; font-weight:700;">SPEC: READY</div>
-          <button class="btn-hud-pause" data-testid="btn-hud-pause" id="btn-hud-pause">❚❚ PAUSE</button>
+          <button class="btn-hud-pause" data-testid="btn-hud-pause" id="btn-hud-pause" aria-label="Pause Tactical Mission">❚❚ PAUSE</button>
         </div>
         <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
           <div style="display:flex; gap:12px;">
@@ -82,7 +82,7 @@ export class HUDView {
       <div class="joystick-base" id="joystick-base">
         <div class="joystick-knob" id="joystick-knob"></div>
       </div>
-      <div class="btn-mobile-dash" data-testid="btn-mobile-dash" id="btn-mobile-dash">DASH</div>
+      <div class="btn-mobile-dash" data-testid="btn-mobile-dash" id="btn-mobile-dash" role="button" aria-label="Tactical Dash">DASH</div>
       <div class="hud-desktop-hint">
         [WASD / L-CLICK] MOVE &nbsp;//&nbsp; [MOUSE] LASER AIM &nbsp;//&nbsp; [SPACE / R-CLICK] DIVE &nbsp;//&nbsp; [ESC] PAUSE
       </div>
