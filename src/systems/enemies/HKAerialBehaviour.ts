@@ -87,6 +87,14 @@ export class HKAerialBehaviour implements EnemyBehaviour {
       diveTelegraph.setVisible(false);
     }
 
+    const prevX = (state.prevX as number | undefined) ?? enemy.x;
+    const prevZ = (state.prevZ as number | undefined) ?? enemy.z;
+    const safeDt = Math.max(dt, 0.001);
+    const vx = (enemy.x - prevX) / safeDt;
+    const vz = (enemy.z - prevZ) / safeDt;
+    state.prevX = enemy.x;
+    state.prevZ = enemy.z;
+
     hk.group.position.set(enemy.x, currentY, enemy.z);
     hk.group.rotation.y = Math.atan2(px - enemy.x, pz - enemy.z);
 
@@ -201,7 +209,7 @@ export class HKAerialBehaviour implements EnemyBehaviour {
       }
     }
 
-    hk.update(ctx.timeSeconds, alertTimer / 1.2, 0);
+    hk.update(ctx.timeSeconds, alertTimer / 1.2, 0, vx, vz, dt);
   }
 
   public onDeath(enemy: ActiveEnemy, ctx: EnemyContext): void {
@@ -215,6 +223,10 @@ export class HKAerialBehaviour implements EnemyBehaviour {
     const hk = this.meshes.get(enemy.id);
     if (hk) {
       hk.group.position.set(enemy.x, 6.5, enemy.z);
+    }
+    if (enemy.state) {
+      enemy.state.prevX = enemy.x;
+      enemy.state.prevZ = enemy.z;
     }
   }
 

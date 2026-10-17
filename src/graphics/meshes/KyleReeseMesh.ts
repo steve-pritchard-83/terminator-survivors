@@ -3,14 +3,21 @@ import { disposeObject3D } from '../dispose';
 
 export class KyleReeseMesh {
   public readonly group = new THREE.Group();
-  private readonly leftLeg: THREE.Group;
-  private readonly rightLeg: THREE.Group;
-  private readonly coatTails: THREE.Mesh;
-  private readonly torsoGroup: THREE.Group;
-  private readonly weaponGroup: THREE.Group;
-  private readonly muzzleLight: THREE.PointLight;
+  public readonly leftLeg: THREE.Group;
+  public readonly rightLeg: THREE.Group;
+  public readonly coatTails: THREE.Mesh;
+  public readonly torsoGroup: THREE.Group;
+  public readonly weaponGroup: THREE.Group;
+  public readonly muzzleLight: THREE.PointLight;
 
   private animTimer = 0;
+  private recoilOffset = 0;
+  private recoilPitch = 0;
+  private dashRollTimer = 0;
+
+  public get recoil(): { offset: number; pitch: number } {
+    return { offset: this.recoilOffset, pitch: this.recoilPitch };
+  }
 
   constructor() {
     const trouserMat = new THREE.MeshStandardMaterial({
@@ -314,9 +321,19 @@ export class KyleReeseMesh {
     this.group.add(this.torsoGroup);
   }
 
-  public pulseMuzzleFlash(color = 0xffaa00): void {
+  public triggerRecoil(intensity = 1.0): void {
+    this.recoilOffset = Math.min(0.25, this.recoilOffset + 0.12 * intensity);
+    this.recoilPitch = Math.max(-0.35, this.recoilPitch - 0.15 * intensity);
+    this.weaponGroup.position.z = 0.1 - this.recoilOffset;
+    this.weaponGroup.rotation.x = this.recoilPitch;
+  }
+
+  public pulseMuzzleFlash(color = 0xffaa00, recoilIntensity?: number): void {
     this.muzzleLight.color.setHex(color);
     this.muzzleLight.intensity = 2.8;
+    if (recoilIntensity !== undefined) {
+      this.triggerRecoil(recoilIntensity);
+    }
   }
 
   public updateAnimation(dt: number, speed: number, aimAngle: number, isDashing: boolean): void {
@@ -324,17 +341,33 @@ export class KyleReeseMesh {
       this.muzzleLight.intensity = Math.max(0, this.muzzleLight.intensity - dt * 22);
     }
 
+    // Recover weapon recoil smoothly back towards neutral
+    if (this.recoilOffset > 0 || this.recoilPitch < 0) {
+      this.recoilOffset = THREE.MathUtils.lerp(this.recoilOffset, 0, Math.min(1, dt * 16));
+      this.recoilPitch = THREE.MathUtils.lerp(this.recoilPitch, 0, Math.min(1, dt * 16));
+      this.weaponGroup.position.z = 0.1 - this.recoilOffset;
+      this.weaponGroup.rotation.x = this.recoilPitch;
+    }
+
     this.group.rotation.y = aimAngle;
 
     if (isDashing) {
-      this.torsoGroup.position.y = 0.55;
-      this.torsoGroup.rotation.x = 0.45;
-      this.coatTails.rotation.x = 0.8;
-      this.leftLeg.rotation.x = -0.5;
-      this.rightLeg.rotation.x = 0.6;
+      this.dashRollTimer += dt;
+      const rollDuration = 0.3;
+      const rollProgress = Math.min(1.0, this.dashRollTimer / rollDuration);
+      const rollAngle = rollProgress * Math.PI * 2;
+
+      this.torsoGroup.position.y = 0.45 + Math.sin(rollProgress * Math.PI) * 0.14;
+      this.torsoGroup.rotation.x = rollAngle;
+      this.torsoGroup.rotation.y = 0;
+      this.torsoGroup.rotation.z = 0;
+      this.coatTails.rotation.x = 0.8 + Math.sin(rollAngle) * 0.25;
+      this.leftLeg.rotation.x = -0.7;
+      this.rightLeg.rotation.x = -0.5;
       return;
     }
 
+    this.dashRollTimer = 0;
     this.torsoGroup.position.y = 0.85;
     this.torsoGroup.rotation.x = 0;
 
@@ -344,12 +377,20 @@ export class KyleReeseMesh {
       this.leftLeg.rotation.x = legStride;
       this.rightLeg.rotation.x = -legStride;
       this.coatTails.rotation.x = 0.45 + Math.sin(this.animTimer * 2) * 0.15;
-      this.torsoGroup.position.y = 0.85 + Math.abs(Math.sin(this.animTimer)) * 0.06;
+      this.coatTails.rotation.z = Math.sin(this.animTimer) * 0.05;
+
+      // Hip sway and torso counter-twist
+      this.torsoGroup.position.y = 0.85 + Math.abs(Math.sin(this.animTimer)) * 0.05;
+      this.torsoGroup.rotation.z = Math.sin(this.animTimer) * 0.04;
+      this.torsoGroup.rotation.y = Math.cos(this.animTimer) * 0.05;
     } else {
       this.leftLeg.rotation.x = THREE.MathUtils.lerp(this.leftLeg.rotation.x, 0, dt * 10);
       this.rightLeg.rotation.x = THREE.MathUtils.lerp(this.rightLeg.rotation.x, 0, dt * 10);
       this.coatTails.rotation.x = THREE.MathUtils.lerp(this.coatTails.rotation.x, 0.1, dt * 8);
+      this.coatTails.rotation.z = THREE.MathUtils.lerp(this.coatTails.rotation.z, 0, dt * 8);
       this.torsoGroup.position.y = 0.85;
+      this.torsoGroup.rotation.z = THREE.MathUtils.lerp(this.torsoGroup.rotation.z, 0, dt * 10);
+      this.torsoGroup.rotation.y = THREE.MathUtils.lerp(this.torsoGroup.rotation.y, 0, dt * 10);
     }
   }
 

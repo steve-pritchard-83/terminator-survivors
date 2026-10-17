@@ -4,13 +4,16 @@ import { disposeObject3D } from '../dispose';
 
 export class HKAerialMesh {
   public readonly group = new THREE.Group();
-  private readonly leftTurbine: THREE.Group;
-  private readonly rightTurbine: THREE.Group;
+  public readonly leftTurbine: THREE.Group;
+  public readonly rightTurbine: THREE.Group;
   private readonly leftSearchlight: VolumetricSearchlight;
   private readonly rightSearchlight: VolumetricSearchlight;
   private readonly leftStrobe: THREE.Mesh;
   private readonly rightStrobe: THREE.Mesh;
   private readonly plasmaBarrels: THREE.Group;
+
+  public currentPitch = 0;
+  public currentRoll = 0;
 
   constructor(isSquadronLeader = false) {
     const scale = isSquadronLeader ? 1.55 : 1.1;
@@ -115,11 +118,35 @@ export class HKAerialMesh {
     this.group.scale.set(scale, scale, scale);
   }
 
-  public update(timeSeconds: number, alertLevel: number, groundY: number): void {
-    // Turbine hover pitch oscillation
-    const pitch = Math.sin(timeSeconds * 3.5) * 0.08;
-    this.leftTurbine.rotation.x = pitch;
-    this.rightTurbine.rotation.x = pitch;
+  public update(
+    timeSeconds: number,
+    alertLevel: number,
+    groundY: number,
+    vx = 0,
+    vz = 0,
+    dt = 0.016
+  ): void {
+    // Flight pitch and bank roll based on velocity relative to heading
+    const heading = this.group.rotation.y;
+    const fwdSpeed = vx * Math.sin(heading) + vz * Math.cos(heading);
+    const latSpeed = vx * Math.cos(heading) - vz * Math.sin(heading);
+
+    const targetPitch = Math.max(-0.25, Math.min(0.25, fwdSpeed * 0.035));
+    const targetRoll = Math.max(-0.35, Math.min(0.35, -latSpeed * 0.05));
+
+    this.currentPitch = THREE.MathUtils.lerp(this.currentPitch, targetPitch, Math.min(1, dt * 6));
+    this.currentRoll = THREE.MathUtils.lerp(this.currentRoll, targetRoll, Math.min(1, dt * 6));
+
+    this.group.rotation.x = this.currentPitch;
+    this.group.rotation.z = this.currentRoll;
+
+    // Turbine hover pitch oscillation + dynamic flight tilt + roll differential
+    const hoverPitch = Math.sin(timeSeconds * 3.5) * 0.08;
+    const thrusterForwardTilt = this.currentPitch * 1.5;
+    const rollDifferential = this.currentRoll * 0.75;
+
+    this.leftTurbine.rotation.x = hoverPitch + thrusterForwardTilt - rollDifferential;
+    this.rightTurbine.rotation.x = hoverPitch + thrusterForwardTilt + rollDifferential;
 
     // Searchlight sweep back and forth
     const sweep = Math.sin(timeSeconds * 1.8) * 0.22;

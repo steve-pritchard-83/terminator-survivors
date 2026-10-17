@@ -202,13 +202,16 @@ export class SceneManager {
   }
 
   public applyQualityPreset(preset: QualityPreset): void {
+    this.hasAutoDetectedQuality = true;
     this.currentPreset = preset;
     const profile = getQualityProfile(preset);
 
     this.renderer.setPixelRatio(profile.pixelRatio);
     this.postProcessing.setPixelRatio(profile.pixelRatio);
-    this.postProcessing.setBloomEnabled(profile.bloom);
-    this.renderer.shadowMap.enabled = profile.shadows;
+    this.postProcessing.setBloomEnabled?.(profile.bloom);
+    if (this.renderer.shadowMap) {
+      this.renderer.shadowMap.enabled = profile.shadows;
+    }
     this.dynamicLighting.setEnabled(profile.dynamicLights);
     this.atmosphere.setEnabled(profile.atmosphere);
 
@@ -268,6 +271,7 @@ export class SceneManager {
   }
 
   private applyQualityChange(ratio: number): void {
+    this.hasAutoDetectedQuality = true;
     this.renderer.setPixelRatio(ratio);
     this.postProcessing.setPixelRatio(ratio);
     const width = window.innerWidth || 1;

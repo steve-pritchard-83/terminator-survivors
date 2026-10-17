@@ -553,8 +553,22 @@ export class EndoskeletonBatch {
         const scuttleTilt = Math.sin(timeSeconds * 18 + enemy.id) * 0.09;
 
         const eliteScale = enemy.isElite ? (enemy.scale ?? 1.4) : 1.0;
-        this.dummy.position.set(enemy.x, scuttleBob, enemy.z);
-        this.dummy.rotation.set(0, facingAngle, scuttleTilt);
+        const crabY = scuttleBob;
+        let crabTilt = scuttleTilt;
+        let crabPitch = 0;
+        let crabX = enemy.x;
+        let crabZ = enemy.z;
+
+        if (enemy.hitFlashTimer > 0) {
+          const stagger = Math.min(1.0, enemy.hitFlashTimer / 0.15);
+          crabPitch = -0.18 * stagger;
+          crabTilt += (Math.sin(enemy.id * 10) > 0 ? 0.15 : -0.15) * stagger;
+          crabX -= Math.sin(facingAngle) * 0.08 * stagger;
+          crabZ -= Math.cos(facingAngle) * 0.08 * stagger;
+        }
+
+        this.dummy.position.set(crabX, crabY, crabZ);
+        this.dummy.rotation.set(crabPitch, facingAngle, crabTilt);
         this.dummy.scale.set(eliteScale, eliteScale, eliteScale);
         this.dummy.updateMatrix();
 
@@ -591,12 +605,26 @@ export class EndoskeletonBatch {
 
       // Animatronic mechanical gait & stride
       const phase = timeSeconds * 7.5 + enemy.id * 1.3;
-      const bobY = Math.abs(Math.sin(phase)) * 0.06;
-      const rollZ = Math.sin(phase) * 0.055;
-      const legStride = Math.sin(phase) * 0.52;
+      let bobY = Math.abs(Math.sin(phase)) * 0.06;
+      let rollZ = Math.sin(phase) * 0.055;
+      let legStride = Math.sin(phase) * 0.52;
+      let pitchX = 0;
+      let posX = enemy.x;
+      let posZ = enemy.z;
 
-      this.dummy.position.set(enemy.x, bobY, enemy.z);
-      this.dummy.rotation.set(0, facingAngle, rollZ);
+      // Stagger backward on hit
+      if (enemy.hitFlashTimer > 0) {
+        const stagger = Math.min(1.0, enemy.hitFlashTimer / 0.15);
+        pitchX = -0.22 * stagger;
+        rollZ += ((enemy.id % 2 === 0 ? 1 : -1) * 0.12) * stagger;
+        bobY -= 0.04 * stagger;
+        legStride *= (1 - stagger * 0.5);
+        posX -= Math.sin(facingAngle) * 0.12 * stagger;
+        posZ -= Math.cos(facingAngle) * 0.12 * stagger;
+      }
+
+      this.dummy.position.set(posX, bobY, posZ);
+      this.dummy.rotation.set(pitchX, facingAngle, rollZ);
       this.dummy.scale.set(scale, scale, scale);
       this.dummy.updateMatrix();
 
@@ -604,14 +632,14 @@ export class EndoskeletonBatch {
       this.opticsInstancedMesh.setMatrixAt(activeIndex, this.dummy.matrix);
 
       // Left Leg articulated matrix
-      this.legDummy.position.set(enemy.x, bobY + 0.68 * scale, enemy.z);
-      this.legDummy.rotation.set(legStride, facingAngle, rollZ);
+      this.legDummy.position.set(posX, bobY + 0.68 * scale, posZ);
+      this.legDummy.rotation.set(legStride + pitchX * 0.4, facingAngle, rollZ);
       this.legDummy.scale.set(scale, scale, scale);
       this.legDummy.updateMatrix();
       this.leftLegInstancedMesh.setMatrixAt(activeIndex, this.legDummy.matrix);
 
       // Right Leg articulated matrix
-      this.legDummy.rotation.set(-legStride, facingAngle, rollZ);
+      this.legDummy.rotation.set(-legStride + pitchX * 0.4, facingAngle, rollZ);
       this.legDummy.updateMatrix();
       this.rightLegInstancedMesh.setMatrixAt(activeIndex, this.legDummy.matrix);
 

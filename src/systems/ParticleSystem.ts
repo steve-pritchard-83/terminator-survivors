@@ -51,7 +51,7 @@ export class ParticleSystem {
   private readonly particles: Particle[] = [];
   private readonly unbinds: (() => void)[] = [];
   private particleCap = 100;
-  private debrisCap = 48;
+  private debrisCap = 300;
 
   public setCaps(particleCap: number, debrisCap: number): void {
     this.particleCap = Math.max(15, particleCap);

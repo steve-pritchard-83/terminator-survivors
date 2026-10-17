@@ -65,6 +65,36 @@ interface TransientVfx {
   update: (progress: number, dt: number) => void;
 }
 
+const WEAPON_RECOIL_SCALES: Record<string, number> = {
+  ithaca_37: 1.8,
+  trench_sweeper: 1.9,
+  m79_thumper: 1.6,
+  mm1_barrage: 1.7,
+  rpg_launcher: 2.0,
+  tandem_warhead: 2.2,
+  m16_carbine: 0.5,
+  phased_plasma_assault: 0.6,
+  m25_plasma: 0.9,
+  m95a1_plasma: 1.1,
+  pipe_bomb: 1.2,
+  thermite_buster: 1.4,
+  napalm_canister: 0.8,
+  firestorm_wall: 0.9,
+  firestorm_lane: 0.9,
+  emp_emitter: 0.4,
+  emp_supernova: 0.5,
+  coltan_knife: 0.7,
+  hyperalloy_blade: 0.8,
+  seeker_drone: 0,
+  perimeter_ring: 0,
+  laser_designator: 0,
+  orbital_ion: 0,
+  resistance_k9: 0,
+  k9_pack: 0,
+  reprogrammed_t800: 0,
+  guardian_protocol: 0
+};
+
 export class WeaponSystem {
   public readonly group = new THREE.Group();
   private readonly runState: RunState;
@@ -250,6 +280,10 @@ export class WeaponSystem {
     if (def?.pattern) {
       this.currentFiringWeaponId = wId as WeaponId;
       try {
+        const recoilIntensity = WEAPON_RECOIL_SCALES[wId] ?? 1.0;
+        if (recoilIntensity > 0) {
+          this.playerMesh.triggerRecoil(recoilIntensity);
+        }
         this.patterns[def.pattern]?.fire(def, stats, px, pz, targetAngle, this.fireContext);
       } finally {
         this.currentFiringWeaponId = null;

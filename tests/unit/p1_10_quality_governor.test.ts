@@ -20,6 +20,7 @@ vi.mock('three', async () => {
     dispose = vi.fn();
     toneMapping = 0;
     toneMappingExposure = 1;
+    shadowMap = { enabled: false };
   }
   return {
     ...actual,
@@ -36,6 +37,7 @@ vi.mock('../../src/graphics/PostProcessing', () => {
       setPixelRatio = vi.fn((ratio: number) => {
         mockPostProcessingSetPixelRatio?.(ratio);
       });
+      setBloomEnabled = vi.fn();
       update = vi.fn();
       render = vi.fn();
       triggerEmpGlitch = vi.fn();
