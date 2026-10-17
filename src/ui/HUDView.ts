@@ -116,9 +116,39 @@ export class HUDView {
       this.resetCombo();
     });
 
+    globalEvents.on('achievement:unlocked', ({ title, rewardDescription }) => {
+      this.showAchievementNotification(title, rewardDescription);
+    });
+
     this.pauseBtn.addEventListener('click', () => {
       this.onPauseClicked?.();
     });
+  }
+
+  public showAchievementNotification(title: string, rewardDesc: string): void {
+    const banner = document.createElement('div');
+    banner.className = 'hud-achievement-notification';
+    banner.style.cssText = `
+      position: absolute;
+      top: 64px;
+      right: 20px;
+      background: rgba(10, 20, 30, 0.95);
+      border: 1px solid var(--color-cyan);
+      box-shadow: 0 0 14px rgba(77, 210, 255, 0.4);
+      padding: 8px 14px;
+      font-family: var(--font-display);
+      border-radius: 4px;
+      z-index: 100;
+      pointer-events: none;
+      animation: fadeInOut 4s forwards;
+    `;
+    banner.innerHTML = `
+      <div style="font-size:10px; color:var(--color-amber); letter-spacing:1px;">★ INTEL SECURED</div>
+      <div style="font-size:13px; color:#fff; font-weight:bold;">${title}</div>
+      <div style="font-size:11px; color:var(--color-cyan);">${rewardDesc}</div>
+    `;
+    this.container.appendChild(banner);
+    window.setTimeout(() => banner.remove(), 4000);
   }
 
   public updateCombo(combo: number): void {

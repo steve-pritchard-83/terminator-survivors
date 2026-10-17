@@ -73,6 +73,7 @@ export class RunState {
   public isDailyOperation = false;
   public dailyDateKey = '';
   public activeThreats = new Set<ThreatModifierId>();
+  public unlockedWeapons: BaseWeaponId[] = [];
   private purchasedMetaUpgrades: Record<string, number> = {};
 
   public godMode = false;
@@ -104,7 +105,8 @@ export class RunState {
     purchasedMetaUpgrades: Record<string, number>,
     seed = 0,
     stageId: StageId = 'la_2029_wasteland',
-    activeThreats?: ThreatModifierId[]
+    activeThreats?: ThreatModifierId[],
+    unlockedWeapons?: BaseWeaponId[]
   ): void {
     if (this.mode !== 'title') {
       this.stateMachine.reset('title');
@@ -116,6 +118,7 @@ export class RunState {
     this.isDailyOperation = false;
     this.dailyDateKey = '';
     this.activeThreats = new Set(activeThreats ?? []);
+    this.unlockedWeapons = unlockedWeapons ? [...unlockedWeapons] : [];
     this.timeSeconds = 0;
     this.level = 1;
     this.xp = 0;
@@ -299,7 +302,11 @@ export class RunState {
 
   public generateUpgradeChoices(): UpgradeChoice[] {
     const choices: UpgradeChoice[] = [];
-    const eligibleWeapons = Object.keys(BASE_WEAPONS) as BaseWeaponId[];
+    const allBaseWeapons = Object.keys(BASE_WEAPONS) as BaseWeaponId[];
+    const eligibleWeapons =
+      this.unlockedWeapons.length > 0
+        ? allBaseWeapons.filter((w) => this.unlockedWeapons.includes(w))
+        : allBaseWeapons;
     const eligiblePassives = Object.keys(PASSIVES) as PassiveId[];
 
     // 1. Existing upgradable weapons (Level < 8)

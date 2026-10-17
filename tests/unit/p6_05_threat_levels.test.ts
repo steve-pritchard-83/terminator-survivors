@@ -205,7 +205,7 @@ describe('P6-05: Threat Levels (Difficulty Modifiers)', () => {
       runState.kills = 50;
       runState.timeSeconds = 200;
 
-      controller.endRun(true);
+      controller.endRun(false);
 
       // 100 * 1.30 = 130 scrap added to saveManager
       expect(saveManager.getData().alloyScrap).toBe(130);

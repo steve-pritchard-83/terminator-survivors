@@ -287,6 +287,9 @@ export interface MetaSaveData {
     maxScrap: number;
   };
   dailyAttempts?: Record<string, DailyAttemptRecord>;
+  achievements?: string[];
+  unlockedWeapons?: BaseWeaponId[];
+  unlockedCosmetics?: string[];
 }
 
 export interface DailyOperationConfig {

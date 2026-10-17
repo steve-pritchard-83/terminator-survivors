@@ -15,6 +15,7 @@ import type { LoadoutId, StageId, ThreatModifierId, UpgradeChoice, WeaponId, Act
 import { globalEvents } from './EventBus';
 import { globalRNG } from './RNG';
 import { computeThreatScrapMultiplier } from '../data/threatModifiers';
+import { AchievementTracker } from '../state/AchievementTracker';
 
 export interface RunControllerHost {
   readonly runState: RunState;
@@ -35,9 +36,11 @@ export interface RunControllerHost {
 
 export class RunController {
   public activeBoss: { name: string; hp: number; maxHp: number } | null = null;
+  public readonly achievementTracker: AchievementTracker;
   private readonly unbinds: Array<() => void> = [];
 
   constructor(private readonly host: RunControllerHost) {
+    this.achievementTracker = new AchievementTracker(this.host.saveManager, this.host.runState);
     this.setupEvents();
   }
 
@@ -108,7 +111,15 @@ export class RunController {
   ): void {
     const seed = (customSeed !== undefined ? customSeed : Date.now()) >>> 0;
     globalRNG.setSeed(seed);
-    this.host.runState.initRun(loadoutId, this.host.saveManager.getData().upgrades, seed, stageId, activeThreats);
+    this.host.runState.initRun(
+      loadoutId,
+      this.host.saveManager.getData().upgrades,
+      seed,
+      stageId,
+      activeThreats,
+      this.host.saveManager.getUnlockedWeapons()
+    );
+    this.achievementTracker.setRunState(this.host.runState);
     this.host.runState.isDailyOperation = isDaily;
     this.host.runState.dailyDateKey = dailyDateKey;
     this.host.runState.autoAimEnabled = this.host.saveManager.getData().settings.autoAim;
@@ -160,6 +171,16 @@ export class RunController {
         alloyScrap: finalScrap
       });
     }
+
+    globalEvents.emit('run:completed', {
+      victory,
+      timeSeconds: this.host.runState.timeSeconds,
+      kills: this.host.runState.kills,
+      alloyScrap: finalScrap,
+      stageId: this.host.runState.stageId,
+      loadoutId: this.host.runState.loadoutId,
+      threatCount: this.host.runState.activeThreats.size
+    });
 
     this.host.uiManager.levelUpModal.hide();
     this.host.uiManager.vaultModal.hide();
@@ -332,6 +353,7 @@ export class RunController {
   }
 
   public dispose(): void {
+    this.achievementTracker.destroy();
     for (const unbind of this.unbinds) {
       unbind();
     }

@@ -20,6 +20,8 @@ export type GameEventMap = {
   'weapon:evolved': { from: WeaponId; to: WeaponId; name: string };
   'camera:shake': { trauma: number };
   'audio:sfx': { name: string; arg?: number };
+  'achievement:unlocked': { achievementId: string; title: string; description: string; rewardDescription: string };
+  'run:completed': { victory: boolean; timeSeconds: number; kills: number; alloyScrap: number; stageId: string; loadoutId: string; threatCount: number };
 };
 
 type EventCallback<T> = (data: T) => void;

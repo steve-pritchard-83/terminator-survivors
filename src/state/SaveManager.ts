@@ -1,5 +1,6 @@
-import type { DailyAttemptRecord, LoadoutId, MetaSaveData, MetaUpgradeId } from '../core/types';
+import type { BaseWeaponId, DailyAttemptRecord, LoadoutId, MetaSaveData, MetaUpgradeId } from '../core/types';
 import { LOADOUTS, META_UPGRADES } from '../data/upgrades';
+import { ACHIEVEMENTS, DEFAULT_UNLOCKED_WEAPONS } from '../data/achievements';
 
 const STORAGE_KEY = 'TERMINATOR_SURVIVORS_SAVE_V1';
 
@@ -56,7 +57,10 @@ export class SaveManager {
         maxKills: 0,
         maxScrap: 0
       },
-      dailyAttempts: {}
+      dailyAttempts: {},
+      achievements: [],
+      unlockedWeapons: [...DEFAULT_UNLOCKED_WEAPONS],
+      unlockedCosmetics: []
     };
   }
 
@@ -137,6 +141,36 @@ export class SaveManager {
       }
     }
 
+    // 7. Validate achievements
+    const achievements: string[] = [];
+    if (Array.isArray(current.achievements)) {
+      for (const a of current.achievements) {
+        if (typeof a === 'string' && a in ACHIEVEMENTS && !achievements.includes(a)) {
+          achievements.push(a);
+        }
+      }
+    }
+
+    // 8. Validate unlocked weapons
+    const unlockedWeapons: BaseWeaponId[] = [...DEFAULT_UNLOCKED_WEAPONS];
+    if (Array.isArray(current.unlockedWeapons)) {
+      for (const w of current.unlockedWeapons) {
+        if (typeof w === 'string' && !unlockedWeapons.includes(w as BaseWeaponId)) {
+          unlockedWeapons.push(w as BaseWeaponId);
+        }
+      }
+    }
+
+    // 9. Validate cosmetics
+    const unlockedCosmetics: string[] = [];
+    if (Array.isArray(current.unlockedCosmetics)) {
+      for (const c of current.unlockedCosmetics) {
+        if (typeof c === 'string' && !unlockedCosmetics.includes(c)) {
+          unlockedCosmetics.push(c);
+        }
+      }
+    }
+
     return {
       version: SaveManager.CURRENT_VERSION,
       alloyScrap: typeof current.alloyScrap === 'number' && current.alloyScrap >= 0 ? Math.floor(current.alloyScrap) : 0,
@@ -148,7 +182,10 @@ export class SaveManager {
       upgrades,
       settings,
       endlessHighScores,
-      dailyAttempts
+      dailyAttempts,
+      achievements,
+      unlockedWeapons,
+      unlockedCosmetics
     };
   }
 
@@ -306,6 +343,66 @@ export class SaveManager {
 
   public getDailyAttempt(dateKey: string): DailyAttemptRecord | null {
     return this.data.dailyAttempts?.[dateKey] ?? null;
+  }
+
+  public isAchievementUnlocked(id: string): boolean {
+    return Boolean(this.data.achievements?.includes(id));
+  }
+
+  public getUnlockedAchievements(): string[] {
+    return this.data.achievements ? [...this.data.achievements] : [];
+  }
+
+  public unlockAchievement(id: string): boolean {
+    const def = ACHIEVEMENTS[id];
+    if (!def) return false;
+    if (!this.data.achievements) {
+      this.data.achievements = [];
+    }
+    if (this.data.achievements.includes(id)) {
+      return false;
+    }
+
+    this.data.achievements.push(id);
+
+    // Apply Reward
+    if (def.reward.type === 'scrap' && typeof def.reward.amount === 'number') {
+      this.data.alloyScrap += def.reward.amount;
+    } else if (def.reward.type === 'loadout' && def.reward.id) {
+      if (!this.data.unlockedLoadouts.includes(def.reward.id as LoadoutId)) {
+        this.data.unlockedLoadouts.push(def.reward.id as LoadoutId);
+      }
+    } else if (def.reward.type === 'weapon' && def.reward.id) {
+      if (!this.data.unlockedWeapons) this.data.unlockedWeapons = [...DEFAULT_UNLOCKED_WEAPONS];
+      if (!this.data.unlockedWeapons.includes(def.reward.id as BaseWeaponId)) {
+        this.data.unlockedWeapons.push(def.reward.id as BaseWeaponId);
+      }
+    } else if (def.reward.type === 'cosmetic' && def.reward.id) {
+      if (!this.data.unlockedCosmetics) this.data.unlockedCosmetics = [];
+      if (!this.data.unlockedCosmetics.includes(def.reward.id)) {
+        this.data.unlockedCosmetics.push(def.reward.id);
+      }
+    }
+
+    this.save();
+    return true;
+  }
+
+  public getUnlockedWeapons(): BaseWeaponId[] {
+    return this.data.unlockedWeapons ? [...this.data.unlockedWeapons] : [...DEFAULT_UNLOCKED_WEAPONS];
+  }
+
+  public unlockWeapon(id: BaseWeaponId): boolean {
+    if (!this.data.unlockedWeapons) this.data.unlockedWeapons = [...DEFAULT_UNLOCKED_WEAPONS];
+    if (this.data.unlockedWeapons.includes(id)) return false;
+    this.data.unlockedWeapons.push(id);
+    this.save();
+    return true;
+  }
+
+  public isWeaponUnlocked(id: BaseWeaponId): boolean {
+    const list = this.getUnlockedWeapons();
+    return list.includes(id);
   }
 
   public resetProgress(): void {

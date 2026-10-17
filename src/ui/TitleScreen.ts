@@ -2,6 +2,7 @@ import type { SaveManager } from '../state/SaveManager';
 import type { AudioEngine } from '../audio/AudioEngine';
 import { LOADOUTS, META_UPGRADES } from '../data/upgrades';
 import { LORE } from '../data/lore';
+import { ACHIEVEMENTS, TOTAL_ACHIEVEMENTS } from '../data/achievements';
 import type { LoadoutId, MetaUpgradeId } from '../core/types';
 import type { GamepadManager } from '../input/GamepadManager';
 
@@ -13,10 +14,12 @@ interface BeforeInstallPromptEvent extends Event {
 export class TitleScreen {
   public readonly container: HTMLElement;
   private readonly bunkerModal: HTMLElement;
+  private readonly achievementsModal: HTMLElement;
   private readonly pwaModal: HTMLElement;
   private readonly installBtn: HTMLElement;
   private readonly startBtn: HTMLElement;
   private readonly bunkerBtn: HTMLElement;
+  private readonly achievementsBtn: HTMLElement;
   private readonly saveManager: SaveManager;
   private readonly audioEngine: AudioEngine;
   private readonly onStartRun: (loadoutId: LoadoutId) => void;
@@ -25,6 +28,8 @@ export class TitleScreen {
   private selectedBtnIndex = 0;
   private bunkerSelectables: HTMLElement[] = [];
   private selectedBunkerIndex = 0;
+  private achievementsSelectables: HTMLElement[] = [];
+  private selectedAchievementsIndex = 0;
 
   constructor(
     root: HTMLElement,
@@ -53,6 +58,9 @@ export class TitleScreen {
           </button>
           <button class="btn-secondary" data-testid="btn-bunker-shop" id="btn-bunker-shop">
             TECH-COM BUNKER REQUISITION
+          </button>
+          <button class="btn-secondary" data-testid="btn-achievements" id="btn-achievements">
+            TECH-COM INTEL // ACHIEVEMENTS
           </button>
           <button class="btn-secondary" id="btn-install-pwa" style="display:none; border-color:var(--color-cyan); color:var(--color-cyan);">
             INSTALL APP (PWA)
@@ -109,15 +117,33 @@ export class TitleScreen {
           </div>
         </div>
       </div>
+
+      <div class="modal-backdrop" id="achievements-modal" style="display:none;">
+        <div class="t800-modal-box" style="max-width:800px; max-height:88vh; overflow-y:auto;">
+          <div class="t800-header">TECH-COM INTEL // ACHIEVEMENTS</div>
+          <div class="t800-ticker" id="achievements-scrap-header">RECORDS SECURED: 0 / 40</div>
+          <div id="achievements-list" class="upgrade-card-list" style="margin-top:10px; display:flex; flex-direction:column; gap:8px;"></div>
+          <div style="display:flex; justify-content:center; align-items:center; gap:12px; margin-top:14px;">
+            <button class="btn-secondary" id="btn-close-achievements" style="align-self:center;">
+              RETURN TO COMMAND
+            </button>
+          </div>
+          <div id="achievements-controller-hint" style="font-family:var(--font-telemetry); font-size:12px; color:var(--color-cyan); margin-top:6px; text-align:center; display:none;">
+            [D-PAD] BROWSE &nbsp;//&nbsp; [B] RETURN
+          </div>
+        </div>
+      </div>
     `;
 
     root.appendChild(this.container);
 
     this.bunkerModal = this.container.querySelector('#bunker-modal')!;
+    this.achievementsModal = this.container.querySelector('#achievements-modal')!;
     this.pwaModal = this.container.querySelector('#pwa-install-modal')!;
     this.installBtn = this.container.querySelector('#btn-install-pwa')!;
     this.startBtn = this.container.querySelector('#btn-start-run')!;
     this.bunkerBtn = this.container.querySelector('#btn-bunker-shop')!;
+    this.achievementsBtn = this.container.querySelector('#btn-achievements')!;
 
     this.setupPwaInstallPrompt();
 
@@ -132,9 +158,19 @@ export class TitleScreen {
       this.openBunkerShop();
     });
 
+    this.achievementsBtn.addEventListener('click', () => {
+      this.openAchievements();
+    });
+
     this.container.querySelector('#btn-close-bunker')?.addEventListener('click', () => {
       this.audioEngine.playHudScanClose();
       this.bunkerModal.style.display = 'none';
+      this.updateTitleButtonHighlight();
+    });
+
+    this.container.querySelector('#btn-close-achievements')?.addEventListener('click', () => {
+      this.audioEngine.playHudScanClose();
+      this.achievementsModal.style.display = 'none';
       this.updateTitleButtonHighlight();
     });
 
@@ -273,12 +309,16 @@ export class TitleScreen {
     return this.bunkerModal.style.display !== 'none';
   }
 
+  public isAchievementsVisible(): boolean {
+    return this.achievementsModal.style.display !== 'none';
+  }
+
   public isPwaModalVisible(): boolean {
     return this.pwaModal.style.display !== 'none';
   }
 
   private getActiveTitleButtons(): HTMLElement[] {
-    const btns: HTMLElement[] = [this.startBtn, this.bunkerBtn];
+    const btns: HTMLElement[] = [this.startBtn, this.bunkerBtn, this.achievementsBtn];
     if (this.installBtn.style.display !== 'none') {
       btns.push(this.installBtn);
     }
@@ -313,7 +353,10 @@ export class TitleScreen {
     // Show hints if controller connected
     const hintEl = this.container.querySelector('#title-controller-hint') as HTMLElement | null;
     if (hintEl) {
-      hintEl.style.display = gp.hasActiveController && !this.isBunkerVisible() ? 'block' : 'none';
+      hintEl.style.display =
+        gp.hasActiveController && !this.isBunkerVisible() && !this.isAchievementsVisible()
+          ? 'block'
+          : 'none';
     }
     const bunkerHintEl = this.container.querySelector(
       '#bunker-controller-hint'
@@ -321,6 +364,13 @@ export class TitleScreen {
     if (bunkerHintEl) {
       bunkerHintEl.style.display =
         gp.hasActiveController && this.isBunkerVisible() ? 'block' : 'none';
+    }
+    const achHintEl = this.container.querySelector(
+      '#achievements-controller-hint'
+    ) as HTMLElement | null;
+    if (achHintEl) {
+      achHintEl.style.display =
+        gp.hasActiveController && this.isAchievementsVisible() ? 'block' : 'none';
     }
 
     // 1. PWA Modal Open
@@ -377,7 +427,41 @@ export class TitleScreen {
       return true;
     }
 
-    // 3. Main Title Screen
+    // 3. Achievements Modal Open
+    if (this.isAchievementsVisible()) {
+      if (gp.isMenuCancelPressed()) {
+        const closeBtn = this.achievementsModal.querySelector(
+          '#btn-close-achievements'
+        ) as HTMLElement | null;
+        closeBtn?.click();
+        gp.playRumble(40, 0.15, 0.3);
+        return true;
+      }
+
+      const nav = gp.getMenuNavigation(dt);
+      if (nav.y !== 0) {
+        if (this.achievementsSelectables.length > 0) {
+          this.selectedAchievementsIndex =
+            (this.selectedAchievementsIndex + nav.y + this.achievementsSelectables.length) %
+            this.achievementsSelectables.length;
+          this.updateAchievementsHighlight();
+          gp.playRumble(25, 0.05, 0.2);
+        }
+        return true;
+      }
+
+      if (gp.isMenuConfirmPressed()) {
+        if (this.achievementsSelectables[this.selectedAchievementsIndex]) {
+          gp.playRumble(60, 0.25, 0.4);
+          this.achievementsSelectables[this.selectedAchievementsIndex].click();
+          return true;
+        }
+      }
+
+      return true;
+    }
+
+    // 4. Main Title Screen
     const nav = gp.getMenuNavigation(dt);
     const btns = this.getActiveTitleButtons();
     if (nav.y !== 0) {
@@ -499,5 +583,84 @@ export class TitleScreen {
     }
 
     this.updateBunkerHighlight();
+  }
+
+  private openAchievements(): void {
+    this.audioEngine.playHudScanOpen();
+    this.achievementsModal.style.display = 'flex';
+    this.selectedAchievementsIndex = 0;
+    this.renderAchievements();
+  }
+
+  private renderAchievements(): void {
+    const unlockedIds = this.saveManager.getUnlockedAchievements();
+    const count = unlockedIds.length;
+    const pct = Math.round((count / TOTAL_ACHIEVEMENTS) * 100);
+
+    const scrapHeader = this.achievementsModal.querySelector('#achievements-scrap-header')!;
+    scrapHeader.textContent = `RECORDS SECURED: ${count} / ${TOTAL_ACHIEVEMENTS} (${pct}%) // ALLOY SCRAP: ${this.saveManager.getData().alloyScrap}`;
+
+    this.achievementsSelectables = [];
+    const listEl = this.achievementsModal.querySelector('#achievements-list')!;
+    listEl.innerHTML = '';
+
+    for (const ach of Object.values(ACHIEVEMENTS)) {
+      const isUnlocked = unlockedIds.includes(ach.id);
+      const card = document.createElement('div');
+      card.className = 'upgrade-card';
+      card.style.cssText = `
+        padding: 10px 14px;
+        background: ${isUnlocked ? 'rgba(10, 30, 20, 0.6)' : 'rgba(15, 20, 25, 0.6)'};
+        border: 1px solid ${isUnlocked ? 'rgba(0, 255, 136, 0.4)' : 'rgba(255, 255, 255, 0.1)'};
+        border-radius: 4px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+      `;
+
+      card.innerHTML = `
+        <div style="flex: 1;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-family:var(--font-display); font-size:13px; color:${isUnlocked ? '#fff' : '#aaa'}; font-weight:bold;">
+              ${isUnlocked ? '★ ' : '○ '}${ach.title}
+            </span>
+            <span style="font-size:10px; padding:2px 6px; border-radius:3px; background:rgba(77,210,255,0.15); color:var(--color-cyan); text-transform:uppercase;">
+              ${ach.category}
+            </span>
+          </div>
+          <div style="font-size:11px; color:#bbb; margin-top:3px;">
+            ${ach.description}
+          </div>
+        </div>
+        <div style="text-align:right; min-width:180px;">
+          <div style="font-size:11px; font-weight:bold; color:${isUnlocked ? '#00ff88' : 'var(--color-amber)'};">
+            ${isUnlocked ? 'SECURED' : ach.reward.description}
+          </div>
+          <div style="font-size:10px; color:${isUnlocked ? 'rgba(0,255,136,0.8)' : '#888'}; margin-top:2px;">
+            ${isUnlocked ? 'INTEL ACQUIRED' : 'LOCKED'}
+          </div>
+        </div>
+      `;
+
+      listEl.appendChild(card);
+    }
+
+    const closeBtn = this.achievementsModal.querySelector('#btn-close-achievements') as HTMLElement | null;
+    if (closeBtn) {
+      this.achievementsSelectables.push(closeBtn);
+    }
+    this.updateAchievementsHighlight();
+  }
+
+  private updateAchievementsHighlight(): void {
+    this.achievementsSelectables.forEach((el, i) => {
+      if (i === this.selectedAchievementsIndex) {
+        el.classList.add('controller-selected');
+        el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      } else {
+        el.classList.remove('controller-selected');
+      }
+    });
   }
 }
