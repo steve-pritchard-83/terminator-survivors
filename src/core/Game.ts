@@ -14,6 +14,7 @@ import { WeaponSystem } from '../systems/WeaponSystem';
 import { EnemySystem } from '../systems/EnemySystem';
 import { WaveDirector } from '../systems/WaveDirector';
 import { PickupSystem } from '../systems/PickupSystem';
+import { InteractiveEnvironmentSystem } from '../systems/InteractiveEnvironmentSystem';
 import { UIManager } from '../ui/UIManager';
 import { RunController, type RunControllerHost } from './RunController';
 import { InputRouter, type InputRouterHost } from './InputRouter';
@@ -38,6 +39,7 @@ export class Game implements RunControllerHost, InputRouterHost, DebugAPIHost {
   public readonly enemySystem: EnemySystem;
   public readonly waveDirector: WaveDirector;
   public readonly pickupSystem: PickupSystem;
+  public readonly interactiveEnv: InteractiveEnvironmentSystem;
   public readonly uiManager: UIManager;
   public readonly runController: RunController;
   public readonly inputRouter: InputRouter;
@@ -83,6 +85,7 @@ export class Game implements RunControllerHost, InputRouterHost, DebugAPIHost {
     this.enemySystem = new EnemySystem(this.runState, this.grid, this.audioEngine, this.particles, this.endoBatch);
     this.waveDirector = new WaveDirector(this.runState, this.enemySystem);
     this.pickupSystem = new PickupSystem(this.runState, this.audioEngine, this.particles);
+    this.interactiveEnv = new InteractiveEnvironmentSystem(this.runState, this.grid, this.sceneManager.scene, this.audioEngine, this.particles, this.pickupSystem, this.enemySystem);
     this.sceneManager.scene.add(this.playerSystem.group, this.weaponSystem.group, this.enemySystem.group, this.pickupSystem.group);
 
     // 4. UI Layer & CRT Overlay
@@ -155,6 +158,8 @@ export class Game implements RunControllerHost, InputRouterHost, DebugAPIHost {
     this.pickupSystem.update(dt);
     this.particles.update(dt);
     this.environment.update(this.runState.playerPos.x, this.runState.playerPos.z);
+    this.interactiveEnv.update(dt);
+    this.environment.obstacleColliders.push(...this.interactiveEnv.getCarColliders());
 
     const isLowHp = this.runState.hp > 0 && (this.runState.hp / this.runState.maxHp) < 0.25;
     this.audioEngine.updateHeartbeat(dt, isLowHp);
@@ -183,6 +188,7 @@ export class Game implements RunControllerHost, InputRouterHost, DebugAPIHost {
     this.runController.dispose();
     this.debugAPI?.dispose();
     this.pickupSystem.dispose();
+    this.interactiveEnv.dispose();
   }
 }
 

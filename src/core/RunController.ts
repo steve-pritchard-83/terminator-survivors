@@ -9,6 +9,7 @@ import type { EnemySystem } from '../systems/EnemySystem';
 import type { PickupSystem } from '../systems/PickupSystem';
 import type { ParticleSystem } from '../systems/ParticleSystem';
 import type { WaveDirector } from '../systems/WaveDirector';
+import type { InteractiveEnvironmentSystem } from '../systems/InteractiveEnvironmentSystem';
 import type { GameLoop } from './GameLoop';
 import type { LoadoutId, UpgradeChoice, WeaponId, ActiveEnemy } from './types';
 import { globalEvents } from './EventBus';
@@ -26,6 +27,7 @@ export interface RunControllerHost {
   readonly pickupSystem: PickupSystem;
   readonly particles: ParticleSystem;
   readonly waveDirector: WaveDirector;
+  readonly interactiveEnv?: InteractiveEnvironmentSystem;
   readonly gameLoop: GameLoop;
   onRunStarted?: () => void;
 }
@@ -105,6 +107,7 @@ export class RunController {
     this.host.enemySystem.clear();
     this.host.pickupSystem.clear();
     this.host.particles.clear();
+    this.host.interactiveEnv?.clear();
     this.host.waveDirector.reset();
     this.activeBoss = null;
     this.host.inputManager.clearDashRequest();
