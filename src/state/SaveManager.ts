@@ -50,6 +50,11 @@ export class SaveManager {
         sfxVolume: 0.85,
         crtScanlines: true,
         autoAim: true
+      },
+      endlessHighScores: {
+        bestTimeSeconds: 0,
+        maxKills: 0,
+        maxScrap: 0
       }
     };
   }
@@ -114,6 +119,13 @@ export class SaveManager {
       autoAim: typeof current.settings?.autoAim === 'boolean' ? current.settings.autoAim : def.settings.autoAim
     };
 
+    // 5. Validate endless high scores
+    const endlessHighScores = {
+      bestTimeSeconds: typeof current.endlessHighScores?.bestTimeSeconds === 'number' && current.endlessHighScores.bestTimeSeconds >= 0 ? current.endlessHighScores.bestTimeSeconds : 0,
+      maxKills: typeof current.endlessHighScores?.maxKills === 'number' && current.endlessHighScores.maxKills >= 0 ? Math.floor(current.endlessHighScores.maxKills) : 0,
+      maxScrap: typeof current.endlessHighScores?.maxScrap === 'number' && current.endlessHighScores.maxScrap >= 0 ? Math.floor(current.endlessHighScores.maxScrap) : 0
+    };
+
     return {
       version: SaveManager.CURRENT_VERSION,
       alloyScrap: typeof current.alloyScrap === 'number' && current.alloyScrap >= 0 ? Math.floor(current.alloyScrap) : 0,
@@ -123,7 +135,8 @@ export class SaveManager {
       unlockedLoadouts: unlocked,
       selectedLoadout: selected,
       upgrades,
-      settings
+      settings,
+      endlessHighScores
     };
   }
 
@@ -224,7 +237,8 @@ export class SaveManager {
     timeSec: number,
     scrapEarned: number,
     victory: boolean,
-    bossesKilled = 0
+    bossesKilled = 0,
+    isEndless = false
   ): void {
     this.data.totalKills += kills;
     this.data.alloyScrap += scrapEarned;
@@ -233,6 +247,15 @@ export class SaveManager {
     }
     if (victory) {
       this.data.victories++;
+    }
+
+    if (isEndless) {
+      if (!this.data.endlessHighScores) {
+        this.data.endlessHighScores = { bestTimeSeconds: 0, maxKills: 0, maxScrap: 0 };
+      }
+      this.data.endlessHighScores.bestTimeSeconds = Math.max(this.data.endlessHighScores.bestTimeSeconds, timeSec);
+      this.data.endlessHighScores.maxKills = Math.max(this.data.endlessHighScores.maxKills, kills);
+      this.data.endlessHighScores.maxScrap = Math.max(this.data.endlessHighScores.maxScrap, scrapEarned);
     }
 
     // Milestone Auto-Unlocks

@@ -133,7 +133,8 @@ export class RunController {
       this.host.runState.timeSeconds,
       this.host.runState.alloyScrapEarned,
       victory,
-      this.host.runState.bossesKilled
+      this.host.runState.bossesKilled,
+      this.host.runState.isEndless
     );
 
     this.host.uiManager.levelUpModal.hide();
@@ -151,7 +152,17 @@ export class RunController {
         this.host.audioEngine.playHudScanClose();
         this.host.runState.mode = 'title';
         this.host.uiManager.titleScreen.show();
-      }
+      },
+      victory && !this.host.runState.isEndless
+        ? () => {
+            this.host.runState.isEndless = true;
+            this.host.runState.mode = 'playing';
+            this.host.runState.addScrap(100);
+            this.host.audioEngine.startMusic();
+            this.host.uiManager.hudView.show();
+            this.host.uiManager.hudView.triggerBossWarning('CONTINUE THE WAR // ENDLESS MODE ACTIVATED');
+          }
+        : undefined
     );
   }
 
@@ -254,7 +265,7 @@ export class RunController {
       if (this.activeBoss) {
         this.activeBoss = null;
       }
-      if (enemy.archetype === 'skynet_tde_core') {
+      if (enemy.archetype === 'skynet_tde_core' && !this.host.runState.isEndless) {
         this.endRun(true);
       }
     } else if (enemy.state?.isElite) {

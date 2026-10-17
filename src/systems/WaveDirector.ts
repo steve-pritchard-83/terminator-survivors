@@ -31,7 +31,9 @@ export class WaveDirector {
 
     this.runState.timeSeconds += dt;
     const totalSec = Math.floor(this.runState.timeSeconds);
-    const minute = Math.min(RUN_DURATION_MINUTES, Math.floor(totalSec / 60));
+    const minute = this.runState.isEndless
+      ? Math.floor(totalSec / 60)
+      : Math.min(RUN_DURATION_MINUTES, Math.floor(totalSec / 60));
     const timeline = STAGES[this.runState.stageId]?.waveTimeline ?? WAVE_TIMELINE;
 
     // Check minute transition
@@ -39,15 +41,40 @@ export class WaveDirector {
       this.currentMinute = minute;
       globalEvents.emit('wave:minute', { minute });
 
-      const entry = timeline[minute];
-      if (entry?.boss && !this.spawnedBossesThisRun.has(`${minute}_${entry.boss}`)) {
-        this.spawnedBossesThisRun.add(`${minute}_${entry.boss}`);
-        this.spawnBoss(entry.boss, entry.alertBanner);
+      if (this.runState.isEndless && minute > RUN_DURATION_MINUTES) {
+        const endlessBosses: EnemyArchetypeId[] = [
+          'hk_aerial_squadron_leader',
+          'hk_tank_goliath',
+          't1000_prototype',
+          'skynet_tde_core'
+        ];
+        const isBossMinute = (minute - RUN_DURATION_MINUTES) % 3 === 0;
+        const bossIdx = Math.floor((minute - RUN_DURATION_MINUTES - 1) / 3) % endlessBosses.length;
+        const bossArchetype = isBossMinute ? endlessBosses[bossIdx] : undefined;
+
+        if (bossArchetype && !this.spawnedBossesThisRun.has(`${minute}_${bossArchetype}`)) {
+          this.spawnedBossesThisRun.add(`${minute}_${bossArchetype}`);
+          this.spawnBoss(bossArchetype, `ALERT // ENDLESS WAVE ${minute}: MACHINE SIEGE`);
+        }
+      } else {
+        const entry = timeline[minute];
+        if (entry?.boss && !this.spawnedBossesThisRun.has(`${minute}_${entry.boss}`)) {
+          this.spawnedBossesThisRun.add(`${minute}_${entry.boss}`);
+          this.spawnBoss(entry.boss, entry.alertBanner);
+        }
       }
     }
 
     const entry = timeline[Math.min(RUN_DURATION_MINUTES, this.currentMinute)];
     if (!entry) return;
+
+    let hpMultiplier = entry.hpMultiplier;
+    let damageMultiplier = entry.damageMultiplier;
+    if (this.runState.isEndless && this.currentMinute > RUN_DURATION_MINUTES) {
+      const endlessScale = Math.pow(1.15, this.currentMinute - RUN_DURATION_MINUTES);
+      hpMultiplier *= endlessScale;
+      damageMultiplier *= endlessScale;
+    }
 
     // Normal wave spawns
     this.spawnTimer += dt;
@@ -56,7 +83,7 @@ export class WaveDirector {
       this.enemySystem.activeEnemies.length < entry.minEnemies
     ) {
       this.spawnTimer = 0;
-      this.spawnPerimeterEnemy(entry.pool, entry.hpMultiplier, entry.damageMultiplier, entry.eliteChance);
+      this.spawnPerimeterEnemy(entry.pool, hpMultiplier, damageMultiplier, entry.eliteChance);
     }
   }
 
@@ -72,7 +99,7 @@ export class WaveDirector {
     globalEvents.emit('boss:spawned', {
       archetype,
       name: bannerText ?? archetype.toUpperCase(),
-      maxHp: boss.maxHp
+      maxHp: boss?.maxHp ?? 1000
     });
   }
 

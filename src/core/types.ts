@@ -262,6 +262,11 @@ export interface MetaSaveData {
     crtScanlines: boolean;
     autoAim: boolean;
   };
+  endlessHighScores?: {
+    bestTimeSeconds: number;
+    maxKills: number;
+    maxScrap: number;
+  };
 }
 
 export interface PerfTelemetry {

@@ -7,6 +7,7 @@ export class EndRunModal {
   private readonly statsEl: HTMLElement;
   private readonly loreEl: HTMLElement;
   private onReturnCallback: (() => void) | null = null;
+  private onContinueCallback: (() => void) | null = null;
 
   constructor(root: HTMLElement) {
     this.container = document.createElement('div');
@@ -19,9 +20,14 @@ export class EndRunModal {
         <div class="t800-ticker" id="end-ticker">WAR LOG // LOS ANGELES 2029</div>
         <div id="end-stats" style="font-family:var(--font-telemetry); font-size:15px; color:#fff; margin:18px 0; line-height:1.8;"></div>
         <div id="end-lore" style="font-size:13px; color:var(--color-chrome); margin-bottom:20px; line-height:1.5;"></div>
-        <button class="btn-primary" id="btn-return-bunker" style="align-self:center;">
-          RETURN TO COMMAND
-        </button>
+        <div style="display:flex; flex-direction:column; gap:10px; align-items:center;">
+          <button class="btn-primary" id="btn-continue-war" style="background:var(--color-amber); border-color:#ffbb00; display:none;">
+            CONTINUE THE WAR (+100 ALLOY)
+          </button>
+          <button class="btn-primary" id="btn-return-bunker">
+            RETURN TO COMMAND
+          </button>
+        </div>
         <div id="end-controller-hint" style="font-family:var(--font-telemetry); font-size:12px; color:var(--color-cyan); margin-top:12px; display:none;">
           [A / B / START] RETURN TO COMMAND
         </div>
@@ -33,6 +39,11 @@ export class EndRunModal {
     this.titleEl = this.container.querySelector('#end-title')!;
     this.statsEl = this.container.querySelector('#end-stats')!;
     this.loreEl = this.container.querySelector('#end-lore')!;
+
+    this.container.querySelector('#btn-continue-war')?.addEventListener('click', () => {
+      this.container.style.display = 'none';
+      this.onContinueCallback?.();
+    });
 
     this.container.querySelector('#btn-return-bunker')?.addEventListener('click', () => {
       this.container.style.display = 'none';
@@ -47,10 +58,17 @@ export class EndRunModal {
     level: number,
     scrap: number,
     seed: number | undefined,
-    onReturn: () => void
+    onReturn: () => void,
+    onContinueWar?: () => void
   ): void {
     this.onReturnCallback = onReturn;
+    this.onContinueCallback = onContinueWar ?? null;
     this.container.style.display = 'flex';
+
+    const continueBtn = this.container.querySelector('#btn-continue-war') as HTMLElement | null;
+    if (continueBtn) {
+      continueBtn.style.display = onContinueWar ? 'block' : 'none';
+    }
 
     const sec = Math.floor(timeSeconds);
     const m = Math.floor(sec / 60);

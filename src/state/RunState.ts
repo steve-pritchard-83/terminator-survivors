@@ -68,6 +68,7 @@ export class RunState {
   public revivalsLeft = 0;
   public loadoutId: LoadoutId = 'reese_2029';
   public stageId: StageId = 'la_2029_wasteland';
+  public isEndless = false;
   private purchasedMetaUpgrades: Record<string, number> = {};
 
   public godMode = false;
@@ -106,6 +107,7 @@ export class RunState {
     this.mode = 'playing';
     this.seed = seed;
     this.stageId = stageId;
+    this.isEndless = false;
     this.timeSeconds = 0;
     this.level = 1;
     this.xp = 0;
