@@ -8,6 +8,7 @@ export default defineConfig({
       registerType: 'autoUpdate',
       injectRegister: 'auto',
       includeAssets: [
+        'icons/favicon.png',
         'icons/favicon.svg',
         'icons/icon-192.png',
         'icons/icon-512.png',
@@ -26,6 +27,7 @@ export default defineConfig({
         orientation: 'any',
         start_url: './',
         icons: [
+          { src: 'icons/favicon.png', sizes: '64x64', type: 'image/png' },
           { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png' },
           { src: 'icons/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }

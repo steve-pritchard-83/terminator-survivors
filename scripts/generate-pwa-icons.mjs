@@ -21,6 +21,13 @@ if (fs.existsSync(path.join(refDir, 'backgroundmusic.mp3'))) {
   fs.copyFileSync(path.join(refDir, 'backgroundmusic.mp3'), path.join(audioDir, 'backgroundmusic.mp3'));
 }
 
+// Preserve custom artwork PWA icons if already staged in public/icons
+const existingIcon512 = path.join(iconDir, 'icon-512.png');
+if (fs.existsSync(existingIcon512) && fs.statSync(existingIcon512).size > 8192) {
+  console.log('Staged fonts, backgroundmusic.mp3, and verified custom PWA icons in public/icons/');
+  process.exit(0);
+}
+
 const crcTable = new Uint32Array(256);
 for (let n = 0; n < 256; n++) {
   let c = n;
