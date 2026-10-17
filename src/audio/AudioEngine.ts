@@ -148,11 +148,10 @@ export class AudioEngine {
         return;
       }
 
-      const isHeadless =
+      const isHeadlessPlaywright =
         typeof navigator !== 'undefined' &&
-        /HeadlessChrome/i.test(navigator.userAgent) &&
-        !window.AudioContext;
-      if (isHeadless) {
+        (navigator.webdriver === true || /HeadlessChrome/i.test(navigator.userAgent));
+      if (isHeadlessPlaywright) {
         this.initialized = true;
         return;
       }
