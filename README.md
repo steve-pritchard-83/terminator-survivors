@@ -64,10 +64,10 @@ Available anywhere on desktop and mobile, with full progressive web app (PWA) of
   - *Skynet Orbital Ion Cannon* (Triple cascading orbital ion beams)
 
 ### 3. Skynet Threat Matrix
-- **T-800 Cyberdyne Systems Model 101 Endoskeletons**: Dual-layer InstancedMesh rendering capable of holding 650+ active chrome skeletons with glowing red optical sensors at 60 FPS.
+- **T-800 Cyberdyne Systems Model 101 Endoskeletons**: Dual-layer InstancedMesh rendering holding active chrome skeletons with glowing red optical sensors at 60 FPS.
 - **Hunter-Killer Aerial**: Supersonic patrol units strafing the battlefield with crimson plasma beams.
-- **Hunter-Killer Goliath Tank**: Multi-track behemoths equipped with dual swivel turrets and twin sweeping volumetric searchlights.
-- **T-1000 Mimetic Polyalloy Prototype**: Advanced liquid metal boss capable of liquid puddle repositioning, blade flurries, and nanite regeneration.
+- **Hunter-Killer Goliath Tank**: Multi-track behemoths equipped with dual swivel turrets, ground artillery telegraphs, and twin sweeping volumetric searchlights.
+- **T-1000 Mimetic Polyalloy Prototype**: Advanced liquid metal boss with chrome polyalloy reflection shaders (puddle repositioning, blade flurries, and nanite regeneration planned in Roadmap Phase 5).
 
 ### 4. Controller, Mobile Native & PWA First
 - **Xbox & Universal Gamepad Support**:
@@ -108,7 +108,7 @@ Available anywhere on desktop and mobile, with full progressive web app (PWA) of
 - **Rendering Engine**: Three.js (WebGL 2.0 / PBR shaders / InstancedMesh)
 - **Audio System**: Web Audio API (procedural synthesis) + HTML5 Audio (gapless music streaming & 56 SFX)
 - **Spatial Partitioning**: Custom 2D Spatial Hash Grid ($O(1)$ collision checks across hundreds of units)
-- **State Management**: Reactive deterministic game loop with fixed-timestep physics (60Hz) and lerped rendering
+- **State Management**: Reactive deterministic game loop with fixed-timestep physics (60Hz; render interpolation planned in Roadmap Phase 1)
 - **Input System**: Multi-device manager supporting Keyboard, Mouse, Virtual Touchscreen Joystick, and Standard Gamepad API with Dual-Rumble Haptics
 - **Build System**: Vite 6 + TypeScript 5.7
 - **PWA Tooling**: Vite Plugin PWA + Workbox (precache limit configured for high-fidelity assets)
@@ -171,9 +171,16 @@ npm run test:e2e
 
 ---
 
+## 🗺️ Roadmap & Engineering Plan
+
+For our comprehensive 10-phase engineering roadmap and correctness audit scorecard, see [`roadmap.md`](roadmap.md).
+
+---
+
 ## 📜 Credits & Disclaimers
 
 - Built with tribute to James Cameron, Gale Anne Hurd, Brad Fiedel, and the creators of *The Terminator* franchise.
-- Created for non-commercial educational and entertainment purposes.
+- Created strictly as a non-commercial educational and entertainment fan project. Not endorsed by or affiliated with Orion Pictures, StudioCanal, or rights holders of *The Terminator*.
+- Complete asset provenance and licensing registers are tracked in [`ASSETS.md`](ASSETS.md).
 
 *"There is no fate but what we make for ourselves."*
