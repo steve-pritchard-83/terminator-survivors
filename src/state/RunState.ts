@@ -57,6 +57,8 @@ export class RunState {
   public dashCooldownTimer = 0;
   public readonly dashDuration = 0.28;
   public readonly dashCooldown = 1.8;
+  public invulnerabilityTimer = 0;
+  public invulnerabilityDuration = 0.5;
   public autoAimEnabled = true;
 
   public weapons = new Map<WeaponId, ActiveWeaponSlot>();
@@ -129,6 +131,8 @@ export class RunState {
     });
 
     this.revivalsLeft = 0;
+    this.invulnerabilityTimer = 0;
+    this.invulnerabilityDuration = loadout?.invulnerabilityDuration ?? 0.5;
     this.computedStats = this.getDefaultStats();
     this.recalculateStats();
     this.hp = this.maxHp;
@@ -202,9 +206,12 @@ export class RunState {
 
   public takeDamage(rawDamage: number): number {
     if (this.hp <= 0 || this.mode !== 'playing') return 0;
-    if (this.godMode || this.isDashing) return 0;
+    if (this.godMode || this.isDashing || this.invulnerabilityTimer > 0) return 0;
     const mitigated = computeMitigatedDamage(rawDamage, this.computedStats.armor);
-    this.hp = Math.max(0, this.hp - mitigated);
+    if (mitigated > 0) {
+      this.hp = Math.max(0, this.hp - mitigated);
+      this.invulnerabilityTimer = this.hp > 0 ? this.invulnerabilityDuration : 0;
+    }
     return mitigated;
   }
 
@@ -213,6 +220,7 @@ export class RunState {
     if (this.revivalsLeft > 0) {
       this.revivalsLeft--;
       this.hp = Math.round(this.maxHp * 0.5);
+      this.invulnerabilityTimer = 0;
       return 'revived';
     }
     return 'dead';
@@ -243,6 +251,9 @@ export class RunState {
     }
     if (this.dashCooldownTimer > 0) {
       this.dashCooldownTimer = Math.max(0, this.dashCooldownTimer - dt);
+    }
+    if (this.invulnerabilityTimer > 0) {
+      this.invulnerabilityTimer = Math.max(0, this.invulnerabilityTimer - dt);
     }
     // Passive HP regen
     if (this.computedStats.regenPerSec > 0 && this.hp > 0 && this.hp < this.maxHp) {

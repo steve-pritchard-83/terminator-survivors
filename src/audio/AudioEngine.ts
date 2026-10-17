@@ -609,6 +609,56 @@ export class AudioEngine {
     this.playSample('combatDive', 0.68);
   }
 
+  private heartbeatTimer = 0;
+
+  public playHeartbeat(): void {
+    this.triggerHaptic([25, 40, 20, 35], 90);
+    if (!this.ctx || !this.sfxGain || this.isMuted) return;
+
+    try {
+      const now = this.ctx.currentTime;
+      // 1st thump ("lub"): 65 Hz -> 32 Hz
+      const osc1 = this.ctx.createOscillator();
+      const gain1 = this.ctx.createGain();
+      osc1.type = 'triangle';
+      osc1.frequency.setValueAtTime(65, now);
+      osc1.frequency.exponentialRampToValueAtTime(32, now + 0.08);
+      gain1.gain.setValueAtTime(0.65, now);
+      gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.085);
+      osc1.connect(gain1);
+      gain1.connect(this.sfxGain);
+      osc1.start(now);
+      osc1.stop(now + 0.09);
+
+      // 2nd thump ("dub"): 55 Hz -> 28 Hz after 0.12s
+      const osc2 = this.ctx.createOscillator();
+      const gain2 = this.ctx.createGain();
+      osc2.type = 'triangle';
+      osc2.frequency.setValueAtTime(55, now + 0.12);
+      osc2.frequency.exponentialRampToValueAtTime(28, now + 0.19);
+      gain2.gain.setValueAtTime(0.48, now + 0.12);
+      gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.195);
+      osc2.connect(gain2);
+      gain2.connect(this.sfxGain);
+      osc2.start(now + 0.12);
+      osc2.stop(now + 0.20);
+    } catch {
+      // Fallback silently if audio context is in an unsupported state
+    }
+  }
+
+  public updateHeartbeat(dt: number, isLowHp: boolean): void {
+    if (!isLowHp) {
+      this.heartbeatTimer = 0;
+      return;
+    }
+    this.heartbeatTimer -= dt;
+    if (this.heartbeatTimer <= 0) {
+      this.playHeartbeat();
+      this.heartbeatTimer = 0.75;
+    }
+  }
+
   public playPlayerHit(): void {
     this.triggerHaptic([32, 35, 45], 90);
     this.playSample('playerHit', 0.72);

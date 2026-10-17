@@ -9,7 +9,8 @@ export const CameronGradingShader = {
     tDiffuse: { value: null },
     uTime: { value: 0.0 },
     uAberration: { value: 0.0012 },
-    uDamageFlash: { value: 0.0 }
+    uDamageFlash: { value: 0.0 },
+    uLowHpPulse: { value: 0.0 }
   },
   vertexShader: `
     varying vec2 vUv;
@@ -23,6 +24,7 @@ export const CameronGradingShader = {
     uniform float uTime;
     uniform float uAberration;
     uniform float uDamageFlash;
+    uniform float uLowHpPulse;
     varying vec2 vUv;
 
     float rand(vec2 co) {
@@ -61,6 +63,10 @@ export const CameronGradingShader = {
 
       // Crimson optical damage flash
       col = mix(col, vec3(0.95, 0.08, 0.08), clamp(uDamageFlash, 0.0, 0.65));
+
+      // Crimson low-HP (<25%) pulsing vignette
+      float lowHpVignette = smoothstep(0.28, 0.95, dist) * uLowHpPulse;
+      col = mix(col, vec3(0.85, 0.02, 0.02), clamp(lowHpVignette, 0.0, 0.75));
 
       gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
     }
@@ -104,6 +110,7 @@ export class PostProcessingManager {
   private aberrationTarget = 0.0008;
   private currentAberration = 0.0008;
   private damageFlash = 0.0;
+  private lowHpIntensity = 0.0;
 
   constructor(renderer: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.Camera) {
     this.renderer = renderer;
@@ -165,6 +172,10 @@ export class PostProcessingManager {
     this.currentAberration = 0.018;
   }
 
+  public setLowHpIntensity(intensity: number): void {
+    this.lowHpIntensity = intensity;
+  }
+
   public update(dt: number, timeSeconds: number): void {
     if (this.damageFlash > 0) {
       this.damageFlash = Math.max(0, this.damageFlash - dt * 2.8);
@@ -176,6 +187,7 @@ export class PostProcessingManager {
     this.gradingPass.uniforms.uTime.value = timeSeconds;
     this.gradingPass.uniforms.uDamageFlash.value = this.damageFlash;
     this.gradingPass.uniforms.uAberration.value = this.currentAberration;
+    this.gradingPass.uniforms.uLowHpPulse.value = this.lowHpIntensity;
   }
 
   public render(): void {

@@ -173,6 +173,14 @@ export class HUDView {
     // HP bar
     const hpPercent = Math.max(0, Math.min(100, (runState.hp / runState.maxHp) * 100));
     this.hpFill.style.width = `${hpPercent}%`;
+    const isLowHp = runState.hp > 0 && (runState.hp / runState.maxHp) < 0.25;
+    if (isLowHp) {
+      this.hpFill.classList.add('hud-low-hp-pulse');
+      this.hpFill.style.boxShadow = '0 0 12px #ff0000, 0 0 20px #ff0000';
+    } else {
+      this.hpFill.classList.remove('hud-low-hp-pulse');
+      this.hpFill.style.boxShadow = '0 0 6px var(--color-red)';
+    }
 
     // Timer (MM:SS)
     const sec = Math.floor(runState.timeSeconds);

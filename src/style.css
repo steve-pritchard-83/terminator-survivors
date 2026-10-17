@@ -848,3 +848,18 @@ body,
     transform: translate(-50%, -10px);
   }
 }
+
+.hud-low-hp-pulse {
+  animation: hud-low-hp-pulse-anim 0.65s ease-in-out infinite alternate;
+}
+
+@keyframes hud-low-hp-pulse-anim {
+  0% {
+    filter: brightness(1.0);
+    box-shadow: 0 0 6px var(--color-red);
+  }
+  100% {
+    filter: brightness(1.8);
+    box-shadow: 0 0 16px #ff0000, 0 0 28px #ff1744;
+  }
+}

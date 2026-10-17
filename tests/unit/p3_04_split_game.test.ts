@@ -38,6 +38,7 @@ vi.mock('../../src/graphics/PostProcessing', () => {
       render = vi.fn();
       triggerEmpGlitch = vi.fn();
       triggerDamageFlash = vi.fn();
+      setLowHpIntensity = vi.fn();
     }
   };
 });

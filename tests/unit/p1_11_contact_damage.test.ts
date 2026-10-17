@@ -34,6 +34,7 @@ describe('P1-11 contact damage cooldown decay (fixes B13)', () => {
 
     // Player moves away for 0.10s (out of contact radius)
     runState.playerPos = { x: 30, z: 30 };
+    runState.updateTimers(0.10);
     enemySystem.update(0.10, 0.116, []);
 
     // attackCooldown decayed during the 0.10s away from player
@@ -42,6 +43,7 @@ describe('P1-11 contact damage cooldown decay (fixes B13)', () => {
 
     // Player re-enters contact radius
     runState.playerPos = { x: enemy.x, z: enemy.z };
+    runState.updateTimers(0.10);
     enemySystem.update(0.10, 0.216, []);
 
     // Still on cooldown (0.45 - 0.10 = 0.35s left) -> NO instant second damage hit
@@ -49,6 +51,7 @@ describe('P1-11 contact damage cooldown decay (fixes B13)', () => {
     expect(runState.hp).toBe(hpAfterFirstHit);
 
     // Advance remaining 0.35s + a tick in contact
+    runState.updateTimers(0.36);
     enemySystem.update(0.36, 0.576, []);
 
     // Second hit lands when cooldown naturally expires

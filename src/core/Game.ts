@@ -83,7 +83,7 @@ export class Game implements RunControllerHost, InputRouterHost, DebugAPIHost {
     this.enemySystem = new EnemySystem(this.runState, this.grid, this.audioEngine, this.particles, this.endoBatch);
     this.waveDirector = new WaveDirector(this.runState, this.enemySystem);
     this.pickupSystem = new PickupSystem(this.runState, this.audioEngine);
-    this.sceneManager.scene.add(this.weaponSystem.group, this.enemySystem.group, this.pickupSystem.group);
+    this.sceneManager.scene.add(this.playerSystem.group, this.weaponSystem.group, this.enemySystem.group, this.pickupSystem.group);
 
     // 4. UI Layer & CRT Overlay
     const crtOverlay = document.createElement('div');
@@ -143,7 +143,7 @@ export class Game implements RunControllerHost, InputRouterHost, DebugAPIHost {
     this.prevPlayerPos.x = this.runState.playerPos.x;
     this.prevPlayerPos.z = this.runState.playerPos.z;
 
-    this.playerSystem.update(dt, input.move, input.aim, this.environment.obstacleColliders);
+    this.playerSystem.update(dt, input.move, input.aim, this.environment.obstacleColliders, input.aimPos);
 
     this.grid.clear();
     for (const enemy of this.enemySystem.activeEnemies) this.grid.insert(enemy);
@@ -155,6 +155,11 @@ export class Game implements RunControllerHost, InputRouterHost, DebugAPIHost {
     this.pickupSystem.update(dt);
     this.particles.update(dt);
     this.environment.update(this.runState.playerPos.x, this.runState.playerPos.z);
+
+    const isLowHp = this.runState.hp > 0 && (this.runState.hp / this.runState.maxHp) < 0.25;
+    this.audioEngine.updateHeartbeat(dt, isLowHp);
+    const lowHpPulse = isLowHp ? 0.35 + 0.55 * Math.pow(Math.max(0, Math.sin(this.runState.timeSeconds * Math.PI * 2 * 1.6)), 2) : 0;
+    this.sceneManager.postProcessing.setLowHpIntensity(lowHpPulse);
 
     this.runController.update(dt);
     this.sceneManager.adjustQuality(this.gameLoop.fps, dt);

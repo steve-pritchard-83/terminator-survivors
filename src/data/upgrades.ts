@@ -9,6 +9,7 @@ export interface LoadoutConfig {
   bonusStats: Partial<PlayerComputedStats>;
   unlockRequirement: string;
   cost: number;
+  invulnerabilityDuration?: number; // Configurable i-frame duration in seconds
 }
 
 export const LOADOUTS: Record<LoadoutId, LoadoutConfig> = {

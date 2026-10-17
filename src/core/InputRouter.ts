@@ -15,6 +15,7 @@ export interface InputRouterHost {
 export interface InputResult {
   move: { x: number; z: number };
   aim: number | null;
+  aimPos?: { x: number; z: number } | null;
 }
 
 export class InputRouter {
@@ -65,12 +66,14 @@ export class InputRouter {
       }
     }
 
+    let aimPos: { x: number; z: number } | null = null;
     let move = this.host.inputManager.getMovement();
     if (this.host.inputManager.isMouseAimActive()) {
       const mousePos = this.host.inputManager.getMouseScreenPos();
       if (mousePos) {
         const worldMouse = this.host.sceneManager.screenToWorldGround(mousePos.x, mousePos.y);
         if (worldMouse) {
+          aimPos = { x: worldMouse.x, z: worldMouse.z };
           const dx = worldMouse.x - this.host.runState.playerPos.x;
           const dz = worldMouse.z - this.host.runState.playerPos.z;
           const dist = Math.hypot(dx, dz);
@@ -96,7 +99,8 @@ export class InputRouter {
 
     return {
       move,
-      aim: this.host.inputManager.getAimAngle()
+      aim: this.host.inputManager.getAimAngle(),
+      aimPos
     };
   }
 }
