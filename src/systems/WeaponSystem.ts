@@ -72,6 +72,15 @@ export class WeaponSystem {
   private orbitalAngle = 0;
   private nextProjId = 1;
 
+  // Spatial query scratch arrays for allocation-free updates
+  private readonly projectileHitScratch: SpatialEntity[] = [];
+  private readonly projectileSplashScratch: SpatialEntity[] = [];
+  private readonly droneHitScratch: SpatialEntity[] = [];
+  private readonly groundZoneScratch: SpatialEntity[] = [];
+  private readonly empHitScratch: SpatialEntity[] = [];
+  private readonly orbitalHitScratch: SpatialEntity[] = [];
+  private readonly orbitalTargetsScratch: SpatialEntity[] = [];
+
   // Reusable geometries & materials
   private readonly plasmaBoltGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.7, 8);
   private readonly heavyPlasmaGeo = new THREE.CylinderGeometry(0.16, 0.16, 1.4, 8);
@@ -350,7 +359,7 @@ export class WeaponSystem {
         const empRadius = (isSupernova ? 6.5 : 3.8) * areaMult;
         this.spawnEmpShockwave(px, pz, empRadius, isSupernova);
         globalEvents.emit('camera:shake', { trauma: isSupernova ? 0.35 : 0.22 });
-        const hitEnemies = this.grid.queryRadius(px, pz, empRadius);
+        const hitEnemies = this.grid.queryRadius(px, pz, empRadius, this.empHitScratch);
         for (let i = 0; i < hitEnemies.length; i++) {
           const target = hitEnemies[i];
           const hit = this.applyDamageToTarget(target, dmg);
@@ -415,7 +424,14 @@ export class WeaponSystem {
       case 'orbital_ion': {
         const count = stats.amount + this.runState.computedStats.bonusAmount;
         const targets = this.runState.autoAimEnabled
-          ? (this.grid.findNearestN(px, pz, count, 28, (e) => e.type === 'enemy') as ActiveEnemy[])
+          ? (this.grid.findNearestN(
+              px,
+              pz,
+              count,
+              28,
+              (e) => e.type === 'enemy',
+              this.orbitalTargetsScratch
+            ) as ActiveEnemy[])
           : [];
 
         for (let i = 0; i < count; i++) {
@@ -427,7 +443,7 @@ export class WeaponSystem {
           const ionRadius = (wId === 'orbital_ion' ? 3.5 : 2.5) * areaMult;
           this.spawnOrbitalIonBeam(target.x, target.z, ionRadius);
           globalEvents.emit('camera:shake', { trauma: 0.32 });
-          const hit = this.grid.queryRadius(target.x, target.z, ionRadius);
+          const hit = this.grid.queryRadius(target.x, target.z, ionRadius, this.orbitalHitScratch);
           for (let h = 0; h < hit.length; h++) {
             this.applyDamageToTarget(hit[h], dmg);
           }
@@ -699,7 +715,7 @@ export class WeaponSystem {
       dMesh.rotation.y = -a;
 
       // Slice through enemies in contact with 0.35s per-enemy cooldown
-      const hit = this.grid.queryRadius(dx, dz, hitRadius);
+      const hit = this.grid.queryRadius(dx, dz, hitRadius, this.droneHitScratch);
       for (let h = 0; h < hit.length; h++) {
         const target = hit[h];
         if (target.type !== 'enemy') continue;
@@ -738,7 +754,7 @@ export class WeaponSystem {
       );
 
       // Hit detection
-      const hitCandidates = this.grid.queryRadius(p.x, p.z, p.radius);
+      const hitCandidates = this.grid.queryRadius(p.x, p.z, p.radius, this.projectileHitScratch);
       for (let c = 0; c < hitCandidates.length; c++) {
         const target = hitCandidates[c];
         if (!p.hitEnemyIds.has(target.id)) {
@@ -759,7 +775,7 @@ export class WeaponSystem {
           this.audio.playExplosion(p.areaRadius > 3 ? 1.5 : 1.0);
           this.particles.spawnExplosion(p.x, 0.2, p.z, p.areaRadius > 3 ? 1.4 : 1.0);
           globalEvents.emit('camera:shake', { trauma: p.areaRadius > 3 ? 0.35 : 0.22 });
-          const splash = this.grid.queryRadius(p.x, p.z, p.areaRadius);
+          const splash = this.grid.queryRadius(p.x, p.z, p.areaRadius, this.projectileSplashScratch);
           for (let s = 0; s < splash.length; s++) {
             this.applyDamageToTarget(splash[s], p.damage);
           }
@@ -783,7 +799,7 @@ export class WeaponSystem {
 
       if (gz.tickTimer >= 0.25) {
         gz.tickTimer = 0;
-        const targets = this.grid.queryRadius(gz.x, gz.z, gz.radius);
+        const targets = this.grid.queryRadius(gz.x, gz.z, gz.radius, this.groundZoneScratch);
         for (let e = 0; e < targets.length; e++) {
           this.applyDamageToTarget(targets[e], gz.damagePerSec * 0.25);
         }

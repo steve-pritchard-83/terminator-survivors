@@ -116,6 +116,7 @@ export interface SpatialEntity {
   z: number;
   radius: number;
   type: 'enemy' | 'pickup' | 'crate';
+  _queryStamp?: number;
 }
 
 export interface ActiveEnemy extends SpatialEntity {

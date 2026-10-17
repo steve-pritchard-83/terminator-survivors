@@ -57,4 +57,13 @@ describe('SpatialHashGrid', () => {
     grid.clear();
     expect(grid.queryRadius(0, 0, 5)).toHaveLength(0);
   });
+
+  it('queries radius into provided scratch array via queryRadiusInto', () => {
+    grid.insert({ id: 1, x: 0, z: 0, radius: 1, type: 'enemy' });
+    grid.insert({ id: 2, x: 2, z: 0, radius: 1, type: 'enemy' });
+    const out: SpatialEntity[] = [];
+    const returned = grid.queryRadiusInto(0, 0, 3, out);
+    expect(returned).toBe(out);
+    expect(out).toHaveLength(2);
+  });
 });

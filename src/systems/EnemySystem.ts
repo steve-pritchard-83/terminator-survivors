@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import type { ActiveEnemy, EnemyArchetypeId } from '../core/types';
+import type { ActiveEnemy, EnemyArchetypeId, SpatialEntity } from '../core/types';
 import type { RunState } from '../state/RunState';
 import type { SpatialHashGrid } from '../core/SpatialHashGrid';
 import type { AudioEngine } from '../audio/AudioEngine';
@@ -56,6 +56,7 @@ export class EnemySystem {
   private readonly skynetNovaCooldown = new Map<number, number>();
 
   // Enemy projectiles & artillery reticles
+  private readonly separationScratch: SpatialEntity[] = [];
   private readonly enemyPool: InstancedPool<EnemyProjectile>;
   private readonly enemyProjectilePool: EnemyProjectile[] = [];
   private readonly enemyPlasmaGeo = new THREE.CylinderGeometry(0.09, 0.09, 0.75, 8);
@@ -257,7 +258,12 @@ export class EnemySystem {
       const dist = Math.hypot(dx, dz);
 
       // Soft Boids Separation Force (pushes overlapping enemies apart)
-      const neighbors = this.grid.queryRadius(enemy.x, enemy.z, enemy.radius * 1.6);
+      const neighbors = this.grid.queryRadius(
+        enemy.x,
+        enemy.z,
+        enemy.radius * 1.6,
+        this.separationScratch
+      );
       let sepX = 0;
       let sepZ = 0;
       const maxNeighbors = Math.min(neighbors.length, 6);

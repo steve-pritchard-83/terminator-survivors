@@ -4,6 +4,11 @@ export class SpatialHashGrid {
   private readonly cellSize: number;
   private readonly grid = new Map<string, SpatialEntity[]>();
   private readonly entityCells = new Map<number, string[]>();
+  private readonly entityStamps = new Map<number, number>();
+  private queryStamp = 0;
+  private readonly findNearestScratch: SpatialEntity[] = [];
+  private readonly findNearestNScratch: SpatialEntity[] = [];
+  private readonly nearestNFilteredScratch: Array<{ entity: SpatialEntity; distSq: number }> = [];
 
   constructor(cellSize = 4.0) {
     this.cellSize = cellSize;
@@ -16,6 +21,7 @@ export class SpatialHashGrid {
   public clear(): void {
     this.grid.clear();
     this.entityCells.clear();
+    this.entityStamps.clear();
   }
 
   public insert(entity: SpatialEntity): void {
@@ -48,7 +54,13 @@ export class SpatialHashGrid {
   ): SpatialEntity[] {
     const results = outResults ?? [];
     results.length = 0;
-    const seen = new Set<number>();
+
+    this.queryStamp++;
+    if (this.queryStamp >= 0x7fffffff) {
+      this.queryStamp = 1;
+      this.entityStamps.clear();
+    }
+    const stamp = this.queryStamp;
 
     const minCx = Math.floor((x - radius) / this.cellSize);
     const maxCx = Math.floor((x + radius) / this.cellSize);
@@ -61,8 +73,12 @@ export class SpatialHashGrid {
         if (!list) continue;
         for (let i = 0; i < list.length; i++) {
           const e = list[i];
-          if (seen.has(e.id)) continue;
-          seen.add(e.id);
+          if (e._queryStamp === stamp || this.entityStamps.get(e.id) === stamp) {
+            continue;
+          }
+          e._queryStamp = stamp;
+          this.entityStamps.set(e.id, stamp);
+
           const dx = e.x - x;
           const dz = e.z - z;
           const totalR = radius + e.radius;
@@ -75,13 +91,23 @@ export class SpatialHashGrid {
     return results;
   }
 
+  public queryRadiusInto(
+    x: number,
+    z: number,
+    radius: number,
+    outResults: SpatialEntity[]
+  ): SpatialEntity[] {
+    return this.queryRadius(x, z, radius, outResults);
+  }
+
   public findNearest(
     x: number,
     z: number,
     maxRadius: number,
-    filterFn?: (e: SpatialEntity) => boolean
+    filterFn?: (e: SpatialEntity) => boolean,
+    outScratch?: SpatialEntity[]
   ): SpatialEntity | null {
-    const candidates = this.queryRadius(x, z, maxRadius);
+    const candidates = this.queryRadius(x, z, maxRadius, outScratch ?? this.findNearestScratch);
     let nearest: SpatialEntity | null = null;
     let nearestDistSq = maxRadius * maxRadius;
 
@@ -104,21 +130,29 @@ export class SpatialHashGrid {
     z: number,
     count: number,
     maxRadius: number,
-    filterFn?: (e: SpatialEntity) => boolean
+    filterFn?: (e: SpatialEntity) => boolean,
+    outResults?: SpatialEntity[]
   ): SpatialEntity[] {
-    if (count <= 0) return [];
-    const candidates = this.queryRadius(x, z, maxRadius);
-    const filtered: Array<{ entity: SpatialEntity; distSq: number }> = [];
+    const results = outResults ?? [];
+    results.length = 0;
+    if (count <= 0) return results;
+
+    const candidates = this.queryRadius(x, z, maxRadius, this.findNearestNScratch);
+    this.nearestNFilteredScratch.length = 0;
 
     for (let i = 0; i < candidates.length; i++) {
       const e = candidates[i];
       if (filterFn && !filterFn(e)) continue;
       const dx = e.x - x;
       const dz = e.z - z;
-      filtered.push({ entity: e, distSq: dx * dx + dz * dz });
+      this.nearestNFilteredScratch.push({ entity: e, distSq: dx * dx + dz * dz });
     }
 
-    filtered.sort((a, b) => a.distSq - b.distSq);
-    return filtered.slice(0, count).map((item) => item.entity);
+    this.nearestNFilteredScratch.sort((a, b) => a.distSq - b.distSq);
+    const n = Math.min(count, this.nearestNFilteredScratch.length);
+    for (let i = 0; i < n; i++) {
+      results.push(this.nearestNFilteredScratch[i].entity);
+    }
+    return results;
   }
 }
