@@ -40,7 +40,6 @@ export class Game {
   public readonly uiManager: UIManager;
 
   private activeBoss: { name: string; hp: number; maxHp: number } | null = null;
-  private isPaused = false;
   private prevPlayerPos = { x: 0, z: 0 };
 
   constructor(appContainer: HTMLElement) {
@@ -136,7 +135,7 @@ export class Game {
 
   private setupEvents(): void {
     this.inputManager.onDashCallback = () => {
-      if (!this.isPaused && this.runState.mode === 'playing') {
+      if (this.runState.mode === 'playing') {
         this.inputManager.consumeDash();
         if (this.runState.triggerDash()) {
           this.audioEngine.playCombatDive();
@@ -201,7 +200,6 @@ export class Game {
     });
 
     const showLevelUpModal = (level: number, choices: UpgradeChoice[]): void => {
-      this.isPaused = true;
       this.runState.mode = 'levelup';
       this.audioEngine.playHudScanOpen();
       this.uiManager.levelUpModal.show(level, choices, (choice) => {
@@ -214,7 +212,6 @@ export class Game {
           const nextChoices = this.runState.generateUpgradeChoices();
           showLevelUpModal(this.runState.level, nextChoices);
         } else {
-          this.isPaused = false;
           this.runState.mode = 'playing';
         }
       });
@@ -225,12 +222,12 @@ export class Game {
     });
 
     globalEvents.on('vault:opened', ({ upgradesAwarded, evolvedWeapon, alloyBonus }) => {
-      this.isPaused = true;
       this.runState.mode = 'vault';
       this.sceneManager.addScreenShake(0.35);
       this.uiManager.vaultModal.show(upgradesAwarded, evolvedWeapon, alloyBonus, () => {
         this.audioEngine.playUpgradeApplied();
         this.inputManager.clearDashRequest();
+        this.runState.mode = 'playing';
         if (!evolvedWeapon) {
           this.runState.pendingLevelUps += 3;
           if (this.runState.pendingLevelUps > 0) {
@@ -239,9 +236,6 @@ export class Game {
             const choices = this.runState.generateUpgradeChoices();
             showLevelUpModal(this.runState.level, choices);
           }
-        } else {
-          this.isPaused = false;
-          this.runState.mode = 'playing';
         }
       });
     });
@@ -274,7 +268,6 @@ export class Game {
     this.waveDirector.reset();
     this.activeBoss = null;
     this.inputManager.clearDashRequest();
-    this.isPaused = false;
 
     this.uiManager.titleScreen.hide();
     this.uiManager.hudView.damageNumbers.clear();
@@ -287,7 +280,6 @@ export class Game {
   public endRun(victory: boolean): void {
     if (this.runState.mode === 'gameover' || this.runState.mode === 'victory') return;
     this.runState.mode = victory ? 'victory' : 'gameover';
-    this.isPaused = true;
     this.audioEngine.stopMusic();
     this.audioEngine.playRunEnd(victory);
 
@@ -314,23 +306,21 @@ export class Game {
         this.audioEngine.playHudScanClose();
         this.runState.mode = 'title';
         this.uiManager.titleScreen.show();
-        this.isPaused = false;
       }
     );
   }
 
   public togglePause(): void {
-    if (this.runState.mode !== 'playing') return;
-    if (this.isPaused) {
+    if (this.runState.mode === 'paused') {
       this.resumeFromPause();
-    } else {
+    } else if (this.runState.mode === 'playing') {
       this.pauseGame();
     }
   }
 
   public pauseGame(): void {
-    if (this.runState.mode !== 'playing' || this.isPaused) return;
-    this.isPaused = true;
+    if (this.runState.mode !== 'playing') return;
+    this.runState.mode = 'paused';
     this.audioEngine.playHudScanOpen();
     this.uiManager.pauseModal.show(
       () => this.resumeFromPause(),
@@ -339,10 +329,11 @@ export class Game {
   }
 
   public resumeFromPause(): void {
+    if (this.runState.mode !== 'paused') return;
     this.uiManager.pauseModal.hide();
     this.audioEngine.playHudScanClose();
     this.inputManager.clearDashRequest();
-    this.isPaused = false;
+    this.runState.mode = 'playing';
   }
 
   public abortToTitle(): void {
@@ -355,9 +346,11 @@ export class Game {
     this.weaponSystem.clear();
     this.particles.clear();
     this.activeBoss = null;
+    if (this.runState.mode === 'playing') {
+      this.runState.mode = 'paused';
+    }
     this.runState.mode = 'title';
     this.uiManager.titleScreen.show();
-    this.isPaused = false;
   }
 
   private fixedUpdate(dt: number): void {
@@ -365,7 +358,7 @@ export class Game {
     this.inputManager.update(dt);
     this.uiManager.updateGamepad(this.inputManager.gamepadManager, dt);
 
-    if (this.isPaused || this.runState.mode !== 'playing') {
+    if (this.runState.mode !== 'playing') {
       // Idle rotation in title screen
       if (this.runState.mode === 'title') {
         this.environment.update(0, 0);

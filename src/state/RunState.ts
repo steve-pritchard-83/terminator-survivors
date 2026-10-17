@@ -12,6 +12,7 @@ import type {
 import { BASE_WEAPONS, PASSIVES, canEvolveWeapon } from '../data/weapons';
 import { LOADOUTS, META_UPGRADES } from '../data/upgrades';
 import { globalRNG } from '../core/RNG';
+import { StateMachine, GAME_MODE_TRANSITIONS } from '../core/StateMachine';
 
 export function getXpForNextLevel(level: number): number {
   if (level <= 2) {
@@ -26,7 +27,15 @@ export function computeMitigatedDamage(rawDamage: number, armor: number): number
 }
 
 export class RunState {
-  public mode: GameMode = 'title';
+  public readonly stateMachine = new StateMachine<GameMode>('title', GAME_MODE_TRANSITIONS);
+
+  public get mode(): GameMode {
+    return this.stateMachine.getState();
+  }
+
+  public set mode(newMode: GameMode) {
+    this.stateMachine.transition(newMode);
+  }
   public timeSeconds = 0;
   public level = 1;
   public xp = 0;
@@ -84,6 +93,9 @@ export class RunState {
     purchasedMetaUpgrades: Record<string, number>,
     seed = 0
   ): void {
+    if (this.mode !== 'title') {
+      this.stateMachine.reset('title');
+    }
     this.mode = 'playing';
     this.seed = seed;
     this.timeSeconds = 0;
