@@ -170,4 +170,12 @@ export class Game implements RunControllerHost, InputRouterHost, DebugAPIHost {
     }
     this.sceneManager.render(dt, this.runState.timeSeconds);
   }
+
+  public dispose(): void {
+    this.gameLoop.stop();
+    this.runController.dispose();
+    this.debugAPI.dispose();
+    this.pickupSystem.dispose();
+  }
 }
+

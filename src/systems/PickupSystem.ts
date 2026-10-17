@@ -32,6 +32,7 @@ export class PickupSystem {
 
   private comboCount = 0;
   private comboTimer = 0;
+  private readonly unbinds: Array<() => void> = [];
 
   constructor(runState: RunState, audio: AudioEngine) {
     this.runState = runState;
@@ -79,34 +80,36 @@ export class PickupSystem {
       )
     };
 
-    // Listen for enemy kill events to drop data cores or crates
-    globalEvents.on('enemy:killed', ({ enemy, x, z, xp }) => {
-      if (enemy.isBoss) {
-        this.spawnBossVault(x, z);
-        this.runState.addScrap(75);
-      } else {
-        this.spawnDataCore(x, z, xp);
-        // 25% chance to award alloy scrap on normal enemy kills
-        if (globalRNG.chance(0.25)) {
-          this.runState.addScrap(2);
+    this.unbinds.push(
+      // Listen for enemy kill events to drop data cores or crates
+      globalEvents.on('enemy:killed', ({ enemy, x, z, xp }) => {
+        if (enemy.isBoss) {
+          this.spawnBossVault(x, z);
+          this.runState.addScrap(75);
+        } else {
+          this.spawnDataCore(x, z, xp);
+          // 25% chance to award alloy scrap on normal enemy kills
+          if (globalRNG.chance(0.25)) {
+            this.runState.addScrap(2);
+          }
+          // 7% chance to drop destructible supply crate in condensed 10-minute runs
+          if (globalRNG.chance(0.07)) {
+            this.spawnSupplyCrate(
+              x + (globalRNG.next() - 0.5) * 2,
+              z + (globalRNG.next() - 0.5) * 2
+            );
+          }
         }
-        // 7% chance to drop destructible supply crate in condensed 10-minute runs
-        if (globalRNG.chance(0.07)) {
-          this.spawnSupplyCrate(
-            x + (globalRNG.next() - 0.5) * 2,
-            z + (globalRNG.next() - 0.5) * 2
-          );
-        }
-      }
-    });
+      }),
 
-    // Listen for weapons destroying supply crates
-    globalEvents.on('crate:destroyed', ({ crateId }) => {
-      const idx = this.pickups.findIndex((p) => p.id === crateId && p.kind === 'crate');
-      if (idx !== -1) {
-        this.collectPickup(this.pickups[idx], idx);
-      }
-    });
+      // Listen for weapons destroying supply crates
+      globalEvents.on('crate:destroyed', ({ crateId }) => {
+        const idx = this.pickups.findIndex((p) => p.id === crateId && p.kind === 'crate');
+        if (idx !== -1) {
+          this.collectPickup(this.pickups[idx], idx);
+        }
+      })
+    );
   }
 
   public spawnDataCore(x: number, z: number, xpValue: number): void {
@@ -409,5 +412,13 @@ export class PickupSystem {
     this.coreCount = 0;
     for (const pool of Object.values(this.crystalPools)) pool.clear();
     for (const pool of Object.values(this.beamPools)) pool.clear();
+  }
+
+  public dispose(): void {
+    for (const unbind of this.unbinds) {
+      unbind();
+    }
+    this.unbinds.length = 0;
+    this.clear();
   }
 }

@@ -37,6 +37,9 @@ export class EventBus {
     set.add(callback);
     return () => {
       set?.delete(callback);
+      if (set && set.size === 0) {
+        this.listeners.delete(event);
+      }
     };
   }
 
@@ -47,6 +50,10 @@ export class EventBus {
         cb(data);
       }
     }
+  }
+
+  public listenerCount<K extends keyof GameEventMap>(event: K): number {
+    return this.listeners.get(event)?.size ?? 0;
   }
 
   public clear(): void {
