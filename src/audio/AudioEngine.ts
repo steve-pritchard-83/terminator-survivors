@@ -75,17 +75,41 @@ export const SFX_WAV_MANIFEST: Record<string, string[]> = {
 
 import type { GamepadManager } from '../input/GamepadManager';
 
+export interface VoiceLimitConfig {
+  maxVoices: number;
+  minRetriggerMs: number;
+}
+
+export const DEFAULT_VOICE_CONFIG: VoiceLimitConfig = {
+  maxVoices: 4,
+  minRetriggerMs: 30
+};
+
+export const CATEGORY_VOICE_LIMITS: Record<string, VoiceLimitConfig> = {
+  endoHit: { maxVoices: 6, minRetriggerMs: 30 },
+  playerHit: { maxVoices: 6, minRetriggerMs: 30 },
+  explosion: { maxVoices: 3, minRetriggerMs: 30 },
+  endoDestroy: { maxVoices: 3, minRetriggerMs: 30 }
+};
+
+interface VoiceSlot {
+  lastStartTime: number;
+  source: AudioBufferSourceNode | null;
+}
+
 export class AudioEngine {
   public gamepadManager: GamepadManager | null = null;
   private ctx: AudioContext | null = null;
   private masterGain: GainNode | null = null;
   private musicGain: GainNode | null = null;
   private sfxGain: GainNode | null = null;
+  private compressor: DynamicsCompressorNode | null = null;
 
   private musicSource: AudioBufferSourceNode | null = null;
   private musicBuffer: AudioBuffer | null = null;
   private musicAudioElement: HTMLAudioElement | null = null;
   private readonly sfxBuffers = new Map<string, AudioBuffer[]>();
+  private readonly voiceSlots = new Map<string, VoiceSlot[]>();
 
   private isMuted = false;
   private masterVol = 0.8;
@@ -116,18 +140,22 @@ export class AudioEngine {
       return;
     }
     try {
-      const isAutomated =
-        typeof navigator !== 'undefined' &&
-        (navigator.webdriver === true || /jsdom|HeadlessChrome/i.test(navigator.userAgent));
-      if (isAutomated) {
+      const AudioContextClass =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      if (!AudioContextClass) {
         this.initialized = true;
         return;
       }
 
-      const AudioContextClass =
-        window.AudioContext ||
-        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-      if (!AudioContextClass) return;
+      const isHeadless =
+        typeof navigator !== 'undefined' &&
+        /HeadlessChrome/i.test(navigator.userAgent) &&
+        !window.AudioContext;
+      if (isHeadless) {
+        this.initialized = true;
+        return;
+      }
 
       this.ctx = new AudioContextClass();
       this.masterGain = this.ctx.createGain();
@@ -138,9 +166,23 @@ export class AudioEngine {
       this.musicGain.gain.value = this.musicVol;
       this.sfxGain.gain.value = this.sfxVol;
 
-      this.musicGain.connect(this.masterGain);
-      this.sfxGain.connect(this.masterGain);
-      this.masterGain.connect(this.ctx.destination);
+      if (typeof this.ctx.createDynamicsCompressor === 'function') {
+        this.compressor = this.ctx.createDynamicsCompressor();
+        this.compressor.threshold.value = -12;
+        this.compressor.knee.value = 10;
+        this.compressor.ratio.value = 12;
+        this.compressor.attack.value = 0.003;
+        this.compressor.release.value = 0.15;
+
+        this.musicGain.connect(this.masterGain);
+        this.sfxGain.connect(this.masterGain);
+        this.masterGain.connect(this.compressor);
+        this.compressor.connect(this.ctx.destination);
+      } else {
+        this.musicGain.connect(this.masterGain);
+        this.sfxGain.connect(this.masterGain);
+        this.masterGain.connect(this.ctx.destination);
+      }
 
       this.initialized = true;
       this.loadBackgroundMusic();
@@ -152,7 +194,44 @@ export class AudioEngine {
       void this.ensureCategoryLoaded('pickupGem');
     } catch {
       // AudioContext unavailable in test/restricted environments
+      this.initialized = true;
     }
+  }
+
+  public getCompressor(): DynamicsCompressorNode | null {
+    return this.compressor;
+  }
+
+  public setAudioBufferForTesting(category: string, buffers: AudioBuffer[]): void {
+    this.sfxBuffers.set(category, buffers);
+  }
+
+  private getVoiceSlots(category: string): VoiceSlot[] {
+    let slots = this.voiceSlots.get(category);
+    if (!slots) {
+      const config = CATEGORY_VOICE_LIMITS[category] ?? DEFAULT_VOICE_CONFIG;
+      slots = [];
+      for (let i = 0; i < config.maxVoices; i++) {
+        slots.push({ lastStartTime: -Infinity, source: null });
+      }
+      this.voiceSlots.set(category, slots);
+    }
+    return slots;
+  }
+
+  private acquireVoiceSlot(category: string): VoiceSlot | null {
+    const config = CATEGORY_VOICE_LIMITS[category] ?? DEFAULT_VOICE_CONFIG;
+    const slots = this.getVoiceSlots(category);
+    const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
+
+    for (let i = 0; i < slots.length; i++) {
+      const slot = slots[i];
+      if (slot.source === null && now - slot.lastStartTime >= config.minRetriggerMs) {
+        slot.lastStartTime = now;
+        return slot;
+      }
+    }
+    return null;
   }
 
   private async ensureCategoryLoaded(category: string): Promise<void> {
@@ -190,11 +269,9 @@ export class AudioEngine {
       this.init();
     }
 
-    const isAutomated =
-      typeof navigator !== 'undefined' &&
-      (navigator.webdriver === true || /jsdom|HeadlessChrome/i.test(navigator.userAgent));
-    if (isAutomated) {
-      return true;
+    const slot = this.acquireVoiceSlot(category);
+    if (!slot) {
+      return false; // Drop requests beyond concurrent voice cap or within minRetriggerMs
     }
 
     const list = this.sfxBuffers.get(category);
@@ -202,6 +279,8 @@ export class AudioEngine {
       const buffer = list[Math.floor(Math.random() * list.length)];
       const source = this.ctx.createBufferSource();
       const gain = this.ctx.createGain();
+      slot.source = source;
+
       source.buffer = buffer;
       const jitter = 1.0 + (Math.random() - 0.5) * pitchJitter;
       source.playbackRate.value = playbackRate * jitter;
@@ -211,9 +290,20 @@ export class AudioEngine {
       gain.connect(this.sfxGain);
       source.start(0);
       source.onended = () => {
+        if (slot.source === source) {
+          slot.source = null;
+        }
         source.disconnect();
         gain.disconnect();
       };
+      return true;
+    }
+
+    const isAutomated =
+      typeof navigator !== 'undefined' &&
+      (navigator.webdriver === true || /jsdom|HeadlessChrome/i.test(navigator.userAgent));
+    if (isAutomated) {
+      slot.source = null;
       return true;
     }
 
@@ -228,13 +318,20 @@ export class AudioEngine {
         const el = new Audio(url);
         el.volume = Math.max(0, Math.min(1, this.masterVol * this.sfxVol * gainValue));
         el.playbackRate = playbackRate;
-        el.play()?.catch?.(() => {});
+        el.onended = () => {
+          slot.source = null;
+        };
+        el.play()?.catch?.(() => {
+          slot.source = null;
+        });
         return true;
       } catch {
+        slot.source = null;
         return false;
       }
     }
 
+    slot.source = null;
     return false;
   }
 
@@ -248,7 +345,8 @@ export class AudioEngine {
       this.startMusic();
     } catch {
       try {
-        if (!this.musicAudioElement && typeof Audio !== 'undefined') {
+        const isJsdom = typeof navigator !== 'undefined' && /jsdom/i.test(navigator.userAgent);
+        if (!isJsdom && !this.musicAudioElement && typeof Audio !== 'undefined') {
           this.musicAudioElement = new Audio('./audio/backgroundmusic.mp3');
           this.musicAudioElement.loop = true;
           this.musicAudioElement.volume = this.masterVol * this.musicVol;
