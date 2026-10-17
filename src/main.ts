@@ -1,6 +1,10 @@
 import './style.css';
 import { Game } from './core/Game';
+import { ErrorReporter } from './core/ErrorReporter';
 import { registerSW } from 'virtual:pwa-register';
+
+// Install global error / unhandledrejection reporting
+ErrorReporter.init();
 
 window.addEventListener('DOMContentLoaded', () => {
   const app = document.getElementById('app');
