@@ -1,10 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { AudioEngine } from '../../src/audio/AudioEngine';
+import { AudioEngine, SFX_WAV_MANIFEST } from '../../src/audio/AudioEngine';
 
-describe('AudioEngine Synthesis and Fallback', () => {
+describe('AudioEngine WAV Sample Bank & UI/Combat Triggers', () => {
   it('instantiates cleanly in headless environments without throwing', () => {
     const audio = new AudioEngine();
     expect(audio).toBeDefined();
+    expect(Object.keys(SFX_WAV_MANIFEST).length).toBeGreaterThanOrEqual(20);
   });
 
   it('clamps and updates volume parameters safely', () => {
@@ -14,7 +15,7 @@ describe('AudioEngine Synthesis and Fallback', () => {
     audio.setSfxVolume(0.5);
   });
 
-  it('safely executes all 12 procedural SFX methods without throwing exceptions', () => {
+  it('safely executes all combat and UI WAV SFX methods without throwing exceptions', () => {
     const audio = new AudioEngine();
     expect(() => {
       audio.playPlasmaShot(false);
@@ -30,6 +31,16 @@ describe('AudioEngine Synthesis and Fallback', () => {
       audio.playVaultJackpot();
       audio.playCombatDive();
       audio.playPlayerHit();
+      audio.playUiClick();
+      audio.playUiBeep();
+      audio.playUiBuy();
+      audio.playUiError();
+      audio.playUpgradeApplied();
+      audio.playHudScanOpen();
+      audio.playHudScanClose();
+      audio.playRunStart();
+      audio.playRunEnd(true);
+      audio.playRunEnd(false);
     }).not.toThrow();
   });
 });

@@ -108,6 +108,7 @@ export class Game {
       appContainer,
       this.saveManager,
       this.inputManager,
+      this.audioEngine,
       (loadoutId) => this.startRun(loadoutId)
     );
 
@@ -153,12 +154,15 @@ export class Game {
 
     globalEvents.on('boss:spawned', ({ name, maxHp }) => {
       this.activeBoss = { name, hp: maxHp, maxHp };
+      this.audioEngine.playSearchlightAlert();
     });
 
     globalEvents.on('levelup:triggered', ({ level, choices }) => {
       this.isPaused = true;
       this.runState.mode = 'levelup';
+      this.audioEngine.playHudScanOpen();
       this.uiManager.levelUpModal.show(level, choices, (choice) => {
+        this.audioEngine.playUpgradeApplied();
         this.runState.applyUpgrade(choice);
         this.isPaused = false;
         this.runState.mode = 'playing';
@@ -169,6 +173,7 @@ export class Game {
       this.isPaused = true;
       this.runState.mode = 'vault';
       this.uiManager.vaultModal.show(upgradesAwarded, evolvedWeapon, alloyBonus, () => {
+        this.audioEngine.playUpgradeApplied();
         this.isPaused = false;
         this.runState.mode = 'playing';
       });
@@ -197,6 +202,7 @@ export class Game {
     this.uiManager.titleScreen.hide();
     this.uiManager.hudView.show();
     this.audioEngine.init();
+    this.audioEngine.playRunStart();
     this.audioEngine.startMusic();
   }
 
@@ -204,6 +210,7 @@ export class Game {
     this.runState.mode = victory ? 'victory' : 'gameover';
     this.isPaused = true;
     this.audioEngine.stopMusic();
+    this.audioEngine.playRunEnd(victory);
 
     this.saveManager.addRunResults(
       this.runState.kills,
@@ -220,6 +227,7 @@ export class Game {
       this.runState.level,
       this.runState.alloyScrapEarned,
       () => {
+        this.audioEngine.playHudScanClose();
         this.runState.mode = 'title';
         this.uiManager.titleScreen.show();
         this.isPaused = false;

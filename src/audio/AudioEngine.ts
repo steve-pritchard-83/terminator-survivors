@@ -1,19 +1,29 @@
-const SFX_WAV_MANIFEST: Record<string, string[]> = {
+export const SFX_WAV_MANIFEST: Record<string, string[]> = {
   plasmaLight: [
     './audio/effects/S_PlasmaShot01.wav',
-    './audio/effects/S_PlasmaShot02.wav'
+    './audio/effects/S_PlasmaShot02.wav',
+    './audio/effects/S_PlasmaShot03.wav',
+    './audio/effects/S_PlasmaShot04.wav'
   ],
   plasmaHeavy: [
     './audio/effects/S_Plasma_Aerial_New01.wav',
-    './audio/effects/S_LaserTank01.wav'
+    './audio/effects/S_Plasma_Aerial_New02.wav',
+    './audio/effects/S_LaserTank01.wav',
+    './audio/effects/S_LaserTank02.wav'
   ],
   shotgun: [
     './audio/effects/S_Ithica01.wav',
+    './audio/effects/S_Ithica02.wav',
     './audio/effects/Shotgun_shot_spas.wav'
   ],
   explosion: [
     './audio/effects/S_Explosion01.wav',
+    './audio/effects/S_Explosion02.wav',
     './audio/effects/plasma_explosion.wav'
+  ],
+  empBlast: [
+    './audio/effects/S_HackingDevice_On.wav',
+    './audio/effects/S_DetectiveModeOn.wav'
   ],
   endoHit: [
     './audio/effects/S_BulletHitMetal01.wav',
@@ -21,16 +31,81 @@ const SFX_WAV_MANIFEST: Record<string, string[]> = {
   ],
   endoDestroy: [
     './audio/effects/plasma_explosion.wav',
-    './audio/effects/S_Explosion01.wav'
+    './audio/effects/S_DoorLockBreak01.wav'
   ],
   hkAlert: [
+    './audio/effects/S_TurretAlarm.wav',
+    './audio/effects/S_HUD_TurretAlarm2.wav',
+    './audio/effects/S_Alterted.wav',
     './audio/effects/hk_heavy1a_m.wav'
   ],
+  pickupGem: [
+    './audio/effects/S_LootPickupStuff.wav',
+    './audio/effects/S_LootPickupQuest.wav'
+  ],
+  levelUp: [
+    './audio/effects/S_ExpLevel.wav',
+    './audio/effects/S_NewLevel.wav',
+    './audio/effects/S_NewLevel2.wav',
+    './audio/effects/S_NewLevel3.wav'
+  ],
+  vaultJackpot: [
+    './audio/effects/S_ObjectiveComplete.wav',
+    './audio/effects/S_HckingCompleat.wav',
+    './audio/effects/S_AddtoArchive.wav'
+  ],
   combatDive: [
-    './audio/effects/S_Swing01.wav'
+    './audio/effects/S_Woosh.wav',
+    './audio/effects/S_Swing01.wav',
+    './audio/effects/S_Swing02.wav'
   ],
   playerHit: [
-    './audio/effects/S_BulletHitBody01.wav'
+    './audio/effects/S_BulletHitBody01.wav',
+    './audio/effects/S_BulletHitBody02.wav'
+  ],
+  uiClick: [
+    './audio/effects/S_Click.wav',
+    './audio/effects/S_Click02.wav',
+    './audio/effects/S_Click03.wav',
+    './audio/effects/S_Click04.wav'
+  ],
+  uiBeep: [
+    './audio/effects/S_ButtonBeep01.wav',
+    './audio/effects/S_ButtonBeep02.wav'
+  ],
+  uiBuy: [
+    './audio/effects/S_Buy.wav'
+  ],
+  uiError: [
+    './audio/effects/S_DetectiveModeError.wav',
+    './audio/effects/Frogger_Error.wav'
+  ],
+  uiUpgradeApplied: [
+    './audio/effects/S_WeaponUpgradesApplied.wav'
+  ],
+  uiModalOpen: [
+    './audio/effects/S_HUD_DetectiveModeOnNew.wav',
+    './audio/effects/S_HUD_Infiltrator_AnalysingIntelData1.wav',
+    './audio/effects/S_HUD_Infiltrator_EnemyAnalysis.wav'
+  ],
+  uiModalClose: [
+    './audio/effects/S_HUD_DetectiveModeOffNew.wav',
+    './audio/effects/S_DetectiveModeOff.wav'
+  ],
+  uiTypewriter: [
+    './audio/effects/S_UI_TypewriterNew01.wav',
+    './audio/effects/S_UI_TypewriterNew02.wav',
+    './audio/effects/S_UI_TypewriterNew03.wav'
+  ],
+  runStart: [
+    './audio/effects/S_Splash_Screen_Drums_x1.wav',
+    './audio/effects/S_NewQuest.wav'
+  ],
+  runDefeat: [
+    './audio/effects/S_QuestFaild.wav'
+  ],
+  runVictory: [
+    './audio/effects/S_ObjectiveComplete.wav'
   ]
 };
 
@@ -53,7 +128,6 @@ export class AudioEngine {
   private initialized = false;
 
   constructor() {
-    // Lazy initialize on first user interaction
     const unlockAudio = () => {
       this.init();
       window.removeEventListener('pointerdown', unlockAudio);
@@ -101,45 +175,75 @@ export class AudioEngine {
 
   private async loadSfxWavBank(): Promise<void> {
     if (!this.ctx) return;
-    for (const [category, urls] of Object.entries(SFX_WAV_MANIFEST)) {
-      const decodedList: AudioBuffer[] = [];
-      for (const url of urls) {
-        try {
-          const res = await fetch(url);
-          if (!res.ok || !this.ctx) continue;
-          const buf = await res.arrayBuffer();
-          const audioBuf = await this.ctx.decodeAudioData(buf);
-          decodedList.push(audioBuf);
-        } catch {
-          // Ignore individual WAV decode errors in headless/test mode
+    await Promise.all(
+      Object.entries(SFX_WAV_MANIFEST).map(async ([category, urls]) => {
+        const decodedList: AudioBuffer[] = [];
+        for (const url of urls) {
+          try {
+            const res = await fetch(url);
+            if (!res.ok || !this.ctx) continue;
+            const buf = await res.arrayBuffer();
+            const audioBuf = await this.ctx.decodeAudioData(buf);
+            decodedList.push(audioBuf);
+          } catch {
+            // Ignore individual WAV decode errors in headless/test mode
+          }
         }
-      }
-      if (decodedList.length > 0) {
-        this.sfxBuffers.set(category, decodedList);
-      }
-    }
+        if (decodedList.length > 0) {
+          this.sfxBuffers.set(category, decodedList);
+        }
+      })
+    );
   }
 
-  private playSample(category: string, gainValue = 0.65, playbackRate = 1.0): boolean {
-    if (!this.ctx || !this.sfxGain || this.isMuted) return false;
+  private playSample(
+    category: string,
+    gainValue = 0.65,
+    playbackRate = 1.0,
+    pitchJitter = 0.06
+  ): boolean {
+    if (this.isMuted) return false;
+    if (!this.initialized) {
+      this.init();
+    }
+
     const list = this.sfxBuffers.get(category);
-    if (!list || list.length === 0) return false;
+    if (this.ctx && this.sfxGain && list && list.length > 0) {
+      const buffer = list[Math.floor(Math.random() * list.length)];
+      const source = this.ctx.createBufferSource();
+      const gain = this.ctx.createGain();
+      source.buffer = buffer;
+      const jitter = 1.0 + (Math.random() - 0.5) * pitchJitter;
+      source.playbackRate.value = playbackRate * jitter;
+      gain.gain.value = gainValue;
 
-    const buffer = list[Math.floor(Math.random() * list.length)];
-    const source = this.ctx.createBufferSource();
-    const gain = this.ctx.createGain();
-    source.buffer = buffer;
-    source.playbackRate.value = playbackRate * (0.95 + Math.random() * 0.1);
-    gain.gain.value = gainValue;
+      source.connect(gain);
+      gain.connect(this.sfxGain);
+      source.start(0);
+      source.onended = () => {
+        source.disconnect();
+        gain.disconnect();
+      };
+      return true;
+    }
 
-    source.connect(gain);
-    gain.connect(this.sfxGain);
-    source.start(0);
-    source.onended = () => {
-      source.disconnect();
-      gain.disconnect();
-    };
-    return true;
+    // Immediate HTMLAudioElement fallback while buffers are still decoding on initial click
+    const isJsdom = typeof navigator !== 'undefined' && /jsdom/i.test(navigator.userAgent);
+    const urls = SFX_WAV_MANIFEST[category];
+    if (!isJsdom && urls && urls.length > 0 && typeof Audio !== 'undefined') {
+      try {
+        const url = urls[Math.floor(Math.random() * urls.length)];
+        const el = new Audio(url);
+        el.volume = Math.max(0, Math.min(1, this.masterVol * this.sfxVol * gainValue));
+        el.playbackRate = playbackRate;
+        el.play()?.catch?.(() => {});
+        return true;
+      } catch {
+        return false;
+      }
+    }
+
+    return false;
   }
 
   private async loadBackgroundMusic(): Promise<void> {
@@ -151,9 +255,8 @@ export class AudioEngine {
       this.musicBuffer = await this.ctx.decodeAudioData(arrayBuffer);
       this.startMusic();
     } catch {
-      // Fallback to HTMLAudioElement if WebAudio decoding fails
       try {
-        if (!this.musicAudioElement) {
+        if (!this.musicAudioElement && typeof Audio !== 'undefined') {
           this.musicAudioElement = new Audio('./audio/backgroundmusic.mp3');
           this.musicAudioElement.loop = true;
           this.musicAudioElement.volume = this.masterVol * this.musicVol;
@@ -215,330 +318,90 @@ export class AudioEngine {
     if (this.sfxGain) this.sfxGain.gain.value = this.sfxVol;
   }
 
-  // 12 Hybrid Authentic WAV + Procedural Web Audio API SFX Generators
+  // Authentic WAV Sound Effect Triggers (Combat & UI)
   public playPlasmaShot(isHeavy = false): void {
-    if (!this.ctx || !this.sfxGain || this.isMuted) return;
-    if (this.playSample(isHeavy ? 'plasmaHeavy' : 'plasmaLight', isHeavy ? 0.65 : 0.5)) {
-      return;
-    }
-    const now = this.ctx.currentTime;
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-
-    osc.type = 'sawtooth';
-    const startFreq = isHeavy ? 1400 : 2000;
-    const endFreq = isHeavy ? 180 : 260;
-    osc.frequency.setValueAtTime(startFreq, now);
-    osc.frequency.exponentialRampToValueAtTime(endFreq, now + 0.16);
-
-    gain.gain.setValueAtTime(0.4, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
-
-    osc.connect(gain);
-    gain.connect(this.sfxGain);
-
-    osc.start(now);
-    osc.stop(now + 0.18);
-    osc.onended = () => {
-      osc.disconnect();
-      gain.disconnect();
-    };
+    this.playSample(isHeavy ? 'plasmaHeavy' : 'plasmaLight', isHeavy ? 0.65 : 0.5);
   }
 
   public playShotgunBlast(): void {
-    if (!this.ctx || !this.sfxGain || this.isMuted) return;
-    if (this.playSample('shotgun', 0.72)) {
-      return;
-    }
-    const now = this.ctx.currentTime;
-    const bufferSize = this.ctx.sampleRate * 0.28;
-    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) {
-      data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (this.ctx.sampleRate * 0.06));
-    }
-
-    const noise = this.ctx.createBufferSource();
-    noise.buffer = buffer;
-
-    const filter = this.ctx.createBiquadFilter();
-    filter.type = 'lowpass';
-    filter.frequency.setValueAtTime(900, now);
-    filter.frequency.exponentialRampToValueAtTime(140, now + 0.25);
-
-    const gain = this.ctx.createGain();
-    gain.gain.setValueAtTime(0.7, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
-
-    noise.connect(filter);
-    filter.connect(gain);
-    gain.connect(this.sfxGain);
-
-    noise.start(now);
-    noise.onended = () => {
-      noise.disconnect();
-      filter.disconnect();
-      gain.disconnect();
-    };
+    this.playSample('shotgun', 0.72);
   }
 
   public playExplosion(scale = 1.0): void {
-    if (!this.ctx || !this.sfxGain || this.isMuted) return;
-    if (this.playSample('explosion', Math.min(0.9, 0.55 * scale), scale > 1.3 ? 0.85 : 1.0)) {
-      return;
-    }
-    const now = this.ctx.currentTime;
-    const duration = Math.min(1.2, 0.5 * scale);
-
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(95, now);
-    osc.frequency.exponentialRampToValueAtTime(24, now + duration);
-
-    gain.gain.setValueAtTime(0.8, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
-
-    osc.connect(gain);
-    gain.connect(this.sfxGain);
-
-    osc.start(now);
-    osc.stop(now + duration);
-    osc.onended = () => {
-      osc.disconnect();
-      gain.disconnect();
-    };
+    this.playSample('explosion', Math.min(0.9, 0.55 * scale), scale > 1.3 ? 0.88 : 1.0);
   }
 
   public playEmpBlast(): void {
-    if (!this.ctx || !this.sfxGain || this.isMuted) return;
-    this.playSample('plasmaHeavy', 0.45, 0.65);
-    const now = this.ctx.currentTime;
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(620, now);
-    osc.frequency.exponentialRampToValueAtTime(45, now + 0.45);
-
-    gain.gain.setValueAtTime(0.5, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
-
-    osc.connect(gain);
-    gain.connect(this.sfxGain);
-
-    osc.start(now);
-    osc.stop(now + 0.5);
-    osc.onended = () => {
-      osc.disconnect();
-      gain.disconnect();
-    };
+    this.playSample('empBlast', 0.7, 1.0, 0.02);
   }
 
   public playEndoHit(): void {
-    if (!this.ctx || !this.sfxGain || this.isMuted) return;
-    if (this.playSample('endoHit', 0.4)) {
-      return;
-    }
-    const now = this.ctx.currentTime;
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-
-    osc.type = 'triangle';
-    osc.frequency.setValueAtTime(1650, now);
-    osc.frequency.exponentialRampToValueAtTime(320, now + 0.08);
-
-    gain.gain.setValueAtTime(0.25, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
-
-    osc.connect(gain);
-    gain.connect(this.sfxGain);
-
-    osc.start(now);
-    osc.stop(now + 0.08);
-    osc.onended = () => {
-      osc.disconnect();
-      gain.disconnect();
-    };
+    this.playSample('endoHit', 0.42);
   }
 
   public playEndoDestroy(): void {
-    if (!this.ctx || !this.sfxGain || this.isMuted) return;
-    if (this.playSample('endoDestroy', 0.5, 1.15)) {
-      return;
-    }
-    const now = this.ctx.currentTime;
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-
-    osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(220, now);
-    osc.frequency.exponentialRampToValueAtTime(40, now + 0.22);
-
-    gain.gain.setValueAtTime(0.35, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
-
-    osc.connect(gain);
-    gain.connect(this.sfxGain);
-
-    osc.start(now);
-    osc.stop(now + 0.22);
-    osc.onended = () => {
-      osc.disconnect();
-      gain.disconnect();
-    };
+    this.playSample('endoDestroy', 0.52, 1.05);
   }
 
   public playSearchlightAlert(): void {
-    if (!this.ctx || !this.sfxGain || this.isMuted) return;
-    this.playSample('hkAlert', 0.55);
-    const now = this.ctx.currentTime;
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-
-    osc.type = 'square';
-    osc.frequency.setValueAtTime(880, now);
-    osc.frequency.setValueAtTime(1320, now + 0.12);
-
-    gain.gain.setValueAtTime(0.3, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
-
-    osc.connect(gain);
-    gain.connect(this.sfxGain);
-
-    osc.start(now);
-    osc.stop(now + 0.28);
-    osc.onended = () => {
-      osc.disconnect();
-      gain.disconnect();
-    };
+    this.playSample('hkAlert', 0.62, 1.0, 0.0);
   }
 
   public playPickupGem(combo = 0): void {
-    if (!this.ctx || !this.sfxGain || this.isMuted) return;
-    const now = this.ctx.currentTime;
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-
-    osc.type = 'sine';
-    const pitch = 520 * Math.pow(1.05946, combo % 16);
-    osc.frequency.setValueAtTime(pitch, now);
-    osc.frequency.exponentialRampToValueAtTime(pitch * 1.5, now + 0.08);
-
-    gain.gain.setValueAtTime(0.2, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
-
-    osc.connect(gain);
-    gain.connect(this.sfxGain);
-
-    osc.start(now);
-    osc.stop(now + 0.08);
-    osc.onended = () => {
-      osc.disconnect();
-      gain.disconnect();
-    };
+    const pitch = Math.min(1.45, 1.0 + (combo % 12) * 0.035);
+    this.playSample('pickupGem', 0.55, pitch, 0.0);
   }
 
   public playLevelUp(): void {
-    if (!this.ctx || !this.sfxGain || this.isMuted) return;
-    const now = this.ctx.currentTime;
-    const freqs = [330, 440, 554, 659, 880];
-    freqs.forEach((f, i) => {
-      if (!this.ctx || !this.sfxGain) return;
-      const osc = this.ctx.createOscillator();
-      const gain = this.ctx.createGain();
-      const t = now + i * 0.06;
-      osc.type = 'sawtooth';
-      osc.frequency.setValueAtTime(f, t);
-      gain.gain.setValueAtTime(0.25, t);
-      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
-      osc.connect(gain);
-      gain.connect(this.sfxGain);
-      osc.start(t);
-      osc.stop(t + 0.25);
-      osc.onended = () => {
-        osc.disconnect();
-        gain.disconnect();
-      };
-    });
+    this.playSample('levelUp', 0.78, 1.0, 0.0);
   }
 
   public playVaultJackpot(): void {
-    if (!this.ctx || !this.sfxGain || this.isMuted) return;
-    const now = this.ctx.currentTime;
-    const freqs = [440, 554, 659, 880, 1108, 1318];
-    freqs.forEach((f, i) => {
-      if (!this.ctx || !this.sfxGain) return;
-      const osc = this.ctx.createOscillator();
-      const gain = this.ctx.createGain();
-      const t = now + i * 0.08;
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(f, t);
-      gain.gain.setValueAtTime(0.3, t);
-      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
-      osc.connect(gain);
-      gain.connect(this.sfxGain);
-      osc.start(t);
-      osc.stop(t + 0.35);
-      osc.onended = () => {
-        osc.disconnect();
-        gain.disconnect();
-      };
-    });
+    this.playSample('vaultJackpot', 0.85, 1.0, 0.0);
   }
 
   public playCombatDive(): void {
-    if (!this.ctx || !this.sfxGain || this.isMuted) return;
-    if (this.playSample('combatDive', 0.65)) {
-      return;
-    }
-    const now = this.ctx.currentTime;
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(260, now);
-    osc.frequency.exponentialRampToValueAtTime(75, now + 0.22);
-
-    gain.gain.setValueAtTime(0.4, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
-
-    osc.connect(gain);
-    gain.connect(this.sfxGain);
-
-    osc.start(now);
-    osc.stop(now + 0.22);
-    osc.onended = () => {
-      osc.disconnect();
-      gain.disconnect();
-    };
+    this.playSample('combatDive', 0.68);
   }
 
   public playPlayerHit(): void {
-    if (!this.ctx || !this.sfxGain || this.isMuted) return;
-    if (this.playSample('playerHit', 0.7)) {
-      return;
-    }
-    const now = this.ctx.currentTime;
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
+    this.playSample('playerHit', 0.72);
+  }
 
-    osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(140, now);
-    osc.frequency.exponentialRampToValueAtTime(35, now + 0.18);
+  // Dedicated Authentic UI Sound Effects
+  public playUiClick(): void {
+    this.playSample('uiClick', 0.65, 1.0, 0.02);
+  }
 
-    gain.gain.setValueAtTime(0.5, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+  public playUiBeep(): void {
+    this.playSample('uiBeep', 0.45, 1.0, 0.0);
+  }
 
-    osc.connect(gain);
-    gain.connect(this.sfxGain);
+  public playUiBuy(): void {
+    this.playSample('uiBuy', 0.75, 1.0, 0.0);
+  }
 
-    osc.start(now);
-    osc.stop(now + 0.18);
-    osc.onended = () => {
-      osc.disconnect();
-      gain.disconnect();
-    };
+  public playUiError(): void {
+    this.playSample('uiError', 0.65, 1.0, 0.0);
+  }
+
+  public playUpgradeApplied(): void {
+    this.playSample('uiUpgradeApplied', 0.8, 1.0, 0.0);
+  }
+
+  public playHudScanOpen(): void {
+    this.playSample('uiModalOpen', 0.68, 1.0, 0.0);
+  }
+
+  public playHudScanClose(): void {
+    this.playSample('uiModalClose', 0.6, 1.0, 0.0);
+  }
+
+  public playRunStart(): void {
+    this.playSample('runStart', 0.82, 1.0, 0.0);
+  }
+
+  public playRunEnd(victory: boolean): void {
+    this.playSample(victory ? 'runVictory' : 'runDefeat', 0.82, 1.0, 0.0);
   }
 }

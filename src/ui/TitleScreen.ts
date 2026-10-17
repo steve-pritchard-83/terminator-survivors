@@ -1,4 +1,5 @@
 import type { SaveManager } from '../state/SaveManager';
+import type { AudioEngine } from '../audio/AudioEngine';
 import { LOADOUTS, META_UPGRADES } from '../data/upgrades';
 import { LORE } from '../data/lore';
 import type { LoadoutId, MetaUpgradeId } from '../core/types';
@@ -7,14 +8,17 @@ export class TitleScreen {
   public readonly container: HTMLElement;
   private readonly bunkerModal: HTMLElement;
   private readonly saveManager: SaveManager;
+  private readonly audioEngine: AudioEngine;
   private readonly onStartRun: (loadoutId: LoadoutId) => void;
 
   constructor(
     root: HTMLElement,
     saveManager: SaveManager,
+    audioEngine: AudioEngine,
     onStartRun: (loadoutId: LoadoutId) => void
   ) {
     this.saveManager = saveManager;
+    this.audioEngine = audioEngine;
     this.onStartRun = onStartRun;
 
     this.container = document.createElement('div');
@@ -75,6 +79,7 @@ export class TitleScreen {
     });
 
     this.container.querySelector('#btn-close-bunker')?.addEventListener('click', () => {
+      this.audioEngine.playHudScanClose();
       this.bunkerModal.style.display = 'none';
     });
   }
@@ -88,6 +93,7 @@ export class TitleScreen {
   }
 
   private openBunkerShop(): void {
+    this.audioEngine.playHudScanOpen();
     this.bunkerModal.style.display = 'flex';
     this.renderBunkerContents();
   }
@@ -105,6 +111,7 @@ export class TitleScreen {
       const isSelected = data.selectedLoadout === lId;
 
       const card = document.createElement('div');
+      card.setAttribute('data-loadout-card', lId);
       card.style.cssText = `
         padding: 8px 10px;
         background: ${isSelected ? 'rgba(77,210,255,0.2)' : 'rgba(15,25,38,0.7)'};
@@ -122,11 +129,15 @@ export class TitleScreen {
 
       card.onclick = () => {
         if (isUnlocked) {
+          this.audioEngine.playUpgradeApplied();
           this.saveManager.selectLoadout(lId as LoadoutId);
           this.renderBunkerContents();
         } else if (data.alloyScrap >= cfg.cost) {
+          this.audioEngine.playUiBuy();
           this.saveManager.unlockLoadout(lId as LoadoutId);
           this.renderBunkerContents();
+        } else {
+          this.audioEngine.playUiError();
         }
       };
       loadoutGrid.appendChild(card);
@@ -156,12 +167,17 @@ export class TitleScreen {
 
       if (!isMax && data.alloyScrap >= cost) {
         card.onclick = () => {
+          this.audioEngine.playUiBuy();
           this.saveManager.purchaseUpgrade(upId as MetaUpgradeId);
           this.renderBunkerContents();
         };
       } else if (isMax) {
         card.style.opacity = '0.6';
         card.style.cursor = 'default';
+      } else {
+        card.onclick = () => {
+          this.audioEngine.playUiError();
+        };
       }
 
       upgradeList.appendChild(card);
