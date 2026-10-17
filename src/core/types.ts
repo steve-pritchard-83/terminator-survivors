@@ -134,9 +134,10 @@ export interface ActiveEnemy extends SpatialEntity {
   armorStripMultiplier: number;
   attackCooldown: number;
   chargeTimer?: number;
-  searchlightAngle: number;
-  searchlightAlertTimer: number;
-  phaseState: number;
+  searchlightAngle?: number;
+  searchlightAlertTimer?: number;
+  phaseState?: number;
+  state?: Record<string, number>;
 }
 
 export interface ActiveWeaponSlot {
