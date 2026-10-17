@@ -30,7 +30,7 @@ export class Environment2029 {
     this.groundGeo.rotateX(-Math.PI / 2);
 
     this.groundMat = new THREE.MeshStandardMaterial({
-      color: 0x2b3a4d,
+      color: 0x485e78,
       map: ProceduralTextures.getWastelandGroundAlbedo(),
       bumpMap: ProceduralTextures.getWastelandGroundBump(),
       bumpScale: 0.12,
@@ -152,15 +152,15 @@ export class Environment2029 {
 
     this.group.add(this.skullInstancedMesh, this.rebarInstancedMesh, this.carInstancedMesh);
 
-    // 4. Drifting Volumetric Low-Lying Ground Fog / Smoke Layers
+    // 4. Drifting Volumetric Low-Lying Ground Fog / Smoke Layers (moonlit blue-gray mist)
     this.fogMistGroup = new THREE.Group();
     const mistGeo = new THREE.PlaneGeometry(16, 16);
     mistGeo.rotateX(-Math.PI / 2);
     const mistMat = new THREE.MeshBasicMaterial({
       map: ProceduralTextures.getSoftGlowSprite(),
-      color: 0x1c3452,
+      color: 0x4a6e96,
       transparent: true,
-      opacity: 0.18,
+      opacity: 0.14,
       depthWrite: false,
       side: THREE.DoubleSide
     });

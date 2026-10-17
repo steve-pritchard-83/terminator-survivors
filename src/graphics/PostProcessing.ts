@@ -45,13 +45,13 @@ export const CameronGradingShader = {
       float luma = dot(col, vec3(0.299, 0.587, 0.114));
       col = mix(col + coldShadows * (1.0 - luma) * 0.35, col * vec3(0.96, 1.02, 1.10), smoothstep(0.08, 0.75, luma));
 
-      // Subtle 35mm film grain & atmospheric fog vignette at screen edges
-      float grain = (rand(vUv + fract(uTime)) - 0.5) * 0.018;
-      vec3 edgeFogColor = vec3(0.024, 0.051, 0.094);
-      float edgeFogFactor = smoothstep(0.36, 0.82, dist) * 0.58;
+      // Subtle 35mm film grain & moonlit slate-blue fog haze at outer screen edges
+      float grain = (rand(vUv + fract(uTime)) - 0.5) * 0.016;
+      vec3 edgeFogColor = vec3(0.09, 0.16, 0.25);
+      float edgeFogFactor = smoothstep(0.44, 0.90, dist) * 0.34;
       col = mix(col + grain, edgeFogColor, edgeFogFactor);
-      float vignette = smoothstep(0.95, 0.36, dist);
-      col *= mix(0.68, 1.0, vignette);
+      float vignette = smoothstep(0.98, 0.42, dist);
+      col *= mix(0.84, 1.0, vignette);
 
       // Crimson optical damage flash
       col = mix(col, vec3(0.95, 0.08, 0.08), clamp(uDamageFlash, 0.0, 0.65));

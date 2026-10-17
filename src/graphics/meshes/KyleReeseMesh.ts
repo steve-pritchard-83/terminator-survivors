@@ -247,21 +247,26 @@ export class KyleReeseMesh {
     flashlightLens.position.set(0.12, -0.04, 0.79);
 
     // Real Dynamic Three.js SpotLight cutting through the nocturnal fog
-    const flashlightSpot = new THREE.SpotLight(0xd8ecff, 11.5, 29, Math.PI / 4.2, 0.58, 1.05);
-    flashlightSpot.position.set(0.12, 0.25, 0.75);
+    const flashlightSpot = new THREE.SpotLight(0xe0f2ff, 15.0, 32, Math.PI / 3.8, 0.78, 0.95);
+    flashlightSpot.position.set(0.12, 0.35, 0.75);
     const flashlightTarget = new THREE.Object3D();
-    flashlightTarget.position.set(0.12, -0.95, 14.5);
+    flashlightTarget.position.set(0.12, -0.85, 14.5);
     this.weaponGroup.add(flashlightTarget);
     flashlightSpot.target = flashlightTarget;
 
-    // Subtle Volumetric Flashlight Cone Beam cutting through the mist
-    const beamConeGeo = new THREE.ConeGeometry(3.2, 13.5, 24, 1, true);
+    // Soft ambient fill around Kyle so his immediate surroundings are always readable
+    const playerAuraLight = new THREE.PointLight(0x7aa8d8, 2.2, 11);
+    playerAuraLight.position.set(0, 1.2, 0);
+    this.torsoGroup.add(playerAuraLight);
+
+    // Subtle Volumetric Flashlight Cone (kept above ground plane so it never creates a hard oval slice on the floor)
+    const beamConeGeo = new THREE.ConeGeometry(1.15, 11.5, 24, 1, true);
     beamConeGeo.rotateX(-Math.PI / 2);
-    beamConeGeo.translate(0.12, -0.18, 7.55);
+    beamConeGeo.translate(0.12, 0.02, 6.55);
     const beamConeMat = new THREE.MeshBasicMaterial({
-      color: 0xaad4ff,
+      color: 0xb8dcff,
       transparent: true,
-      opacity: 0.065,
+      opacity: 0.042,
       blending: THREE.AdditiveBlending,
       side: THREE.DoubleSide,
       depthWrite: false,

@@ -19,12 +19,12 @@ export class SceneManager {
     const isAutomated = typeof navigator !== 'undefined' && navigator.webdriver === true;
 
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x060d18);
-    // Dense atmospheric Future War fog that masks distant geometry and frames the flashlight beam
-    this.scene.fog = new THREE.Fog(0x060d18, 14.5, 34.5);
+    this.scene.background = new THREE.Color(0x162840);
+    // Camera is ~21.5m from player; starting fog at 23.5m keeps the play area crisp while misting the outer perimeter
+    this.scene.fog = new THREE.Fog(0x162840, 23.5, 48.0);
     if (!isAutomated) {
       this.scene.environment = ProceduralTextures.getMetallicEnvMap();
-      this.scene.environmentIntensity = 0.42;
+      this.scene.environmentIntensity = 0.50;
     }
 
     const width = container.clientWidth || window.innerWidth;
@@ -43,23 +43,23 @@ export class SceneManager {
     this.renderer.setSize(width, height);
     this.renderer.setPixelRatio(isAutomated ? 1 : Math.min(window.devicePixelRatio || 1, 2));
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.02;
+    this.renderer.toneMappingExposure = 1.20;
 
     container.appendChild(this.renderer.domElement);
 
-    // Moody nocturnal moonlight (low-glare so metallic surfaces don't glint harshly and flashlight pops)
-    const hemiLight = new THREE.HemisphereLight(0x5580b0, 0x101824, 0.72);
+    // Balanced "in-between" nocturnal moonlight: clear battlefield visibility with diffused metallic sheen
+    const hemiLight = new THREE.HemisphereLight(0x7aa8d8, 0x203044, 1.25);
     this.scene.add(hemiLight);
 
-    const ambientLight = new THREE.AmbientLight(0x1d2e44, 0.55);
+    const ambientLight = new THREE.AmbientLight(0x345070, 1.05);
     this.scene.add(ambientLight);
 
-    const moonLight = new THREE.DirectionalLight(0x709cc8, 0.95);
+    const moonLight = new THREE.DirectionalLight(0x90bce8, 1.45);
     moonLight.position.set(-16, 30, -14);
     this.scene.add(moonLight);
 
     // Subtle counter-rim light for silhouettes emerging from the fog
-    const rimLight = new THREE.DirectionalLight(0x3d6ea8, 0.55);
+    const rimLight = new THREE.DirectionalLight(0x5288c4, 0.85);
     rimLight.position.set(18, 14, 20);
     this.scene.add(rimLight);
 
