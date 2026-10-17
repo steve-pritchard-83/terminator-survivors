@@ -12,16 +12,18 @@ import { T1000Mesh } from '../graphics/meshes/T1000Mesh';
 import { InfiltratorMesh } from '../graphics/meshes/InfiltratorMesh';
 import { SkynetCoreMesh } from '../graphics/meshes/SkynetCoreMesh';
 import { disposeObject3D } from '../graphics/dispose';
+import { InstancedPool, type PoolableUser } from '../graphics/InstancedPool';
 import { globalEvents } from '../core/EventBus';
 import { globalRNG } from '../core/RNG';
 
-export interface EnemyProjectile {
-  mesh: THREE.Mesh;
+export interface EnemyProjectile extends PoolableUser {
+  poolIndex: number;
   x: number;
   y: number;
   z: number;
   vx: number;
   vz: number;
+  rotY: number;
   damage: number;
   radius: number;
   life: number;
@@ -54,6 +56,7 @@ export class EnemySystem {
   private readonly skynetNovaCooldown = new Map<number, number>();
 
   // Enemy projectiles & artillery reticles
+  private readonly enemyPool: InstancedPool<EnemyProjectile>;
   private readonly enemyProjectilePool: EnemyProjectile[] = [];
   private readonly enemyPlasmaGeo = new THREE.CylinderGeometry(0.09, 0.09, 0.75, 8);
   private readonly enemyPlasmaMat = new THREE.MeshBasicMaterial({ color: 0xff1144 });
@@ -88,24 +91,12 @@ export class EnemySystem {
     this.artilleryReticleGeo.userData = { shared: true };
     this.artilleryReticleMat.userData = { shared: true };
 
-    // Pre-warm enemy projectile pool
-    for (let i = 0; i < 24; i++) {
-      const mesh = new THREE.Mesh(this.enemyPlasmaGeo, this.enemyPlasmaMat);
-      mesh.visible = false;
-      this.group.add(mesh);
-      this.enemyProjectilePool.push({
-        mesh,
-        x: 0,
-        y: 0,
-        z: 0,
-        vx: 0,
-        vz: 0,
-        damage: 12,
-        radius: 0.35,
-        life: 0,
-        maxLife: 2.2
-      });
-    }
+    this.enemyPool = new InstancedPool<EnemyProjectile>(
+      this.enemyPlasmaGeo,
+      this.enemyPlasmaMat,
+      256,
+      this.group
+    );
   }
 
   public spawnEnemy(
@@ -174,7 +165,7 @@ export class EnemySystem {
   }
 
   private releaseEnemyProjectile(p: EnemyProjectile): void {
-    p.mesh.visible = false;
+    this.enemyPool.release(p.poolIndex);
     this.enemyProjectilePool.push(p);
   }
 
@@ -203,25 +194,20 @@ export class EnemySystem {
       p.z = z;
       p.vx = vx;
       p.vz = vz;
+      p.rotY = angle;
       p.damage = damage;
       p.radius = 0.35;
       p.life = 0;
       p.maxLife = 2.2;
-      p.mesh.position.set(x, y, z);
-      p.mesh.rotation.y = angle;
-      p.mesh.visible = true;
     } else {
-      const mesh = new THREE.Mesh(this.enemyPlasmaGeo, this.enemyPlasmaMat);
-      mesh.position.set(x, y, z);
-      mesh.rotation.y = angle;
-      this.group.add(mesh);
       p = {
-        mesh,
+        poolIndex: 0,
         x,
         y,
         z,
         vx,
         vz,
+        rotY: angle,
         damage,
         radius: 0.35,
         life: 0,
@@ -229,6 +215,8 @@ export class EnemySystem {
       };
     }
 
+    this.enemyPool.acquire(p);
+    this.enemyPool.setTransform(p.poolIndex, x, y, z, angle);
     this.enemyProjectiles.push(p);
     this.audio.playPlasmaShot(false);
   }
@@ -335,7 +323,7 @@ export class EnemySystem {
       p.life += dt;
       p.x += p.vx * dt;
       p.z += p.vz * dt;
-      p.mesh.position.set(p.x, p.y, p.z);
+      this.enemyPool.setTransform(p.poolIndex, p.x, p.y, p.z, p.rotY);
 
       const pdist = Math.hypot(px - p.x, pz - p.z);
       if (pdist < p.radius + 0.55) {
@@ -602,6 +590,7 @@ export class EnemySystem {
       this.releaseEnemyProjectile(p);
     }
     this.enemyProjectiles.length = 0;
+    this.enemyPool.clear();
     for (const r of this.tankReticleMeshes.values()) {
       this.group.remove(r);
       disposeObject3D(r);
