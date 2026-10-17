@@ -99,6 +99,8 @@ export const BASE_WEAPONS: Record<BaseWeaponId, WeaponDefinition> = {
     pairedPassive: 'might_shells',
     evolvesInto: 'trench_sweeper',
     iconColor: '#ff9900',
+    pattern: 'SpreadShot',
+    patternParams: { spreadAngle: 0.42, ringFull: false, projectileVisual: 'pellet', flashColor: 0xff9900, projectileRadius: 0.25 },
     levels: buildWeaponLevels(
       { damage: 24, cooldown: 1.15, area: 1.0, speed: 22, amount: 5, duration: 0.45, pierce: 2 },
       ['Fires a 5-pellet buckshot spread with heavy knockback.'],
@@ -113,6 +115,8 @@ export const BASE_WEAPONS: Record<BaseWeaponId, WeaponDefinition> = {
     pairedPassive: 'blast_radius',
     evolvesInto: 'thermite_buster',
     iconColor: '#ff4411',
+    pattern: 'Lobbed',
+    patternParams: { projectileVisual: 'bomb', arcSpread: 0.5, minDist: 5, maxDist: 13, vy: 4.5, flightTime: 0.8, areaRadius: 2.5 },
     levels: buildWeaponLevels(
       { damage: 45, cooldown: 2.4, area: 1.35, speed: 12, amount: 1, duration: 1.2, pierce: 99 },
       ['Lobs a homemade fuse pipe bomb detonating in a fiery explosion.'],
@@ -127,6 +131,8 @@ export const BASE_WEAPONS: Record<BaseWeaponId, WeaponDefinition> = {
     pairedPassive: 'phase_inductor',
     evolvesInto: 'm95a1_plasma',
     iconColor: '#d400ff',
+    pattern: 'StraightShot',
+    patternParams: { projectileVisual: 'plasma', flashColor: 0xd400ff, parallelOffset: 0.12, projectileRadius: 0.35, sfx: 'plasma_light' },
     levels: buildWeaponLevels(
       { damage: 30, cooldown: 0.75, area: 1.0, speed: 28, amount: 1, duration: 1.2, pierce: 1 },
       ['Fires high-velocity violet phased plasma bolts at nearest machine.'],
@@ -141,6 +147,8 @@ export const BASE_WEAPONS: Record<BaseWeaponId, WeaponDefinition> = {
     pairedPassive: 'telemetry_cpu',
     evolvesInto: 'perimeter_ring',
     iconColor: '#00e5ff',
+    pattern: 'Orbiters',
+    patternParams: { droneCount: 2, orbitRadius: 2.4, orbitSpeedMult: 1.0 },
     levels: buildWeaponLevels(
       { damage: 18, cooldown: 3.2, area: 1.1, speed: 4.2, amount: 2, duration: 2.6, pierce: 99 },
       ['Two captured micro-drones orbit Kyle, slicing through approaching machines.'],
@@ -155,6 +163,8 @@ export const BASE_WEAPONS: Record<BaseWeaponId, WeaponDefinition> = {
     pairedPassive: 'flux_coil',
     evolvesInto: 'emp_supernova',
     iconColor: '#4dd2ff',
+    pattern: 'Nova',
+    patternParams: { baseRadius: 3.8, isSupernova: false, shakeTrauma: 0.22, slowDuration: 2.0 },
     levels: buildWeaponLevels(
       { damage: 14, cooldown: 1.45, area: 1.25, speed: 1.0, amount: 1, duration: 0.35, pierce: 99 },
       ['Emits an expanding electromagnetic ring that damages and slows machines.'],
@@ -169,6 +179,8 @@ export const BASE_WEAPONS: Record<BaseWeaponId, WeaponDefinition> = {
     pairedPassive: 'bandolier',
     evolvesInto: 'mm1_barrage',
     iconColor: '#ffbb00',
+    pattern: 'Lobbed',
+    patternParams: { projectileVisual: 'bomb', arcSpread: Math.PI * 2, minDist: 6, maxDist: 15, vy: 5.5, flightTime: 0.7, areaRadius: 3.2 },
     levels: buildWeaponLevels(
       { damage: 52, cooldown: 2.1, area: 1.2, speed: 16, amount: 1, duration: 0.8, pierce: 99 },
       ['Lobs high-arcing 40mm HE grenades at heavy enemy clusters.'],
@@ -183,6 +195,8 @@ export const BASE_WEAPONS: Record<BaseWeaponId, WeaponDefinition> = {
     pairedPassive: 'fuel_tank',
     evolvesInto: 'firestorm_wall',
     iconColor: '#ff2200',
+    pattern: 'GroundZone',
+    patternParams: { baseRadius: 2.0, minDist: 4, maxDist: 7 },
     levels: buildWeaponLevels(
       { damage: 16, cooldown: 2.6, area: 1.3, speed: 10, amount: 1, duration: 3.0, pierce: 99 },
       ['Throws a fuel canister creating lingering burning ground fire.'],
@@ -197,6 +211,8 @@ export const BASE_WEAPONS: Record<BaseWeaponId, WeaponDefinition> = {
     pairedPassive: 'comms_uplink',
     evolvesInto: 'orbital_ion',
     iconColor: '#ff0055',
+    pattern: 'Strike',
+    patternParams: { baseRadius: 2.5, shakeTrauma: 0.32 },
     levels: buildWeaponLevels(
       { damage: 60, cooldown: 2.8, area: 1.1, speed: 40, amount: 1, duration: 0.5, pierce: 99 },
       ['Paints heavy targets with a red laser, calling down Resistance artillery.'],
@@ -213,6 +229,8 @@ export const EVOLVED_WEAPONS: Record<EvolvedWeaponId, WeaponDefinition> = {
     isEvolved: true,
     evolvesFrom: 'ithaca_37',
     iconColor: '#ffa500',
+    pattern: 'SpreadShot',
+    patternParams: { spreadAngle: Math.PI * 2, ringFull: true, projectileVisual: 'pellet', flashColor: 0xff5500, projectileRadius: 0.4 },
     levels: [
       {
         level: 1,
@@ -235,6 +253,8 @@ export const EVOLVED_WEAPONS: Record<EvolvedWeaponId, WeaponDefinition> = {
     isEvolved: true,
     evolvesFrom: 'pipe_bomb',
     iconColor: '#ff3300',
+    pattern: 'Lobbed',
+    patternParams: { projectileVisual: 'bomb', arcSpread: 0.5, minDist: 5, maxDist: 13, vy: 4.5, flightTime: 0.8, areaRadius: 4.2 },
     levels: [
       {
         level: 1,
@@ -257,6 +277,8 @@ export const EVOLVED_WEAPONS: Record<EvolvedWeaponId, WeaponDefinition> = {
     isEvolved: true,
     evolvesFrom: 'm25_plasma',
     iconColor: '#e600ff',
+    pattern: 'StraightShot',
+    patternParams: { projectileVisual: 'heavy_plasma', flashColor: 0xff00ea, jitterAngle: 0.1, jitterPos: 0.4, projectileRadius: 0.6, sfx: 'plasma_heavy' },
     levels: [
       {
         level: 1,
@@ -279,6 +301,8 @@ export const EVOLVED_WEAPONS: Record<EvolvedWeaponId, WeaponDefinition> = {
     isEvolved: true,
     evolvesFrom: 'seeker_drone',
     iconColor: '#00ffff',
+    pattern: 'Orbiters',
+    patternParams: { droneCount: 5, orbitRadius: 3.2, orbitSpeedMult: 1.6 },
     levels: [
       {
         level: 1,
@@ -301,6 +325,8 @@ export const EVOLVED_WEAPONS: Record<EvolvedWeaponId, WeaponDefinition> = {
     isEvolved: true,
     evolvesFrom: 'emp_emitter',
     iconColor: '#00ccff',
+    pattern: 'Nova',
+    patternParams: { baseRadius: 6.5, isSupernova: true, shakeTrauma: 0.35, slowDuration: 2.0, armorStrip: 0.3, healAmount: 1 },
     levels: [
       {
         level: 1,
@@ -323,6 +349,8 @@ export const EVOLVED_WEAPONS: Record<EvolvedWeaponId, WeaponDefinition> = {
     isEvolved: true,
     evolvesFrom: 'm79_thumper',
     iconColor: '#ffd700',
+    pattern: 'Lobbed',
+    patternParams: { projectileVisual: 'bomb', arcSpread: Math.PI * 2, minDist: 6, maxDist: 15, vy: 5.5, flightTime: 0.7, areaRadius: 3.2 },
     levels: [
       {
         level: 1,
@@ -345,6 +373,8 @@ export const EVOLVED_WEAPONS: Record<EvolvedWeaponId, WeaponDefinition> = {
     isEvolved: true,
     evolvesFrom: 'napalm_canister',
     iconColor: '#ff5500',
+    pattern: 'GroundZone',
+    patternParams: { baseRadius: 3.2, minDist: 4, maxDist: 7 },
     levels: [
       {
         level: 1,
@@ -367,6 +397,8 @@ export const EVOLVED_WEAPONS: Record<EvolvedWeaponId, WeaponDefinition> = {
     isEvolved: true,
     evolvesFrom: 'laser_designator',
     iconColor: '#ff00aa',
+    pattern: 'Strike',
+    patternParams: { baseRadius: 3.5, shakeTrauma: 0.32 },
     levels: [
       {
         level: 1,

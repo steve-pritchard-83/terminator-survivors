@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import type { RunState } from '../state/RunState';
 import type { SpatialHashGrid } from '../core/SpatialHashGrid';
-import type { ActiveEnemy, SpatialEntity } from '../core/types';
+import type { ActiveEnemy, SpatialEntity, WeaponId, WeaponLevelStats, WeaponPatternId } from '../core/types';
 import type { AudioEngine } from '../audio/AudioEngine';
 import type { ParticleSystem } from './ParticleSystem';
 import type { KyleReeseMesh } from '../graphics/meshes/KyleReeseMesh';
@@ -10,8 +10,15 @@ import { globalEvents } from '../core/EventBus';
 import { globalRNG } from '../core/RNG';
 import { disposeObject3D } from '../graphics/dispose';
 import { InstancedPool, type PoolableUser } from '../graphics/InstancedPool';
+import {
+  type WeaponPattern,
+  type WeaponFireContext,
+  type Orbiters,
+  type ProjectileMeshCategory,
+  createWeaponPatternRegistry
+} from './weapons';
 
-export type ProjectileMeshCategory = 'pellet' | 'plasma' | 'heavy_plasma' | 'bomb';
+export type { ProjectileMeshCategory };
 
 interface Projectile extends PoolableUser {
   id: number;
@@ -62,14 +69,15 @@ export class WeaponSystem {
   private readonly particles: ParticleSystem;
   private readonly playerMesh: KyleReeseMesh;
 
+  public readonly patterns: Record<WeaponPatternId, WeaponPattern>;
+  public readonly orbitersPattern: Orbiters;
+  private readonly fireContext: WeaponFireContext;
+
   private projectiles: Projectile[] = [];
   private readonly projectilePool: Projectile[] = [];
   private readonly pools: Record<ProjectileMeshCategory, InstancedPool<Projectile>>;
   private groundZones: GroundZone[] = [];
-  private orbitalDrones: THREE.Mesh[] = [];
-  private droneHitCooldowns = new Map<number, number>();
   private transientVfx: TransientVfx[] = [];
-  private orbitalAngle = 0;
   private nextProjId = 1;
 
   // Spatial query scratch arrays for allocation-free updates
@@ -86,17 +94,11 @@ export class WeaponSystem {
   private readonly heavyPlasmaGeo = new THREE.CylinderGeometry(0.16, 0.16, 1.4, 8);
   private readonly pelletGeo = new THREE.SphereGeometry(0.06, 6, 6);
   private readonly bombGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.32, 8);
-  private readonly droneGeo = new THREE.BoxGeometry(0.35, 0.12, 0.35);
 
   private readonly plasmaMat = new THREE.MeshBasicMaterial({ color: 0xd400ff });
   private readonly heavyPlasmaMat = new THREE.MeshBasicMaterial({ color: 0xff00cc });
   private readonly buckshotMat = new THREE.MeshBasicMaterial({ color: 0xffcc00 });
   private readonly bombMat = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.8 });
-  private readonly droneMat = new THREE.MeshStandardMaterial({
-    color: 0x00e5ff,
-    emissive: 0x00c4e6,
-    emissiveIntensity: 3.5
-  });
 
   constructor(
     runState: RunState,
@@ -111,6 +113,10 @@ export class WeaponSystem {
     this.particles = particles;
     this.playerMesh = playerMesh;
 
+    const { registry, orbiters } = createWeaponPatternRegistry();
+    this.patterns = registry;
+    this.orbitersPattern = orbiters;
+
     this.plasmaBoltGeo.rotateX(Math.PI / 2);
     this.heavyPlasmaGeo.rotateX(Math.PI / 2);
 
@@ -118,13 +124,11 @@ export class WeaponSystem {
     this.heavyPlasmaGeo.userData = { shared: true };
     this.pelletGeo.userData = { shared: true };
     this.bombGeo.userData = { shared: true };
-    this.droneGeo.userData = { shared: true };
 
     this.plasmaMat.userData = { shared: true };
     this.heavyPlasmaMat.userData = { shared: true };
     this.buckshotMat.userData = { shared: true };
     this.bombMat.userData = { shared: true };
-    this.droneMat.userData = { shared: true };
 
     this.pools = {
       pellet: new InstancedPool<Projectile>(this.pelletGeo, this.buckshotMat, 512, this.group),
@@ -136,6 +140,32 @@ export class WeaponSystem {
         this.group
       ),
       bomb: new InstancedPool<Projectile>(this.bombGeo, this.bombMat, 128, this.group)
+    };
+
+    this.fireContext = {
+      runState: this.runState,
+      audio: this.audio,
+      particles: this.particles,
+      playerMesh: this.playerMesh,
+      grid: this.grid,
+      group: this.group,
+      spawnProjectile: (params) => this.spawnProjectile(params),
+      spawnEmpShockwave: (x, z, maxRadius, isSupernova) =>
+        this.spawnEmpShockwave(x, z, maxRadius, isSupernova),
+      spawnGroundZone: (x, z, radius, dmg, dur) =>
+        this.spawnGroundZone(x, z, radius, dmg, dur),
+      spawnOrbitalIonBeam: (x, z, radius) =>
+        this.spawnOrbitalIonBeam(x, z, radius),
+      applyDamageToTarget: (target, damage) =>
+        this.applyDamageToTarget(target, damage),
+      emit: (evt, payload) => globalEvents.emit(evt, payload),
+      rng: globalRNG,
+      scratch: {
+        empHit: this.empHitScratch,
+        orbitalHit: this.orbitalHitScratch,
+        orbitalTargets: this.orbitalTargetsScratch,
+        droneHit: this.droneHitScratch
+      }
     };
   }
 
@@ -190,24 +220,12 @@ export class WeaponSystem {
 
   private fireWeapon(
     wId: string,
-    stats: {
-      damage: number;
-      speed: number;
-      amount: number;
-      pierce: number;
-      area: number;
-      duration: number;
-    },
+    stats: WeaponLevelStats,
     px: number,
     pz: number,
-    enemies: ActiveEnemy[],
+    _enemies: ActiveEnemy[],
     aimAngle: number | null
   ): void {
-    const might = this.runState.computedStats.mightMultiplier;
-    const areaMult = this.runState.computedStats.areaMultiplier;
-    const dmg = Math.round(stats.damage * might);
-    const amount = stats.amount + this.runState.computedStats.bonusAmount;
-
     // Find nearest target for auto-targeted weapons (or fallback when mouse aim is not active)
     const nearest = this.runState.autoAimEnabled
       ? (this.grid.findNearest(px, pz, 28, (e) => e.type === 'enemy') as ActiveEnemy | null)
@@ -220,237 +238,9 @@ export class WeaponSystem {
       targetAngle = Math.atan2(nearest.x - px, nearest.z - pz);
     }
 
-    switch (wId) {
-      case 'ithaca_37': {
-        this.audio.playShotgunBlast();
-        this.playerMesh.pulseMuzzleFlash(0xff9900);
-        const spreadAngle = 0.42;
-        for (let i = 0; i < amount; i++) {
-          const angleOffset = (i / Math.max(1, amount - 1) - 0.5) * spreadAngle;
-          const a = targetAngle + angleOffset;
-          this.spawnProjectile({
-            weaponId: wId,
-            meshCategory: 'pellet',
-            x: px,
-            y: 0.8,
-            z: pz,
-            vx: Math.sin(a) * stats.speed,
-            vy: 0,
-            vz: Math.cos(a) * stats.speed,
-            rotY: 0,
-            damage: dmg,
-            radius: 0.25 * areaMult,
-            pierceLeft: stats.pierce,
-            life: 0,
-            maxLife: stats.duration
-          });
-        }
-        break;
-      }
-
-      case 'trench_sweeper': {
-        this.audio.playShotgunBlast();
-        this.playerMesh.pulseMuzzleFlash(0xff5500);
-        // 360 ring of flechettes
-        for (let i = 0; i < amount; i++) {
-          const a = targetAngle + (i / amount) * Math.PI * 2;
-          this.spawnProjectile({
-            weaponId: wId,
-            meshCategory: 'pellet',
-            x: px,
-            y: 0.8,
-            z: pz,
-            vx: Math.sin(a) * stats.speed,
-            vy: 0,
-            vz: Math.cos(a) * stats.speed,
-            rotY: 0,
-            damage: dmg,
-            radius: 0.4 * areaMult,
-            pierceLeft: stats.pierce,
-            life: 0,
-            maxLife: stats.duration
-          });
-        }
-        break;
-      }
-
-      case 'm25_plasma': {
-        this.audio.playPlasmaShot(false);
-        this.playerMesh.pulseMuzzleFlash(0xd400ff);
-        for (let i = 0; i < amount; i++) {
-          const offset = (i - (amount - 1) / 2) * 0.12;
-          this.spawnProjectile({
-            weaponId: wId,
-            meshCategory: 'plasma',
-            x: px + Math.cos(targetAngle) * offset,
-            y: 0.85,
-            z: pz - Math.sin(targetAngle) * offset,
-            vx: Math.sin(targetAngle) * stats.speed,
-            vy: 0,
-            vz: Math.cos(targetAngle) * stats.speed,
-            rotY: targetAngle,
-            damage: dmg,
-            radius: 0.35 * areaMult,
-            pierceLeft: stats.pierce,
-            life: 0,
-            maxLife: stats.duration
-          });
-        }
-        break;
-      }
-
-      case 'm95a1_plasma': {
-        this.audio.playPlasmaShot(true);
-        this.playerMesh.pulseMuzzleFlash(0xff00ea);
-        for (let i = 0; i < amount; i++) {
-          const a = targetAngle + (globalRNG.next() - 0.5) * 0.1;
-          this.spawnProjectile({
-            weaponId: wId,
-            meshCategory: 'heavy_plasma',
-            x: px + (globalRNG.next() - 0.5) * 0.4,
-            y: 0.85,
-            z: pz + (globalRNG.next() - 0.5) * 0.4,
-            vx: Math.sin(a) * stats.speed,
-            vy: 0,
-            vz: Math.cos(a) * stats.speed,
-            rotY: a,
-            damage: dmg,
-            radius: 0.6 * areaMult,
-            pierceLeft: stats.pierce,
-            life: 0,
-            maxLife: stats.duration
-          });
-        }
-        break;
-      }
-
-      case 'pipe_bomb':
-      case 'thermite_buster': {
-        for (let i = 0; i < amount; i++) {
-          const a = targetAngle + (globalRNG.next() - 0.5) * 0.5;
-          const dist = 5 + globalRNG.next() * 8;
-          this.spawnProjectile({
-            weaponId: wId,
-            meshCategory: 'bomb',
-            x: px,
-            y: 0.8,
-            z: pz,
-            vx: (Math.sin(a) * dist) / 0.8,
-            vy: 4.5,
-            vz: (Math.cos(a) * dist) / 0.8,
-            rotY: a,
-            pitchX: 0,
-            damage: dmg,
-            radius: 0.3,
-            pierceLeft: 99,
-            life: 0,
-            maxLife: 0.8,
-            isAreaOnExpire: true,
-            areaRadius: (wId === 'thermite_buster' ? 4.2 : 2.5) * areaMult
-          });
-        }
-        break;
-      }
-
-      case 'emp_emitter':
-      case 'emp_supernova': {
-        this.audio.playEmpBlast();
-        const isSupernova = wId === 'emp_supernova';
-        const empRadius = (isSupernova ? 6.5 : 3.8) * areaMult;
-        this.spawnEmpShockwave(px, pz, empRadius, isSupernova);
-        globalEvents.emit('camera:shake', { trauma: isSupernova ? 0.35 : 0.22 });
-        const hitEnemies = this.grid.queryRadius(px, pz, empRadius, this.empHitScratch);
-        for (let i = 0; i < hitEnemies.length; i++) {
-          const target = hitEnemies[i];
-          const hit = this.applyDamageToTarget(target, dmg);
-          if (hit && target.type === 'enemy') {
-            const e = target as ActiveEnemy;
-            e.slowTimer = 2.0;
-            if (isSupernova) {
-              e.armorStripMultiplier = Math.max(0.4, e.armorStripMultiplier - 0.3);
-              this.runState.heal(1);
-            }
-          }
-        }
-        this.particles.spawnExplosion(px, 0.2, pz, 1.2);
-        break;
-      }
-
-      case 'm79_thumper':
-      case 'mm1_barrage': {
-        for (let i = 0; i < amount; i++) {
-          const a = globalRNG.next() * Math.PI * 2;
-          const dist = 6 + globalRNG.next() * 9;
-          this.spawnProjectile({
-            weaponId: wId,
-            meshCategory: 'bomb',
-            x: px,
-            y: 0.8,
-            z: pz,
-            vx: (Math.sin(a) * dist) / 0.7,
-            vy: 5.5,
-            vz: (Math.cos(a) * dist) / 0.7,
-            rotY: a,
-            pitchX: 0,
-            damage: dmg,
-            radius: 0.3,
-            pierceLeft: 99,
-            life: 0,
-            maxLife: 0.7,
-            isAreaOnExpire: true,
-            areaRadius: 3.2 * areaMult
-          });
-        }
-        break;
-      }
-
-      case 'napalm_canister':
-      case 'firestorm_wall': {
-        for (let i = 0; i < amount; i++) {
-          const angle = (i / amount) * Math.PI * 2;
-          const dist = 4 + globalRNG.next() * 3;
-          this.spawnGroundZone(
-            px + Math.cos(angle) * dist,
-            pz + Math.sin(angle) * dist,
-            (wId === 'firestorm_wall' ? 3.2 : 2.0) * areaMult,
-            dmg,
-            stats.duration
-          );
-        }
-        break;
-      }
-
-      case 'laser_designator':
-      case 'orbital_ion': {
-        const count = stats.amount + this.runState.computedStats.bonusAmount;
-        const targets = this.runState.autoAimEnabled
-          ? (this.grid.findNearestN(
-              px,
-              pz,
-              count,
-              28,
-              (e) => e.type === 'enemy',
-              this.orbitalTargetsScratch
-            ) as ActiveEnemy[])
-          : [];
-
-        for (let i = 0; i < count; i++) {
-          const target = targets[i] ?? {
-            x: px + (globalRNG.next() - 0.5) * 16,
-            z: pz + (globalRNG.next() - 0.5) * 16
-          };
-          this.audio.playPlasmaShot(true);
-          const ionRadius = (wId === 'orbital_ion' ? 3.5 : 2.5) * areaMult;
-          this.spawnOrbitalIonBeam(target.x, target.z, ionRadius);
-          globalEvents.emit('camera:shake', { trauma: 0.32 });
-          const hit = this.grid.queryRadius(target.x, target.z, ionRadius, this.orbitalHitScratch);
-          for (let h = 0; h < hit.length; h++) {
-            this.applyDamageToTarget(hit[h], dmg);
-          }
-          this.particles.spawnExplosion(target.x, 0.2, target.z, 1.4);
-        }
-        break;
-      }
+    const def = ALL_WEAPONS[wId as WeaponId];
+    if (def?.pattern) {
+      this.patterns[def.pattern]?.fire(def, stats, px, pz, targetAngle, this.fireContext);
     }
   }
 
@@ -647,86 +437,8 @@ export class WeaponSystem {
     });
   }
 
-  private updateOrbitingDrones(dt: number, px: number, pz: number, _enemies: ActiveEnemy[]): void {
-    const seekerSlot = this.runState.weapons.get('seeker_drone');
-    const ringSlot = this.runState.weapons.get('perimeter_ring');
-    const activeSlot = ringSlot || seekerSlot;
-
-    if (!activeSlot) {
-      // Remove any existing drones
-      for (const d of this.orbitalDrones) {
-        this.group.remove(d);
-      }
-      this.orbitalDrones.length = 0;
-      this.droneHitCooldowns.clear();
-      return;
-    }
-
-    // Decrement hit cooldowns
-    for (const [id, cd] of this.droneHitCooldowns.entries()) {
-      const nextCd = cd - dt;
-      if (nextCd <= 0) {
-        this.droneHitCooldowns.delete(id);
-      } else {
-        this.droneHitCooldowns.set(id, nextCd);
-      }
-    }
-
-    const def = ALL_WEAPONS[activeSlot.id];
-    const stats = def?.levels[Math.min(activeSlot.level - 1, def.levels.length - 1)] ?? {
-      damage: 18,
-      speed: 4.2,
-      amount: 2,
-      area: 1.1,
-      cooldown: 3.2,
-      duration: 2.6,
-      pierce: 99
-    };
-
-    const might = this.runState.computedStats.mightMultiplier;
-    const areaMult = this.runState.computedStats.areaMultiplier;
-    const damage = Math.round(stats.damage * might);
-    const count = Math.min(8, Math.max(1, stats.amount + this.runState.computedStats.bonusAmount));
-    const orbitSpeed = stats.speed;
-    const radius = (ringSlot ? 3.8 : 2.8) * areaMult;
-    const hitRadius = 0.6 * areaMult;
-
-    this.orbitalAngle += dt * orbitSpeed;
-
-    // Ensure correct drone mesh count
-    while (this.orbitalDrones.length < count) {
-      const drone = new THREE.Mesh(this.droneGeo, this.droneMat);
-      this.group.add(drone);
-      this.orbitalDrones.push(drone);
-    }
-    while (this.orbitalDrones.length > count) {
-      const removed = this.orbitalDrones.pop()!;
-      this.group.remove(removed);
-      disposeObject3D(removed);
-    }
-
-    for (let i = 0; i < count; i++) {
-      const a = this.orbitalAngle + (i / count) * Math.PI * 2;
-      const dx = px + Math.cos(a) * radius;
-      const dz = pz + Math.sin(a) * radius;
-
-      const dMesh = this.orbitalDrones[i];
-      dMesh.position.set(dx, 0.75, dz);
-      dMesh.rotation.y = -a;
-
-      // Slice through enemies in contact with 0.35s per-enemy cooldown
-      const hit = this.grid.queryRadius(dx, dz, hitRadius, this.droneHitScratch);
-      for (let h = 0; h < hit.length; h++) {
-        const target = hit[h];
-        if (target.type !== 'enemy') continue;
-        if (!this.droneHitCooldowns.has(target.id)) {
-          this.droneHitCooldowns.set(target.id, 0.35);
-          this.applyDamageToTarget(target, damage);
-          this.audio.playEndoHit();
-          this.particles.spawnPlasmaImpact(dx, 0.75, dz);
-        }
-      }
-    }
+  private updateOrbitingDrones(dt: number, px: number, pz: number, enemies: ActiveEnemy[]): void {
+    this.orbitersPattern.update(dt, px, pz, enemies, this.fireContext);
   }
 
   private updateProjectiles(dt: number): void {
@@ -828,12 +540,7 @@ export class WeaponSystem {
     }
     this.groundZones.length = 0;
 
-    for (const d of this.orbitalDrones) {
-      this.group.remove(d);
-      disposeObject3D(d);
-    }
-    this.orbitalDrones.length = 0;
-    this.droneHitCooldowns.clear();
+    this.orbitersPattern.clear(this.group);
 
     for (const fx of this.transientVfx) {
       this.group.remove(fx.mesh);

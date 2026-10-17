@@ -69,6 +69,42 @@ export interface WeaponLevelStats {
   description: string;
 }
 
+export type WeaponPatternId =
+  | 'SpreadShot'
+  | 'StraightShot'
+  | 'Lobbed'
+  | 'Nova'
+  | 'Orbiters'
+  | 'GroundZone'
+  | 'Strike';
+
+export interface WeaponPatternParams {
+  spreadAngle?: number;
+  ringFull?: boolean;
+  projectileVisual?: 'pellet' | 'plasma' | 'heavy_plasma' | 'bomb';
+  projectileRadius?: number;
+  flashColor?: number;
+  sfx?: 'shotgun' | 'plasma_light' | 'plasma_heavy' | 'emp' | 'none';
+  parallelOffset?: number;
+  jitterAngle?: number;
+  jitterPos?: number;
+  arcSpread?: number;
+  minDist?: number;
+  maxDist?: number;
+  vy?: number;
+  flightTime?: number;
+  areaRadius?: number;
+  baseRadius?: number;
+  shakeTrauma?: number;
+  isSupernova?: boolean;
+  slowDuration?: number;
+  armorStrip?: number;
+  healAmount?: number;
+  droneCount?: number;
+  orbitRadius?: number;
+  orbitSpeedMult?: number;
+}
+
 export interface WeaponDefinition {
   id: WeaponId;
   name: string;
@@ -78,6 +114,8 @@ export interface WeaponDefinition {
   evolvesInto?: EvolvedWeaponId;
   evolvesFrom?: BaseWeaponId;
   iconColor: string;
+  pattern: WeaponPatternId;
+  patternParams?: WeaponPatternParams;
   levels: WeaponLevelStats[];
 }
 
