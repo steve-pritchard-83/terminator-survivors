@@ -61,6 +61,9 @@ export class RunController {
       globalEvents.on('camera:shake', ({ trauma }) => {
         this.host.sceneManager.addScreenShake(trauma);
       }),
+      globalEvents.on('ability:triggered', ({ loadoutId, abilityId, x, z }) => {
+        this.handleAbilityTriggered(loadoutId, abilityId, x, z);
+      }),
       globalEvents.on('player:damaged', () => {
         this.host.sceneManager.postProcessing.triggerDamageFlash();
         this.host.sceneManager.addScreenShake(0.42);
@@ -360,9 +363,97 @@ export class RunController {
     }
   }
 
-  public update(_dt: number): void {
+  public handleAbilityTriggered(loadoutId: string, _abilityId: string, px: number, pz: number): void {
+    if (loadoutId === 'reese_2029') {
+      const angles = [0, Math.PI * 0.5, Math.PI, Math.PI * 1.5];
+      for (const ang of angles) {
+        this.host.weaponSystem.spawnProjectile({
+          weaponId: 'pipe_bomb',
+          meshCategory: 'bomb',
+          x: px,
+          y: 0.5,
+          z: pz,
+          vx: Math.sin(ang) * 9,
+          vy: 4.2,
+          vz: Math.cos(ang) * 9,
+          rotY: ang,
+          damage: 160 * this.host.runState.computedStats.mightMultiplier,
+          radius: 0.4,
+          pierceLeft: 1,
+          life: 0,
+          maxLife: 1.2,
+          isAreaOnExpire: true,
+          areaRadius: 4.5,
+          knockback: 18
+        });
+      }
+      this.host.audioEngine.playExplosion(0.8);
+      this.host.sceneManager.addScreenShake(0.35);
+    } else if (loadoutId === 'techcom_sapper') {
+      for (const slot of this.host.runState.weapons.values()) {
+        slot.cooldownTimer = 0;
+      }
+      this.host.weaponSystem.spawnEmpShockwave(px, pz, 14, true);
+      this.host.audioEngine.playExplosion(1.4);
+      this.host.sceneManager.addScreenShake(0.45);
+      const nearby = this.host.enemySystem.activeEnemies.filter(
+        (e) => Math.hypot(e.x - px, e.z - pz) <= 14
+      );
+      for (const e of nearby) {
+        this.host.weaponSystem.applyDamageToTarget(
+          e,
+          250 * this.host.runState.computedStats.mightMultiplier,
+          20,
+          { x: e.x - px, z: e.z - pz },
+          'm25_plasma'
+        );
+      }
+    } else if (loadoutId === 'sarah_connor') {
+      for (let i = 0; i < 6; i++) {
+        const ang = (i / 6) * Math.PI * 2;
+        const gx = px + Math.sin(ang) * 4.5;
+        const gz = pz + Math.cos(ang) * 4.5;
+        this.host.weaponSystem.spawnGroundZone(
+          gx,
+          gz,
+          2.6,
+          85 * this.host.runState.computedStats.mightMultiplier,
+          6.0,
+          6,
+          'ithaca_37'
+        );
+      }
+      this.host.audioEngine.playExplosion(1.2);
+      this.host.sceneManager.addScreenShake(0.3);
+    } else if (loadoutId === 'reprogrammed_t800') {
+      this.host.runState.invulnerabilityTimer = 5.0;
+      this.host.audioEngine.playSearchlightAlert();
+      this.host.sceneManager.addScreenShake(0.5);
+    } else if (loadoutId === 'reese_1984' || loadoutId === 'john_connor') {
+      this.host.audioEngine.playSearchlightAlert();
+      this.host.sceneManager.addScreenShake(0.25);
+    }
+  }
+
+  public update(dt: number): void {
     if (this.host.runState.mode !== 'playing') {
       return;
+    }
+
+    if (this.host.runState.loadoutId === 'reprogrammed_t800' && this.host.runState.isAbilityActive) {
+      const px = this.host.runState.playerPos.x;
+      const pz = this.host.runState.playerPos.z;
+      for (const e of this.host.enemySystem.activeEnemies) {
+        if (Math.hypot(e.x - px, e.z - pz) < 1.6) {
+          this.host.weaponSystem.applyDamageToTarget(
+            e,
+            200 * dt * this.host.runState.computedStats.mightMultiplier,
+            15,
+            { x: e.x - px, z: e.z - pz },
+            'm25_plasma'
+          );
+        }
+      }
     }
 
     if (this.activeBoss) {

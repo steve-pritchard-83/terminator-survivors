@@ -9,7 +9,9 @@ export class InputManager {
   private mouseScreenPos: { x: number; y: number } | null = null;
   private leftMouseDown = false;
   private dashRequested = false;
+  private abilityRequested = false;
   public onDashCallback: (() => void) | null = null;
+  public onAbilityCallback: (() => void) | null = null;
   public onPauseCallback: (() => void) | null = null;
 
   private activePointerId: number | null = null;
@@ -24,6 +26,10 @@ export class InputManager {
     this.gamepadManager.onDashCallback = () => {
       this.dashRequested = true;
       this.onDashCallback?.();
+    };
+    this.gamepadManager.onAbilityCallback = () => {
+      this.abilityRequested = true;
+      this.onAbilityCallback?.();
     };
     this.gamepadManager.onPauseCallback = () => {
       this.onPauseCallback?.();
@@ -87,7 +93,8 @@ export class InputManager {
     touchZoneEl: HTMLElement,
     baseEl: HTMLElement,
     knobEl: HTMLElement,
-    dashBtnEl: HTMLElement
+    dashBtnEl: HTMLElement,
+    abilityBtnEl?: HTMLElement
   ): void {
     this.joystickBaseEl = baseEl;
     this.joystickKnobEl = knobEl;
@@ -144,6 +151,19 @@ export class InputManager {
     dashBtnEl.addEventListener('pointerdown', onDash);
     dashBtnEl.addEventListener('touchstart', onDash);
     dashBtnEl.addEventListener('click', onDash);
+
+    // Mobile Ability Touch Button
+    if (abilityBtnEl) {
+      const onAbility = (e: Event) => {
+        e.preventDefault();
+        this.lastActiveDevice = 'touch';
+        this.abilityRequested = true;
+        this.onAbilityCallback?.();
+      };
+      abilityBtnEl.addEventListener('pointerdown', onAbility);
+      abilityBtnEl.addEventListener('touchstart', onAbility);
+      abilityBtnEl.addEventListener('click', onAbility);
+    }
   }
 
   private onKeyDown = (e: KeyboardEvent): void => {
@@ -152,6 +172,9 @@ export class InputManager {
     if (e.code === 'Space' || e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
       this.dashRequested = true;
       this.onDashCallback?.();
+    } else if (e.code === 'KeyE' || e.code === 'KeyQ' || e.code === 'KeyF') {
+      this.abilityRequested = true;
+      this.onAbilityCallback?.();
     } else if (e.code === 'Escape') {
       this.onPauseCallback?.();
     }
@@ -243,6 +266,17 @@ export class InputManager {
     this.gamepadManager.clearDashRequest();
   }
 
+  public consumeAbility(): boolean {
+    const ability = this.abilityRequested || this.gamepadManager.consumeAbility();
+    this.abilityRequested = false;
+    return ability;
+  }
+
+  public clearAbilityRequest(): void {
+    this.abilityRequested = false;
+    this.gamepadManager.clearAbilityRequest();
+  }
+
   // Playwright & Unit test helpers
   public setJoystickVectorForTest(x: number, z: number): void {
     this.touchVec = { x, z };
@@ -250,5 +284,9 @@ export class InputManager {
 
   public triggerDashForTest(): void {
     this.dashRequested = true;
+  }
+
+  public triggerAbilityForTest(): void {
+    this.abilityRequested = true;
   }
 }

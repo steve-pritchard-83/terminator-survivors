@@ -257,7 +257,7 @@ export class WeaponSystem {
     }
   }
 
-  private spawnEmpShockwave(x: number, z: number, maxRadius: number, isSupernova = false): void {
+  public spawnEmpShockwave(x: number, z: number, maxRadius: number, isSupernova = false): void {
     const ringGeo = new THREE.RingGeometry(0.85, 1.0, 32);
     ringGeo.rotateX(-Math.PI / 2);
     const ringMat = new THREE.MeshBasicMaterial({
@@ -341,7 +341,7 @@ export class WeaponSystem {
     });
   }
 
-  private applyDamageToTarget(
+  public applyDamageToTarget(
     entity: SpatialEntity,
     baseDamage: number,
     knockback = 0,
@@ -407,7 +407,7 @@ export class WeaponSystem {
     return true;
   }
 
-  private spawnProjectile(p: SpawnProjectileParams): void {
+  public spawnProjectile(p: SpawnProjectileParams): void {
     let proj: Projectile;
     if (this.projectilePool.length > 0) {
       proj = this.projectilePool.pop()!;
@@ -445,7 +445,7 @@ export class WeaponSystem {
     this.projectiles.push(proj);
   }
 
-  private spawnGroundZone(
+  public spawnGroundZone(
     x: number,
     z: number,
     radius: number,

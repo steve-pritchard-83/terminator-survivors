@@ -64,7 +64,13 @@ export type EnemyArchetypeId =
   | 'plasma_turret'
   | 't600_minigunner';
 
-export type LoadoutId = 'reese_2029' | 'reese_1984' | 'techcom_sapper' | 'john_connor';
+export type LoadoutId =
+  | 'reese_2029'
+  | 'reese_1984'
+  | 'techcom_sapper'
+  | 'john_connor'
+  | 'sarah_connor'
+  | 'reprogrammed_t800';
 
 export type StageId =
   | 'la_2029_wasteland'

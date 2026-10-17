@@ -55,7 +55,10 @@ export class GamepadManager {
   public onConnectCallback: ((status: GamepadStatus) => void) | null = null;
   public onDisconnectCallback: ((status: GamepadStatus) => void) | null = null;
   public onDashCallback: (() => void) | null = null;
+  public onAbilityCallback: (() => void) | null = null;
   public onPauseCallback: (() => void) | null = null;
+
+  private abilityRequested = false;
 
   // Test override mock
   private mockGamepad: Gamepad | null = null;
@@ -227,6 +230,16 @@ export class GamepadManager {
       this.onDashCallback?.();
     }
 
+    const abilityPressed =
+      this.isButtonJustPressed(XBOX_BUTTON.Y) ||
+      this.isButtonJustPressed(XBOX_BUTTON.X) ||
+      this.isButtonJustPressed(XBOX_BUTTON.RB);
+
+    if (abilityPressed) {
+      this.abilityRequested = true;
+      this.onAbilityCallback?.();
+    }
+
     // Pause: Menu/Start (9) or View/Back (8)
     if (this.isButtonJustPressed(XBOX_BUTTON.MENU) || this.isButtonJustPressed(XBOX_BUTTON.VIEW)) {
       this.pauseRequested = true;
@@ -242,6 +255,18 @@ export class GamepadManager {
 
   public clearDashRequest(): void {
     this.dashRequested = false;
+  }
+
+  public consumeAbility(): boolean {
+    if (this.abilityRequested) {
+      this.abilityRequested = false;
+      return true;
+    }
+    return false;
+  }
+
+  public clearAbilityRequest(): void {
+    this.abilityRequested = false;
   }
 
   public isButtonDown(buttonIndex: number): boolean {

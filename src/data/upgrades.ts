@@ -1,5 +1,13 @@
 import type { BaseWeaponId, LoadoutId, MetaUpgradeId, PlayerComputedStats } from '../core/types';
 
+export interface LoadoutAbilityConfig {
+  id: string;
+  name: string;
+  description: string;
+  cooldown: number; // in seconds
+  duration?: number; // active buff duration if applicable
+}
+
 export interface LoadoutConfig {
   id: LoadoutId;
   name: string;
@@ -10,6 +18,7 @@ export interface LoadoutConfig {
   unlockRequirement: string;
   cost: number;
   invulnerabilityDuration?: number; // Configurable i-frame duration in seconds
+  ability: LoadoutAbilityConfig;
 }
 
 export const LOADOUTS: Record<LoadoutId, LoadoutConfig> = {
@@ -22,7 +31,13 @@ export const LOADOUTS: Record<LoadoutId, LoadoutConfig> = {
       'Veteran guerilla fighter of the 132nd Tech-Com division. Starts with Ithaca 37 shotgun spread.',
     bonusStats: { moveSpeed: 0.6, bonusAmount: 0 },
     unlockRequirement: 'Available by default.',
-    cost: 0
+    cost: 0,
+    ability: {
+      id: 'pipebomb_barrage',
+      name: 'Pipe-bomb Barrage',
+      description: 'Throws 4 heavy pipe-bombs outward in a radial burst.',
+      cooldown: 22
+    }
   },
   reese_1984: {
     id: 'reese_1984',
@@ -33,7 +48,14 @@ export const LOADOUTS: Record<LoadoutId, LoadoutConfig> = {
       'Wearing the stolen trenchcoat. Increased explosive area and salvage magnet range.',
     bonusStats: { areaMultiplier: 0.25, magnetRadius: 1.5 },
     unlockRequirement: 'Survive 4 minutes in Sector 44 or 500 Alloy Scrap.',
-    cost: 500
+    cost: 500,
+    ability: {
+      id: 'sawed_off_dual_wield',
+      name: 'Sawed-off Dual Wield',
+      description: 'Doubles firing rate and adds +2 projectiles for 6 seconds.',
+      cooldown: 28,
+      duration: 6
+    }
   },
   techcom_sapper: {
     id: 'techcom_sapper',
@@ -44,7 +66,13 @@ export const LOADOUTS: Record<LoadoutId, LoadoutConfig> = {
       'Heavy weapons specialist armed with a captured Westinghouse 40W phased plasma rifle.',
     bonusStats: { mightMultiplier: 0.15, cooldownMultiplier: -0.12 },
     unlockRequirement: 'Destroy 1 HK-Tank or 1,200 Alloy Scrap.',
-    cost: 1200
+    cost: 1200,
+    ability: {
+      id: 'plasma_overcharge',
+      name: 'Plasma Overcharge',
+      description: 'Immediately resets all weapon cooldowns and emits an EMP shockwave.',
+      cooldown: 30
+    }
   },
   john_connor: {
     id: 'john_connor',
@@ -55,7 +83,49 @@ export const LOADOUTS: Record<LoadoutId, LoadoutConfig> = {
       'The military mastermind of the Resistance. Starts with Seeker Drones, +1 Projectile, and +1 Revival.',
     bonusStats: { bonusAmount: 1, xpGainMultiplier: 0.25, revivals: 1 },
     unlockRequirement: 'Defeat the Skynet Time Displacement Core or 3,000 Alloy Scrap.',
-    cost: 3000
+    cost: 3000,
+    ability: {
+      id: 'tactical_rally',
+      name: 'Tactical Rally',
+      description: 'Rallies Resistance forces, granting +35% Might and tactical firepower for 10s.',
+      cooldown: 35,
+      duration: 10
+    }
+  },
+  sarah_connor: {
+    id: 'sarah_connor',
+    name: 'Sarah Connor — Legend of the Resistance',
+    callsign: 'MOTHER OF THE FUTURE',
+    startingWeapon: 'ithaca_37',
+    description:
+      'Trained for the coming war. High maneuverability, superior fire rate, and area denial.',
+    bonusStats: { moveSpeed: 1.2, cooldownMultiplier: -0.15 },
+    unlockRequirement: 'Survive 10 minutes in Cyberdyne Factory or 2,000 Alloy Scrap.',
+    cost: 2000,
+    ability: {
+      id: 'molotov_perimeter',
+      name: 'Molotov Perimeter',
+      description: 'Ignites a defensive ring of 6 lingering flame zones around the player.',
+      cooldown: 24
+    }
+  },
+  reprogrammed_t800: {
+    id: 'reprogrammed_t800',
+    name: 'Reprogrammed T-800 — Cybernetic Guardian',
+    callsign: 'MODEL 101',
+    startingWeapon: 'm25_plasma',
+    description:
+      'Living tissue over metal endoskeleton. Massive armor and survivability at the cost of agility.',
+    bonusStats: { maxHp: 150, armor: 3, mightMultiplier: 0.25, moveSpeed: -1.0 },
+    unlockRequirement: 'Defeat Skynet TDE Core or 4,500 Alloy Scrap.',
+    cost: 4500,
+    ability: {
+      id: 'endo_overdrive',
+      name: 'Endo Overdrive',
+      description: 'Overclocks servo-hydraulics: invulnerability and +60% move speed for 5s.',
+      cooldown: 40,
+      duration: 5
+    }
   }
 };
 

@@ -16,6 +16,7 @@ import { BASE_WEAPONS, PASSIVES, canEvolveWeapon } from '../data/weapons';
 import { LOADOUTS, META_UPGRADES } from '../data/upgrades';
 import { globalRNG } from '../core/RNG';
 import { StateMachine, GAME_MODE_TRANSITIONS } from '../core/StateMachine';
+import { globalEvents } from '../core/EventBus';
 
 export function getXpForNextLevel(level: number): number {
   if (level <= 2) {
@@ -74,6 +75,9 @@ export class RunState {
   public dashCooldownTimer = 0;
   public readonly dashDuration = 0.28;
   public readonly dashCooldown = 1.8;
+  public abilityCooldownTimer = 0;
+  public abilityActiveDuration = 0;
+  public isAbilityActive = false;
   public invulnerabilityTimer = 0;
   public invulnerabilityDuration = 0.5;
   public autoAimEnabled = true;
@@ -151,6 +155,9 @@ export class RunState {
     this.isDashing = false;
     this.dashTimer = 0;
     this.dashCooldownTimer = 0;
+    this.abilityCooldownTimer = 0;
+    this.abilityActiveDuration = 0;
+    this.isAbilityActive = false;
     this.weapons.clear();
     this.passives.clear();
     this.loadoutId = loadoutId;
@@ -216,6 +223,18 @@ export class RunState {
     if (this.activeThreats.has('no_second_chances')) {
       base.revivals = 0;
       base.revivalChance = 0;
+    }
+
+    // 4. Active ability buffs
+    if (this.isAbilityActive) {
+      if (this.loadoutId === 'reese_1984') {
+        base.cooldownMultiplier *= 0.5;
+        base.bonusAmount += 2;
+      } else if (this.loadoutId === 'john_connor') {
+        base.mightMultiplier += 0.35;
+      } else if (this.loadoutId === 'reprogrammed_t800') {
+        base.moveSpeed *= 1.6;
+      }
     }
 
     // Clamp cooldownMultiplier to a safe floor of 0.35
@@ -297,6 +316,27 @@ export class RunState {
     return true;
   }
 
+  public triggerAbility(): boolean {
+    const loadout = LOADOUTS[this.loadoutId];
+    if (!loadout || !loadout.ability) return false;
+    if (this.abilityCooldownTimer > 0) return false;
+
+    this.abilityCooldownTimer = loadout.ability.cooldown;
+    if (loadout.ability.duration && loadout.ability.duration > 0) {
+      this.abilityActiveDuration = loadout.ability.duration;
+      this.isAbilityActive = true;
+      this.recalculateStats();
+    }
+
+    globalEvents.emit('ability:triggered', {
+      loadoutId: this.loadoutId,
+      abilityId: loadout.ability.id,
+      x: this.playerPos.x,
+      z: this.playerPos.z
+    });
+    return true;
+  }
+
   public updateTimers(dt: number): void {
     if (this.isDashing) {
       this.dashTimer -= dt;
@@ -307,6 +347,16 @@ export class RunState {
     }
     if (this.dashCooldownTimer > 0) {
       this.dashCooldownTimer = Math.max(0, this.dashCooldownTimer - dt);
+    }
+    if (this.abilityCooldownTimer > 0) {
+      this.abilityCooldownTimer = Math.max(0, this.abilityCooldownTimer - dt);
+    }
+    if (this.abilityActiveDuration > 0) {
+      this.abilityActiveDuration = Math.max(0, this.abilityActiveDuration - dt);
+      if (this.abilityActiveDuration <= 0) {
+        this.isAbilityActive = false;
+        this.recalculateStats();
+      }
     }
     if (this.invulnerabilityTimer > 0) {
       this.invulnerabilityTimer = Math.max(0, this.invulnerabilityTimer - dt);

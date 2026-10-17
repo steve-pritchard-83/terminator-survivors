@@ -1,5 +1,6 @@
 import type { RunState } from '../state/RunState';
 import { ALL_WEAPONS, PASSIVES } from '../data/weapons';
+import { LOADOUTS } from '../data/upgrades';
 import { DamageNumbers } from './DamageNumbers';
 import { globalEvents } from '../core/EventBus';
 
@@ -21,6 +22,7 @@ export class HUDView {
   private readonly bossFill: HTMLElement;
   private readonly mobileDashBtn: HTMLElement;
   private readonly dashStatusEl: HTMLElement;
+  private readonly abilityStatusEl: HTMLElement;
   private readonly pauseBtn: HTMLElement;
   private readonly bossWarningBanner: HTMLElement;
   private readonly floatingTextLayer: HTMLElement;
@@ -50,6 +52,7 @@ export class HUDView {
           <div>TERMINATIONS: <span id="hud-kills-text" style="color:var(--color-red)">0</span></div>
           <div>SCRAP: <span id="hud-scrap-text" style="color:var(--color-amber)">0</span></div>
           <div id="hud-dash-status" style="color:var(--color-cyan); font-size:12px; font-weight:700;">DIVE: READY</div>
+          <div id="hud-ability-status" data-testid="hud-ability-status" style="color:var(--color-amber); font-size:12px; font-weight:700;">SPEC: READY</div>
           <button class="btn-hud-pause" data-testid="btn-hud-pause" id="btn-hud-pause">❚❚ PAUSE</button>
         </div>
         <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
@@ -99,6 +102,7 @@ export class HUDView {
     this.bossFill = this.container.querySelector('#hud-boss-fill')!;
     this.mobileDashBtn = this.container.querySelector('#btn-mobile-dash')!;
     this.dashStatusEl = this.container.querySelector('#hud-dash-status')!;
+    this.abilityStatusEl = this.container.querySelector('#hud-ability-status')!;
     this.pauseBtn = this.container.querySelector('#btn-hud-pause')!;
     this.bossWarningBanner = this.container.querySelector('#hud-boss-warning')!;
     this.floatingTextLayer = (this.container.querySelector('#floating-text-layer') ||
@@ -209,12 +213,12 @@ export class HUDView {
   public setGamepadActive(active: boolean, isXbox: boolean): void {
     if (active) {
       this.desktopHintEl.innerHTML = isXbox
-        ? '[LS / D-PAD] MOVE &nbsp;//&nbsp; [RS] TWIN-STICK AIM &nbsp;//&nbsp; [B / LB] COMBAT DIVE &nbsp;//&nbsp; [START] PAUSE'
-        : '[STICK / D-PAD] MOVE &nbsp;//&nbsp; [RIGHT STICK] AIM &nbsp;//&nbsp; [B / LB] COMBAT DIVE &nbsp;//&nbsp; [START] PAUSE';
+        ? '[LS / D-PAD] MOVE &nbsp;//&nbsp; [RS] TWIN-STICK AIM &nbsp;//&nbsp; [B / LB] DIVE &nbsp;//&nbsp; [Y / RB] ABILITY &nbsp;//&nbsp; [START] PAUSE'
+        : '[STICK / D-PAD] MOVE &nbsp;//&nbsp; [RIGHT STICK] AIM &nbsp;//&nbsp; [B / LB] DIVE &nbsp;//&nbsp; [Y / RB] ABILITY &nbsp;//&nbsp; [START] PAUSE';
       this.mobileDashBtn.style.opacity = '0.35';
     } else {
       this.desktopHintEl.innerHTML =
-        '[WASD / L-CLICK] MOVE &nbsp;//&nbsp; [MOUSE] LASER AIM &nbsp;//&nbsp; [SPACE / R-CLICK] DIVE &nbsp;//&nbsp; [ESC] PAUSE';
+        '[WASD / L-CLICK] MOVE &nbsp;//&nbsp; [MOUSE] LASER AIM &nbsp;//&nbsp; [SPACE / R-CLICK] DIVE &nbsp;//&nbsp; [E] ABILITY &nbsp;//&nbsp; [ESC] PAUSE';
       this.mobileDashBtn.style.opacity = '1';
     }
   }
@@ -296,6 +300,22 @@ export class HUDView {
       this.dashStatusEl.style.color = 'var(--color-cyan)';
       this.mobileDashBtn.classList.remove('on-cooldown');
       this.mobileDashBtn.textContent = 'DIVE';
+    }
+
+    // Ability status & visual cooldown
+    const loadout = LOADOUTS[runState.loadoutId];
+    const abilityName = loadout?.ability?.name ?? 'SPEC';
+    if (runState.isAbilityActive) {
+      const durSec = runState.abilityActiveDuration.toFixed(1);
+      this.abilityStatusEl.textContent = `${abilityName}: ACTIVE (${durSec}s)`;
+      this.abilityStatusEl.style.color = '#fff';
+    } else if (runState.abilityCooldownTimer > 0) {
+      const cdSec = runState.abilityCooldownTimer.toFixed(1);
+      this.abilityStatusEl.textContent = `${abilityName}: ${cdSec}s`;
+      this.abilityStatusEl.style.color = '#888';
+    } else {
+      this.abilityStatusEl.textContent = `${abilityName}: READY [E]`;
+      this.abilityStatusEl.style.color = 'var(--color-amber)';
     }
 
     // Boss Bar

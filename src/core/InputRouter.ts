@@ -36,6 +36,13 @@ export class InputRouter {
       }
     };
 
+    this.host.inputManager.onAbilityCallback = () => {
+      if (this.host.runState.mode === 'playing') {
+        this.host.inputManager.consumeAbility();
+        this.host.runState.triggerAbility();
+      }
+    };
+
     this.host.inputManager.onPauseCallback = () => {
       this.onPause();
     };
@@ -64,6 +71,10 @@ export class InputRouter {
       if (dashed) {
         this.host.audioEngine.playCombatDive();
       }
+    }
+
+    if (this.host.inputManager.consumeAbility()) {
+      this.host.runState.triggerAbility();
     }
 
     let aimPos: { x: number; z: number } | null = null;

@@ -559,6 +559,7 @@ export class TitleScreen {
       card.innerHTML = `
         <div style="font-family:var(--font-display); font-size:11px; color:#fff;">${cfg.name}</div>
         <div style="font-size:10px; color:var(--color-amber);">${cfg.callsign}</div>
+        <div style="font-size:9px; color:var(--color-cyan); margin-top:2px;">SPEC: ${cfg.ability.name}</div>
         <div style="font-size:10px; margin-top:4px; color:${isUnlocked ? '#00ff88' : '#ff4444'}">
           ${isSelected ? 'ACTIVE' : isUnlocked ? 'SELECT' : `UNLOCK: ${cfg.cost} SCRAP`}
         </div>
