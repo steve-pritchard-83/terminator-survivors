@@ -124,3 +124,219 @@ export const ENEMY_CODEX: Record<
   }
 };
 
+export const WEAPON_CODEX: Record<
+  string,
+  { name: string; designation: string; lore: string; manufacturer: string }
+> = {
+  ithaca_37: {
+    name: 'Ithaca 37 12-Gauge',
+    designation: 'Model 37 Pump-Action Shotgun',
+    lore: 'Kyle Reese\'s signature civilian pump-action shotgun, modified with a sawed-off stock and custom shoulder strap lanyard. Delivers devastating kinetic knockback at close quarters.',
+    manufacturer: 'Ithaca Gun Company'
+  },
+  pipe_bomb: {
+    name: 'Thermite Pipe Bomb',
+    designation: 'Tech-Com Improvised Explosive Device',
+    lore: 'Hand-packed galvanized steel plumbing pipes filled with powdered rust, aluminum fuel, and magnesium igniter ribbons. Lobbed over machine barricades to blow out drive tracks.',
+    manufacturer: 'Tech-Com Demolitions Squad'
+  },
+  m25_plasma: {
+    name: 'Westinghouse M-25 Phased Plasma',
+    designation: 'Westinghouse General 40-Watt Plasma Rifle',
+    lore: 'The standard-issue infantry weapon of the United States Technical Division in 2029. Employs magnetic plasma acceleration coils spitting superheated ionized gas pulses.',
+    manufacturer: 'Westinghouse / Tech-Com Salvage'
+  },
+  seeker_drone: {
+    name: 'Autonomous Seeker Drone',
+    designation: 'Reprogrammed Micro-UAV Interceptor',
+    lore: 'Scavenged Skynet sensor drones re-flashed with open-source Tech-Com autonomous targeting kernels. Orbits the operative before homing in on the nearest machine chassis.',
+    manufacturer: 'Tech-Com Cybernetics Unit'
+  },
+  emp_emitter: {
+    name: 'EMP Burst Emitter',
+    designation: 'Tachyon Electromagnetic Pulse Node',
+    lore: 'Radial capacitor discharger that generates localized electromagnetic pulses, overloading machine neural net buses and stripping hyperalloy armor coatings.',
+    manufacturer: 'Tech-Com Tactical Science Division'
+  },
+  m79_thumper: {
+    name: 'M79 "Thumper" Grenade Launcher',
+    designation: '40mm Break-Action Ordnance Launcher',
+    lore: 'Single-shot break-open launcher firing 40x46mm high-explosive grenades. Its characteristic hollow "thump" upon discharge is a welcome sound to cornered human resistance fighters.',
+    manufacturer: 'Springfield Armory'
+  },
+  napalm_canister: {
+    name: 'Aerosolized Napalm Canister',
+    designation: 'Incendiary Area Denial Projectile',
+    lore: 'Pressurized canisters of viscous chemical incendiary fuel that coat the ground in persistent flames, incinerating low-altitude drones and melting machine rubber flesh coverings.',
+    manufacturer: 'Tech-Com Chemical Works'
+  },
+  laser_designator: {
+    name: 'Tactical Laser Designator',
+    designation: 'Orbital & Heavy Mortar Uplink Node',
+    lore: 'Handheld pulsed infrared collimator linked to scavenged automated defense satellite arrays and bunker mortar emplacements to rain pin-point kinetic strikes.',
+    manufacturer: 'Tech-Com Signal Corps'
+  },
+  m16_carbine: {
+    name: 'Colt M16A1 Assault Rifle',
+    designation: '5.56x45mm NATO Select-Fire Rifle',
+    lore: 'A pre-war classic that saw continuous service into the late 2020s. Lightweight, high cyclic rate of fire, and deadly when loaded with hand-crafted tungsten-core penetrators.',
+    manufacturer: 'Colt Defense'
+  },
+  rpg_launcher: {
+    name: 'RPG-7 Rocket Launcher',
+    designation: 'Shoulder-Launched Anti-Armor Rocket',
+    lore: 'Rugged unguided anti-tank weapon firing PG-7V shaped-charge rocket projectiles capable of piercing hyperalloy armor skirts on Hunter-Killer combat tanks.',
+    manufacturer: 'Bazalt / Resistance Armories'
+  },
+  molotov: {
+    name: 'Improvised Fuel Molotov',
+    designation: 'Glass Bottle Incendiary Contrivance',
+    lore: 'Motor oil and gasoline enclosed in glass beverage bottles with cloth rag wicks. The classic urban guerrilla response to machine ground sweeps.',
+    manufacturer: 'Civilian Resistance Brigades'
+  },
+  resistance_k9: {
+    name: 'Tech-Com Patrol K-9 Unit',
+    designation: 'Biological Cybernetic Detection Canine',
+    lore: 'German Shepherds and Belgian Malinois bred and trained by the resistance to sniff out synthetic organic skin sheaths on Series 800 and 600 infiltrator units.',
+    manufacturer: 'Tech-Com Canine Division'
+  },
+  reprogrammed_t800: {
+    name: 'Reprogrammed T-800 Companion',
+    designation: 'Re-written Neural Net Combat Drone',
+    lore: 'A captured Series 800 Terminator whose CPU switch was extracted and reset from "read-only" to "write". Re-tasked with a single mission directive: protect the resistance.',
+    manufacturer: 'Cyberdyne Systems / Tech-Com'
+  },
+  coltan_knife: {
+    name: 'Coltan Alloy Combat Blade',
+    designation: 'High-Density Vibrational Dagger',
+    lore: 'Forged from scrap coltan mined from destroyed Terminator chassis. Capable of slicing through heavy hydraulic cables and sensory wiring harnesses.',
+    manufacturer: 'Tech-Com Blacksmith Enclave'
+  },
+  trench_sweeper: {
+    name: 'Trench Sweeper Autocannon',
+    designation: 'Evolved Model 37 Full-Auto Sweeper',
+    lore: 'Drum-fed fully-automatic shotgun conversion unleashing continuous 360-degree buckshot clouds that shred advancing endoskeletons into scrap.',
+    manufacturer: 'Tech-Com Demolitions & Ordnance'
+  },
+  thermite_buster: {
+    name: 'Thermite Buster Shockwave',
+    designation: 'Evolved Heavy Cluster Bomb',
+    lore: 'Submunition-packing thermite charges that detonate into secondary shockwave fissures, melting through ground concrete and underlying bunkers.',
+    manufacturer: 'Tech-Com Demolitions & Ordnance'
+  },
+  m95a1_plasma: {
+    name: 'M95A1 Heavy Phased Plasma',
+    designation: 'Evolved Twin-Chamber Plasma Gatling',
+    lore: 'Supercooled plasma weapon utilizing superconducting phase inductors to fire piercing hyper-velocity plasma lances with zero chamber cooldown.',
+    manufacturer: 'Westinghouse Advanced Technology'
+  },
+  perimeter_ring: {
+    name: 'Perimeter Defense Ring',
+    designation: 'Evolved Autonomous Kinetic Orbital Barrier',
+    lore: 'A coordinated orbital fleet of micro-interceptor drones providing a continuous rotating ring of physical kinetic deflection and laser interception.',
+    manufacturer: 'Tech-Com Cybernetics Unit'
+  },
+  emp_supernova: {
+    name: 'Tachyon EMP Supernova',
+    designation: 'Evolved Resonance Discharge Core',
+    lore: 'Overcharges the central flux coil into a screen-clearing electromagnetic shockwave that permanently strips armor plating from all surrounding machines.',
+    manufacturer: 'Tech-Com Tactical Science Division'
+  },
+  mm1_barrage: {
+    name: 'MM-1 Rotary Barrage',
+    designation: 'Evolved 12-Shot Rotary Grenade Platform',
+    lore: '12-round rotary grenade launcher system that floods the combat sector in perpetual explosive detonations, leaving no machine standing.',
+    manufacturer: 'Springfield / Tech-Com Armory'
+  },
+  firestorm_wall: {
+    name: 'Firestorm Wall Projector',
+    designation: 'Evolved Pressurized Chemical Barrier',
+    lore: 'Continuous pressurized aerosol flame streams forming an impenetrable wall of burning chemical inferno that consumes incoming swarms.',
+    manufacturer: 'Tech-Com Chemical Works'
+  },
+  orbital_ion: {
+    name: 'Orbital Ion Cannon Strike',
+    designation: 'Evolved Defense Satellite Beam Uplink',
+    lore: 'Commands orbital kinetic ion satellites to focus multi-gigawatt particle beams directly onto heavy machine priority targets.',
+    manufacturer: 'US Space Command / Tech-Com'
+  },
+  phased_plasma_assault: {
+    name: 'Phased Plasma Carbine',
+    designation: 'Evolved Plasma-Enriched Assault Rifle',
+    lore: 'Converts standard 5.56mm kinetic ammunition into accelerated plasma-coated micro-rounds, combining ballistic penetration with thermal vaporization.',
+    manufacturer: 'Tech-Com Field R&D'
+  },
+  tandem_warhead: {
+    name: 'Tandem Hyperalloy Warhead',
+    designation: 'Evolved Multi-Stage Rocket Ordnance',
+    lore: 'Features a precursor shaped-charge warhead to compromise surface reactive armor followed by a secondary hyperalloy penetrator.',
+    manufacturer: 'Resistance Heavy Weapons Depot'
+  },
+  firestorm_lane: {
+    name: 'Firestorm Street Sweeper',
+    designation: 'Evolved High-Volatility Incendiary Line',
+    lore: 'Infused with high-octane volatile accelerants that splash across asphalt in lethal fiery lines, inflicting critical burns on machine treads.',
+    manufacturer: 'Civilian Resistance Brigades'
+  },
+  k9_pack: {
+    name: 'Alpha K-9 Combat Pack',
+    designation: 'Evolved Multi-Canine Patrol Strike Group',
+    lore: 'An coordinated pack of ferocious resistance war hounds trained to bite through hydraulic limbs and pin down machine scouts.',
+    manufacturer: 'Tech-Com Canine Division'
+  },
+  guardian_protocol: {
+    name: 'T-800 Guardian Protocol',
+    designation: 'Evolved Heavy Endoskeleton Aegis',
+    lore: 'The reprogrammed T-800 activates protective shielding and advanced tactical targeting subroutines, standing as an indestructible shield for Kyle Reese.',
+    manufacturer: 'Tech-Com Cybernetics Unit'
+  },
+  hyperalloy_blade: {
+    name: 'Hyperalloy Executioner Blade',
+    designation: 'Evolved Anti-Chassis Greatsword',
+    lore: 'A massive two-handed sword forged from crushed T-800 skull plates that cleaves through machine limbs and armor joints in wide sweeping arcs.',
+    manufacturer: 'Tech-Com Blacksmith Enclave'
+  }
+};
+
+export const STAGE_CODEX: Record<
+  import('../core/types').StageId,
+  { name: string; era: string; sector: string; hazards: string; lore: string }
+> = {
+  la_2029_wasteland: {
+    name: 'Los Angeles Wasteland',
+    era: '2029 A.D.',
+    sector: 'Sector 44 Ruins // Ground Zero',
+    hazards: 'Barbed wire barricades, active HK-Tank searchlight sweeps, collapsing concrete rubble piles.',
+    lore: 'The blasted nuclear ruins of downtown Los Angeles. Fields of crushed human skulls blanket the concrete beneath the relentless searchlights of Hunter-Killer patrols.'
+  },
+  cyberdyne_factory: {
+    name: 'Cyberdyne Assembly Plant',
+    era: '2029 A.D.',
+    sector: 'Automated Sub-Level 3 // Industrial Sector',
+    hazards: 'Motorized conveyor belts altering movement momentum, open molten steel vats dealing lethal thermal burn.',
+    lore: 'A fully automated Skynet manufacturing facility churning out hyperalloy combat chassis around the clock. Automated conveyor lines feed assembly jigs over vats of liquid metal.'
+  },
+  tech_noir_1984: {
+    name: 'Tech Noir Nightclub Alley',
+    era: 'May 12, 1984',
+    sector: 'Pico Boulevard // Downtown Los Angeles',
+    hazards: 'Slick wet asphalt reducing traction, neon billboard glare, blaring LAPD squad cruisers.',
+    lore: 'May 12, 1984, 1:47 AM. The rain-slicked neon alleys of 1984 Los Angeles outside the Tech Noir nightclub where Kyle Reese first engaged the Series 800 to protect Sarah Connor.'
+  },
+  skynet_central_tde: {
+    name: 'Skynet Central TDE Facility',
+    era: '2029 A.D.',
+    sector: 'Cheyenne Mountain Complex // Quantum Temporal Chamber',
+    hazards: 'Oscillating laser grid security beams, temporal singularity gravity wells, pylon lightning discharges.',
+    lore: 'The subterranean quantum sanctum housing Skynet\'s Time Displacement Equipment. The temporal displacement ring hums with immense gravitational energy.'
+  },
+  century_city_bunker: {
+    name: 'Century City Resistance Sanctuary',
+    era: '2029 A.D.',
+    sector: 'Tech-Com Underground Haven // Blast Door Vault',
+    hazards: 'Fortified steel blast door under siege by Skynet infiltrators, sandbag choke points, emergency amber alarms.',
+    lore: 'The last underground bastion harboring human refugees and wounded fighters. If the reinforced blast door falls, humanity loses its final haven.'
+  }
+};
+
+

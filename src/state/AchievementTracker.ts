@@ -33,8 +33,9 @@ export class AchievementTracker {
 
   private bindEvents(): void {
     this.unsubs.push(
-      globalEvents.on('enemy:killed', () => {
+      globalEvents.on('enemy:killed', ({ enemy }) => {
         this.runKills++;
+        this.saveManager.recordEnemyKill(enemy.archetype);
         const lifetimeKills = this.saveManager.getData().totalKills + this.runKills;
 
         this.tryUnlock('first_blood');
@@ -91,6 +92,7 @@ export class AchievementTracker {
 
     this.unsubs.push(
       globalEvents.on('weapon:evolved', ({ to }) => {
+        this.saveManager.recordEvolutionDiscovered(to);
         this.tryUnlock('first_evolution');
         if (to === 'trench_sweeper') this.tryUnlock('trench_sweeper_evo');
         else if (to === 'thermite_buster') this.tryUnlock('thermite_buster_evo');

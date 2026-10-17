@@ -3,6 +3,7 @@ import type { AudioEngine } from '../audio/AudioEngine';
 import { LOADOUTS, META_UPGRADES } from '../data/upgrades';
 import { LORE } from '../data/lore';
 import { ACHIEVEMENTS, TOTAL_ACHIEVEMENTS } from '../data/achievements';
+import { CodexModal } from './CodexModal';
 import type { LoadoutId, MetaUpgradeId } from '../core/types';
 import type { GamepadManager } from '../input/GamepadManager';
 
@@ -15,11 +16,13 @@ export class TitleScreen {
   public readonly container: HTMLElement;
   private readonly bunkerModal: HTMLElement;
   private readonly achievementsModal: HTMLElement;
+  public readonly codexModal: CodexModal;
   private readonly pwaModal: HTMLElement;
   private readonly installBtn: HTMLElement;
   private readonly startBtn: HTMLElement;
   private readonly bunkerBtn: HTMLElement;
   private readonly achievementsBtn: HTMLElement;
+  private readonly codexBtn: HTMLElement;
   private readonly saveManager: SaveManager;
   private readonly audioEngine: AudioEngine;
   private readonly onStartRun: (loadoutId: LoadoutId) => void;
@@ -61,6 +64,9 @@ export class TitleScreen {
           </button>
           <button class="btn-secondary" data-testid="btn-achievements" id="btn-achievements">
             TECH-COM INTEL // ACHIEVEMENTS
+          </button>
+          <button class="btn-secondary" data-testid="btn-codex" id="btn-codex">
+            TECH-COM CODEX // BESTIARY
           </button>
           <button class="btn-secondary" id="btn-install-pwa" style="display:none; border-color:var(--color-cyan); color:var(--color-cyan);">
             INSTALL APP (PWA)
@@ -144,6 +150,8 @@ export class TitleScreen {
     this.startBtn = this.container.querySelector('#btn-start-run')!;
     this.bunkerBtn = this.container.querySelector('#btn-bunker-shop')!;
     this.achievementsBtn = this.container.querySelector('#btn-achievements')!;
+    this.codexBtn = this.container.querySelector('#btn-codex')!;
+    this.codexModal = new CodexModal(this.container, this.saveManager, this.audioEngine);
 
     this.setupPwaInstallPrompt();
 
@@ -160,6 +168,10 @@ export class TitleScreen {
 
     this.achievementsBtn.addEventListener('click', () => {
       this.openAchievements();
+    });
+
+    this.codexBtn.addEventListener('click', () => {
+      this.codexModal.show();
     });
 
     this.container.querySelector('#btn-close-bunker')?.addEventListener('click', () => {
@@ -318,7 +330,12 @@ export class TitleScreen {
   }
 
   private getActiveTitleButtons(): HTMLElement[] {
-    const btns: HTMLElement[] = [this.startBtn, this.bunkerBtn, this.achievementsBtn];
+    const btns: HTMLElement[] = [
+      this.startBtn,
+      this.bunkerBtn,
+      this.achievementsBtn,
+      this.codexBtn
+    ];
     if (this.installBtn.style.display !== 'none') {
       btns.push(this.installBtn);
     }
@@ -354,7 +371,10 @@ export class TitleScreen {
     const hintEl = this.container.querySelector('#title-controller-hint') as HTMLElement | null;
     if (hintEl) {
       hintEl.style.display =
-        gp.hasActiveController && !this.isBunkerVisible() && !this.isAchievementsVisible()
+        gp.hasActiveController &&
+        !this.isBunkerVisible() &&
+        !this.isAchievementsVisible() &&
+        !this.codexModal.isVisible()
           ? 'block'
           : 'none';
     }
@@ -461,7 +481,17 @@ export class TitleScreen {
       return true;
     }
 
-    // 4. Main Title Screen
+    // 4. Codex Modal Open
+    if (this.codexModal.isVisible()) {
+      if (gp.isMenuCancelPressed()) {
+        this.codexModal.hide();
+        gp.playRumble(40, 0.15, 0.3);
+        return true;
+      }
+      return true;
+    }
+
+    // 5. Main Title Screen
     const nav = gp.getMenuNavigation(dt);
     const btns = this.getActiveTitleButtons();
     if (nav.y !== 0) {

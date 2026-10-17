@@ -290,6 +290,9 @@ export interface MetaSaveData {
   achievements?: string[];
   unlockedWeapons?: BaseWeaponId[];
   unlockedCosmetics?: string[];
+  bestiaryKills?: Record<string, number>;
+  discoveredWeapons?: string[];
+  discoveredEvolutions?: string[];
 }
 
 export interface DailyOperationConfig {

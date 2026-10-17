@@ -60,7 +60,10 @@ export class SaveManager {
       dailyAttempts: {},
       achievements: [],
       unlockedWeapons: [...DEFAULT_UNLOCKED_WEAPONS],
-      unlockedCosmetics: []
+      unlockedCosmetics: [],
+      bestiaryKills: {},
+      discoveredWeapons: [...DEFAULT_UNLOCKED_WEAPONS],
+      discoveredEvolutions: []
     };
   }
 
@@ -171,6 +174,36 @@ export class SaveManager {
       }
     }
 
+    // 10. Validate bestiary kills
+    const bestiaryKills: Record<string, number> = {};
+    if (current.bestiaryKills && typeof current.bestiaryKills === 'object') {
+      for (const [k, v] of Object.entries(current.bestiaryKills)) {
+        if (typeof v === 'number' && v >= 0) {
+          bestiaryKills[k] = Math.floor(v);
+        }
+      }
+    }
+
+    // 11. Validate discovered weapons
+    const discoveredWeapons: string[] = [...DEFAULT_UNLOCKED_WEAPONS];
+    if (Array.isArray(current.discoveredWeapons)) {
+      for (const w of current.discoveredWeapons) {
+        if (typeof w === 'string' && !discoveredWeapons.includes(w)) {
+          discoveredWeapons.push(w);
+        }
+      }
+    }
+
+    // 12. Validate discovered evolutions
+    const discoveredEvolutions: string[] = [];
+    if (Array.isArray(current.discoveredEvolutions)) {
+      for (const e of current.discoveredEvolutions) {
+        if (typeof e === 'string' && !discoveredEvolutions.includes(e)) {
+          discoveredEvolutions.push(e);
+        }
+      }
+    }
+
     return {
       version: SaveManager.CURRENT_VERSION,
       alloyScrap: typeof current.alloyScrap === 'number' && current.alloyScrap >= 0 ? Math.floor(current.alloyScrap) : 0,
@@ -185,7 +218,10 @@ export class SaveManager {
       dailyAttempts,
       achievements,
       unlockedWeapons,
-      unlockedCosmetics
+      unlockedCosmetics,
+      bestiaryKills,
+      discoveredWeapons,
+      discoveredEvolutions
     };
   }
 
@@ -403,6 +439,40 @@ export class SaveManager {
   public isWeaponUnlocked(id: BaseWeaponId): boolean {
     const list = this.getUnlockedWeapons();
     return list.includes(id);
+  }
+
+  public recordEnemyKill(archetype: string): void {
+    if (!this.data.bestiaryKills) this.data.bestiaryKills = {};
+    this.data.bestiaryKills[archetype] = (this.data.bestiaryKills[archetype] ?? 0) + 1;
+    this.save();
+  }
+
+  public getBestiaryKills(archetype: string): number {
+    return this.data.bestiaryKills?.[archetype] ?? 0;
+  }
+
+  public recordWeaponDiscovered(weaponId: string): void {
+    if (!this.data.discoveredWeapons) this.data.discoveredWeapons = [...DEFAULT_UNLOCKED_WEAPONS];
+    if (!this.data.discoveredWeapons.includes(weaponId)) {
+      this.data.discoveredWeapons.push(weaponId);
+      this.save();
+    }
+  }
+
+  public isWeaponDiscovered(weaponId: string): boolean {
+    return Boolean(this.data.discoveredWeapons?.includes(weaponId));
+  }
+
+  public recordEvolutionDiscovered(evolutionId: string): void {
+    if (!this.data.discoveredEvolutions) this.data.discoveredEvolutions = [];
+    if (!this.data.discoveredEvolutions.includes(evolutionId)) {
+      this.data.discoveredEvolutions.push(evolutionId);
+      this.save();
+    }
+  }
+
+  public isEvolutionDiscovered(evolutionId: string): boolean {
+    return Boolean(this.data.discoveredEvolutions?.includes(evolutionId));
   }
 
   public resetProgress(): void {
