@@ -3,6 +3,7 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
+import { globalEvents } from '../core/EventBus';
 
 export const CameronGradingShader = {
   uniforms: {
@@ -111,12 +112,21 @@ export class PostProcessingManager {
   private currentAberration = 0.0008;
   private damageFlash = 0.0;
   private lowHpIntensity = 0.0;
+  private flashIntensityScale = 1.0;
+
+  public setFlashIntensityScale(scale: number): void {
+    this.flashIntensityScale = Math.max(0, Math.min(2.0, scale));
+  }
 
   constructor(renderer: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.Camera) {
     this.renderer = renderer;
     this.scene = scene;
     this.camera = camera;
     this.useFastPath = isSoftwareOrAutomatedRenderer(renderer);
+
+    globalEvents.on('settings:updated', (s) => {
+      this.setFlashIntensityScale(s.reducedMotion ? 0.2 : s.flashIntensity / 100);
+    });
     const isMobile = isMobileGpuDevice();
 
     const size = new THREE.Vector2();
@@ -164,8 +174,8 @@ export class PostProcessingManager {
   }
 
   public triggerDamageFlash(): void {
-    this.damageFlash = 0.65;
-    this.currentAberration = 0.012; // Spike chromatic aberration on hit
+    this.damageFlash = 0.65 * this.flashIntensityScale;
+    this.currentAberration = 0.012 * this.flashIntensityScale; // Spike chromatic aberration on hit
   }
 
   public triggerEmpGlitch(): void {

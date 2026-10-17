@@ -11,10 +11,12 @@ export class PauseModal {
   private readonly crtCheckbox: HTMLInputElement;
   private readonly autoAimCheckbox: HTMLInputElement;
   private readonly resumeBtn: HTMLButtonElement;
+  private readonly settingsBtn: HTMLButtonElement;
   private readonly abortBtn: HTMLButtonElement;
 
-  private onResumeCallback: (() => void) | null = null;
-  private onAbortCallback: (() => void) | null = null;
+  public onResumeCallback: (() => void) | null = null;
+  public onAbortCallback: (() => void) | null = null;
+  public onOpenSettings?: () => void;
 
   private selectedRowIndex = 0;
   private readonly rows: HTMLElement[] = [];
@@ -67,8 +69,9 @@ export class PauseModal {
           </div>
         </div>
 
-        <div style="display:flex; gap:16px; justify-content:center; margin-top:8px;">
+        <div style="display:flex; gap:12px; justify-content:center; margin-top:8px;">
           <button class="btn-primary" data-testid="btn-pause-resume" id="btn-pause-resume" style="flex:1;">RESUME MISSION</button>
+          <button class="btn-secondary" id="btn-pause-settings" style="flex:1;">ALL SETTINGS</button>
           <button class="btn-secondary" data-testid="btn-pause-abort" id="btn-pause-abort" style="flex:1; border-color:var(--color-red); color:var(--color-red);">ABORT MISSION</button>
         </div>
 
@@ -86,6 +89,7 @@ export class PauseModal {
     this.crtCheckbox = this.container.querySelector('#pause-toggle-crt')!;
     this.autoAimCheckbox = this.container.querySelector('#pause-toggle-autoaim')!;
     this.resumeBtn = this.container.querySelector('#btn-pause-resume')!;
+    this.settingsBtn = this.container.querySelector('#btn-pause-settings')!;
     this.abortBtn = this.container.querySelector('#btn-pause-abort')!;
 
     this.rows = [
@@ -95,6 +99,7 @@ export class PauseModal {
       this.container.querySelector('#pause-row-3')!,
       this.container.querySelector('#pause-row-4')!,
       this.resumeBtn,
+      this.settingsBtn,
       this.abortBtn
     ];
 
@@ -148,6 +153,11 @@ export class PauseModal {
     this.resumeBtn.addEventListener('click', () => {
       this.hide();
       this.onResumeCallback?.();
+    });
+
+    this.settingsBtn.addEventListener('click', () => {
+      this.hide();
+      this.onOpenSettings?.();
     });
 
     this.abortBtn.addEventListener('click', () => {

@@ -17,15 +17,25 @@ export class GameLoop {
   private readonly onUpdate: (dt: number) => void;
   private readonly onRender: (alpha: number, dt: number) => void;
 
+  public hitStopEnabled = true;
+
   constructor(
     onUpdate: (dt: number) => void,
     onRender: (alpha: number, dt: number) => void
   ) {
     this.onUpdate = onUpdate;
     this.onRender = onRender;
+
+    // Dynamically toggle hit-stop with reduced motion
+    import('./EventBus').then(({ globalEvents }) => {
+      globalEvents.on('settings:updated', (s) => {
+        this.hitStopEnabled = !s.reducedMotion;
+      });
+    }).catch(() => {});
   }
 
   public hitStop(seconds: number): void {
+    if (!this.hitStopEnabled) return;
     const clamped = Math.min(0.10, Math.max(0, seconds));
     this.hitStopTimer = Math.min(0.12, this.hitStopTimer + clamped);
   }

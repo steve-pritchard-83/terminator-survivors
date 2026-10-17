@@ -8,6 +8,7 @@ import { LevelUpModal } from './LevelUpModal';
 import { VaultJackpotModal } from './VaultJackpotModal';
 import { EndRunModal } from './EndRunModal';
 import { PauseModal } from './PauseModal';
+import { SettingsPanel } from './SettingsPanel';
 import type { LoadoutId } from '../core/types';
 
 export class UIManager {
@@ -17,6 +18,7 @@ export class UIManager {
   public readonly vaultModal: VaultJackpotModal;
   public readonly endRunModal: EndRunModal;
   public readonly pauseModal: PauseModal;
+  public readonly settingsPanel: SettingsPanel;
 
   constructor(
     root: HTMLElement,
@@ -28,16 +30,25 @@ export class UIManager {
   ) {
     this.hudView = new HUDView(root);
     this.endRunModal = new EndRunModal(root, saveManager, audioEngine);
+    this.settingsPanel = new SettingsPanel(root, saveManager, audioEngine);
     this.titleScreen = new TitleScreen(
       root,
       saveManager,
       audioEngine,
       onStartRun,
-      () => this.endRunModal.showArchives(() => this.titleScreen.show())
+      () => this.endRunModal.showArchives(() => this.titleScreen.show()),
+      () => this.settingsPanel.show(() => this.titleScreen.show())
     );
     this.levelUpModal = new LevelUpModal(root);
     this.vaultModal = new VaultJackpotModal(root);
     this.pauseModal = new PauseModal(root, saveManager, audioEngine, getRunState);
+    this.pauseModal.onOpenSettings = () => {
+      this.settingsPanel.show(() => {
+        if (this.pauseModal.onResumeCallback && this.pauseModal.onAbortCallback) {
+          this.pauseModal.show(this.pauseModal.onResumeCallback, this.pauseModal.onAbortCallback);
+        }
+      });
+    };
 
     // Global UI Hover Beep & Button Click WAV Sound Hooks
     let lastHoveredEl: Element | null = null;
@@ -106,6 +117,9 @@ export class UIManager {
 
   public updateGamepad(gp: import('../input/GamepadManager').GamepadManager, dt: number): void {
     if (!gp.hasActiveController) return;
+
+    // 0. Settings Panel
+    if (this.settingsPanel.handleGamepadMenuNavigation(gp, dt)) return;
 
     // 1. Level Up Requisition Modal
     if (this.levelUpModal.handleGamepad(gp, dt)) return;

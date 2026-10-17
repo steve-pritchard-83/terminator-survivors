@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { PostProcessingManager } from './PostProcessing';
 import { ProceduralTextures } from './ProceduralTextures';
+import { globalEvents } from '../core/EventBus';
 
 export class SceneManager {
   public readonly scene: THREE.Scene;
@@ -13,6 +14,7 @@ export class SceneManager {
   private readonly tempTarget = new THREE.Vector3();
   private readonly screenScratch = new THREE.Vector3();
   private shakeTrauma = 0;
+  private screenShakeScale = 1.0;
   private readonly raycaster = new THREE.Raycaster();
   private readonly aimPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.8);
   private readonly intersectPt = new THREE.Vector3();
@@ -44,8 +46,16 @@ export class SceneManager {
     this.shakeTrauma = Math.min(1.0, this.shakeTrauma + trauma);
   }
 
+  public setScreenShakeScale(scale: number): void {
+    this.screenShakeScale = Math.max(0, Math.min(2.0, scale));
+  }
+
   constructor(container: HTMLElement) {
     const isAutomated = typeof navigator !== 'undefined' && navigator.webdriver === true;
+
+    globalEvents.on('settings:updated', (s) => {
+      this.setScreenShakeScale(s.reducedMotion ? 0 : s.screenShake / 100);
+    });
 
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x162840);
@@ -117,7 +127,7 @@ export class SceneManager {
     let shakeZ = 0;
     if (this.shakeTrauma > 0) {
       this.shakeTrauma = Math.max(0, this.shakeTrauma - dt * 2.4);
-      const shake = this.shakeTrauma * this.shakeTrauma * 0.7;
+      const shake = this.shakeTrauma * this.shakeTrauma * 0.7 * this.screenShakeScale;
       const t = typeof performance !== 'undefined' ? performance.now() : Date.now();
       shakeX = Math.sin(t * 0.045) * shake;
       shakeZ = Math.cos(t * 0.055) * shake;

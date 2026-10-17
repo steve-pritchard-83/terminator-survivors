@@ -1,4 +1,4 @@
-import type { BaseWeaponId, DailyAttemptRecord, LoadoutId, MetaSaveData, MetaUpgradeId, RunHistoryRecord } from '../core/types';
+import type { BaseWeaponId, ColorBlindMode, DamageNumberSetting, DailyAttemptRecord, GameSettings, LoadoutId, MetaSaveData, MetaUpgradeId, RunHistoryRecord } from '../core/types';
 import { LOADOUTS, META_UPGRADES } from '../data/upgrades';
 import { ACHIEVEMENTS, DEFAULT_UNLOCKED_WEAPONS } from '../data/achievements';
 
@@ -57,8 +57,15 @@ export class SaveManager {
         masterVolume: 0.8,
         musicVolume: 0.7,
         sfxVolume: 0.85,
+        screenShake: 100,
+        flashIntensity: 100,
+        reducedMotion: typeof window !== 'undefined' && window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)').matches : false,
+        damageNumbers: 'all',
         crtScanlines: true,
-        autoAim: true
+        autoAim: true,
+        showFps: false,
+        colorBlindMode: 'none',
+        uiScale: 100
       },
       endlessHighScores: {
         bestTimeSeconds: 0,
@@ -128,12 +135,22 @@ export class SaveManager {
     }
 
     // 4. Validate settings
-    const settings = {
+    const validColorBlind: ColorBlindMode[] = ['none', 'deuteranopia', 'protanopia', 'tritanopia'];
+    const validDamageNumbers: DamageNumberSetting[] = ['all', 'crits', 'off'];
+
+    const settings: GameSettings = {
       masterVolume: typeof current.settings?.masterVolume === 'number' ? Math.max(0, Math.min(1, current.settings.masterVolume)) : def.settings.masterVolume,
       musicVolume: typeof current.settings?.musicVolume === 'number' ? Math.max(0, Math.min(1, current.settings.musicVolume)) : def.settings.musicVolume,
       sfxVolume: typeof current.settings?.sfxVolume === 'number' ? Math.max(0, Math.min(1, current.settings.sfxVolume)) : def.settings.sfxVolume,
+      screenShake: typeof current.settings?.screenShake === 'number' ? Math.max(0, Math.min(100, Math.round(current.settings.screenShake))) : def.settings.screenShake,
+      flashIntensity: typeof current.settings?.flashIntensity === 'number' ? Math.max(0, Math.min(100, Math.round(current.settings.flashIntensity))) : def.settings.flashIntensity,
+      reducedMotion: typeof current.settings?.reducedMotion === 'boolean' ? current.settings.reducedMotion : def.settings.reducedMotion,
+      damageNumbers: validDamageNumbers.includes(current.settings?.damageNumbers) ? current.settings.damageNumbers : def.settings.damageNumbers,
       crtScanlines: typeof current.settings?.crtScanlines === 'boolean' ? current.settings.crtScanlines : def.settings.crtScanlines,
-      autoAim: typeof current.settings?.autoAim === 'boolean' ? current.settings.autoAim : def.settings.autoAim
+      autoAim: typeof current.settings?.autoAim === 'boolean' ? current.settings.autoAim : def.settings.autoAim,
+      showFps: typeof current.settings?.showFps === 'boolean' ? current.settings.showFps : def.settings.showFps,
+      colorBlindMode: validColorBlind.includes(current.settings?.colorBlindMode) ? current.settings.colorBlindMode : def.settings.colorBlindMode,
+      uiScale: typeof current.settings?.uiScale === 'number' ? Math.max(80, Math.min(150, Math.round(current.settings.uiScale))) : def.settings.uiScale
     };
 
     // 5. Validate endless high scores

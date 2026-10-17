@@ -281,6 +281,24 @@ export interface UpgradeChoice {
   accentColor: string;
 }
 
+export type ColorBlindMode = 'none' | 'deuteranopia' | 'protanopia' | 'tritanopia';
+export type DamageNumberSetting = 'all' | 'crits' | 'off';
+
+export interface GameSettings {
+  masterVolume: number;
+  musicVolume: number;
+  sfxVolume: number;
+  screenShake: number;
+  flashIntensity: number;
+  reducedMotion: boolean;
+  damageNumbers: DamageNumberSetting;
+  crtScanlines: boolean;
+  autoAim: boolean;
+  showFps: boolean;
+  colorBlindMode: ColorBlindMode;
+  uiScale: number;
+}
+
 export interface MetaSaveData {
   version: number;
   alloyScrap: number;
@@ -290,13 +308,7 @@ export interface MetaSaveData {
   unlockedLoadouts: LoadoutId[];
   selectedLoadout: LoadoutId;
   upgrades: Record<MetaUpgradeId, number>;
-  settings: {
-    masterVolume: number;
-    musicVolume: number;
-    sfxVolume: number;
-    crtScanlines: boolean;
-    autoAim: boolean;
-  };
+  settings: GameSettings;
   endlessHighScores?: {
     bestTimeSeconds: number;
     maxKills: number;

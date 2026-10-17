@@ -25,6 +25,34 @@
   --color-cyan: #4dd2ff;
   --color-amber: #ff9900;
   --color-chrome: #c4d0dc;
+  --ui-scale: 1.0;
+}
+
+body[data-colorblind="deuteranopia"] {
+  --color-red: #d55e00;
+  --color-red-glow: #e66101;
+  --color-cyan: #0072b2;
+  --color-amber: #e69f00;
+}
+
+body[data-colorblind="protanopia"] {
+  --color-red: #d55e00;
+  --color-red-glow: #e66101;
+  --color-cyan: #56b4e9;
+  --color-amber: #f0e442;
+}
+
+body[data-colorblind="tritanopia"] {
+  --color-red: #cc79a7;
+  --color-red-glow: #d55e00;
+  --color-cyan: #009e73;
+  --color-amber: #d55e00;
+}
+
+.screen-layer,
+.modal-backdrop,
+.title-container {
+  zoom: var(--ui-scale);
 }
 
 * {

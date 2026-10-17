@@ -27,6 +27,7 @@ export class HUDView {
   private readonly bossWarningBanner: HTMLElement;
   private readonly floatingTextLayer: HTMLElement;
   private readonly desktopHintEl: HTMLElement;
+  private readonly fpsCounterEl: HTMLElement;
   public onPauseClicked: (() => void) | null = null;
   private lastXp = 0;
   private lastLevel = 1;
@@ -41,6 +42,7 @@ export class HUDView {
     this.container.style.display = 'none';
 
     this.container.innerHTML = `
+      <div id="hud-fps-counter" style="display:none; position:absolute; top:4px; right:10px; font-family:var(--font-telemetry); font-size:11px; color:var(--color-cyan); background:rgba(0,0,0,0.65); padding:2px 8px; border:1px solid rgba(77,210,255,0.4); border-radius:3px; z-index:100;">FPS: 60</div>
       <div class="hud-top-bar">
         <div class="xp-bar-container" id="hud-xp-container">
           <div class="xp-bar-fill" id="hud-xp-fill"></div>
@@ -108,6 +110,7 @@ export class HUDView {
     this.floatingTextLayer = (this.container.querySelector('#floating-text-layer') ||
       this.container.querySelector('#hud-floating-text-layer'))!;
     this.desktopHintEl = this.container.querySelector('.hud-desktop-hint')!;
+    this.fpsCounterEl = this.container.querySelector('#hud-fps-counter')!;
     this.damageNumbers = new DamageNumbers(this.floatingTextLayer);
 
     this.comboCounterEl = this.container.querySelector('#hud-combo-counter')!;
@@ -122,6 +125,11 @@ export class HUDView {
 
     globalEvents.on('achievement:unlocked', ({ title, rewardDescription }) => {
       this.showAchievementNotification(title, rewardDescription);
+    });
+
+    globalEvents.on('settings:updated', (s) => {
+      this.damageNumbers.setMode(s.damageNumbers);
+      this.fpsCounterEl.style.display = s.showFps ? 'block' : 'none';
     });
 
     this.pauseBtn.addEventListener('click', () => {
@@ -225,8 +233,14 @@ export class HUDView {
 
   public update(
     runState: RunState,
-    activeBoss: { name: string; hp: number; maxHp: number } | null
+    activeBoss: { name: string; hp: number; maxHp: number } | null,
+    fps?: number
   ): void {
+    if (this.fpsCounterEl.style.display !== 'none' && typeof fps === 'number') {
+      const ms = fps > 0 ? (1000 / fps).toFixed(1) : '0.0';
+      this.fpsCounterEl.textContent = `FPS: ${fps} // ${ms}ms`;
+    }
+
     // XP bar & pickup pulse
     if (runState.xp > this.lastXp || runState.level > this.lastLevel) {
       this.xpBarContainer.classList.add('xp-pickup-pulse');
