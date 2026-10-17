@@ -346,6 +346,7 @@ export interface MetaSaveData {
   discoveredWeapons?: string[];
   discoveredEvolutions?: string[];
   runHistory?: RunHistoryRecord[];
+  tutorialCompleted?: boolean;
 }
 
 export interface RunHistoryRecord {

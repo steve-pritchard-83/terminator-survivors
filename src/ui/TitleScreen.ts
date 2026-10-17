@@ -4,6 +4,7 @@ import { LOADOUTS, META_UPGRADES } from '../data/upgrades';
 import { LORE } from '../data/lore';
 import { ACHIEVEMENTS, TOTAL_ACHIEVEMENTS } from '../data/achievements';
 import { CodexModal } from './CodexModal';
+import { TutorialModal } from './TutorialModal';
 import type { LoadoutId, MetaUpgradeId } from '../core/types';
 import type { GamepadManager } from '../input/GamepadManager';
 import { ModalA11y } from './A11yHelper';
@@ -18,9 +19,11 @@ export class TitleScreen {
   private readonly bunkerModal: HTMLElement;
   private readonly achievementsModal: HTMLElement;
   public readonly codexModal: CodexModal;
+  public readonly tutorialModal: TutorialModal;
   private readonly pwaModal: HTMLElement;
   private readonly installBtn: HTMLElement;
   private readonly startBtn: HTMLElement;
+  private readonly bootCampBtn: HTMLElement;
   private readonly bunkerBtn: HTMLElement;
   private readonly achievementsBtn: HTMLElement;
   private readonly codexBtn: HTMLElement;
@@ -71,6 +74,9 @@ export class TitleScreen {
         <div class="title-actions-row">
           <button class="btn-primary" data-testid="btn-start-run" id="btn-start-run" aria-label="Deploy to Sector 44">
             DEPLOY TO SECTOR 44
+          </button>
+          <button class="btn-secondary" data-testid="btn-boot-camp" id="btn-boot-camp" aria-label="Tech-Com Boot Camp Tutorial">
+            TECH-COM BOOT CAMP // TUTORIAL
           </button>
           <button class="btn-secondary" data-testid="btn-bunker-shop" id="btn-bunker-shop" aria-label="Tech-Com Bunker Requisition">
             TECH-COM BUNKER REQUISITION
@@ -170,12 +176,14 @@ export class TitleScreen {
     this.pwaModal = this.container.querySelector('#pwa-install-modal')!;
     this.installBtn = this.container.querySelector('#btn-install-pwa')!;
     this.startBtn = this.container.querySelector('#btn-start-run')!;
+    this.bootCampBtn = this.container.querySelector('#btn-boot-camp')!;
     this.bunkerBtn = this.container.querySelector('#btn-bunker-shop')!;
     this.achievementsBtn = this.container.querySelector('#btn-achievements')!;
     this.codexBtn = this.container.querySelector('#btn-codex')!;
     this.historyBtn = this.container.querySelector('#btn-history')!;
     this.settingsBtn = this.container.querySelector('#btn-settings')!;
     this.codexModal = new CodexModal(this.container, this.saveManager, this.audioEngine);
+    this.tutorialModal = new TutorialModal(this.container, this.saveManager, this.audioEngine);
 
     this.bunkerA11y = new ModalA11y(this.bunkerModal, {
       onClose: () => {
@@ -242,8 +250,19 @@ export class TitleScreen {
     // Button event listeners
     this.startBtn.addEventListener('click', () => {
       this.tryLockMobileLandscape();
+      if (!this.saveManager.isTutorialCompleted()) {
+        this.tutorialModal.show(() => {
+          this.hide();
+          this.onStartRun(this.saveManager.getData().selectedLoadout);
+        });
+        return;
+      }
       this.hide();
       this.onStartRun(this.saveManager.getData().selectedLoadout);
+    });
+
+    this.bootCampBtn.addEventListener('click', () => {
+      this.tutorialModal.show(undefined, true);
     });
 
     this.bunkerBtn.addEventListener('click', () => {
@@ -291,7 +310,8 @@ export class TitleScreen {
         this.isBunkerVisible() ||
         this.isAchievementsVisible() ||
         this.isPwaModalVisible() ||
-        this.codexModal.isVisible()
+        this.codexModal.isVisible() ||
+        this.tutorialModal.isVisible()
       ) {
         return;
       }
@@ -467,6 +487,7 @@ export class TitleScreen {
   private getActiveTitleButtons(): HTMLElement[] {
     const btns: HTMLElement[] = [
       this.startBtn,
+      this.bootCampBtn,
       this.bunkerBtn,
       this.achievementsBtn,
       this.codexBtn,
@@ -504,6 +525,11 @@ export class TitleScreen {
   public handleGamepad(gp: GamepadManager, dt: number): boolean {
     if (!this.isVisible()) return false;
 
+    // 0. Tutorial Modal Open
+    if (this.tutorialModal.isVisible()) {
+      return this.tutorialModal.handleGamepad(gp);
+    }
+
     // Show hints if controller connected
     const hintEl = this.container.querySelector('#title-controller-hint') as HTMLElement | null;
     if (hintEl) {
@@ -511,7 +537,8 @@ export class TitleScreen {
         gp.hasActiveController &&
         !this.isBunkerVisible() &&
         !this.isAchievementsVisible() &&
-        !this.codexModal.isVisible()
+        !this.codexModal.isVisible() &&
+        !this.tutorialModal.isVisible()
           ? 'block'
           : 'none';
     }

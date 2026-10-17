@@ -81,7 +81,8 @@ export class SaveManager {
       bestiaryKills: {},
       discoveredWeapons: [...DEFAULT_UNLOCKED_WEAPONS],
       discoveredEvolutions: [],
-      runHistory: []
+      runHistory: [],
+      tutorialCompleted: false
     };
   }
 
@@ -279,7 +280,8 @@ export class SaveManager {
       bestiaryKills,
       discoveredWeapons,
       discoveredEvolutions,
-      runHistory: runHistory.slice(0, 20)
+      runHistory: runHistory.slice(0, 20),
+      tutorialCompleted: Boolean(current.tutorialCompleted)
     };
   }
 
@@ -584,6 +586,15 @@ export class SaveManager {
 
   public getRunHistory(): RunHistoryRecord[] {
     return this.data.runHistory ? [...this.data.runHistory] : [];
+  }
+
+  public isTutorialCompleted(): boolean {
+    return Boolean(this.data.tutorialCompleted);
+  }
+
+  public setTutorialCompleted(completed = true): void {
+    this.data.tutorialCompleted = completed;
+    this.save();
   }
 
   public resetProgress(): void {
