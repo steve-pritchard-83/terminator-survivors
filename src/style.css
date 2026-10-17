@@ -1,0 +1,390 @@
+@import '@fontsource/orbitron/700.css';
+@import '@fontsource/orbitron/900.css';
+@import '@fontsource/rajdhani/500.css';
+@import '@fontsource/rajdhani/700.css';
+@import '@fontsource/share-tech-mono/400.css';
+
+:root {
+  --font-display: 'Terminator Real NFI', 'Orbitron', sans-serif;
+  --font-tactical: 'Rajdhani', sans-serif;
+  --font-telemetry: 'Share Tech Mono', monospace;
+
+  --color-bg: #050d1a;
+  --color-red: #e61919;
+  --color-red-glow: #ff2222;
+  --color-cyan: #4dd2ff;
+  --color-amber: #ff9900;
+  --color-chrome: #c4d0dc;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+html, body, #app {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--color-bg);
+  color: #fff;
+  font-family: var(--font-tactical);
+}
+
+/* CRT Scanline Overlay */
+.crt-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.22) 0px,
+    rgba(0, 0, 0, 0.22) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  z-index: 99;
+}
+
+/* Game Canvas */
+#canvas-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+/* Common Screen Overlays */
+.screen-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Top XP Bar & HUD */
+.hud-top-bar {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 12px 18px;
+  background: linear-gradient(180deg, rgba(5, 13, 26, 0.92) 0%, rgba(5, 13, 26, 0) 100%);
+  pointer-events: auto;
+}
+
+.xp-bar-container {
+  position: relative;
+  width: 100%;
+  height: 14px;
+  background: rgba(14, 28, 48, 0.85);
+  border: 1px solid var(--color-cyan);
+  border-radius: 2px;
+  box-shadow: 0 0 10px rgba(77, 210, 255, 0.35);
+  overflow: hidden;
+}
+
+.xp-bar-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #0088cc, var(--color-cyan));
+  box-shadow: 0 0 12px var(--color-cyan);
+  transition: width 0.15s ease-out;
+}
+
+.hud-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+  font-family: var(--font-telemetry);
+  font-size: 14px;
+  text-shadow: 0 0 6px var(--color-cyan);
+}
+
+.hud-clock {
+  font-size: 20px;
+  font-family: var(--font-display);
+  color: var(--color-amber);
+  letter-spacing: 2px;
+  text-shadow: 0 0 8px var(--color-amber);
+}
+
+.hud-equipment-rack {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.rack-slot {
+  width: 32px;
+  height: 32px;
+  background: rgba(10, 22, 38, 0.8);
+  border: 1px solid rgba(77, 210, 255, 0.4);
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: bold;
+}
+
+/* Boss Health Bar */
+.boss-bar-container {
+  width: 70%;
+  max-width: 600px;
+  align-self: center;
+  margin-top: 6px;
+  background: rgba(30, 0, 0, 0.85);
+  border: 1px solid var(--color-red);
+  padding: 4px;
+  display: none;
+  flex-direction: column;
+}
+
+.boss-title {
+  font-family: var(--font-display);
+  font-size: 13px;
+  color: var(--color-red);
+  text-align: center;
+  margin-bottom: 2px;
+  letter-spacing: 1px;
+}
+
+.boss-bar-fill {
+  height: 10px;
+  width: 100%;
+  background: var(--color-red);
+  box-shadow: 0 0 10px var(--color-red);
+  transition: width 0.1s linear;
+}
+
+/* Touch Controls */
+.touch-zone-left {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 55%;
+  height: 70%;
+  z-index: 20;
+}
+
+.joystick-base {
+  position: absolute;
+  width: 112px;
+  height: 112px;
+  border-radius: 50%;
+  border: 2px solid rgba(230, 25, 25, 0.45);
+  background: radial-gradient(circle, rgba(230, 25, 25, 0.15) 0%, rgba(5, 13, 26, 0.4) 70%);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  display: none;
+}
+
+.joystick-knob {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #ff3333 0%, var(--color-red) 80%);
+  box-shadow: 0 0 12px var(--color-red-glow);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.btn-mobile-dash {
+  position: absolute;
+  bottom: 35px;
+  right: 35px;
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  border: 2px solid var(--color-cyan);
+  background: radial-gradient(circle, rgba(77, 210, 255, 0.3) 0%, rgba(5, 13, 26, 0.8) 80%);
+  box-shadow: 0 0 14px rgba(77, 210, 255, 0.4);
+  color: var(--color-cyan);
+  font-family: var(--font-display);
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 25;
+  cursor: pointer;
+}
+
+/* T-800 CSM-101 Optical Level-Up Modal */
+.modal-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(18, 2, 2, 0.88);
+  backdrop-filter: blur(4px);
+  z-index: 80;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 16px;
+}
+
+.t800-modal-box {
+  width: 90%;
+  max-width: 680px;
+  border: 2px solid var(--color-red);
+  background: rgba(12, 1, 1, 0.94);
+  box-shadow: 0 0 25px rgba(230, 25, 25, 0.5);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.t800-header {
+  font-family: var(--font-display);
+  font-size: 24px;
+  color: var(--color-red);
+  text-shadow: 0 0 10px var(--color-red);
+  letter-spacing: 2px;
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.t800-ticker {
+  font-family: var(--font-telemetry);
+  font-size: 12px;
+  color: #ff6666;
+  opacity: 0.8;
+  margin-bottom: 18px;
+  border-bottom: 1px dashed rgba(230, 25, 25, 0.4);
+  padding-bottom: 6px;
+}
+
+.upgrade-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.upgrade-card {
+  display: flex;
+  align-items: center;
+  padding: 14px 18px;
+  background: rgba(28, 4, 4, 0.8);
+  border: 1px solid rgba(230, 25, 25, 0.4);
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.upgrade-card:hover, .upgrade-card:active {
+  background: rgba(70, 8, 8, 0.95);
+  border-color: var(--color-red);
+  box-shadow: 0 0 15px rgba(230, 25, 25, 0.6);
+  transform: translateY(-2px);
+}
+
+.upgrade-card-info {
+  margin-left: 14px;
+  flex: 1;
+}
+
+.upgrade-card-title {
+  font-family: var(--font-display);
+  font-size: 16px;
+  color: #fff;
+  letter-spacing: 1px;
+}
+
+.upgrade-card-sub {
+  font-family: var(--font-telemetry);
+  font-size: 11px;
+  color: var(--color-amber);
+}
+
+.upgrade-card-desc {
+  font-size: 13px;
+  color: var(--color-chrome);
+  margin-top: 4px;
+}
+
+/* Title Screen */
+.title-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  background: radial-gradient(circle, rgba(5, 13, 26, 0.5) 0%, rgba(5, 13, 26, 0.95) 100%);
+  padding: 24px;
+}
+
+.title-logo {
+  font-family: var(--font-display);
+  font-size: clamp(32px, 7vw, 56px);
+  color: #fff;
+  text-shadow: 0 0 16px var(--color-cyan);
+  letter-spacing: 4px;
+  text-align: center;
+  margin-bottom: 6px;
+}
+
+.title-sub {
+  font-family: var(--font-telemetry);
+  font-size: clamp(14px, 3vw, 18px);
+  color: var(--color-red);
+  letter-spacing: 3px;
+  margin-bottom: 24px;
+}
+
+.btn-primary {
+  padding: 14px 38px;
+  font-family: var(--font-display);
+  font-size: 16px;
+  color: #fff;
+  background: rgba(14, 28, 48, 0.9);
+  border: 2px solid var(--color-cyan);
+  box-shadow: 0 0 16px rgba(77, 210, 255, 0.4);
+  border-radius: 3px;
+  cursor: pointer;
+  letter-spacing: 2px;
+  margin-bottom: 12px;
+  transition: all 0.15s ease;
+}
+
+.btn-primary:hover, .btn-primary:active {
+  background: var(--color-cyan);
+  color: #050d1a;
+  box-shadow: 0 0 24px var(--color-cyan);
+}
+
+.btn-secondary {
+  padding: 10px 24px;
+  font-family: var(--font-telemetry);
+  font-size: 13px;
+  color: var(--color-amber);
+  background: transparent;
+  border: 1px solid var(--color-amber);
+  border-radius: 2px;
+  cursor: pointer;
+  letter-spacing: 1px;
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 153, 0, 0.2);
+}

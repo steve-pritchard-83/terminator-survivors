@@ -1,0 +1,377 @@
+import type {
+  ActiveWeaponSlot,
+  BaseWeaponId,
+  EvolvedWeaponId,
+  GameMode,
+  LoadoutId,
+  PassiveId,
+  PlayerComputedStats,
+  UpgradeChoice,
+  WeaponId
+} from '../core/types';
+import { BASE_WEAPONS, EVOLVED_WEAPONS, PASSIVES, canEvolveWeapon } from '../data/weapons';
+import { LOADOUTS, META_UPGRADES } from '../data/upgrades';
+import { globalRNG } from '../core/RNG';
+
+export function getXpForNextLevel(level: number): number {
+  return Math.floor(10 + 8 * level + 2.5 * Math.pow(level, 1.65));
+}
+
+export function computeMitigatedDamage(rawDamage: number, armor: number): number {
+  const safeArmor = Math.max(0, armor);
+  return Math.max(1, Math.round(rawDamage * (100 / (100 + safeArmor * 8))));
+}
+
+export class RunState {
+  public mode: GameMode = 'title';
+  public timeSeconds = 0;
+  public level = 1;
+  public xp = 0;
+  public xpToNext = getXpForNextLevel(1);
+  public hp = 100;
+  public maxHp = 100;
+  public kills = 0;
+  public alloyScrapEarned = 0;
+
+  public playerPos = { x: 0, z: 0 };
+  public playerFacing = 0; // radians
+  public isDashing = false;
+  public dashTimer = 0;
+  public dashCooldownTimer = 0;
+  public readonly dashDuration = 0.28;
+  public readonly dashCooldown = 3.5;
+
+  public weapons = new Map<WeaponId, ActiveWeaponSlot>();
+  public passives = new Map<PassiveId, number>();
+  public computedStats: PlayerComputedStats = this.getDefaultStats();
+  public revivalsLeft = 0;
+  public loadoutId: LoadoutId = 'reese_2029';
+
+  public godMode = false;
+
+  private getDefaultStats(): PlayerComputedStats {
+    return {
+      maxHp: 100,
+      regenPerSec: 0,
+      moveSpeed: 5.5,
+      armor: 0,
+      mightMultiplier: 1.0,
+      areaMultiplier: 1.0,
+      cooldownMultiplier: 1.0,
+      speedMultiplier: 1.0,
+      durationMultiplier: 1.0,
+      bonusAmount: 0,
+      magnetRadius: 3.5,
+      critChance: 0.05,
+      luckMultiplier: 1.0,
+      xpGainMultiplier: 1.0,
+      revivals: 0
+    };
+  }
+
+  public initRun(loadoutId: LoadoutId, purchasedMetaUpgrades: Record<string, number>): void {
+    this.mode = 'playing';
+    this.timeSeconds = 0;
+    this.level = 1;
+    this.xp = 0;
+    this.xpToNext = getXpForNextLevel(1);
+    this.kills = 0;
+    this.alloyScrapEarned = 0;
+    this.playerPos = { x: 0, z: 0 };
+    this.playerFacing = 0;
+    this.isDashing = false;
+    this.dashTimer = 0;
+    this.dashCooldownTimer = 0;
+    this.weapons.clear();
+    this.passives.clear();
+    this.loadoutId = loadoutId;
+
+    const base = this.getDefaultStats();
+    const loadout = LOADOUTS[loadoutId];
+
+    // Apply Meta Upgrades
+    for (const [upId, lv] of Object.entries(purchasedMetaUpgrades)) {
+      const cfg = META_UPGRADES[upId as keyof typeof META_UPGRADES];
+      if (cfg && lv > 0) {
+        for (const [stat, val] of Object.entries(cfg.statPerLevel)) {
+          const k = stat as keyof PlayerComputedStats;
+          base[k] = (base[k] as number) + (val as number) * lv;
+        }
+      }
+    }
+
+    // Apply Loadout bonus
+    if (loadout) {
+      for (const [stat, val] of Object.entries(loadout.bonusStats)) {
+        const k = stat as keyof PlayerComputedStats;
+        base[k] = (base[k] as number) + (val as number);
+      }
+    }
+
+    this.computedStats = base;
+    this.maxHp = base.maxHp;
+    this.hp = this.maxHp;
+    this.revivalsLeft = base.revivals;
+
+    // Grant starting weapon
+    const startingWeaponId = loadout ? loadout.startingWeapon : 'ithaca_37';
+    this.weapons.set(startingWeaponId, {
+      id: startingWeaponId,
+      level: 1,
+      evolved: false,
+      cooldownTimer: 0
+    });
+
+    this.recalculateStats();
+  }
+
+  public recalculateStats(): void {
+    const base = this.getDefaultStats();
+    const loadout = LOADOUTS[this.loadoutId];
+
+    if (loadout) {
+      for (const [stat, val] of Object.entries(loadout.bonusStats)) {
+        const k = stat as keyof PlayerComputedStats;
+        base[k] = (base[k] as number) + (val as number);
+      }
+    }
+
+    // Passives
+    for (const [pId, lv] of this.passives.entries()) {
+      const pDef = PASSIVES[pId];
+      if (pDef && lv > 0) {
+        for (const [stat, val] of Object.entries(pDef.statPerLevel)) {
+          const k = stat as keyof PlayerComputedStats;
+          base[k] = (base[k] as number) + (val as number) * lv;
+        }
+      }
+    }
+
+    const hpPercent = this.maxHp > 0 ? this.hp / this.maxHp : 1;
+    this.computedStats = base;
+    this.maxHp = base.maxHp;
+    this.hp = Math.max(1, Math.min(this.maxHp, Math.round(this.maxHp * hpPercent)));
+  }
+
+  public addXp(amount: number): boolean {
+    const gained = Math.round(amount * this.computedStats.xpGainMultiplier);
+    this.xp += gained;
+    if (this.xp >= this.xpToNext) {
+      this.level++;
+      this.xp -= this.xpToNext;
+      this.xpToNext = getXpForNextLevel(this.level);
+      return true; // leveled up!
+    }
+    return false;
+  }
+
+  public takeDamage(rawDamage: number): number {
+    if (this.godMode || this.isDashing) return 0;
+    const mitigated = computeMitigatedDamage(rawDamage, this.computedStats.armor);
+    this.hp = Math.max(0, this.hp - mitigated);
+    return mitigated;
+  }
+
+  public heal(amount: number): number {
+    if (this.hp <= 0) return 0;
+    const before = this.hp;
+    this.hp = Math.min(this.maxHp, this.hp + amount);
+    return this.hp - before;
+  }
+
+  public triggerDash(): boolean {
+    if (this.isDashing || this.dashCooldownTimer > 0) return false;
+    this.isDashing = true;
+    this.dashTimer = this.dashDuration;
+    this.dashCooldownTimer = this.dashCooldown;
+    return true;
+  }
+
+  public updateTimers(dt: number): void {
+    if (this.isDashing) {
+      this.dashTimer -= dt;
+      if (this.dashTimer <= 0) {
+        this.isDashing = false;
+        this.dashTimer = 0;
+      }
+    }
+    if (this.dashCooldownTimer > 0) {
+      this.dashCooldownTimer = Math.max(0, this.dashCooldownTimer - dt);
+    }
+    // Passive HP regen
+    if (this.computedStats.regenPerSec > 0 && this.hp > 0 && this.hp < this.maxHp) {
+      this.heal(this.computedStats.regenPerSec * dt);
+    }
+  }
+
+  public generateUpgradeChoices(): UpgradeChoice[] {
+    const choices: UpgradeChoice[] = [];
+    const eligibleWeapons = Object.keys(BASE_WEAPONS) as BaseWeaponId[];
+    const eligiblePassives = Object.keys(PASSIVES) as PassiveId[];
+
+    // 1. Existing upgradable weapons (Level < 8)
+    for (const [wId, slot] of this.weapons.entries()) {
+      if (!slot.evolved && slot.level < 8) {
+        const def = BASE_WEAPONS[wId as BaseWeaponId];
+        if (def) {
+          const nextLv = slot.level + 1;
+          const nextStats = def.levels[nextLv - 1];
+          choices.push({
+            kind: 'weapon',
+            id: wId,
+            title: def.name,
+            subtitle: `${def.codeName} // LV ${nextLv}`,
+            currentLevel: slot.level,
+            nextLevel: nextLv,
+            description: nextStats?.description ?? `Upgrade to Level ${nextLv}`,
+            synergyHint: def.pairedPassive ? `Synergy: ${PASSIVES[def.pairedPassive].name}` : undefined,
+            accentColor: def.iconColor
+          });
+        }
+      }
+    }
+
+    // 2. Existing upgradable passives (Level < maxLevel)
+    for (const [pId, lv] of this.passives.entries()) {
+      const def = PASSIVES[pId];
+      if (def && lv < def.maxLevel) {
+        const nextLv = lv + 1;
+        choices.push({
+          kind: 'passive',
+          id: pId,
+          title: def.name,
+          subtitle: `${def.codeName} // LV ${nextLv}`,
+          currentLevel: lv,
+          nextLevel: nextLv,
+          description: def.descriptionPerLevel,
+          synergyHint: `Evolves: ${BASE_WEAPONS[def.evolvesWeapon].name}`,
+          accentColor: def.iconColor
+        });
+      }
+    }
+
+    // 3. New weapons (if slot count < 6)
+    if (this.weapons.size < 6) {
+      for (const wId of eligibleWeapons) {
+        if (!this.weapons.has(wId)) {
+          const def = BASE_WEAPONS[wId];
+          choices.push({
+            kind: 'weapon',
+            id: wId,
+            title: def.name,
+            subtitle: `${def.codeName} // NEW WEAPON`,
+            currentLevel: 0,
+            nextLevel: 1,
+            description: def.levels[0].description,
+            synergyHint: def.pairedPassive ? `Synergy: ${PASSIVES[def.pairedPassive].name}` : undefined,
+            accentColor: def.iconColor
+          });
+        }
+      }
+    }
+
+    // 4. New passives (if slot count < 6)
+    if (this.passives.size < 6) {
+      for (const pId of eligiblePassives) {
+        if (!this.passives.has(pId)) {
+          const def = PASSIVES[pId];
+          choices.push({
+            kind: 'passive',
+            id: pId,
+            title: def.name,
+            subtitle: `${def.codeName} // NEW SALVAGE`,
+            currentLevel: 0,
+            nextLevel: 1,
+            description: def.descriptionPerLevel,
+            synergyHint: `Evolves: ${BASE_WEAPONS[def.evolvesWeapon].name}`,
+            accentColor: def.iconColor
+          });
+        }
+      }
+    }
+
+    // Shuffle and pick 3 (or 4 if luck high)
+    const count = this.computedStats.luckMultiplier >= 1.3 ? 4 : 3;
+    const shuffled: UpgradeChoice[] = [];
+    const pool = [...choices];
+
+    while (pool.length > 0 && shuffled.length < count) {
+      const idx = globalRNG.int(0, pool.length - 1);
+      shuffled.push(pool.splice(idx, 1)[0]);
+    }
+
+    // If pool exhausted (all items maxed), offer Medkit or Scrap
+    while (shuffled.length < 3) {
+      if (shuffled.length === 0) {
+        shuffled.push({
+          kind: 'heal',
+          id: 'medkit',
+          title: 'Tech-Com Field Medkit',
+          subtitle: 'RESISTANCE AID',
+          currentLevel: 0,
+          nextLevel: 1,
+          description: 'Restores 40 HP immediately.',
+          accentColor: '#00ff88'
+        });
+      } else {
+        shuffled.push({
+          kind: 'scrap',
+          id: 'scrap_cache',
+          title: 'Skynet Alloy Scrap Cache',
+          subtitle: 'BUNKER SALVAGE',
+          currentLevel: 0,
+          nextLevel: 1,
+          description: 'Awards +50 Alloy Scrap for Bunker upgrades.',
+          accentColor: '#ffd700'
+        });
+      }
+    }
+
+    return shuffled;
+  }
+
+  public applyUpgrade(choice: UpgradeChoice): void {
+    if (choice.kind === 'weapon') {
+      const wId = choice.id as BaseWeaponId;
+      const current = this.weapons.get(wId);
+      if (current) {
+        current.level = Math.min(8, current.level + 1);
+      } else {
+        this.weapons.set(wId, {
+          id: wId,
+          level: 1,
+          evolved: false,
+          cooldownTimer: 0
+        });
+      }
+    } else if (choice.kind === 'passive') {
+      const pId = choice.id as PassiveId;
+      const curLv = this.passives.get(pId) ?? 0;
+      this.passives.set(pId, curLv + 1);
+      this.recalculateStats();
+    } else if (choice.kind === 'heal') {
+      this.heal(40);
+    } else if (choice.kind === 'scrap') {
+      this.alloyScrapEarned += 50;
+    }
+  }
+
+  public checkAndEvolveWeapon(): EvolvedWeaponId | null {
+    for (const [wId, slot] of this.weapons.entries()) {
+      if (!slot.evolved && slot.level >= 8) {
+        const evoId = canEvolveWeapon(wId, slot.level, this.passives);
+        if (evoId) {
+          this.weapons.delete(wId);
+          this.weapons.set(evoId, {
+            id: evoId,
+            level: 1,
+            evolved: true,
+            cooldownTimer: 0
+          });
+          return evoId;
+        }
+      }
+    }
+    return null;
+  }
+}
