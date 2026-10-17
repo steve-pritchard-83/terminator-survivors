@@ -47,4 +47,23 @@ describe('SaveManager and Bunker Persistence', () => {
     expect(sm.getData().alloyScrap).toBe(0);
     expect(sm.getData().selectedLoadout).toBe('reese_2029');
   });
+
+  it('auto-unlocks loadouts upon reaching milestones in addRunResults', () => {
+    const sm = new SaveManager();
+    expect(sm.getData().unlockedLoadouts).toEqual(['reese_2029']);
+
+    // Run 1: survived 250s (> 4 minutes) -> unlocks reese_1984
+    sm.addRunResults(50, 250, 100, false, 0);
+    expect(sm.getData().unlockedLoadouts).toContain('reese_1984');
+    expect(sm.getData().unlockedLoadouts).not.toContain('techcom_sapper');
+    expect(sm.getData().unlockedLoadouts).not.toContain('john_connor');
+
+    // Run 2: destroyed 1 boss -> unlocks techcom_sapper
+    sm.addRunResults(100, 150, 200, false, 1);
+    expect(sm.getData().unlockedLoadouts).toContain('techcom_sapper');
+
+    // Run 3: victory -> unlocks john_connor
+    sm.addRunResults(300, 600, 500, true, 2);
+    expect(sm.getData().unlockedLoadouts).toContain('john_connor');
+  });
 });

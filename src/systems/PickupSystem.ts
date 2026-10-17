@@ -31,12 +31,25 @@ export class PickupSystem {
     globalEvents.on('enemy:killed', ({ enemy, x, z, xp }) => {
       if (enemy.isBoss) {
         this.spawnBossVault(x, z);
+        this.runState.addScrap(75);
       } else {
         this.spawnDataCore(x, z, xp);
+        // 25% chance to award alloy scrap on normal enemy kills
+        if (Math.random() < 0.25) {
+          this.runState.addScrap(2);
+        }
         // 7% chance to drop destructible supply crate in condensed 10-minute runs
         if (Math.random() < 0.07) {
           this.spawnSupplyCrate(x + (Math.random() - 0.5) * 2, z + (Math.random() - 0.5) * 2);
         }
+      }
+    });
+
+    // Listen for weapons destroying supply crates
+    globalEvents.on('crate:destroyed', ({ crateId }) => {
+      const idx = this.pickups.findIndex((p) => p.id === crateId && p.kind === 'crate');
+      if (idx !== -1) {
+        this.collectPickup(this.pickups[idx], idx);
       }
     });
   }
@@ -153,7 +166,7 @@ export class PickupSystem {
       if (roll < 0.4) {
         this.runState.heal(35);
       } else if (roll < 0.7) {
-        this.runState.alloyScrapEarned += 45;
+        this.runState.addScrap(45);
       } else {
         // Vacuum all cores on screen
         for (const core of this.pickups) {
@@ -177,7 +190,7 @@ export class PickupSystem {
         if (upgradesAwarded === 0) upgradesAwarded = 3;
       }
       const alloyBonus = 220;
-      this.runState.alloyScrapEarned += alloyBonus;
+      this.runState.addScrap(alloyBonus);
 
       globalEvents.emit('vault:opened', {
         upgradesAwarded,

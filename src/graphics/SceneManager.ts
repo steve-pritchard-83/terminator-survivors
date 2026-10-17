@@ -10,10 +10,16 @@ export class SceneManager {
 
   private readonly cameraOffset = new THREE.Vector3(0, 17.5, 12.5);
   private currentCameraTarget = new THREE.Vector3(0, 0, 0);
+  private readonly tempTarget = new THREE.Vector3();
+  private shakeTrauma = 0;
   private readonly raycaster = new THREE.Raycaster();
   private readonly aimPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.8);
   private readonly intersectPt = new THREE.Vector3();
   private readonly ndcMouse = new THREE.Vector2();
+
+  public addScreenShake(trauma: number): void {
+    this.shakeTrauma = Math.min(1.0, this.shakeTrauma + trauma);
+  }
 
   constructor(container: HTMLElement) {
     const isAutomated = typeof navigator !== 'undefined' && navigator.webdriver === true;
@@ -79,14 +85,25 @@ export class SceneManager {
   };
 
   public updateCamera(targetX: number, targetZ: number, dt: number): void {
-    const target = new THREE.Vector3(targetX, 0, targetZ);
+    this.tempTarget.set(targetX, 0, targetZ);
     // Tight, responsive camera tracking
-    this.currentCameraTarget.lerp(target, Math.min(1, dt * 28));
+    this.currentCameraTarget.lerp(this.tempTarget, Math.min(1, dt * 28));
+
+    // Trauma-based Camera Shake
+    let shakeX = 0;
+    let shakeZ = 0;
+    if (this.shakeTrauma > 0) {
+      this.shakeTrauma = Math.max(0, this.shakeTrauma - dt * 2.4);
+      const shake = this.shakeTrauma * this.shakeTrauma * 0.7;
+      const t = typeof performance !== 'undefined' ? performance.now() : Date.now();
+      shakeX = Math.sin(t * 0.045) * shake;
+      shakeZ = Math.cos(t * 0.055) * shake;
+    }
 
     this.camera.position.set(
-      this.currentCameraTarget.x + this.cameraOffset.x,
+      this.currentCameraTarget.x + this.cameraOffset.x + shakeX,
       this.currentCameraTarget.y + this.cameraOffset.y,
-      this.currentCameraTarget.z + this.cameraOffset.z
+      this.currentCameraTarget.z + this.cameraOffset.z + shakeZ
     );
     this.camera.lookAt(this.currentCameraTarget);
   }
@@ -104,6 +121,20 @@ export class SceneManager {
     const hit = this.raycaster.ray.intersectPlane(this.aimPlane, this.intersectPt);
     if (!hit) return null;
     return { x: this.intersectPt.x, z: this.intersectPt.z };
+  }
+
+  public worldToScreen(worldX: number, worldY: number, worldZ: number): { x: number; y: number } | null {
+    if (typeof window === 'undefined') return null;
+    this.tempTarget.set(worldX, worldY, worldZ);
+    this.tempTarget.project(this.camera);
+
+    if (this.tempTarget.z > 1) return null;
+
+    const width = window.innerWidth || 1;
+    const height = window.innerHeight || 1;
+    const x = (this.tempTarget.x * 0.5 + 0.5) * width;
+    const y = (-this.tempTarget.y * 0.5 + 0.5) * height;
+    return { x, y };
   }
 
   public adjustQuality(fps: number): void {

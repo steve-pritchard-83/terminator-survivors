@@ -672,3 +672,85 @@ html, body, #app {
     margin-top: 2px;
   }
 }
+
+/* HUD Tactical Extensions */
+.btn-hud-pause {
+  background: rgba(10, 18, 30, 0.85);
+  border: 1px solid var(--color-cyan);
+  color: var(--color-cyan);
+  font-family: var(--font-telemetry);
+  font-size: 13px;
+  letter-spacing: 1px;
+  padding: 4px 10px;
+  border-radius: 2px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 8px rgba(77, 210, 255, 0.25);
+}
+
+.btn-hud-pause:hover {
+  background: rgba(77, 210, 255, 0.2);
+}
+
+.hud-boss-warning {
+  position: absolute;
+  top: 15%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(40, 2, 2, 0.94);
+  border-top: 2px solid var(--color-red);
+  border-bottom: 2px solid var(--color-red);
+  box-shadow: 0 0 35px rgba(230, 25, 25, 0.7);
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: 18px;
+  letter-spacing: 2px;
+  padding: 12px 32px;
+  text-align: center;
+  z-index: 50;
+  display: none;
+  animation: boss-warning-flash 0.6s infinite alternate;
+  pointer-events: none;
+}
+
+@keyframes boss-warning-flash {
+  0% { opacity: 0.8; transform: translateX(-50%) scale(0.98); }
+  100% { opacity: 1.0; transform: translateX(-50%) scale(1.02); }
+}
+
+.hud-floating-text-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 20;
+}
+
+.floating-text-callout {
+  position: absolute;
+  font-family: var(--font-telemetry);
+  font-weight: 700;
+  text-shadow: 0 0 4px #000, 0 0 8px #000;
+  transform: translate(-50%, -50%);
+  animation: float-up-fade 0.75s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes float-up-fade {
+  0% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+  50% { transform: translate(-50%, -18px) scale(1.15); }
+  100% { opacity: 0; transform: translate(-50%, -36px) scale(0.9); }
+}
+
+.btn-mobile-dash.on-cooldown {
+  opacity: 0.45;
+  border-color: #555;
+  color: #888;
+  box-shadow: none;
+}
+

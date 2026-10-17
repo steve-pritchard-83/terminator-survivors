@@ -1,14 +1,18 @@
 import * as THREE from 'three';
 import type { RunState } from '../state/RunState';
 import type { KyleReeseMesh } from '../graphics/meshes/KyleReeseMesh';
+import type { ParticleSystem } from './ParticleSystem';
 
 export class PlayerSystem {
   private readonly runState: RunState;
   private readonly playerMesh: KyleReeseMesh;
+  private readonly particles?: ParticleSystem;
+  private dashAfterimageTimer = 0;
 
-  constructor(runState: RunState, playerMesh: KyleReeseMesh) {
+  constructor(runState: RunState, playerMesh: KyleReeseMesh, particles?: ParticleSystem) {
     this.runState = runState;
     this.playerMesh = playerMesh;
+    this.particles = particles;
   }
 
   public update(
@@ -71,5 +75,16 @@ export class PlayerSystem {
     // Update 3D mesh
     this.playerMesh.group.position.set(nextX, 0, nextZ);
     this.playerMesh.updateAnimation(dt, inputLen > 0.05 ? speed : 0, facing, this.runState.isDashing);
+
+    // Combat dive afterimage ghost trail
+    if (this.runState.isDashing && this.particles) {
+      this.dashAfterimageTimer -= dt;
+      if (this.dashAfterimageTimer <= 0) {
+        this.dashAfterimageTimer = 0.035;
+        this.particles.spawnDashAfterimage(nextX, 0.45, nextZ);
+      }
+    } else {
+      this.dashAfterimageTimer = 0;
+    }
   }
 }

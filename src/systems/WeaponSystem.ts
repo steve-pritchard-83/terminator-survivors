@@ -1,11 +1,12 @@
 import * as THREE from 'three';
 import type { RunState } from '../state/RunState';
 import type { SpatialHashGrid } from '../core/SpatialHashGrid';
-import type { ActiveEnemy } from '../core/types';
+import type { ActiveEnemy, SpatialEntity } from '../core/types';
 import type { AudioEngine } from '../audio/AudioEngine';
 import type { ParticleSystem } from './ParticleSystem';
 import type { KyleReeseMesh } from '../graphics/meshes/KyleReeseMesh';
 import { ALL_WEAPONS } from '../data/weapons';
+import { globalEvents } from '../core/EventBus';
 
 interface Projectile {
   id: number;
@@ -38,6 +39,13 @@ interface GroundZone {
   tickTimer: number;
 }
 
+interface TransientVfx {
+  mesh: THREE.Object3D;
+  life: number;
+  maxLife: number;
+  update: (progress: number, dt: number) => void;
+}
+
 export class WeaponSystem {
   public readonly group = new THREE.Group();
   private readonly runState: RunState;
@@ -49,6 +57,7 @@ export class WeaponSystem {
   private projectiles: Projectile[] = [];
   private groundZones: GroundZone[] = [];
   private orbitalDrones: THREE.Mesh[] = [];
+  private transientVfx: TransientVfx[] = [];
   private orbitalAngle = 0;
   private nextProjId = 1;
 
@@ -114,6 +123,18 @@ export class WeaponSystem {
 
     // 4. Update Lingering Ground Zones
     this.updateGroundZones(dt);
+
+    // 5. Update Transient VFX (EMP shockwaves, Orbital Ion beams)
+    for (let i = this.transientVfx.length - 1; i >= 0; i--) {
+      const fx = this.transientVfx[i];
+      fx.life += dt;
+      const progress = Math.min(1, fx.life / fx.maxLife);
+      fx.update(progress, dt);
+      if (fx.life >= fx.maxLife) {
+        this.group.remove(fx.mesh);
+        this.transientVfx.splice(i, 1);
+      }
+    }
   }
 
   private fireWeapon(
@@ -130,7 +151,9 @@ export class WeaponSystem {
     const amount = stats.amount + this.runState.computedStats.bonusAmount;
 
     // Find nearest target for auto-targeted weapons (or fallback when mouse aim is not active)
-    const nearest = this.grid.findNearest(px, pz, 28, (e) => e.type === 'enemy') as ActiveEnemy | null;
+    const nearest = this.runState.autoAimEnabled
+      ? (this.grid.findNearest(px, pz, 28, (e) => e.type === 'enemy') as ActiveEnemy | null)
+      : null;
 
     let targetAngle = this.runState.playerFacing;
     if (aimAngle !== null) {
@@ -272,16 +295,21 @@ export class WeaponSystem {
       case 'emp_emitter':
       case 'emp_supernova': {
         this.audio.playEmpBlast();
-        const empRadius = (wId === 'emp_supernova' ? 6.5 : 3.8) * areaMult;
+        const isSupernova = wId === 'emp_supernova';
+        const empRadius = (isSupernova ? 6.5 : 3.8) * areaMult;
+        this.spawnEmpShockwave(px, pz, empRadius, isSupernova);
+        globalEvents.emit('camera:shake', { trauma: isSupernova ? 0.35 : 0.22 });
         const hitEnemies = this.grid.queryRadius(px, pz, empRadius);
         for (let i = 0; i < hitEnemies.length; i++) {
-          const e = hitEnemies[i] as ActiveEnemy;
-          e.hp -= dmg;
-          e.slowTimer = 2.0;
-          e.hitFlashTimer = 0.15;
-          if (wId === 'emp_supernova') {
-            e.armorStripMultiplier = Math.max(0.4, e.armorStripMultiplier - 0.3);
-            this.runState.heal(1);
+          const target = hitEnemies[i];
+          const hit = this.applyDamageToTarget(target, dmg);
+          if (hit && target.type === 'enemy') {
+            const e = target as ActiveEnemy;
+            e.slowTimer = 2.0;
+            if (isSupernova) {
+              e.armorStripMultiplier = Math.max(0.4, e.armorStripMultiplier - 0.3);
+              this.runState.heal(1);
+            }
           }
         }
         this.particles.spawnExplosion(px, 0.2, pz, 1.2);
@@ -339,17 +367,125 @@ export class WeaponSystem {
             z: pz + (Math.random() - 0.5) * 16
           };
           this.audio.playPlasmaShot(true);
-          const hit = this.grid.queryRadius(target.x, target.z, 2.5 * areaMult);
+          const ionRadius = (wId === 'orbital_ion' ? 3.5 : 2.5) * areaMult;
+          this.spawnOrbitalIonBeam(target.x, target.z, ionRadius);
+          globalEvents.emit('camera:shake', { trauma: 0.32 });
+          const hit = this.grid.queryRadius(target.x, target.z, ionRadius);
           for (let h = 0; h < hit.length; h++) {
-            const e = hit[h] as ActiveEnemy;
-            e.hp -= dmg;
-            e.hitFlashTimer = 0.2;
+            this.applyDamageToTarget(hit[h], dmg);
           }
           this.particles.spawnExplosion(target.x, 0.2, target.z, 1.4);
         }
         break;
       }
     }
+  }
+
+  private spawnEmpShockwave(x: number, z: number, maxRadius: number, isSupernova = false): void {
+    const ringGeo = new THREE.RingGeometry(0.85, 1.0, 32);
+    ringGeo.rotateX(-Math.PI / 2);
+    const ringMat = new THREE.MeshBasicMaterial({
+      color: isSupernova ? 0x80ffff : 0x00e5ff,
+      transparent: true,
+      opacity: 0.9,
+      side: THREE.DoubleSide,
+      depthWrite: false
+    });
+    const mesh = new THREE.Mesh(ringGeo, ringMat);
+    mesh.position.set(x, 0.15, z);
+    this.group.add(mesh);
+
+    this.transientVfx.push({
+      mesh,
+      life: 0,
+      maxLife: 0.35,
+      update: (progress) => {
+        const r = THREE.MathUtils.lerp(0.2, maxRadius, progress);
+        mesh.scale.set(r, 1, r);
+        ringMat.opacity = (1 - progress) * 0.9;
+      }
+    });
+  }
+
+  private spawnOrbitalIonBeam(x: number, z: number, radius: number): void {
+    const group = new THREE.Group();
+    group.position.set(x, 0, z);
+
+    // Inner bright core
+    const coreGeo = new THREE.CylinderGeometry(radius * 0.45, radius * 0.45, 28, 12);
+    const coreMat = new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0.95
+    });
+    const coreMesh = new THREE.Mesh(coreGeo, coreMat);
+    coreMesh.position.y = 14;
+
+    // Outer plasma glow
+    const outerGeo = new THREE.CylinderGeometry(radius * 0.9, radius * 0.9, 28, 12);
+    const outerMat = new THREE.MeshBasicMaterial({
+      color: 0x00d4ff,
+      transparent: true,
+      opacity: 0.65,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+    const outerMesh = new THREE.Mesh(outerGeo, outerMat);
+    outerMesh.position.y = 14;
+
+    // Ground scorch ring
+    const groundGeo = new THREE.RingGeometry(radius * 0.4, radius * 1.15, 24);
+    groundGeo.rotateX(-Math.PI / 2);
+    const groundMat = new THREE.MeshBasicMaterial({
+      color: 0x00e5ff,
+      transparent: true,
+      opacity: 0.85,
+      side: THREE.DoubleSide,
+      depthWrite: false
+    });
+    const groundMesh = new THREE.Mesh(groundGeo, groundMat);
+    groundMesh.position.y = 0.08;
+
+    group.add(coreMesh, outerMesh, groundMesh);
+    this.group.add(group);
+
+    this.transientVfx.push({
+      mesh: group,
+      life: 0,
+      maxLife: 0.42,
+      update: (progress) => {
+        const scaleX = 1 - progress * 0.7;
+        coreMesh.scale.set(scaleX, 1, scaleX);
+        outerMesh.scale.set(scaleX, 1, scaleX);
+        const fade = 1 - progress;
+        coreMat.opacity = fade * 0.95;
+        outerMat.opacity = fade * 0.65;
+        groundMat.opacity = fade * 0.85;
+      }
+    });
+  }
+
+  private applyDamageToTarget(entity: SpatialEntity, baseDamage: number): boolean {
+    if (entity.type === 'crate') {
+      globalEvents.emit('crate:destroyed', { crateId: entity.id, x: entity.x, z: entity.z });
+      return true;
+    }
+    if (entity.type !== 'enemy') return false;
+
+    const enemy = entity as ActiveEnemy;
+    const isCrit = Math.random() < this.runState.computedStats.critChance;
+    const vulnMult = 1 / Math.max(0.4, enemy.armorStripMultiplier);
+    const finalDamage = Math.max(1, Math.round(baseDamage * vulnMult * (isCrit ? 1.75 : 1.0)));
+    enemy.hp -= finalDamage;
+    enemy.hitFlashTimer = isCrit ? 0.2 : 0.12;
+
+    globalEvents.emit('enemy:damaged', {
+      x: enemy.x,
+      z: enemy.z,
+      damage: finalDamage,
+      isCrit
+    });
+    return true;
   }
 
   private spawnProjectile(p: Omit<Projectile, 'id' | 'hitEnemyIds'>): void {
@@ -450,9 +586,7 @@ export class WeaponSystem {
       // Slice through enemies in contact
       const hit = this.grid.queryRadius(dx, dz, 0.6);
       for (let h = 0; h < hit.length; h++) {
-        const e = hit[h] as ActiveEnemy;
-        e.hp -= damage * dt * 3.5;
-        e.hitFlashTimer = 0.1;
+        this.applyDamageToTarget(hit[h], damage * dt * 3.5);
       }
     }
   }
@@ -474,15 +608,16 @@ export class WeaponSystem {
       // Hit detection
       const hitCandidates = this.grid.queryRadius(p.x, p.z, p.radius);
       for (let c = 0; c < hitCandidates.length; c++) {
-        const e = hitCandidates[c] as ActiveEnemy;
-        if (!p.hitEnemyIds.has(e.id)) {
-          p.hitEnemyIds.add(e.id);
-          e.hp -= p.damage;
-          e.hitFlashTimer = 0.12;
-          this.audio.playEndoHit();
-          this.particles.spawnPlasmaImpact(p.x, p.y, p.z);
-          p.pierceLeft--;
-          if (p.pierceLeft <= 0) break;
+        const target = hitCandidates[c];
+        if (!p.hitEnemyIds.has(target.id)) {
+          p.hitEnemyIds.add(target.id);
+          const hit = this.applyDamageToTarget(target, p.damage);
+          if (hit) {
+            this.audio.playEndoHit();
+            this.particles.spawnPlasmaImpact(p.x, p.y, p.z);
+            p.pierceLeft--;
+            if (p.pierceLeft <= 0) break;
+          }
         }
       }
 
@@ -491,11 +626,10 @@ export class WeaponSystem {
         if (p.isAreaOnExpire && p.areaRadius) {
           this.audio.playExplosion(p.areaRadius > 3 ? 1.5 : 1.0);
           this.particles.spawnExplosion(p.x, 0.2, p.z, p.areaRadius > 3 ? 1.4 : 1.0);
+          globalEvents.emit('camera:shake', { trauma: p.areaRadius > 3 ? 0.35 : 0.22 });
           const splash = this.grid.queryRadius(p.x, p.z, p.areaRadius);
           for (let s = 0; s < splash.length; s++) {
-            const target = splash[s] as ActiveEnemy;
-            target.hp -= p.damage;
-            target.hitFlashTimer = 0.15;
+            this.applyDamageToTarget(splash[s], p.damage);
           }
         }
         this.group.remove(p.mesh);
@@ -517,11 +651,9 @@ export class WeaponSystem {
 
       if (gz.tickTimer >= 0.25) {
         gz.tickTimer = 0;
-        const enemies = this.grid.queryRadius(gz.x, gz.z, gz.radius);
-        for (let e = 0; e < enemies.length; e++) {
-          const target = enemies[e] as ActiveEnemy;
-          target.hp -= gz.damagePerSec * 0.25;
-          target.hitFlashTimer = 0.08;
+        const targets = this.grid.queryRadius(gz.x, gz.z, gz.radius);
+        for (let e = 0; e < targets.length; e++) {
+          this.applyDamageToTarget(targets[e], gz.damagePerSec * 0.25);
         }
       }
 
@@ -559,5 +691,10 @@ export class WeaponSystem {
       this.group.remove(d);
     }
     this.orbitalDrones.length = 0;
+
+    for (const fx of this.transientVfx) {
+      this.group.remove(fx.mesh);
+    }
+    this.transientVfx.length = 0;
   }
 }

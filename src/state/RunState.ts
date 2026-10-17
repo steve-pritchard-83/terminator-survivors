@@ -34,6 +34,7 @@ export class RunState {
   public hp = 100;
   public maxHp = 100;
   public kills = 0;
+  public bossesKilled = 0;
   public alloyScrapEarned = 0;
 
   public playerPos = { x: 0, z: 0 };
@@ -43,12 +44,14 @@ export class RunState {
   public dashCooldownTimer = 0;
   public readonly dashDuration = 0.28;
   public readonly dashCooldown = 1.8;
+  public autoAimEnabled = true;
 
   public weapons = new Map<WeaponId, ActiveWeaponSlot>();
   public passives = new Map<PassiveId, number>();
   public computedStats: PlayerComputedStats = this.getDefaultStats();
   public revivalsLeft = 0;
   public loadoutId: LoadoutId = 'reese_2029';
+  private purchasedMetaUpgrades: Record<string, number> = {};
 
   public godMode = false;
 
@@ -79,6 +82,7 @@ export class RunState {
     this.xp = 0;
     this.xpToNext = getXpForNextLevel(1);
     this.kills = 0;
+    this.bossesKilled = 0;
     this.alloyScrapEarned = 0;
     this.playerPos = { x: 0, z: 0 };
     this.playerFacing = 0;
@@ -88,35 +92,10 @@ export class RunState {
     this.weapons.clear();
     this.passives.clear();
     this.loadoutId = loadoutId;
-
-    const base = this.getDefaultStats();
-    const loadout = LOADOUTS[loadoutId];
-
-    // Apply Meta Upgrades
-    for (const [upId, lv] of Object.entries(purchasedMetaUpgrades)) {
-      const cfg = META_UPGRADES[upId as keyof typeof META_UPGRADES];
-      if (cfg && lv > 0) {
-        for (const [stat, val] of Object.entries(cfg.statPerLevel)) {
-          const k = stat as keyof PlayerComputedStats;
-          base[k] = (base[k] as number) + (val as number) * lv;
-        }
-      }
-    }
-
-    // Apply Loadout bonus
-    if (loadout) {
-      for (const [stat, val] of Object.entries(loadout.bonusStats)) {
-        const k = stat as keyof PlayerComputedStats;
-        base[k] = (base[k] as number) + (val as number);
-      }
-    }
-
-    this.computedStats = base;
-    this.maxHp = base.maxHp;
-    this.hp = this.maxHp;
-    this.revivalsLeft = base.revivals;
+    this.purchasedMetaUpgrades = { ...purchasedMetaUpgrades };
 
     // Grant starting weapon
+    const loadout = LOADOUTS[loadoutId];
     const startingWeaponId = loadout ? loadout.startingWeapon : 'ithaca_37';
     this.weapons.set(startingWeaponId, {
       id: startingWeaponId,
@@ -126,12 +105,25 @@ export class RunState {
     });
 
     this.recalculateStats();
+    this.hp = this.maxHp;
   }
 
   public recalculateStats(): void {
     const base = this.getDefaultStats();
     const loadout = LOADOUTS[this.loadoutId];
 
+    // 1. Apply Meta Upgrades
+    for (const [upId, lv] of Object.entries(this.purchasedMetaUpgrades)) {
+      const cfg = META_UPGRADES[upId as keyof typeof META_UPGRADES];
+      if (cfg && lv > 0) {
+        for (const [stat, val] of Object.entries(cfg.statPerLevel)) {
+          const k = stat as keyof PlayerComputedStats;
+          base[k] = (base[k] as number) + (val as number) * lv;
+        }
+      }
+    }
+
+    // 2. Apply Loadout bonus
     if (loadout) {
       for (const [stat, val] of Object.entries(loadout.bonusStats)) {
         const k = stat as keyof PlayerComputedStats;
@@ -139,7 +131,7 @@ export class RunState {
       }
     }
 
-    // Passives
+    // 3. Apply In-Run Passives
     for (const [pId, lv] of this.passives.entries()) {
       const pDef = PASSIVES[pId];
       if (pDef && lv > 0) {
@@ -150,10 +142,20 @@ export class RunState {
       }
     }
 
+    // Clamp cooldownMultiplier to a safe floor of 0.35
+    base.cooldownMultiplier = Math.max(0.35, base.cooldownMultiplier);
+
     const hpPercent = this.maxHp > 0 ? this.hp / this.maxHp : 1;
     this.computedStats = base;
     this.maxHp = base.maxHp;
     this.hp = Math.max(1, Math.min(this.maxHp, Math.round(this.maxHp * hpPercent)));
+    this.revivalsLeft = Math.max(this.revivalsLeft, base.revivals);
+  }
+
+  public addScrap(baseAmount: number): number {
+    const gained = Math.max(1, Math.round(baseAmount * this.computedStats.xpGainMultiplier));
+    this.alloyScrapEarned += gained;
+    return gained;
   }
 
   public addXp(amount: number): boolean {
@@ -355,7 +357,7 @@ export class RunState {
     } else if (choice.kind === 'heal') {
       this.heal(40);
     } else if (choice.kind === 'scrap') {
-      this.alloyScrapEarned += 50;
+      this.addScrap(50);
     }
   }
 

@@ -15,9 +15,16 @@ export class HUDView {
   private readonly bossBarContainer: HTMLElement;
   private readonly bossTitle: HTMLElement;
   private readonly bossFill: HTMLElement;
+  private readonly mobileDashBtn: HTMLElement;
+  private readonly dashStatusEl: HTMLElement;
+  private readonly pauseBtn: HTMLElement;
+  private readonly bossWarningBanner: HTMLElement;
+  private readonly floatingTextLayer: HTMLElement;
+  public onPauseClicked: (() => void) | null = null;
   private lastXp = 0;
   private lastLevel = 1;
   private xpPulseTimer: number | null = null;
+  private bossWarningTimer: number | null = null;
 
   constructor(root: HTMLElement) {
     this.container = document.createElement('div');
@@ -35,6 +42,8 @@ export class HUDView {
           <div class="hud-clock" data-testid="hud-timer" id="hud-clock-text">00:00</div>
           <div>TERMINATIONS: <span id="hud-kills-text" style="color:var(--color-red)">0</span></div>
           <div>SCRAP: <span id="hud-scrap-text" style="color:var(--color-amber)">0</span></div>
+          <div id="hud-dash-status" style="color:var(--color-cyan); font-size:12px; font-weight:700;">DIVE: READY</div>
+          <button class="btn-hud-pause" data-testid="btn-hud-pause" id="btn-hud-pause">❚❚ PAUSE</button>
         </div>
         <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
           <div style="display:flex; gap:12px;">
@@ -46,6 +55,9 @@ export class HUDView {
           </div>
         </div>
       </div>
+
+      <div class="hud-boss-warning" id="hud-boss-warning" data-testid="hud-boss-warning">SKYNET PRIORITY THREAT DETECTED</div>
+      <div class="hud-floating-text-layer" id="hud-floating-text-layer"></div>
 
       <div class="boss-bar-container" id="hud-boss-bar">
         <div class="boss-title" id="hud-boss-title">WARNING // HUNTER-KILLER GOLIATH</div>
@@ -60,7 +72,7 @@ export class HUDView {
       </div>
       <div class="btn-mobile-dash" data-testid="btn-mobile-dash" id="btn-mobile-dash">DASH</div>
       <div class="hud-desktop-hint">
-        [WASD / L-CLICK] MOVE &nbsp;//&nbsp; [MOUSE] LASER AIM &nbsp;//&nbsp; [SPACE / R-CLICK] DIVE
+        [WASD / L-CLICK] MOVE &nbsp;//&nbsp; [MOUSE] LASER AIM &nbsp;//&nbsp; [SPACE / R-CLICK] DIVE &nbsp;//&nbsp; [ESC] PAUSE
       </div>
     `;
 
@@ -78,6 +90,15 @@ export class HUDView {
     this.bossBarContainer = this.container.querySelector('#hud-boss-bar')!;
     this.bossTitle = this.container.querySelector('#hud-boss-title')!;
     this.bossFill = this.container.querySelector('#hud-boss-fill')!;
+    this.mobileDashBtn = this.container.querySelector('#btn-mobile-dash')!;
+    this.dashStatusEl = this.container.querySelector('#hud-dash-status')!;
+    this.pauseBtn = this.container.querySelector('#btn-hud-pause')!;
+    this.bossWarningBanner = this.container.querySelector('#hud-boss-warning')!;
+    this.floatingTextLayer = this.container.querySelector('#hud-floating-text-layer')!;
+
+    this.pauseBtn.addEventListener('click', () => {
+      this.onPauseClicked?.();
+    });
   }
 
   public show(): void {
@@ -142,6 +163,20 @@ export class HUDView {
       this.passiveRack.appendChild(slotEl);
     }
 
+    // Dash cooldown indicator
+    if (runState.dashCooldownTimer > 0) {
+      const cdSec = runState.dashCooldownTimer.toFixed(1);
+      this.dashStatusEl.textContent = `DIVE: ${cdSec}s`;
+      this.dashStatusEl.style.color = 'var(--color-amber)';
+      this.mobileDashBtn.classList.add('on-cooldown');
+      this.mobileDashBtn.textContent = `${cdSec}s`;
+    } else {
+      this.dashStatusEl.textContent = 'DIVE: READY';
+      this.dashStatusEl.style.color = 'var(--color-cyan)';
+      this.mobileDashBtn.classList.remove('on-cooldown');
+      this.mobileDashBtn.textContent = 'DASH';
+    }
+
     // Boss Bar
     if (activeBoss && activeBoss.hp > 0) {
       this.bossBarContainer.style.display = 'flex';
@@ -151,5 +186,30 @@ export class HUDView {
     } else {
       this.bossBarContainer.style.display = 'none';
     }
+  }
+
+  public triggerBossWarning(bossName: string): void {
+    this.bossWarningBanner.textContent = `SKYNET PRIORITY THREAT: ${bossName.toUpperCase()}`;
+    this.bossWarningBanner.style.display = 'block';
+    if (this.bossWarningTimer !== null) {
+      window.clearTimeout(this.bossWarningTimer);
+    }
+    this.bossWarningTimer = window.setTimeout(() => {
+      this.bossWarningBanner.style.display = 'none';
+      this.bossWarningTimer = null;
+    }, 3800);
+  }
+
+  public spawnFloatingText(text: string, color: string, screenX: number, screenY: number): void {
+    const el = document.createElement('div');
+    el.className = 'floating-text-callout';
+    el.style.left = `${screenX}px`;
+    el.style.top = `${screenY}px`;
+    el.style.color = color;
+    el.textContent = text;
+    this.floatingTextLayer.appendChild(el);
+    window.setTimeout(() => {
+      el.remove();
+    }, 750);
   }
 }

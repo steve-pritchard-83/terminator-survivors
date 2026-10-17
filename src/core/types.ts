@@ -197,6 +197,9 @@ export interface GameDebugAPI {
   triggerVault: () => void;
   fastForward: (seconds: number) => void;
   setGodMode: (enabled: boolean) => void;
+  togglePause?: () => void;
+  pauseGame?: () => void;
+  resumeGame?: () => void;
 }
 
 declare global {

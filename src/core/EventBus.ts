@@ -7,12 +7,15 @@ export type GameEventMap = {
   'player:revived': { remaining: number };
   'player:dash': { x: number; z: number };
   'enemy:killed': { enemy: ActiveEnemy; x: number; z: number; xp: number };
+  'enemy:damaged': { x: number; z: number; damage: number; isCrit: boolean };
+  'crate:destroyed': { crateId: number; x: number; z: number };
   'wave:minute': { minute: number };
   'boss:spawned': { archetype: string; name: string; maxHp: number };
   'boss:defeated': { archetype: string; x: number; z: number };
   'levelup:triggered': { level: number; choices: UpgradeChoice[] };
   'vault:opened': { upgradesAwarded: number; evolvedWeapon?: WeaponId; alloyBonus: number };
   'weapon:evolved': { from: WeaponId; to: WeaponId; name: string };
+  'camera:shake': { trauma: number };
   'audio:sfx': { name: string; arg?: number };
 };
 

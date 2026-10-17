@@ -74,7 +74,7 @@ export class Game {
     );
 
     // 3. Gameplay Systems
-    this.playerSystem = new PlayerSystem(this.runState, this.playerMesh);
+    this.playerSystem = new PlayerSystem(this.runState, this.playerMesh, this.particles);
     this.weaponSystem = new WeaponSystem(
       this.runState,
       this.grid,
@@ -101,6 +101,9 @@ export class Game {
     // 4. UI Layer & CRT Overlay
     const crtOverlay = document.createElement('div');
     crtOverlay.className = 'crt-overlay';
+    if (!settings.crtScanlines) {
+      crtOverlay.style.display = 'none';
+    }
     appContainer.appendChild(crtOverlay);
 
     this.uiManager = new UIManager(
@@ -108,7 +111,8 @@ export class Game {
       this.saveManager,
       this.inputManager,
       this.audioEngine,
-      (loadoutId) => this.startRun(loadoutId)
+      (loadoutId) => this.startRun(loadoutId),
+      () => this.runState
     );
 
     // 5. Game Loop
@@ -137,8 +141,21 @@ export class Game {
       }
     };
 
+    this.inputManager.onPauseCallback = () => {
+      this.togglePause();
+    };
+
+    this.uiManager.hudView.onPauseClicked = () => {
+      this.togglePause();
+    };
+
+    globalEvents.on('camera:shake', ({ trauma }) => {
+      this.sceneManager.addScreenShake(trauma);
+    });
+
     globalEvents.on('player:damaged', () => {
       this.sceneManager.postProcessing.triggerDamageFlash();
+      this.sceneManager.addScreenShake(0.42);
       if (this.runState.hp <= 0) {
         if (this.runState.revivalsLeft > 0) {
           this.runState.revivalsLeft--;
@@ -154,6 +171,18 @@ export class Game {
     globalEvents.on('boss:spawned', ({ name, maxHp }) => {
       this.activeBoss = { name, hp: maxHp, maxHp };
       this.audioEngine.playSearchlightAlert();
+      this.sceneManager.addScreenShake(0.65);
+      this.uiManager.hudView.triggerBossWarning(name);
+    });
+
+    globalEvents.on('enemy:damaged', ({ x, z, damage, isCrit }) => {
+      if (this.runState.mode !== 'playing') return;
+      const screenPos = this.sceneManager.worldToScreen(x, 0.8, z);
+      if (screenPos) {
+        const text = isCrit ? `-${damage} CRIT!` : `-${damage}`;
+        const color = isCrit ? 'var(--color-amber)' : 'var(--color-chrome)';
+        this.uiManager.hudView.spawnFloatingText(text, color, screenPos.x, screenPos.y);
+      }
     });
 
     globalEvents.on('levelup:triggered', ({ level, choices }) => {
@@ -171,6 +200,7 @@ export class Game {
     globalEvents.on('vault:opened', ({ upgradesAwarded, evolvedWeapon, alloyBonus }) => {
       this.isPaused = true;
       this.runState.mode = 'vault';
+      this.sceneManager.addScreenShake(0.35);
       this.uiManager.vaultModal.show(upgradesAwarded, evolvedWeapon, alloyBonus, () => {
         this.audioEngine.playUpgradeApplied();
         this.isPaused = false;
@@ -179,8 +209,12 @@ export class Game {
     });
 
     globalEvents.on('enemy:killed', ({ enemy }) => {
-      if (enemy.isBoss && this.activeBoss) {
-        this.activeBoss = null;
+      if (enemy.isBoss) {
+        this.runState.bossesKilled++;
+        this.sceneManager.addScreenShake(0.55);
+        if (this.activeBoss) {
+          this.activeBoss = null;
+        }
         if (enemy.archetype === 'skynet_tde_core') {
           this.endRun(true);
         }
@@ -190,6 +224,7 @@ export class Game {
 
   public startRun(loadoutId: LoadoutId): void {
     this.runState.initRun(loadoutId, this.saveManager.getData().upgrades);
+    this.runState.autoAimEnabled = this.saveManager.getData().settings.autoAim;
     this.weaponSystem.clear();
     this.enemySystem.clear();
     this.pickupSystem.clear();
@@ -215,7 +250,8 @@ export class Game {
       this.runState.kills,
       this.runState.timeSeconds,
       this.runState.alloyScrapEarned,
-      victory
+      victory,
+      this.runState.bossesKilled
     );
 
     this.uiManager.hudView.hide();
@@ -232,6 +268,45 @@ export class Game {
         this.isPaused = false;
       }
     );
+  }
+
+  public togglePause(): void {
+    if (this.runState.mode !== 'playing') return;
+    if (this.isPaused) {
+      this.resumeFromPause();
+    } else {
+      this.pauseGame();
+    }
+  }
+
+  public pauseGame(): void {
+    if (this.runState.mode !== 'playing' || this.isPaused) return;
+    this.isPaused = true;
+    this.audioEngine.playHudScanOpen();
+    this.uiManager.pauseModal.show(
+      () => this.resumeFromPause(),
+      () => this.abortToTitle()
+    );
+  }
+
+  public resumeFromPause(): void {
+    this.uiManager.pauseModal.hide();
+    this.audioEngine.playHudScanClose();
+    this.isPaused = false;
+  }
+
+  public abortToTitle(): void {
+    this.uiManager.pauseModal.hide();
+    this.audioEngine.stopMusic();
+    this.uiManager.hudView.hide();
+    this.enemySystem.clear();
+    this.pickupSystem.clear();
+    this.weaponSystem.clear();
+    this.particles.clear();
+    this.activeBoss = null;
+    this.runState.mode = 'title';
+    this.uiManager.titleScreen.show();
+    this.isPaused = false;
   }
 
   private fixedUpdate(dt: number): void {
@@ -294,7 +369,7 @@ export class Game {
 
     // 3. Systems Update
     this.weaponSystem.update(dt, this.enemySystem.activeEnemies, aim);
-    this.enemySystem.update(dt, this.runState.timeSeconds);
+    this.enemySystem.update(dt, this.runState.timeSeconds, this.environment.obstacleColliders);
     this.waveDirector.update(dt);
     this.pickupSystem.update(dt);
     this.particles.update(dt);
@@ -364,7 +439,10 @@ export class Game {
       },
       setGodMode: (enabled: boolean) => {
         this.runState.godMode = enabled;
-      }
+      },
+      togglePause: () => this.togglePause(),
+      pauseGame: () => this.pauseGame(),
+      resumeGame: () => this.resumeFromPause()
     };
 
     if (typeof window !== 'undefined') {

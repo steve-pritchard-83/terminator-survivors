@@ -44,4 +44,40 @@ describe('Combat and Leveling Mathematics', () => {
     expect(normalDmg).toBe(40);
     expect(state.hp).toBe(60);
   });
+
+  it('preserves purchased meta upgrades when in-run passives are applied', () => {
+    const state = new RunState();
+    // Start run with armor_vest = 2 (+2 armor) and combat_stims = 2 (+30 maxHp)
+    state.initRun('reese_2029', { armor_vest: 2, combat_stims: 2 });
+    expect(state.computedStats.armor).toBe(2);
+    expect(state.maxHp).toBe(130);
+
+    // Pick an in-run passive (might_shells)
+    state.applyUpgrade({
+      kind: 'passive',
+      id: 'might_shells',
+      title: 'Heavy Shells',
+      subtitle: '',
+      currentLevel: 0,
+      nextLevel: 1,
+      description: '',
+      accentColor: '#fff'
+    });
+
+    // Meta upgrades must remain applied after recalculateStats!
+    expect(state.computedStats.armor).toBe(2);
+    expect(state.maxHp).toBe(130);
+    expect(state.computedStats.mightMultiplier).toBeGreaterThan(1.0);
+  });
+
+  it('multiplies scrap awards by xpGainMultiplier from scavenger protocol', () => {
+    const state = new RunState();
+    // scavenger_protocol = 2 (+24% XP / Scrap multiplier)
+    state.initRun('reese_2029', { scavenger_protocol: 2 });
+    expect(state.computedStats.xpGainMultiplier).toBeCloseTo(1.24);
+
+    const scrap = state.addScrap(50);
+    expect(scrap).toBe(62);
+    expect(state.alloyScrapEarned).toBe(62);
+  });
 });

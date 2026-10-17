@@ -126,7 +126,13 @@ export class SaveManager {
     return true;
   }
 
-  public addRunResults(kills: number, timeSec: number, scrapEarned: number, victory: boolean): void {
+  public addRunResults(
+    kills: number,
+    timeSec: number,
+    scrapEarned: number,
+    victory: boolean,
+    bossesKilled = 0
+  ): void {
     this.data.totalKills += kills;
     this.data.alloyScrap += scrapEarned;
     if (timeSec > this.data.bestTimeSeconds) {
@@ -135,6 +141,18 @@ export class SaveManager {
     if (victory) {
       this.data.victories++;
     }
+
+    // Milestone Auto-Unlocks
+    if (timeSec >= 240 && !this.data.unlockedLoadouts.includes('reese_1984')) {
+      this.data.unlockedLoadouts.push('reese_1984');
+    }
+    if (bossesKilled >= 1 && !this.data.unlockedLoadouts.includes('techcom_sapper')) {
+      this.data.unlockedLoadouts.push('techcom_sapper');
+    }
+    if (victory && !this.data.unlockedLoadouts.includes('john_connor')) {
+      this.data.unlockedLoadouts.push('john_connor');
+    }
+
     this.save();
   }
 

@@ -6,6 +6,7 @@ export class InputManager {
   private leftMouseDown = false;
   private dashRequested = false;
   public onDashCallback: (() => void) | null = null;
+  public onPauseCallback: (() => void) | null = null;
 
   private activePointerId: number | null = null;
   private joystickOrigin = { x: 0, y: 0 };
@@ -131,6 +132,8 @@ export class InputManager {
     if (e.code === 'Space' || e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
       this.dashRequested = true;
       this.onDashCallback?.();
+    } else if (e.code === 'Escape') {
+      this.onPauseCallback?.();
     }
   };
 
