@@ -39,6 +39,7 @@ describe('AudioEngine WAV Sample Bank & UI/Combat Triggers', () => {
       audio.playHudScanOpen();
       audio.playHudScanClose();
       audio.playRunStart();
+      audio.playPlayerTerminated();
       audio.playRunEnd(true);
       audio.playRunEnd(false);
     }).not.toThrow();

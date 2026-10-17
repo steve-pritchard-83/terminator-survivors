@@ -96,7 +96,11 @@ export const SFX_WAV_MANIFEST: Record<string, string[]> = {
     './audio/effects/S_Splash_Screen_Drums_x1.wav',
     './audio/effects/S_NewQuest.wav'
   ],
+  playerTerminated: [
+    './audio/effects/terminated.wav'
+  ],
   runDefeat: [
+    './audio/effects/terminated.wav',
     './audio/effects/S_QuestFaild.wav'
   ],
   runVictory: [
@@ -545,6 +549,11 @@ export class AudioEngine {
   public playHudScanClose(): void {
     this.triggerHaptic(10, 30);
     this.playSample('uiModalClose', 0.6, 1.0, 0.0);
+  }
+
+  public playPlayerTerminated(): void {
+    this.triggerHaptic([45, 60, 75, 90], 160);
+    this.playSample('playerTerminated', 0.95, 1.0, 0.0);
   }
 
   public playRunStart(): void {

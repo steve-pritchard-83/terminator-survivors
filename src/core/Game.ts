@@ -163,6 +163,7 @@ export class Game {
           this.sceneManager.postProcessing.triggerEmpGlitch();
           this.audioEngine.playEmpBlast();
         } else {
+          this.audioEngine.playPlayerTerminated();
           this.endRun(false);
         }
       }
