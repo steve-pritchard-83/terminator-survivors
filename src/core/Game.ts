@@ -167,17 +167,6 @@ export class Game {
     globalEvents.on('player:damaged', () => {
       this.sceneManager.postProcessing.triggerDamageFlash();
       this.sceneManager.addScreenShake(0.42);
-      if (this.runState.hp <= 0) {
-        if (this.runState.revivalsLeft > 0) {
-          this.runState.revivalsLeft--;
-          this.runState.hp = Math.round(this.runState.maxHp * 0.5);
-          this.sceneManager.postProcessing.triggerEmpGlitch();
-          this.audioEngine.playEmpBlast();
-        } else {
-          this.audioEngine.playPlayerTerminated();
-          this.endRun(false);
-        }
-      }
     });
 
     globalEvents.on('boss:spawned', ({ name, maxHp }) => {
@@ -264,6 +253,7 @@ export class Game {
   }
 
   public endRun(victory: boolean): void {
+    if (this.runState.mode === 'gameover' || this.runState.mode === 'victory') return;
     this.runState.mode = victory ? 'victory' : 'gameover';
     this.isPaused = true;
     this.audioEngine.stopMusic();
@@ -277,6 +267,8 @@ export class Game {
       this.runState.bossesKilled
     );
 
+    this.uiManager.levelUpModal.hide();
+    this.uiManager.vaultModal.hide();
     this.uiManager.hudView.hide();
     this.uiManager.endRunModal.show(
       victory,
@@ -420,6 +412,19 @@ export class Game {
 
     // Update HUD
     this.uiManager.hudView.update(this.runState, this.activeBoss);
+
+    // 4. Resolve Lethal Damage once per tick
+    const lethalStatus = this.runState.resolveLethalDamage();
+    if (lethalStatus === 'revived') {
+      this.sceneManager.postProcessing.triggerEmpGlitch();
+      this.audioEngine.playEmpBlast();
+      globalEvents.emit('player:revived', { remaining: this.runState.revivalsLeft });
+    } else if (lethalStatus === 'dead') {
+      this.audioEngine.playPlayerTerminated();
+      globalEvents.emit('player:died');
+      this.endRun(false);
+      return;
+    }
 
     // Quality Governor
     this.sceneManager.adjustQuality(this.gameLoop.fps);

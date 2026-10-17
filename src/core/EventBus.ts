@@ -40,7 +40,7 @@ export class EventBus {
     };
   }
 
-  public emit<K extends keyof GameEventMap>(event: K, data: GameEventMap[K]): void {
+  public emit<K extends keyof GameEventMap>(event: K, data?: GameEventMap[K]): void {
     const set = this.listeners.get(event);
     if (set) {
       for (const cb of set) {

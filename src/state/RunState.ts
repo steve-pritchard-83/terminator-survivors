@@ -171,10 +171,21 @@ export class RunState {
   }
 
   public takeDamage(rawDamage: number): number {
+    if (this.hp <= 0 || this.mode !== 'playing') return 0;
     if (this.godMode || this.isDashing) return 0;
     const mitigated = computeMitigatedDamage(rawDamage, this.computedStats.armor);
     this.hp = Math.max(0, this.hp - mitigated);
     return mitigated;
+  }
+
+  public resolveLethalDamage(): 'revived' | 'dead' | 'alive' {
+    if (this.hp > 0) return 'alive';
+    if (this.revivalsLeft > 0) {
+      this.revivalsLeft--;
+      this.hp = Math.round(this.maxHp * 0.5);
+      return 'revived';
+    }
+    return 'dead';
   }
 
   public heal(amount: number): number {
