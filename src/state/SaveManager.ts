@@ -1,4 +1,4 @@
-import type { LoadoutId, MetaSaveData, MetaUpgradeId } from '../core/types';
+import type { DailyAttemptRecord, LoadoutId, MetaSaveData, MetaUpgradeId } from '../core/types';
 import { LOADOUTS, META_UPGRADES } from '../data/upgrades';
 
 const STORAGE_KEY = 'TERMINATOR_SURVIVORS_SAVE_V1';
@@ -55,7 +55,8 @@ export class SaveManager {
         bestTimeSeconds: 0,
         maxKills: 0,
         maxScrap: 0
-      }
+      },
+      dailyAttempts: {}
     };
   }
 
@@ -126,6 +127,16 @@ export class SaveManager {
       maxScrap: typeof current.endlessHighScores?.maxScrap === 'number' && current.endlessHighScores.maxScrap >= 0 ? Math.floor(current.endlessHighScores.maxScrap) : 0
     };
 
+    // 6. Validate daily attempts
+    const dailyAttempts: Record<string, DailyAttemptRecord> = {};
+    if (current.dailyAttempts && typeof current.dailyAttempts === 'object') {
+      for (const [k, v] of Object.entries(current.dailyAttempts)) {
+        if (v && typeof v === 'object') {
+          dailyAttempts[k] = v as DailyAttemptRecord;
+        }
+      }
+    }
+
     return {
       version: SaveManager.CURRENT_VERSION,
       alloyScrap: typeof current.alloyScrap === 'number' && current.alloyScrap >= 0 ? Math.floor(current.alloyScrap) : 0,
@@ -136,7 +147,8 @@ export class SaveManager {
       selectedLoadout: selected,
       upgrades,
       settings,
-      endlessHighScores
+      endlessHighScores,
+      dailyAttempts
     };
   }
 
@@ -278,6 +290,22 @@ export class SaveManager {
       ...settings
     };
     this.save();
+  }
+
+  public hasAttemptedDaily(dateKey: string): boolean {
+    return Boolean(this.data.dailyAttempts && this.data.dailyAttempts[dateKey]);
+  }
+
+  public recordDailyAttempt(attempt: DailyAttemptRecord): void {
+    if (!this.data.dailyAttempts) {
+      this.data.dailyAttempts = {};
+    }
+    this.data.dailyAttempts[attempt.dateKey] = attempt;
+    this.save();
+  }
+
+  public getDailyAttempt(dateKey: string): DailyAttemptRecord | null {
+    return this.data.dailyAttempts?.[dateKey] ?? null;
   }
 
   public resetProgress(): void {

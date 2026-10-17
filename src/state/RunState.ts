@@ -69,6 +69,8 @@ export class RunState {
   public loadoutId: LoadoutId = 'reese_2029';
   public stageId: StageId = 'la_2029_wasteland';
   public isEndless = false;
+  public isDailyOperation = false;
+  public dailyDateKey = '';
   private purchasedMetaUpgrades: Record<string, number> = {};
 
   public godMode = false;
@@ -108,6 +110,8 @@ export class RunState {
     this.seed = seed;
     this.stageId = stageId;
     this.isEndless = false;
+    this.isDailyOperation = false;
+    this.dailyDateKey = '';
     this.timeSeconds = 0;
     this.level = 1;
     this.xp = 0;

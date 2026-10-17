@@ -97,10 +97,18 @@ export class RunController {
     };
   }
 
-  public startRun(loadoutId: LoadoutId, customSeed?: number, stageId: StageId = 'la_2029_wasteland'): void {
+  public startRun(
+    loadoutId: LoadoutId,
+    customSeed?: number,
+    stageId: StageId = 'la_2029_wasteland',
+    isDaily = false,
+    dailyDateKey = ''
+  ): void {
     const seed = (customSeed !== undefined ? customSeed : Date.now()) >>> 0;
     globalRNG.setSeed(seed);
     this.host.runState.initRun(loadoutId, this.host.saveManager.getData().upgrades, seed, stageId);
+    this.host.runState.isDailyOperation = isDaily;
+    this.host.runState.dailyDateKey = dailyDateKey;
     this.host.runState.autoAimEnabled = this.host.saveManager.getData().settings.autoAim;
 
     this.host.weaponSystem.clear();
@@ -136,6 +144,17 @@ export class RunController {
       this.host.runState.bossesKilled,
       this.host.runState.isEndless
     );
+
+    if (this.host.runState.isDailyOperation && this.host.runState.dailyDateKey) {
+      this.host.saveManager.recordDailyAttempt({
+        dateKey: this.host.runState.dailyDateKey,
+        completed: victory,
+        score: Math.floor(this.host.runState.timeSeconds * 10 + this.host.runState.kills * 25 + this.host.runState.alloyScrapEarned * 2),
+        timeSeconds: this.host.runState.timeSeconds,
+        kills: this.host.runState.kills,
+        alloyScrap: this.host.runState.alloyScrapEarned
+      });
+    }
 
     this.host.uiManager.levelUpModal.hide();
     this.host.uiManager.vaultModal.hide();

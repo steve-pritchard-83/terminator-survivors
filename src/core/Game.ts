@@ -126,9 +126,9 @@ export class Game implements RunControllerHost, InputRouterHost, DebugAPIHost {
     this.sceneManager.scene.add(this.environment.group);
   }
 
-  public startRun(loadoutId: LoadoutId, customSeed?: number, stageId: StageId = 'la_2029_wasteland'): void {
+  public startRun(loadoutId: LoadoutId, customSeed?: number, stageId: StageId = 'la_2029_wasteland', isDaily = false, dailyDateKey = ''): void {
     this.setStage(stageId);
-    this.runController.startRun(loadoutId, customSeed, stageId);
+    this.runController.startRun(loadoutId, customSeed, stageId, isDaily, dailyDateKey);
   }
 
   public endRun(victory: boolean): void { this.runController.endRun(victory); }

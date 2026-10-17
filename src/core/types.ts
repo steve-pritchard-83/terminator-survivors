@@ -267,6 +267,24 @@ export interface MetaSaveData {
     maxKills: number;
     maxScrap: number;
   };
+  dailyAttempts?: Record<string, DailyAttemptRecord>;
+}
+
+export interface DailyOperationConfig {
+  dateKey: string;
+  seed: number;
+  stageId: StageId;
+  loadoutId: LoadoutId;
+  modifiersDescription: string;
+}
+
+export interface DailyAttemptRecord {
+  dateKey: string;
+  completed: boolean;
+  score: number;
+  timeSeconds: number;
+  kills: number;
+  alloyScrap: number;
 }
 
 export interface PerfTelemetry {
