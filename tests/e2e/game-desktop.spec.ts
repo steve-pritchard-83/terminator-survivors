@@ -25,8 +25,8 @@ test('Desktop gameplay: title, bunker shop, deploy, level up, and combat dive', 
   expect(state?.weapons.length).toBeGreaterThan(0);
   expect(state?.hp).toBe(100);
 
-  // 5. Test level up modal
-  await page.evaluate(() => window.__GAME_DEBUG__?.grantXp(100));
+  // 5. Test level up modal (level 1 -> 2 requires 20 XP; grantXp(20) triggers exactly 1 level-up)
+  await page.evaluate(() => window.__GAME_DEBUG__?.grantXp(20));
   await expect(page.getByTestId('levelup-modal')).toBeVisible();
   await expect(page.getByTestId('upgrade-card-0')).toBeVisible();
 
