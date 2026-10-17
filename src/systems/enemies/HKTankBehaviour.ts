@@ -1,30 +1,12 @@
-import * as THREE from 'three';
+import type * as THREE from 'three';
 import type { ActiveEnemy } from '../../core/types';
 import type { EnemyBehaviour, EnemyContext } from './EnemyBehaviour';
 import { HKTankMesh } from '../../graphics/meshes/HKTankMesh';
-import { disposeObject3D } from '../../graphics/dispose';
+import { CircleTelegraph } from '../../graphics/Telegraphs';
 
 export class HKTankBehaviour implements EnemyBehaviour {
   private readonly meshes = new Map<number, HKTankMesh>();
-  private readonly reticleMeshes = new Map<number, THREE.Mesh>();
-
-  private readonly artilleryReticleGeo: THREE.RingGeometry;
-  private readonly artilleryReticleMat: THREE.MeshBasicMaterial;
-
-  constructor() {
-    this.artilleryReticleGeo = new THREE.RingGeometry(4.2, 4.5, 32);
-    this.artilleryReticleGeo.rotateX(-Math.PI / 2);
-    this.artilleryReticleGeo.userData = { shared: true };
-
-    this.artilleryReticleMat = new THREE.MeshBasicMaterial({
-      color: 0xff1111,
-      transparent: true,
-      opacity: 0.7,
-      side: THREE.DoubleSide,
-      depthWrite: false
-    });
-    this.artilleryReticleMat.userData = { shared: true };
-  }
+  private readonly telegraphs = new Map<number, CircleTelegraph>();
 
   public createVisual(enemy: ActiveEnemy, ctx: EnemyContext): THREE.Object3D | null {
     const tank = new HKTankMesh();
@@ -57,17 +39,15 @@ export class HKTankBehaviour implements EnemyBehaviour {
     const targetX = state.targetX;
     const targetZ = state.targetZ;
 
-    let reticle = this.reticleMeshes.get(enemy.id);
-    if (!reticle) {
-      reticle = new THREE.Mesh(this.artilleryReticleGeo, this.artilleryReticleMat.clone());
-      ctx.group.add(reticle);
-      this.reticleMeshes.set(enemy.id, reticle);
+    let telegraph = this.telegraphs.get(enemy.id);
+    if (!telegraph) {
+      telegraph = new CircleTelegraph(4.5, 0xff1111);
+      ctx.group.add(telegraph.group);
+      this.telegraphs.set(enemy.id, telegraph);
     }
-    reticle.visible = true;
-    reticle.position.set(targetX, 0.05, targetZ);
+
     const chargeProgress = Math.min(1, chargeTimer / 3.0);
-    reticle.scale.set(chargeProgress, 1, chargeProgress);
-    (reticle.material as THREE.MeshBasicMaterial).opacity = 0.25 + 0.65 * chargeProgress;
+    telegraph.update(targetX, targetZ, chargeProgress, 4.5);
 
     if (chargeTimer >= 3.0) {
       state.chargeTimer = 0;
@@ -78,7 +58,7 @@ export class HKTankBehaviour implements EnemyBehaviour {
       if (blastDist < 4.5) {
         ctx.applyPlayerDamage(35);
       }
-      reticle.visible = false;
+      telegraph.setVisible(false);
       enemy.state.targetX = px;
       enemy.state.targetZ = pz;
     }
@@ -100,11 +80,11 @@ export class HKTankBehaviour implements EnemyBehaviour {
       tank.dispose();
       this.meshes.delete(enemy.id);
     }
-    const reticle = this.reticleMeshes.get(enemy.id);
-    if (reticle) {
-      ctx.group.remove(reticle);
-      disposeObject3D(reticle);
-      this.reticleMeshes.delete(enemy.id);
+    const telegraph = this.telegraphs.get(enemy.id);
+    if (telegraph) {
+      ctx.group.remove(telegraph.group);
+      telegraph.dispose();
+      this.telegraphs.delete(enemy.id);
     }
   }
 
@@ -114,9 +94,9 @@ export class HKTankBehaviour implements EnemyBehaviour {
     }
     this.meshes.clear();
 
-    for (const reticle of this.reticleMeshes.values()) {
-      disposeObject3D(reticle);
+    for (const telegraph of this.telegraphs.values()) {
+      telegraph.dispose();
     }
-    this.reticleMeshes.clear();
+    this.telegraphs.clear();
   }
 }

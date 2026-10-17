@@ -2,9 +2,11 @@ import type * as THREE from 'three';
 import type { ActiveEnemy } from '../../core/types';
 import type { EnemyBehaviour, EnemyContext } from './EnemyBehaviour';
 import { InfiltratorMesh } from '../../graphics/meshes/InfiltratorMesh';
+import { LineTelegraph } from '../../graphics/Telegraphs';
 
 export class InfiltratorBehaviour implements EnemyBehaviour {
   private readonly meshes = new Map<number, InfiltratorMesh>();
+  private readonly telegraphs = new Map<number, LineTelegraph>();
 
   public createVisual(enemy: ActiveEnemy, ctx: EnemyContext): THREE.Object3D | null {
     const infiltrator = new InfiltratorMesh();
@@ -31,7 +33,15 @@ export class InfiltratorBehaviour implements EnemyBehaviour {
     let cooldown = state.burstCooldown ?? enemy.phaseState ?? 0;
     let isFiring = false;
 
+    let telegraph = this.telegraphs.get(enemy.id);
+    if (!telegraph) {
+      telegraph = new LineTelegraph(0.45, 0xff1744);
+      ctx.group.add(telegraph.group);
+      this.telegraphs.set(enemy.id, telegraph);
+    }
+
     if (shotsLeft > 0) {
+      telegraph.setVisible(false);
       burstTimer -= dt;
       isFiring = true;
       if (burstTimer <= 0) {
@@ -44,10 +54,16 @@ export class InfiltratorBehaviour implements EnemyBehaviour {
       }
     } else {
       cooldown -= dt;
-      if (cooldown <= 0 && distToPlayer >= 4.0 && distToPlayer <= 20.0) {
+      if (cooldown <= 0.5 && cooldown > 0 && distToPlayer >= 4.0 && distToPlayer <= 20.0) {
+        const progress = (0.5 - cooldown) / 0.5;
+        telegraph.update(enemy.x, enemy.z, px, pz, progress, 1.4);
+      } else if (cooldown <= 0 && distToPlayer >= 4.0 && distToPlayer <= 20.0) {
         cooldown = 3.2; // Interval between bursts
         shotsLeft = 3;
         burstTimer = 0;
+        telegraph.setVisible(false);
+      } else {
+        telegraph.setVisible(false);
       }
     }
 
@@ -66,6 +82,12 @@ export class InfiltratorBehaviour implements EnemyBehaviour {
       infiltrator.dispose();
       this.meshes.delete(enemy.id);
     }
+    const telegraph = this.telegraphs.get(enemy.id);
+    if (telegraph) {
+      ctx.group.remove(telegraph.group);
+      telegraph.dispose();
+      this.telegraphs.delete(enemy.id);
+    }
   }
 
   public clear(): void {
@@ -73,5 +95,10 @@ export class InfiltratorBehaviour implements EnemyBehaviour {
       infiltrator.dispose();
     }
     this.meshes.clear();
+
+    for (const t of this.telegraphs.values()) {
+      t.dispose();
+    }
+    this.telegraphs.clear();
   }
 }

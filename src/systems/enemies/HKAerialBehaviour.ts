@@ -2,9 +2,11 @@ import type * as THREE from 'three';
 import type { ActiveEnemy } from '../../core/types';
 import type { EnemyBehaviour, EnemyContext } from './EnemyBehaviour';
 import { HKAerialMesh } from '../../graphics/meshes/HKAerialMesh';
+import { CircleTelegraph } from '../../graphics/Telegraphs';
 
 export class HKAerialBehaviour implements EnemyBehaviour {
   private readonly meshes = new Map<number, HKAerialMesh>();
+  private readonly telegraphs = new Map<number, CircleTelegraph>();
 
   public createVisual(enemy: ActiveEnemy, ctx: EnemyContext): THREE.Object3D | null {
     const isLeader = enemy.archetype === 'hk_aerial_squadron_leader';
@@ -32,16 +34,31 @@ export class HKAerialBehaviour implements EnemyBehaviour {
 
     const state = (enemy.state = enemy.state ?? {});
     let alertTimer = state.searchlightAlert ?? enemy.searchlightAlertTimer ?? 0;
+
+    let telegraph = this.telegraphs.get(enemy.id);
+    if (!telegraph) {
+      telegraph = new CircleTelegraph(3.8, 0xff1744);
+      ctx.group.add(telegraph.group);
+      this.telegraphs.set(enemy.id, telegraph);
+    }
+
     if (distToSearchlight < 3.8) {
       alertTimer += dt;
+      telegraph.update(searchlightTargetX, searchlightTargetZ, alertTimer / 1.2, 3.8);
       if (alertTimer >= 1.2) {
         ctx.audio.playSearchlightAlert();
         ctx.audio.playPlasmaShot(true);
         ctx.applyPlayerDamage(18);
         alertTimer = 0;
+        telegraph.setVisible(false);
       }
     } else {
       alertTimer = Math.max(0, alertTimer - dt * 1.5);
+      if (alertTimer > 0) {
+        telegraph.update(searchlightTargetX, searchlightTargetZ, alertTimer / 1.2, 3.8);
+      } else {
+        telegraph.setVisible(false);
+      }
     }
 
     state.searchlightAlert = alertTimer;
@@ -64,6 +81,12 @@ export class HKAerialBehaviour implements EnemyBehaviour {
       hk.dispose();
       this.meshes.delete(enemy.id);
     }
+    const telegraph = this.telegraphs.get(enemy.id);
+    if (telegraph) {
+      ctx.group.remove(telegraph.group);
+      telegraph.dispose();
+      this.telegraphs.delete(enemy.id);
+    }
   }
 
   public clear(): void {
@@ -71,5 +94,10 @@ export class HKAerialBehaviour implements EnemyBehaviour {
       hk.dispose();
     }
     this.meshes.clear();
+
+    for (const t of this.telegraphs.values()) {
+      t.dispose();
+    }
+    this.telegraphs.clear();
   }
 }
