@@ -8,9 +8,12 @@ import type { KyleReeseMesh } from '../graphics/meshes/KyleReeseMesh';
 import { ALL_WEAPONS } from '../data/weapons';
 import { globalEvents } from '../core/EventBus';
 
+export type ProjectileMeshCategory = 'pellet' | 'plasma' | 'heavy_plasma' | 'bomb';
+
 interface Projectile {
   id: number;
   weaponId: string;
+  meshCategory?: ProjectileMeshCategory;
   mesh: THREE.Object3D;
   x: number;
   y: number;
@@ -55,6 +58,13 @@ export class WeaponSystem {
   private readonly playerMesh: KyleReeseMesh;
 
   private projectiles: Projectile[] = [];
+  private readonly projectilePool: Projectile[] = [];
+  private readonly meshPools: Record<ProjectileMeshCategory, THREE.Mesh[]> = {
+    pellet: [],
+    plasma: [],
+    heavy_plasma: [],
+    bomb: []
+  };
   private groundZones: GroundZone[] = [];
   private orbitalDrones: THREE.Mesh[] = [];
   private transientVfx: TransientVfx[] = [];
@@ -93,6 +103,72 @@ export class WeaponSystem {
 
     this.plasmaBoltGeo.rotateX(Math.PI / 2);
     this.heavyPlasmaGeo.rotateX(Math.PI / 2);
+
+    // Pre-warm mesh pools to prevent GC churn during intense combat
+    this.prefillMeshPool('pellet', 32);
+    this.prefillMeshPool('plasma', 24);
+    this.prefillMeshPool('heavy_plasma', 16);
+    this.prefillMeshPool('bomb', 16);
+  }
+
+  private prefillMeshPool(category: ProjectileMeshCategory, count: number): void {
+    for (let i = 0; i < count; i++) {
+      let m: THREE.Mesh;
+      switch (category) {
+        case 'pellet':
+          m = new THREE.Mesh(this.pelletGeo, this.buckshotMat);
+          break;
+        case 'plasma':
+          m = new THREE.Mesh(this.plasmaBoltGeo, this.plasmaMat);
+          break;
+        case 'heavy_plasma':
+          m = new THREE.Mesh(this.heavyPlasmaGeo, this.heavyPlasmaMat);
+          break;
+        case 'bomb':
+          m = new THREE.Mesh(this.bombGeo, this.bombMat);
+          break;
+      }
+      m.visible = false;
+      this.group.add(m);
+      this.meshPools[category].push(m);
+    }
+  }
+
+  private acquireProjectileMesh(category: ProjectileMeshCategory): THREE.Mesh {
+    const pool = this.meshPools[category];
+    if (pool.length > 0) {
+      const m = pool.pop()!;
+      m.visible = true;
+      return m;
+    }
+    let m: THREE.Mesh;
+    switch (category) {
+      case 'pellet':
+        m = new THREE.Mesh(this.pelletGeo, this.buckshotMat);
+        break;
+      case 'plasma':
+        m = new THREE.Mesh(this.plasmaBoltGeo, this.plasmaMat);
+        break;
+      case 'heavy_plasma':
+        m = new THREE.Mesh(this.heavyPlasmaGeo, this.heavyPlasmaMat);
+        break;
+      case 'bomb':
+        m = new THREE.Mesh(this.bombGeo, this.bombMat);
+        break;
+    }
+    this.group.add(m);
+    return m;
+  }
+
+  private releaseProjectile(p: Projectile): void {
+    p.mesh.visible = false;
+    if (p.meshCategory && p.mesh instanceof THREE.Mesh) {
+      this.meshPools[p.meshCategory].push(p.mesh);
+    } else {
+      this.group.remove(p.mesh);
+    }
+    p.hitEnemyIds.clear();
+    this.projectilePool.push(p);
   }
 
   public update(dt: number, enemies: ActiveEnemy[], aimAngle: number | null = null): void {
@@ -170,9 +246,11 @@ export class WeaponSystem {
         for (let i = 0; i < amount; i++) {
           const angleOffset = (i / Math.max(1, amount - 1) - 0.5) * spreadAngle;
           const a = targetAngle + angleOffset;
+          const mesh = this.acquireProjectileMesh('pellet');
           this.spawnProjectile({
             weaponId: wId,
-            mesh: new THREE.Mesh(this.pelletGeo, this.buckshotMat),
+            meshCategory: 'pellet',
+            mesh,
             x: px,
             y: 0.8,
             z: pz,
@@ -195,9 +273,11 @@ export class WeaponSystem {
         // 360 ring of flechettes
         for (let i = 0; i < amount; i++) {
           const a = targetAngle + (i / amount) * Math.PI * 2;
+          const mesh = this.acquireProjectileMesh('pellet');
           this.spawnProjectile({
             weaponId: wId,
-            mesh: new THREE.Mesh(this.pelletGeo, this.buckshotMat),
+            meshCategory: 'pellet',
+            mesh,
             x: px,
             y: 0.8,
             z: pz,
@@ -219,10 +299,11 @@ export class WeaponSystem {
         this.playerMesh.pulseMuzzleFlash(0xd400ff);
         for (let i = 0; i < amount; i++) {
           const offset = (i - (amount - 1) / 2) * 0.12;
-          const boltMesh = new THREE.Mesh(this.plasmaBoltGeo, this.plasmaMat);
+          const boltMesh = this.acquireProjectileMesh('plasma');
           boltMesh.rotation.y = targetAngle;
           this.spawnProjectile({
             weaponId: wId,
+            meshCategory: 'plasma',
             mesh: boltMesh,
             x: px + Math.cos(targetAngle) * offset,
             y: 0.85,
@@ -245,10 +326,11 @@ export class WeaponSystem {
         this.playerMesh.pulseMuzzleFlash(0xff00ea);
         for (let i = 0; i < amount; i++) {
           const a = targetAngle + (Math.random() - 0.5) * 0.1;
-          const boltMesh = new THREE.Mesh(this.heavyPlasmaGeo, this.heavyPlasmaMat);
+          const boltMesh = this.acquireProjectileMesh('heavy_plasma');
           boltMesh.rotation.y = a;
           this.spawnProjectile({
             weaponId: wId,
+            meshCategory: 'heavy_plasma',
             mesh: boltMesh,
             x: px + (Math.random() - 0.5) * 0.4,
             y: 0.85,
@@ -271,9 +353,11 @@ export class WeaponSystem {
         for (let i = 0; i < amount; i++) {
           const a = targetAngle + (Math.random() - 0.5) * 0.5;
           const dist = 5 + Math.random() * 8;
+          const bombMesh = this.acquireProjectileMesh('bomb');
           this.spawnProjectile({
             weaponId: wId,
-            mesh: new THREE.Mesh(this.bombGeo, this.bombMat),
+            meshCategory: 'bomb',
+            mesh: bombMesh,
             x: px,
             y: 0.8,
             z: pz,
@@ -321,9 +405,11 @@ export class WeaponSystem {
         for (let i = 0; i < amount; i++) {
           const a = Math.random() * Math.PI * 2;
           const dist = 6 + Math.random() * 9;
+          const bombMesh = this.acquireProjectileMesh('bomb');
           this.spawnProjectile({
             weaponId: wId,
-            mesh: new THREE.Mesh(this.bombGeo, this.bombMat),
+            meshCategory: 'bomb',
+            mesh: bombMesh,
             x: px,
             y: 0.8,
             z: pz,
@@ -489,13 +575,38 @@ export class WeaponSystem {
   }
 
   private spawnProjectile(p: Omit<Projectile, 'id' | 'hitEnemyIds'>): void {
-    const proj: Projectile = {
-      ...p,
-      id: this.nextProjId++,
-      hitEnemyIds: new Set()
-    };
+    let proj: Projectile;
+    if (this.projectilePool.length > 0) {
+      proj = this.projectilePool.pop()!;
+      proj.weaponId = p.weaponId;
+      proj.meshCategory = p.meshCategory;
+      proj.mesh = p.mesh;
+      proj.x = p.x;
+      proj.y = p.y;
+      proj.z = p.z;
+      proj.vx = p.vx;
+      proj.vy = p.vy;
+      proj.vz = p.vz;
+      proj.damage = p.damage;
+      proj.radius = p.radius;
+      proj.pierceLeft = p.pierceLeft;
+      proj.life = p.life;
+      proj.maxLife = p.maxLife;
+      proj.isAreaOnExpire = p.isAreaOnExpire;
+      proj.areaRadius = p.areaRadius;
+      proj.hitEnemyIds.clear();
+    } else {
+      proj = {
+        ...p,
+        id: this.nextProjId++,
+        hitEnemyIds: new Set()
+      };
+    }
     proj.mesh.position.set(p.x, p.y, p.z);
-    this.group.add(proj.mesh);
+    proj.mesh.visible = true;
+    if (!proj.mesh.parent) {
+      this.group.add(proj.mesh);
+    }
     this.projectiles.push(proj);
   }
 
@@ -632,7 +743,7 @@ export class WeaponSystem {
             this.applyDamageToTarget(splash[s], p.damage);
           }
         }
-        this.group.remove(p.mesh);
+        this.releaseProjectile(p);
         this.projectiles.splice(i, 1);
       }
     }
@@ -672,7 +783,7 @@ export class WeaponSystem {
 
   public clear(): void {
     for (const p of this.projectiles) {
-      this.group.remove(p.mesh);
+      this.releaseProjectile(p);
     }
     this.projectiles.length = 0;
 

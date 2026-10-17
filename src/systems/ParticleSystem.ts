@@ -68,6 +68,32 @@ export class ParticleSystem {
       blending: THREE.AdditiveBlending,
       depthWrite: false
     });
+
+    // Zero-allocation pre-warming: pre-fill pools with reusable meshes
+    this.prefillPool('fire', 48, this.fireMat);
+    this.prefillPool('smoke', 36, this.smokeMat);
+    this.prefillPool('plasma', 24, this.plasmaMat);
+    this.prefillPool('dash', 20, this.dashMat);
+  }
+
+  private prefillPool(type: ParticleType, count: number, templateMat: THREE.MeshBasicMaterial): void {
+    for (let i = 0; i < count; i++) {
+      const mat = templateMat.clone();
+      const mesh = new THREE.Mesh(this.unitPlaneGeo, mat);
+      mesh.visible = false;
+      this.group.add(mesh);
+      this.freePool[type].push({
+        type,
+        mesh,
+        vx: 0,
+        vy: 0,
+        vz: 0,
+        life: 0,
+        maxLife: 1,
+        scaleStart: 1,
+        scaleEnd: 1
+      });
+    }
   }
 
   private acquireParticle(type: ParticleType): Particle {

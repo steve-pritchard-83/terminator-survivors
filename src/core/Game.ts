@@ -197,6 +197,14 @@ export class Game {
       }
     });
 
+    globalEvents.on('pickup:reward', ({ x, z, text, color }) => {
+      if (this.runState.mode !== 'playing') return;
+      const screenPos = this.sceneManager.worldToScreen(x, 0.8, z);
+      if (screenPos) {
+        this.uiManager.hudView.spawnFloatingText(text, color, screenPos.x, screenPos.y);
+      }
+    });
+
     globalEvents.on('levelup:triggered', ({ level, choices }) => {
       this.isPaused = true;
       this.runState.mode = 'levelup';

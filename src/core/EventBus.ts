@@ -9,6 +9,7 @@ export type GameEventMap = {
   'enemy:killed': { enemy: ActiveEnemy; x: number; z: number; xp: number };
   'enemy:damaged': { x: number; z: number; damage: number; isCrit: boolean };
   'crate:destroyed': { crateId: number; x: number; z: number };
+  'pickup:reward': { x: number; z: number; text: string; color: string };
   'wave:minute': { minute: number };
   'boss:spawned': { archetype: string; name: string; maxHp: number };
   'boss:defeated': { archetype: string; x: number; z: number };

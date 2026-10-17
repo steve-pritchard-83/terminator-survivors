@@ -49,6 +49,7 @@ export class EnemySystem {
   private readonly skynetNovaCooldown = new Map<number, number>();
 
   // Enemy projectiles & artillery reticles
+  private readonly enemyProjectilePool: EnemyProjectile[] = [];
   private readonly enemyPlasmaGeo = new THREE.CylinderGeometry(0.09, 0.09, 0.75, 8);
   private readonly enemyPlasmaMat = new THREE.MeshBasicMaterial({ color: 0xff1144 });
   private readonly artilleryReticleGeo = new THREE.RingGeometry(4.2, 4.5, 32);
@@ -77,6 +78,25 @@ export class EnemySystem {
 
     this.enemyPlasmaGeo.rotateX(Math.PI / 2);
     this.artilleryReticleGeo.rotateX(-Math.PI / 2);
+
+    // Pre-warm enemy projectile pool
+    for (let i = 0; i < 24; i++) {
+      const mesh = new THREE.Mesh(this.enemyPlasmaGeo, this.enemyPlasmaMat);
+      mesh.visible = false;
+      this.group.add(mesh);
+      this.enemyProjectilePool.push({
+        mesh,
+        x: 0,
+        y: 0,
+        z: 0,
+        vx: 0,
+        vz: 0,
+        damage: 12,
+        radius: 0.35,
+        life: 0,
+        maxLife: 2.2
+      });
+    }
   }
 
   public spawnEnemy(
@@ -143,6 +163,11 @@ export class EnemySystem {
     return enemy;
   }
 
+  private releaseEnemyProjectile(p: EnemyProjectile): void {
+    p.mesh.visible = false;
+    this.enemyProjectilePool.push(p);
+  }
+
   private spawnEnemyProjectile(
     x: number,
     y: number,
@@ -160,23 +185,41 @@ export class EnemySystem {
     const vz = (dz / dist) * speed;
     const angle = Math.atan2(dx, dz);
 
-    const mesh = new THREE.Mesh(this.enemyPlasmaGeo, this.enemyPlasmaMat);
-    mesh.position.set(x, y, z);
-    mesh.rotation.y = angle;
-    this.group.add(mesh);
+    let p: EnemyProjectile;
+    if (this.enemyProjectilePool.length > 0) {
+      p = this.enemyProjectilePool.pop()!;
+      p.x = x;
+      p.y = y;
+      p.z = z;
+      p.vx = vx;
+      p.vz = vz;
+      p.damage = damage;
+      p.radius = 0.35;
+      p.life = 0;
+      p.maxLife = 2.2;
+      p.mesh.position.set(x, y, z);
+      p.mesh.rotation.y = angle;
+      p.mesh.visible = true;
+    } else {
+      const mesh = new THREE.Mesh(this.enemyPlasmaGeo, this.enemyPlasmaMat);
+      mesh.position.set(x, y, z);
+      mesh.rotation.y = angle;
+      this.group.add(mesh);
+      p = {
+        mesh,
+        x,
+        y,
+        z,
+        vx,
+        vz,
+        damage,
+        radius: 0.35,
+        life: 0,
+        maxLife: 2.2
+      };
+    }
 
-    this.enemyProjectiles.push({
-      mesh,
-      x,
-      y,
-      z,
-      vx,
-      vz,
-      damage,
-      radius: 0.35,
-      life: 0,
-      maxLife: 2.2
-    });
+    this.enemyProjectiles.push(p);
     this.audio.playPlasmaShot(false);
   }
 
@@ -286,13 +329,13 @@ export class EnemySystem {
       if (pdist < p.radius + 0.55) {
         this.applyPlayerDamage(p.damage);
         this.particles.spawnPlasmaImpact(p.x, p.y, p.z);
-        this.group.remove(p.mesh);
+        this.releaseEnemyProjectile(p);
         this.enemyProjectiles.splice(pIdx, 1);
         continue;
       }
 
       if (p.life >= p.maxLife) {
-        this.group.remove(p.mesh);
+        this.releaseEnemyProjectile(p);
         this.enemyProjectiles.splice(pIdx, 1);
       }
     }
@@ -537,7 +580,7 @@ export class EnemySystem {
   public clear(): void {
     this.activeEnemies.length = 0;
     for (const p of this.enemyProjectiles) {
-      this.group.remove(p.mesh);
+      this.releaseEnemyProjectile(p);
     }
     this.enemyProjectiles.length = 0;
     for (const r of this.tankReticleMeshes.values()) {

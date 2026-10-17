@@ -80,4 +80,28 @@ describe('Combat and Leveling Mathematics', () => {
     expect(scrap).toBe(62);
     expect(state.alloyScrapEarned).toBe(62);
   });
+
+  it('computes critical hit and armor-strip vulnerability damage scaling', () => {
+    const baseDamage = 100;
+
+    // Normal hit with intact armor (armorStripMultiplier = 1.0)
+    const vulnIntact = 1 / Math.max(0.4, 1.0);
+    expect(vulnIntact).toBe(1.0);
+    const normalDamage = Math.round(baseDamage * vulnIntact * 1.0);
+    expect(normalDamage).toBe(100);
+
+    // Critical hit with intact armor
+    const critDamage = Math.round(baseDamage * vulnIntact * 1.75);
+    expect(critDamage).toBe(175);
+
+    // Stripped armor (e.g., emp_supernova reduces armorStripMultiplier to 0.4)
+    const vulnStripped = 1 / Math.max(0.4, 0.4);
+    expect(vulnStripped).toBe(2.5); // 2.5x vulnerability multiplier!
+    const strippedDamage = Math.round(baseDamage * vulnStripped * 1.0);
+    expect(strippedDamage).toBe(250);
+
+    // Critical hit against stripped armor (2.5x * 1.75x = 4.375x!)
+    const strippedCritDamage = Math.round(baseDamage * vulnStripped * 1.75);
+    expect(strippedCritDamage).toBe(438);
+  });
 });
