@@ -17,7 +17,7 @@ import { PickupSystem } from '../systems/PickupSystem';
 import { UIManager } from '../ui/UIManager';
 import { globalEvents } from './EventBus';
 import { globalRNG } from './RNG';
-import type { EnemyArchetypeId, GameDebugAPI, LoadoutId, UpgradeChoice } from './types';
+import type { EnemyArchetypeId, GameDebugAPI, LoadoutId, PerfTelemetry, UpgradeChoice } from './types';
 
 export class Game {
   public readonly sceneManager: SceneManager;
@@ -517,6 +517,31 @@ export class Game {
       },
       spawnBoss: (archetype: EnemyArchetypeId) => {
         this.waveDirector.spawnBoss(archetype);
+      },
+      spawnSwarm: (archetype: EnemyArchetypeId, count: number) => {
+        const px = this.runState.playerPos.x;
+        const pz = this.runState.playerPos.z;
+        for (let i = 0; i < count; i++) {
+          const angle = (i / count) * Math.PI * 2 + (globalRNG.next() - 0.5) * 0.2;
+          const radius = 16 + (i % 6) * 2.5 + globalRNG.next() * 2;
+          const ex = px + Math.cos(angle) * radius;
+          const ez = pz + Math.sin(angle) * radius;
+          this.enemySystem.spawnEnemy(archetype, ex, ez);
+        }
+      },
+      getPerf: (): PerfTelemetry => {
+        const perfMemory =
+          typeof performance !== 'undefined' && (performance as any).memory
+            ? Number((((performance as any).memory.usedJSHeapSize) / (1024 * 1024)).toFixed(1))
+            : undefined;
+        return {
+          fps: this.gameLoop.fps,
+          frameTimeMs: this.gameLoop.frameTimeMs,
+          drawCalls: this.sceneManager.renderer.info.render.calls,
+          geometries: this.sceneManager.renderer.info.memory.geometries,
+          textures: this.sceneManager.renderer.info.memory.textures,
+          heapMB: perfMemory
+        };
       },
       triggerVault: () => {
         this.pickupSystem.spawnBossVault(this.runState.playerPos.x, this.runState.playerPos.z);

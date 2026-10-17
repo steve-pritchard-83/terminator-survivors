@@ -175,6 +175,15 @@ export interface MetaSaveData {
   };
 }
 
+export interface PerfTelemetry {
+  fps: number;
+  frameTimeMs: number;
+  drawCalls: number;
+  geometries: number;
+  textures: number;
+  heapMB?: number;
+}
+
 export interface GameDebugAPI {
   getState: () => {
     mode: GameMode;
@@ -198,6 +207,8 @@ export interface GameDebugAPI {
   };
   grantXp: (amount: number) => void;
   spawnBoss: (archetype: EnemyArchetypeId) => void;
+  spawnSwarm: (archetype: EnemyArchetypeId, count: number) => void;
+  getPerf: () => PerfTelemetry;
   triggerVault: () => void;
   fastForward: (seconds: number) => void;
   setGodMode: (enabled: boolean) => void;
