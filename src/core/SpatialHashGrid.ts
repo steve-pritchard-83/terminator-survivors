@@ -54,7 +54,6 @@ export class SpatialHashGrid {
     const maxCx = Math.floor((x + radius) / this.cellSize);
     const minCz = Math.floor((z - radius) / this.cellSize);
     const maxCz = Math.floor((z + radius) / this.cellSize);
-    const r2 = radius * radius;
 
     for (let cx = minCx; cx <= maxCx; cx++) {
       for (let cz = minCz; cz <= maxCz; cz++) {
@@ -98,5 +97,28 @@ export class SpatialHashGrid {
       }
     }
     return nearest;
+  }
+
+  public findNearestN(
+    x: number,
+    z: number,
+    count: number,
+    maxRadius: number,
+    filterFn?: (e: SpatialEntity) => boolean
+  ): SpatialEntity[] {
+    if (count <= 0) return [];
+    const candidates = this.queryRadius(x, z, maxRadius);
+    const filtered: Array<{ entity: SpatialEntity; distSq: number }> = [];
+
+    for (let i = 0; i < candidates.length; i++) {
+      const e = candidates[i];
+      if (filterFn && !filterFn(e)) continue;
+      const dx = e.x - x;
+      const dz = e.z - z;
+      filtered.push({ entity: e, distSq: dx * dx + dz * dz });
+    }
+
+    filtered.sort((a, b) => a.distSq - b.distSq);
+    return filtered.slice(0, count).map((item) => item.entity);
   }
 }

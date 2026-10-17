@@ -7,6 +7,7 @@ import type { ParticleSystem } from './ParticleSystem';
 import type { KyleReeseMesh } from '../graphics/meshes/KyleReeseMesh';
 import { ALL_WEAPONS } from '../data/weapons';
 import { globalEvents } from '../core/EventBus';
+import { globalRNG } from '../core/RNG';
 
 export type ProjectileMeshCategory = 'pellet' | 'plasma' | 'heavy_plasma' | 'bomb';
 
@@ -67,6 +68,7 @@ export class WeaponSystem {
   };
   private groundZones: GroundZone[] = [];
   private orbitalDrones: THREE.Mesh[] = [];
+  private droneHitCooldowns = new Map<number, number>();
   private transientVfx: TransientVfx[] = [];
   private orbitalAngle = 0;
   private nextProjId = 1;
@@ -453,11 +455,15 @@ export class WeaponSystem {
 
       case 'laser_designator':
       case 'orbital_ion': {
-        const count = wId === 'orbital_ion' ? 3 : amount;
+        const count = stats.amount + this.runState.computedStats.bonusAmount;
+        const targets = this.runState.autoAimEnabled
+          ? (this.grid.findNearestN(px, pz, count, 28, (e) => e.type === 'enemy') as ActiveEnemy[])
+          : [];
+
         for (let i = 0; i < count; i++) {
-          const target = nearest ?? {
-            x: px + (Math.random() - 0.5) * 16,
-            z: pz + (Math.random() - 0.5) * 16
+          const target = targets[i] ?? {
+            x: px + (globalRNG.next() - 0.5) * 16,
+            z: pz + (globalRNG.next() - 0.5) * 16
           };
           this.audio.playPlasmaShot(true);
           const ionRadius = (wId === 'orbital_ion' ? 3.5 : 2.5) * areaMult;
@@ -677,12 +683,39 @@ export class WeaponSystem {
         this.group.remove(d);
       }
       this.orbitalDrones.length = 0;
+      this.droneHitCooldowns.clear();
       return;
     }
 
-    const count = ringSlot ? 6 : Math.min(5, 2 + activeSlot.level);
-    const orbitSpeed = ringSlot ? 5.5 : 3.2;
-    const radius = ringSlot ? 3.8 : 2.8;
+    // Decrement hit cooldowns
+    for (const [id, cd] of this.droneHitCooldowns.entries()) {
+      const nextCd = cd - dt;
+      if (nextCd <= 0) {
+        this.droneHitCooldowns.delete(id);
+      } else {
+        this.droneHitCooldowns.set(id, nextCd);
+      }
+    }
+
+    const def = ALL_WEAPONS[activeSlot.id];
+    const stats = def?.levels[Math.min(activeSlot.level - 1, def.levels.length - 1)] ?? {
+      damage: 18,
+      speed: 4.2,
+      amount: 2,
+      area: 1.1,
+      cooldown: 3.2,
+      duration: 2.6,
+      pierce: 99
+    };
+
+    const might = this.runState.computedStats.mightMultiplier;
+    const areaMult = this.runState.computedStats.areaMultiplier;
+    const damage = Math.round(stats.damage * might);
+    const count = Math.min(8, Math.max(1, stats.amount + this.runState.computedStats.bonusAmount));
+    const orbitSpeed = stats.speed;
+    const radius = (ringSlot ? 3.8 : 2.8) * areaMult;
+    const hitRadius = 0.6 * areaMult;
+
     this.orbitalAngle += dt * orbitSpeed;
 
     // Ensure correct drone mesh count
@@ -696,8 +729,6 @@ export class WeaponSystem {
       this.group.remove(removed);
     }
 
-    const damage = ringSlot ? 48 : 18 + activeSlot.level * 4;
-
     for (let i = 0; i < count; i++) {
       const a = this.orbitalAngle + (i / count) * Math.PI * 2;
       const dx = px + Math.cos(a) * radius;
@@ -707,10 +738,17 @@ export class WeaponSystem {
       dMesh.position.set(dx, 0.75, dz);
       dMesh.rotation.y = -a;
 
-      // Slice through enemies in contact
-      const hit = this.grid.queryRadius(dx, dz, 0.6);
+      // Slice through enemies in contact with 0.35s per-enemy cooldown
+      const hit = this.grid.queryRadius(dx, dz, hitRadius);
       for (let h = 0; h < hit.length; h++) {
-        this.applyDamageToTarget(hit[h], damage * dt * 3.5);
+        const target = hit[h];
+        if (target.type !== 'enemy') continue;
+        if (!this.droneHitCooldowns.has(target.id)) {
+          this.droneHitCooldowns.set(target.id, 0.35);
+          this.applyDamageToTarget(target, damage);
+          this.audio.playEndoHit();
+          this.particles.spawnPlasmaImpact(dx, 0.75, dz);
+        }
       }
     }
   }
@@ -815,6 +853,7 @@ export class WeaponSystem {
       this.group.remove(d);
     }
     this.orbitalDrones.length = 0;
+    this.droneHitCooldowns.clear();
 
     for (const fx of this.transientVfx) {
       this.group.remove(fx.mesh);
