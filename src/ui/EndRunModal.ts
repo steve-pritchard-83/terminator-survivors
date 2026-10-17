@@ -46,6 +46,7 @@ export class EndRunModal {
     kills: number,
     level: number,
     scrap: number,
+    seed: number | undefined,
     onReturn: () => void
   ): void {
     this.onReturnCallback = onReturn;
@@ -71,6 +72,7 @@ export class EndRunModal {
       <div>TERMINATIONS: <span style="color:var(--color-red)">${kills}</span></div>
       <div>FIELD LEVEL: <span style="color:var(--color-cyan)">LV ${level}</span></div>
       <div>ALLOY SCRAP RECOVERED: <span style="color:#ffd700">+${scrap}</span></div>
+      ${seed !== undefined ? `<div>MISSION SEED: <span style="color:var(--color-chrome)">${seed}</span></div>` : ''}
     `;
   }
 

@@ -12,6 +12,7 @@ import { T1000Mesh } from '../graphics/meshes/T1000Mesh';
 import { InfiltratorMesh } from '../graphics/meshes/InfiltratorMesh';
 import { SkynetCoreMesh } from '../graphics/meshes/SkynetCoreMesh';
 import { globalEvents } from '../core/EventBus';
+import { globalRNG } from '../core/RNG';
 
 export interface EnemyProjectile {
   mesh: THREE.Mesh;
@@ -471,8 +472,8 @@ export class EnemySystem {
           if (burst.burstTimer <= 0) {
             burst.shotsLeft--;
             burst.burstTimer = 0.15;
-            const spreadX = (Math.random() - 0.5) * 1.2;
-            const spreadZ = (Math.random() - 0.5) * 1.2;
+            const spreadX = (globalRNG.next() - 0.5) * 1.2;
+            const spreadZ = (globalRNG.next() - 0.5) * 1.2;
             this.spawnEnemyProjectile(enemy.x, 1.25, enemy.z, px + spreadX, pz + spreadZ, 12.0, 15);
             this.audio.playPlasmaShot(true);
           }

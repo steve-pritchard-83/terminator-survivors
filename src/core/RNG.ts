@@ -35,3 +35,4 @@ export class RNG {
 }
 
 export const globalRNG = new RNG();
+export const vfxRNG = new RNG(0x1337c0de);

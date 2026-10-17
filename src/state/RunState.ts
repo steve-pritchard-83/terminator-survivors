@@ -32,6 +32,7 @@ export class RunState {
   public xp = 0;
   public xpToNext = getXpForNextLevel(1);
   public pendingLevelUps = 0;
+  public seed = 0;
   public hp = 100;
   public maxHp = 100;
   public kills = 0;
@@ -76,8 +77,13 @@ export class RunState {
     };
   }
 
-  public initRun(loadoutId: LoadoutId, purchasedMetaUpgrades: Record<string, number>): void {
+  public initRun(
+    loadoutId: LoadoutId,
+    purchasedMetaUpgrades: Record<string, number>,
+    seed = 0
+  ): void {
     this.mode = 'playing';
+    this.seed = seed;
     this.timeSeconds = 0;
     this.level = 1;
     this.xp = 0;

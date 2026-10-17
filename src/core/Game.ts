@@ -16,6 +16,7 @@ import { WaveDirector } from '../systems/WaveDirector';
 import { PickupSystem } from '../systems/PickupSystem';
 import { UIManager } from '../ui/UIManager';
 import { globalEvents } from './EventBus';
+import { globalRNG } from './RNG';
 import type { EnemyArchetypeId, GameDebugAPI, LoadoutId, UpgradeChoice } from './types';
 
 export class Game {
@@ -254,8 +255,10 @@ export class Game {
     });
   }
 
-  public startRun(loadoutId: LoadoutId): void {
-    this.runState.initRun(loadoutId, this.saveManager.getData().upgrades);
+  public startRun(loadoutId: LoadoutId, customSeed?: number): void {
+    const seed = (customSeed !== undefined ? customSeed : Date.now()) >>> 0;
+    globalRNG.setSeed(seed);
+    this.runState.initRun(loadoutId, this.saveManager.getData().upgrades, seed);
     this.runState.autoAimEnabled = this.saveManager.getData().settings.autoAim;
     this.weaponSystem.clear();
     this.enemySystem.clear();
@@ -297,6 +300,7 @@ export class Game {
       this.runState.kills,
       this.runState.level,
       this.runState.alloyScrapEarned,
+      this.runState.seed,
       () => {
         this.audioEngine.playHudScanClose();
         this.runState.mode = 'title';
@@ -469,6 +473,7 @@ export class Game {
         mode: this.runState.mode,
         fps: this.gameLoop.fps,
         timeSeconds: this.runState.timeSeconds,
+        seed: this.runState.seed,
         level: this.runState.level,
         xp: this.runState.xp,
         xpToNext: this.runState.xpToNext,

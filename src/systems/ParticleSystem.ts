@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { ProceduralTextures } from '../graphics/ProceduralTextures';
+import { vfxRNG } from '../core/RNG';
 
 export type ParticleType = 'fire' | 'smoke' | 'plasma' | 'dash';
 
@@ -142,15 +143,15 @@ export class ParticleSystem {
     for (let i = 0; i < 6; i++) {
       const p = this.acquireParticle('fire');
       p.mesh.position.set(
-        x + (Math.random() - 0.5) * 0.8 * scale,
+        x + (vfxRNG.next() - 0.5) * 0.8 * scale,
         y + 0.1 + i * 0.05,
-        z + (Math.random() - 0.5) * 0.8 * scale
+        z + (vfxRNG.next() - 0.5) * 0.8 * scale
       );
-      p.vx = (Math.random() - 0.5) * 1.5;
-      p.vy = 0.5 + Math.random() * 1.2;
-      p.vz = (Math.random() - 0.5) * 1.5;
+      p.vx = (vfxRNG.next() - 0.5) * 1.5;
+      p.vy = 0.5 + vfxRNG.next() * 1.2;
+      p.vz = (vfxRNG.next() - 0.5) * 1.5;
       p.life = 0;
-      p.maxLife = 0.45 + Math.random() * 0.25;
+      p.maxLife = 0.45 + vfxRNG.next() * 0.25;
       p.scaleStart = 1.2 * scale;
       p.scaleEnd = 5.2 * scale;
       this.particles.push(p);
@@ -160,11 +161,11 @@ export class ParticleSystem {
     for (let i = 0; i < 4; i++) {
       const p = this.acquireParticle('smoke');
       p.mesh.position.set(x, y + 0.2, z);
-      p.vx = (Math.random() - 0.5) * 0.8;
-      p.vy = 1.2 + Math.random() * 1.5;
-      p.vz = (Math.random() - 0.5) * 0.8;
+      p.vx = (vfxRNG.next() - 0.5) * 0.8;
+      p.vy = 1.2 + vfxRNG.next() * 1.5;
+      p.vz = (vfxRNG.next() - 0.5) * 0.8;
       p.life = 0;
-      p.maxLife = 0.8 + Math.random() * 0.4;
+      p.maxLife = 0.8 + vfxRNG.next() * 0.4;
       p.scaleStart = 2.8 * scale;
       p.scaleEnd = 9.8 * scale;
       this.particles.push(p);

@@ -179,6 +179,7 @@ export interface GameDebugAPI {
     mode: GameMode;
     fps: number;
     timeSeconds: number;
+    seed: number;
     level: number;
     xp: number;
     xpToNext: number;

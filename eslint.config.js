@@ -8,11 +8,11 @@ export default tseslint.config(
     files: ['src/systems/**/*.ts', 'src/state/**/*.ts'],
     rules: {
       'no-restricted-syntax': [
-        'warn',
+        'error',
         {
           selector: "CallExpression[callee.object.name='Math'][callee.property.name='random']",
           message:
-            'Math.random is discouraged in src/systems/ and src/state/. Use globalRNG or vfxRNG instead.'
+            'Math.random is forbidden in src/systems/ and src/state/. Use globalRNG or vfxRNG instead.'
         }
       ]
     }

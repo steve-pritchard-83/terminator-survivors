@@ -334,16 +334,16 @@ export class WeaponSystem {
         this.audio.playPlasmaShot(true);
         this.playerMesh.pulseMuzzleFlash(0xff00ea);
         for (let i = 0; i < amount; i++) {
-          const a = targetAngle + (Math.random() - 0.5) * 0.1;
+          const a = targetAngle + (globalRNG.next() - 0.5) * 0.1;
           const boltMesh = this.acquireProjectileMesh('heavy_plasma');
           boltMesh.rotation.y = a;
           this.spawnProjectile({
             weaponId: wId,
             meshCategory: 'heavy_plasma',
             mesh: boltMesh,
-            x: px + (Math.random() - 0.5) * 0.4,
+            x: px + (globalRNG.next() - 0.5) * 0.4,
             y: 0.85,
-            z: pz + (Math.random() - 0.5) * 0.4,
+            z: pz + (globalRNG.next() - 0.5) * 0.4,
             vx: Math.sin(a) * stats.speed,
             vy: 0,
             vz: Math.cos(a) * stats.speed,
@@ -360,8 +360,8 @@ export class WeaponSystem {
       case 'pipe_bomb':
       case 'thermite_buster': {
         for (let i = 0; i < amount; i++) {
-          const a = targetAngle + (Math.random() - 0.5) * 0.5;
-          const dist = 5 + Math.random() * 8;
+          const a = targetAngle + (globalRNG.next() - 0.5) * 0.5;
+          const dist = 5 + globalRNG.next() * 8;
           const bombMesh = this.acquireProjectileMesh('bomb');
           this.spawnProjectile({
             weaponId: wId,
@@ -412,8 +412,8 @@ export class WeaponSystem {
       case 'm79_thumper':
       case 'mm1_barrage': {
         for (let i = 0; i < amount; i++) {
-          const a = Math.random() * Math.PI * 2;
-          const dist = 6 + Math.random() * 9;
+          const a = globalRNG.next() * Math.PI * 2;
+          const dist = 6 + globalRNG.next() * 9;
           const bombMesh = this.acquireProjectileMesh('bomb');
           this.spawnProjectile({
             weaponId: wId,
@@ -441,7 +441,7 @@ export class WeaponSystem {
       case 'firestorm_wall': {
         for (let i = 0; i < amount; i++) {
           const angle = (i / amount) * Math.PI * 2;
-          const dist = 4 + Math.random() * 3;
+          const dist = 4 + globalRNG.next() * 3;
           this.spawnGroundZone(
             px + Math.cos(angle) * dist,
             pz + Math.sin(angle) * dist,
@@ -572,7 +572,7 @@ export class WeaponSystem {
     if (entity.type !== 'enemy') return false;
 
     const enemy = entity as ActiveEnemy;
-    const isCrit = Math.random() < this.runState.computedStats.critChance;
+    const isCrit = globalRNG.chance(this.runState.computedStats.critChance);
     const vulnMult = 1 / Math.max(0.4, enemy.armorStripMultiplier);
     const finalDamage = Math.max(1, Math.round(baseDamage * vulnMult * (isCrit ? 1.75 : 1.0)));
     enemy.hp -= finalDamage;

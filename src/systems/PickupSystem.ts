@@ -4,6 +4,7 @@ import type { AudioEngine } from '../audio/AudioEngine';
 import type { SpatialEntity } from '../core/types';
 import { PickupMeshFactory } from '../graphics/meshes/PickupMeshes';
 import { globalEvents } from '../core/EventBus';
+import { globalRNG } from '../core/RNG';
 
 export interface ActivePickup extends SpatialEntity {
   mesh: THREE.Object3D;
@@ -35,12 +36,15 @@ export class PickupSystem {
       } else {
         this.spawnDataCore(x, z, xp);
         // 25% chance to award alloy scrap on normal enemy kills
-        if (Math.random() < 0.25) {
+        if (globalRNG.chance(0.25)) {
           this.runState.addScrap(2);
         }
         // 7% chance to drop destructible supply crate in condensed 10-minute runs
-        if (Math.random() < 0.07) {
-          this.spawnSupplyCrate(x + (Math.random() - 0.5) * 2, z + (Math.random() - 0.5) * 2);
+        if (globalRNG.chance(0.07)) {
+          this.spawnSupplyCrate(
+            x + (globalRNG.next() - 0.5) * 2,
+            z + (globalRNG.next() - 0.5) * 2
+          );
         }
       }
     });
@@ -163,7 +167,7 @@ export class PickupSystem {
     } else if (p.kind === 'crate') {
       this.audio.playExplosion(0.8);
       // Random crate rewards: Heal, EMP blast, or Alloy Scrap
-      const roll = Math.random();
+      const roll = globalRNG.next();
       if (roll < 0.4) {
         this.runState.heal(35);
         globalEvents.emit('pickup:reward', {
