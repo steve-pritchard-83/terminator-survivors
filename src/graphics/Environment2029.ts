@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { ProceduralTextures } from './ProceduralTextures';
 import { bakePart, mergeParts } from './meshes/geometryUtils';
+import type { IEnvironment } from './environments/IEnvironment';
+import { disposeObject3D } from './dispose';
 
 interface Chunk {
   x: number;
@@ -8,7 +10,7 @@ interface Chunk {
   group: THREE.Group;
 }
 
-export class Environment2029 {
+export class Environment2029 implements IEnvironment {
   public readonly group = new THREE.Group();
   public readonly obstacleColliders: Array<{ x: number; z: number; radius: number }> = [];
 
@@ -724,5 +726,11 @@ export class Environment2029 {
     if (needsRepopulate) {
       this.repopulateProps(curChunkX, curChunkZ);
     }
+  }
+
+  public dispose(): void {
+    disposeObject3D(this.group);
+    this.obstacleColliders.length = 0;
+    this.chunks.length = 0;
   }
 }

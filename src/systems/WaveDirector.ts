@@ -1,6 +1,7 @@
 import type { RunState } from '../state/RunState';
 import type { EnemySystem } from './EnemySystem';
 import { RUN_DURATION_MINUTES, WAVE_TIMELINE } from '../data/waves';
+import { STAGES } from '../data/stages';
 import { globalEvents } from '../core/EventBus';
 import { globalRNG } from '../core/RNG';
 import type { EnemyArchetypeId } from '../core/types';
@@ -31,20 +32,21 @@ export class WaveDirector {
     this.runState.timeSeconds += dt;
     const totalSec = Math.floor(this.runState.timeSeconds);
     const minute = Math.min(RUN_DURATION_MINUTES, Math.floor(totalSec / 60));
+    const timeline = STAGES[this.runState.stageId]?.waveTimeline ?? WAVE_TIMELINE;
 
     // Check minute transition
     if (minute !== this.currentMinute) {
       this.currentMinute = minute;
       globalEvents.emit('wave:minute', { minute });
 
-      const entry = WAVE_TIMELINE[minute];
+      const entry = timeline[minute];
       if (entry?.boss && !this.spawnedBossesThisRun.has(`${minute}_${entry.boss}`)) {
         this.spawnedBossesThisRun.add(`${minute}_${entry.boss}`);
         this.spawnBoss(entry.boss, entry.alertBanner);
       }
     }
 
-    const entry = WAVE_TIMELINE[Math.min(RUN_DURATION_MINUTES, this.currentMinute)];
+    const entry = timeline[Math.min(RUN_DURATION_MINUTES, this.currentMinute)];
     if (!entry) return;
 
     // Normal wave spawns

@@ -6,7 +6,7 @@ import { InputManager } from '../input/InputManager';
 import { AudioEngine } from '../audio/AudioEngine';
 import { SpatialHashGrid } from './SpatialHashGrid';
 import { ParticleSystem } from '../systems/ParticleSystem';
-import { Environment2029 } from '../graphics/Environment2029';
+import { createEnvironment, type IEnvironment } from '../graphics/environments';
 import { KyleReeseMesh } from '../graphics/meshes/KyleReeseMesh';
 import { EndoskeletonBatch } from '../graphics/meshes/EndoskeletonBatch';
 import { PlayerSystem } from '../systems/PlayerSystem';
@@ -19,7 +19,7 @@ import { UIManager } from '../ui/UIManager';
 import { RunController, type RunControllerHost } from './RunController';
 import { InputRouter, type InputRouterHost } from './InputRouter';
 import { DebugAPI, type DebugAPIHost } from './DebugAPI';
-import type { LoadoutId } from './types';
+import type { LoadoutId, StageId } from './types';
 
 export class Game implements RunControllerHost, InputRouterHost, DebugAPIHost {
   public readonly sceneManager: SceneManager;
@@ -30,7 +30,7 @@ export class Game implements RunControllerHost, InputRouterHost, DebugAPIHost {
   public readonly audioEngine: AudioEngine;
   public readonly grid: SpatialHashGrid;
   public readonly particles: ParticleSystem;
-  public readonly environment: Environment2029;
+  public environment: IEnvironment;
   public readonly playerMesh: KyleReeseMesh;
   public readonly endoBatch: EndoskeletonBatch;
 
@@ -68,16 +68,10 @@ export class Game implements RunControllerHost, InputRouterHost, DebugAPIHost {
 
     this.sceneManager = new SceneManager(canvasContainer);
     this.particles = new ParticleSystem();
-    this.environment = new Environment2029();
+    this.environment = createEnvironment('la_2029_wasteland');
     this.playerMesh = new KyleReeseMesh();
     this.endoBatch = new EndoskeletonBatch(650);
-
-    this.sceneManager.scene.add(
-      this.environment.group,
-      this.playerMesh.group,
-      this.endoBatch.group,
-      this.particles.group
-    );
+    this.sceneManager.scene.add(this.environment.group, this.playerMesh.group, this.endoBatch.group, this.particles.group);
 
     // 3. Gameplay Systems
     this.playerSystem = new PlayerSystem(this.runState, this.playerMesh, this.particles);
@@ -125,8 +119,16 @@ export class Game implements RunControllerHost, InputRouterHost, DebugAPIHost {
     return this.runController.activeBoss;
   }
 
-  public startRun(loadoutId: LoadoutId, customSeed?: number): void {
-    this.runController.startRun(loadoutId, customSeed);
+  public setStage(stageId: StageId): void {
+    this.sceneManager.scene.remove(this.environment.group);
+    this.environment.dispose();
+    this.environment = createEnvironment(stageId);
+    this.sceneManager.scene.add(this.environment.group);
+  }
+
+  public startRun(loadoutId: LoadoutId, customSeed?: number, stageId: StageId = 'la_2029_wasteland'): void {
+    this.setStage(stageId);
+    this.runController.startRun(loadoutId, customSeed, stageId);
   }
 
   public endRun(victory: boolean): void { this.runController.endRun(victory); }
@@ -189,6 +191,6 @@ export class Game implements RunControllerHost, InputRouterHost, DebugAPIHost {
     this.debugAPI?.dispose();
     this.pickupSystem.dispose();
     this.interactiveEnv.dispose();
+    this.environment.dispose();
   }
 }
-

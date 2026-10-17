@@ -11,7 +11,7 @@ import type { ParticleSystem } from '../systems/ParticleSystem';
 import type { WaveDirector } from '../systems/WaveDirector';
 import type { InteractiveEnvironmentSystem } from '../systems/InteractiveEnvironmentSystem';
 import type { GameLoop } from './GameLoop';
-import type { LoadoutId, UpgradeChoice, WeaponId, ActiveEnemy } from './types';
+import type { LoadoutId, StageId, UpgradeChoice, WeaponId, ActiveEnemy } from './types';
 import { globalEvents } from './EventBus';
 import { globalRNG } from './RNG';
 
@@ -97,10 +97,10 @@ export class RunController {
     };
   }
 
-  public startRun(loadoutId: LoadoutId, customSeed?: number): void {
+  public startRun(loadoutId: LoadoutId, customSeed?: number, stageId: StageId = 'la_2029_wasteland'): void {
     const seed = (customSeed !== undefined ? customSeed : Date.now()) >>> 0;
     globalRNG.setSeed(seed);
-    this.host.runState.initRun(loadoutId, this.host.saveManager.getData().upgrades, seed);
+    this.host.runState.initRun(loadoutId, this.host.saveManager.getData().upgrades, seed, stageId);
     this.host.runState.autoAimEnabled = this.host.saveManager.getData().settings.autoAim;
 
     this.host.weaponSystem.clear();

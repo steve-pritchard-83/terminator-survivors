@@ -6,6 +6,7 @@ import type {
   LoadoutId,
   PassiveId,
   PlayerComputedStats,
+  StageId,
   UpgradeChoice,
   WeaponId
 } from '../core/types';
@@ -66,6 +67,7 @@ export class RunState {
   public computedStats: PlayerComputedStats = this.getDefaultStats();
   public revivalsLeft = 0;
   public loadoutId: LoadoutId = 'reese_2029';
+  public stageId: StageId = 'la_2029_wasteland';
   private purchasedMetaUpgrades: Record<string, number> = {};
 
   public godMode = false;
@@ -95,13 +97,15 @@ export class RunState {
   public initRun(
     loadoutId: LoadoutId,
     purchasedMetaUpgrades: Record<string, number>,
-    seed = 0
+    seed = 0,
+    stageId: StageId = 'la_2029_wasteland'
   ): void {
     if (this.mode !== 'title') {
       this.stateMachine.reset('title');
     }
     this.mode = 'playing';
     this.seed = seed;
+    this.stageId = stageId;
     this.timeSeconds = 0;
     this.level = 1;
     this.xp = 0;

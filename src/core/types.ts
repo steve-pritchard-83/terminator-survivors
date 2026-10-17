@@ -66,6 +66,13 @@ export type EnemyArchetypeId =
 
 export type LoadoutId = 'reese_2029' | 'reese_1984' | 'techcom_sapper' | 'john_connor';
 
+export type StageId =
+  | 'la_2029_wasteland'
+  | 'cyberdyne_factory'
+  | 'tech_noir_1984'
+  | 'skynet_central_tde'
+  | 'century_city_bunker';
+
 export type MetaUpgradeId =
   | 'armor_vest'
   | 'combat_stims'
