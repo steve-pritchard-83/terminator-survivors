@@ -8,14 +8,62 @@ import type {
   WeaponLevelStats
 } from '../core/types';
 
+export function formatWeaponStatDiff(
+  curr: Omit<WeaponLevelStats, 'description'>,
+  prev: Omit<WeaponLevelStats, 'description'>,
+  amountNoun = 'PROJECTILE'
+): string {
+  const diffs: string[] = [];
+
+  if (curr.damage !== prev.damage) {
+    const pct = Math.round(((curr.damage - prev.damage) / prev.damage) * 100);
+    diffs.push(`${pct >= 0 ? '+' : ''}${pct}% DMG`);
+  }
+
+  if (curr.amount !== prev.amount) {
+    const diff = curr.amount - prev.amount;
+    diffs.push(`${diff >= 0 ? '+' : ''}${diff} ${amountNoun}`);
+  }
+
+  if (curr.cooldown !== prev.cooldown) {
+    const pct = Math.round(((curr.cooldown - prev.cooldown) / prev.cooldown) * 100);
+    diffs.push(`${pct >= 0 ? '+' : ''}${pct}% CD`);
+  }
+
+  if (curr.area !== prev.area) {
+    const pct = Math.round(((curr.area - prev.area) / prev.area) * 100);
+    diffs.push(`${pct >= 0 ? '+' : ''}${pct}% AREA`);
+  }
+
+  if (curr.speed !== prev.speed) {
+    const pct = Math.round(((curr.speed - prev.speed) / prev.speed) * 100);
+    diffs.push(`${pct >= 0 ? '+' : ''}${pct}% SPEED`);
+  }
+
+  if (curr.duration !== prev.duration) {
+    const pct = Math.round(((curr.duration - prev.duration) / prev.duration) * 100);
+    diffs.push(`${pct >= 0 ? '+' : ''}${pct}% DURATION`);
+  }
+
+  if (curr.pierce !== prev.pierce) {
+    const diff = curr.pierce - prev.pierce;
+    diffs.push(`${diff >= 0 ? '+' : ''}${diff} PIERCE`);
+  }
+
+  return diffs.join(' · ');
+}
+
 export function buildWeaponLevels(
   base: Omit<WeaponLevelStats, 'level' | 'description'>,
-  descs: string[]
+  descs: string[],
+  amountNoun = 'PROJECTILE'
 ): WeaponLevelStats[] {
-  return Array.from({ length: 8 }, (_, idx) => {
+  const levels: WeaponLevelStats[] = [];
+
+  for (let idx = 0; idx < 8; idx++) {
     const lv = idx + 1;
     const mult = 1 + idx * 0.22;
-    return {
+    const stats: Omit<WeaponLevelStats, 'description'> = {
       level: lv,
       damage: Math.round(base.damage * mult),
       cooldown: Number((base.cooldown * Math.pow(0.94, idx)).toFixed(2)),
@@ -23,10 +71,23 @@ export function buildWeaponLevels(
       speed: Number((base.speed * (1 + idx * 0.06)).toFixed(2)),
       amount: base.amount + (lv >= 3 ? 1 : 0) + (lv >= 6 ? 1 : 0) + (lv === 8 ? 1 : 0),
       duration: Number((base.duration * (1 + idx * 0.08)).toFixed(2)),
-      pierce: base.pierce + Math.floor(idx / 2),
-      description: descs[idx] ?? `Level ${lv} Tech-Com modification.`
+      pierce: base.pierce + Math.floor(idx / 2)
     };
-  });
+
+    let description: string;
+    if (idx === 0) {
+      description = descs[0] ?? `Level 1 Tech-Com issue.`;
+    } else {
+      description = formatWeaponStatDiff(stats, levels[idx - 1], amountNoun);
+    }
+
+    levels.push({
+      ...stats,
+      description
+    });
+  }
+
+  return levels;
 }
 
 export const BASE_WEAPONS: Record<BaseWeaponId, WeaponDefinition> = {
@@ -40,16 +101,8 @@ export const BASE_WEAPONS: Record<BaseWeaponId, WeaponDefinition> = {
     iconColor: '#ff9900',
     levels: buildWeaponLevels(
       { damage: 24, cooldown: 1.15, area: 1.0, speed: 22, amount: 5, duration: 0.45, pierce: 2 },
-      [
-        'Fires a 5-pellet buckshot spread with heavy knockback.',
-        'Increases damage (+22%) and pellet velocity.',
-        'Adds +1 buckshot pellet to spread.',
-        'Increases pellet penetration (+1 pierce).',
-        'Reduces pump rack cycle cooldown (-8%).',
-        'Adds +1 buckshot pellet (7 total).',
-        'Increases damage (+25%) and spread width.',
-        'Adds +1 buckshot pellet (8 total). Max Level.'
-      ]
+      ['Fires a 5-pellet buckshot spread with heavy knockback.'],
+      'PELLET'
     )
   },
   pipe_bomb: {
@@ -62,16 +115,8 @@ export const BASE_WEAPONS: Record<BaseWeaponId, WeaponDefinition> = {
     iconColor: '#ff4411',
     levels: buildWeaponLevels(
       { damage: 45, cooldown: 2.4, area: 1.35, speed: 12, amount: 1, duration: 1.2, pierce: 99 },
-      [
-        'Lobs a homemade fuse pipe bomb detonating in a fiery explosion.',
-        'Increases blast radius (+15%) and damage.',
-        'Reduces fuse delay and adds +1 thrown bomb.',
-        'Increases shockwave damage (+25%).',
-        'Reduces throw cooldown (-10%).',
-        'Adds +1 thrown bomb (3 total).',
-        'Increases blast radius and debris scatter.',
-        'Adds +1 thrown bomb (4 total). Max Level.'
-      ]
+      ['Lobs a homemade fuse pipe bomb detonating in a fiery explosion.'],
+      'BOMB'
     )
   },
   m25_plasma: {
@@ -84,16 +129,8 @@ export const BASE_WEAPONS: Record<BaseWeaponId, WeaponDefinition> = {
     iconColor: '#d400ff',
     levels: buildWeaponLevels(
       { damage: 30, cooldown: 0.75, area: 1.0, speed: 28, amount: 1, duration: 1.2, pierce: 1 },
-      [
-        'Fires high-velocity violet phased plasma bolts at nearest machine.',
-        'Increases plasma bolt damage (+25%).',
-        'Adds +1 plasma bolt per salvo.',
-        'Increases bolt pierce (+1 target).',
-        'Reduces capacitor recharge delay (-10%).',
-        'Adds +1 plasma bolt per salvo (3 total).',
-        'Increases bolt velocity and damage.',
-        'Adds +1 plasma bolt per salvo (4 total). Max Level.'
-      ]
+      ['Fires high-velocity violet phased plasma bolts at nearest machine.'],
+      'BOLT'
     )
   },
   seeker_drone: {
@@ -106,16 +143,8 @@ export const BASE_WEAPONS: Record<BaseWeaponId, WeaponDefinition> = {
     iconColor: '#00e5ff',
     levels: buildWeaponLevels(
       { damage: 18, cooldown: 3.2, area: 1.1, speed: 4.2, amount: 2, duration: 2.6, pierce: 99 },
-      [
-        'Two captured micro-drones orbit Kyle, slicing through approaching machines.',
-        'Increases drone orbit duration and slice damage.',
-        'Adds +1 orbiting seeker drone (3 total).',
-        'Increases orbit radius and rotational speed.',
-        'Reduces redeployment cooldown (-12%).',
-        'Adds +1 orbiting seeker drone (4 total).',
-        'Increases drone damage and knockback.',
-        'Adds +1 orbiting seeker drone (5 total). Max Level.'
-      ]
+      ['Two captured micro-drones orbit Kyle, slicing through approaching machines.'],
+      'DRONE'
     )
   },
   emp_emitter: {
@@ -128,16 +157,8 @@ export const BASE_WEAPONS: Record<BaseWeaponId, WeaponDefinition> = {
     iconColor: '#4dd2ff',
     levels: buildWeaponLevels(
       { damage: 14, cooldown: 1.45, area: 1.25, speed: 1.0, amount: 1, duration: 0.35, pierce: 99 },
-      [
-        'Emits an expanding electromagnetic ring that damages and slows machines.',
-        'Increases EMP field radius (+15%).',
-        'Increases machine slowdown duration to 1.5s.',
-        'Reduces pulse cycle cooldown (-10%).',
-        'Increases shock damage (+25%).',
-        'Increases EMP field radius (+20%).',
-        'Increases machine slowdown severity by 40%.',
-        'Reduces pulse cycle cooldown (-12%). Max Level.'
-      ]
+      ['Emits an expanding electromagnetic ring that damages and slows machines.'],
+      'PULSE'
     )
   },
   m79_thumper: {
@@ -150,16 +171,8 @@ export const BASE_WEAPONS: Record<BaseWeaponId, WeaponDefinition> = {
     iconColor: '#ffbb00',
     levels: buildWeaponLevels(
       { damage: 52, cooldown: 2.1, area: 1.2, speed: 16, amount: 1, duration: 0.8, pierce: 99 },
-      [
-        'Lobs high-arcing 40mm HE grenades at heavy enemy clusters.',
-        'Increases blast radius (+15%) and damage.',
-        'Adds +1 grenade per volley (2 total).',
-        'Increases shrapnel fragmentation radius.',
-        'Reduces reload time (-12%).',
-        'Adds +1 grenade per volley (3 total).',
-        'Increases explosive damage (+30%).',
-        'Adds +1 grenade per volley (4 total). Max Level.'
-      ]
+      ['Lobs high-arcing 40mm HE grenades at heavy enemy clusters.'],
+      'GRENADE'
     )
   },
   napalm_canister: {
@@ -172,16 +185,8 @@ export const BASE_WEAPONS: Record<BaseWeaponId, WeaponDefinition> = {
     iconColor: '#ff2200',
     levels: buildWeaponLevels(
       { damage: 16, cooldown: 2.6, area: 1.3, speed: 10, amount: 1, duration: 3.0, pierce: 99 },
-      [
-        'Throws a fuel canister creating lingering burning ground fire.',
-        'Increases burning duration (+1.0s).',
-        'Adds +1 ignited fuel pool.',
-        'Increases fire pool radius (+20%).',
-        'Increases tick damage frequency.',
-        'Adds +1 ignited fuel pool (3 total).',
-        'Increases burning damage (+25%).',
-        'Adds +1 ignited fuel pool (4 total). Max Level.'
-      ]
+      ['Throws a fuel canister creating lingering burning ground fire.'],
+      'CANISTER'
     )
   },
   laser_designator: {
@@ -194,16 +199,8 @@ export const BASE_WEAPONS: Record<BaseWeaponId, WeaponDefinition> = {
     iconColor: '#ff0055',
     levels: buildWeaponLevels(
       { damage: 60, cooldown: 2.8, area: 1.1, speed: 40, amount: 1, duration: 0.5, pierce: 99 },
-      [
-        'Paints heavy targets with a red laser, calling down Resistance artillery.',
-        'Increases ion blast radius and damage.',
-        'Adds +1 targeted strike per barrage (2 total).',
-        'Reduces targeting uplink latency (-12%).',
-        'Increases ion strike damage (+35%).',
-        'Adds +1 targeted strike per barrage (3 total).',
-        'Increases strike critical chance (+20%).',
-        'Adds +1 targeted strike per barrage (4 total). Max Level.'
-      ]
+      ['Paints heavy targets with a red laser, calling down Resistance artillery.'],
+      'STRIKE'
     )
   }
 };

@@ -59,7 +59,7 @@ export class LevelUpModal {
         <div class="upgrade-card-info">
           <div class="upgrade-card-title">${choice.title}</div>
           <div class="upgrade-card-sub">${choice.subtitle}</div>
-          <div class="upgrade-card-desc">${choice.description}</div>
+          <div class="upgrade-card-desc" style="${choice.description.includes(' · ') ? 'font-family:var(--font-telemetry); color:var(--color-amber); letter-spacing:0.5px;' : ''}">${choice.description}</div>
           ${choice.synergyHint ? `<div style="font-size:11px; color:#00e5ff; margin-top:3px;">${choice.synergyHint}</div>` : ''}
         </div>
       `;
