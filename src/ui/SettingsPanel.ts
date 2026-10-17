@@ -1,8 +1,14 @@
 import type { SaveManager } from '../state/SaveManager';
 import type { AudioEngine } from '../audio/AudioEngine';
-import type { ColorBlindMode, DamageNumberSetting, GameSettings } from '../core/types';
+import type { ColorBlindMode, DamageNumberSetting, GameSettings, InputAction, InputMappingConfig } from '../core/types';
 import { globalEvents } from '../core/EventBus';
 import type { GamepadManager } from '../input/GamepadManager';
+import {
+  DEFAULT_INPUT_MAPPINGS,
+  detectKeyConflict,
+  formatButtonLabel,
+  formatKeyLabel
+} from '../data/inputDefaults';
 
 export class SettingsPanel {
   public readonly container: HTMLElement;
@@ -35,6 +41,15 @@ export class SettingsPanel {
   private applyBtn!: HTMLButtonElement;
   private resetBtn!: HTMLButtonElement;
   private closeBtn!: HTMLButtonElement;
+
+  private currentBindings: InputMappingConfig = JSON.parse(JSON.stringify(DEFAULT_INPUT_MAPPINGS));
+  private listeningKeyAction: InputAction | null = null;
+  private listeningGamepadAction: 'dash' | 'ability' | 'pause' | null = null;
+  private keyRemapButtons: Map<InputAction, HTMLButtonElement> = new Map();
+  private gpRemapButtons: Map<'dash' | 'ability' | 'pause', HTMLButtonElement> = new Map();
+  private resetInputsBtn!: HTMLButtonElement;
+  private remapFeedbackEl!: HTMLElement;
+  private keydownHandler?: (e: KeyboardEvent) => void;
 
   private selectables: HTMLElement[] = [];
   private selectedIndex = 0;
@@ -169,6 +184,58 @@ export class SettingsPanel {
               <input type="checkbox" id="setting-fps" style="width:18px; height:18px;" />
             </div>
           </div>
+
+          <!-- INPUT REMAPPING SECTION -->
+          <div style="border:1px solid rgba(255,0,85,0.35); border-radius:4px; padding:12px; background:rgba(10,20,32,0.6);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <div style="font-family:var(--font-display); font-size:12px; color:var(--color-danger);">[TACTICAL CONTROLS & INPUT REMAPPING]</div>
+              <button class="btn-secondary" id="btn-reset-inputs" style="font-size:11px; padding:2px 8px;">RESET CONTROLS</button>
+            </div>
+            <div id="remap-feedback" style="display:none; font-family:var(--font-telemetry); font-size:11px; padding:4px 8px; margin-bottom:8px; border-radius:3px; background:rgba(255,153,0,0.15); border:1px solid var(--color-amber); color:var(--color-amber);"></div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px 16px; font-size:12px;">
+              <div class="settings-row" style="display:flex; justify-content:space-between; align-items:center;">
+                <span>Move Up</span>
+                <button class="remap-key-btn" data-action="moveUp" style="min-width:85px; font-family:var(--font-telemetry); font-size:11px; padding:3px 6px; background:#142233; color:#fff; border:1px solid #3d6088; cursor:pointer;">W</button>
+              </div>
+              <div class="settings-row" style="display:flex; justify-content:space-between; align-items:center;">
+                <span>Move Down</span>
+                <button class="remap-key-btn" data-action="moveDown" style="min-width:85px; font-family:var(--font-telemetry); font-size:11px; padding:3px 6px; background:#142233; color:#fff; border:1px solid #3d6088; cursor:pointer;">S</button>
+              </div>
+              <div class="settings-row" style="display:flex; justify-content:space-between; align-items:center;">
+                <span>Move Left</span>
+                <button class="remap-key-btn" data-action="moveLeft" style="min-width:85px; font-family:var(--font-telemetry); font-size:11px; padding:3px 6px; background:#142233; color:#fff; border:1px solid #3d6088; cursor:pointer;">A</button>
+              </div>
+              <div class="settings-row" style="display:flex; justify-content:space-between; align-items:center;">
+                <span>Move Right</span>
+                <button class="remap-key-btn" data-action="moveRight" style="min-width:85px; font-family:var(--font-telemetry); font-size:11px; padding:3px 6px; background:#142233; color:#fff; border:1px solid #3d6088; cursor:pointer;">D</button>
+              </div>
+              <div class="settings-row" style="display:flex; justify-content:space-between; align-items:center;">
+                <span>Combat Dive / Dash</span>
+                <button class="remap-key-btn" data-action="dash" style="min-width:85px; font-family:var(--font-telemetry); font-size:11px; padding:3px 6px; background:#142233; color:#fff; border:1px solid #3d6088; cursor:pointer;">SPACE</button>
+              </div>
+              <div class="settings-row" style="display:flex; justify-content:space-between; align-items:center;">
+                <span>Tactical Ability / EMP</span>
+                <button class="remap-key-btn" data-action="ability" style="min-width:85px; font-family:var(--font-telemetry); font-size:11px; padding:3px 6px; background:#142233; color:#fff; border:1px solid #3d6088; cursor:pointer;">E</button>
+              </div>
+              <div class="settings-row" style="display:flex; justify-content:space-between; align-items:center;">
+                <span>Pause / Tactical HUD</span>
+                <button class="remap-key-btn" data-action="pause" style="min-width:85px; font-family:var(--font-telemetry); font-size:11px; padding:3px 6px; background:#142233; color:#fff; border:1px solid #3d6088; cursor:pointer;">ESC</button>
+              </div>
+              <div class="settings-row" style="display:flex; justify-content:space-between; align-items:center;">
+                <span>Gamepad Dash</span>
+                <button class="remap-gp-btn" data-gp-action="dash" style="min-width:85px; font-family:var(--font-telemetry); font-size:11px; padding:3px 6px; background:#142233; color:#fff; border:1px solid #3d6088; cursor:pointer;">BUTTON B</button>
+              </div>
+              <div class="settings-row" style="display:flex; justify-content:space-between; align-items:center;">
+                <span>Gamepad Ability</span>
+                <button class="remap-gp-btn" data-gp-action="ability" style="min-width:85px; font-family:var(--font-telemetry); font-size:11px; padding:3px 6px; background:#142233; color:#fff; border:1px solid #3d6088; cursor:pointer;">BUTTON Y</button>
+              </div>
+              <div class="settings-row" style="display:flex; justify-content:space-between; align-items:center;">
+                <span>Gamepad Pause</span>
+                <button class="remap-gp-btn" data-gp-action="pause" style="min-width:85px; font-family:var(--font-telemetry); font-size:11px; padding:3px 6px; background:#142233; color:#fff; border:1px solid #3d6088; cursor:pointer;">START</button>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div style="display:flex; justify-content:center; align-items:center; gap:12px; margin-top:20px;">
@@ -208,6 +275,23 @@ export class SettingsPanel {
     this.resetBtn = this.container.querySelector('#btn-reset-settings')!;
     this.closeBtn = this.container.querySelector('#btn-close-settings')!;
 
+    this.resetInputsBtn = this.container.querySelector('#btn-reset-inputs')!;
+    this.remapFeedbackEl = this.container.querySelector('#remap-feedback')!;
+
+    this.keyRemapButtons.clear();
+    const keyBtns = this.container.querySelectorAll<HTMLButtonElement>('.remap-key-btn');
+    keyBtns.forEach((btn) => {
+      const act = btn.getAttribute('data-action') as InputAction;
+      if (act) this.keyRemapButtons.set(act, btn);
+    });
+
+    this.gpRemapButtons.clear();
+    const gpBtns = this.container.querySelectorAll<HTMLButtonElement>('.remap-gp-btn');
+    gpBtns.forEach((btn) => {
+      const act = btn.getAttribute('data-gp-action') as 'dash' | 'ability' | 'pause';
+      if (act) this.gpRemapButtons.set(act, btn);
+    });
+
     this.selectables = [
       this.masterSlider,
       this.musicSlider,
@@ -221,6 +305,9 @@ export class SettingsPanel {
       this.colorBlindSelect,
       this.uiScaleSlider,
       this.showFpsCheckbox,
+      this.resetInputsBtn,
+      ...Array.from(this.keyRemapButtons.values()),
+      ...Array.from(this.gpRemapButtons.values()),
       this.applyBtn,
       this.resetBtn,
       this.closeBtn
@@ -270,18 +357,40 @@ export class SettingsPanel {
       this.hide();
       this.onCloseCallback?.();
     });
+
+    // Input remapping listeners
+    for (const [action, btn] of this.keyRemapButtons.entries()) {
+      btn.addEventListener('click', () => this.startListeningKey(action));
+    }
+
+    for (const [action, btn] of this.gpRemapButtons.entries()) {
+      btn.addEventListener('click', () => this.startListeningGamepad(action));
+    }
+
+    this.resetInputsBtn.addEventListener('click', () => {
+      this.audioEngine.playUiBuy();
+      this.currentBindings = JSON.parse(JSON.stringify(DEFAULT_INPUT_MAPPINGS));
+      this.saveManager.updateInputBindings(this.currentBindings);
+      globalEvents.emit('input:rebound', this.currentBindings);
+      this.cancelListening();
+      this.showFeedback('Tactical control mappings restored to factory preset.');
+    });
   }
 
   public show(onClose?: () => void): void {
     this.onCloseCallback = onClose;
     this.audioEngine.playHudScanOpen();
     this.loadCurrentSettings();
+    this.currentBindings = JSON.parse(JSON.stringify(this.saveManager.getInputBindings()));
+    this.updateInputButtonLabels();
+    if (this.remapFeedbackEl) this.remapFeedbackEl.style.display = 'none';
     this.container.style.display = 'flex';
     this.selectedIndex = 0;
     this.updateHighlight();
   }
 
   public hide(): void {
+    this.cancelListening();
     this.container.style.display = 'none';
   }
 
@@ -370,6 +479,28 @@ export class SettingsPanel {
   public handleGamepadMenuNavigation(gp: GamepadManager, dt: number): boolean {
     if (!this.isVisible()) return false;
 
+    // If currently remapping a gamepad action, intercept the next button pressed
+    if (this.listeningGamepadAction) {
+      if (gp.isMenuCancelPressed()) {
+        this.showFeedback('Gamepad remapping canceled.');
+        this.cancelListening();
+        return true;
+      }
+      for (let b = 0; b <= 15; b++) {
+        if (gp.isButtonJustPressed(b)) {
+          const act = this.listeningGamepadAction;
+          this.currentBindings.gamepad[act] = [b];
+          this.saveManager.updateInputBindings(this.currentBindings);
+          globalEvents.emit('input:rebound', this.currentBindings);
+          this.showFeedback(`Bound [${formatButtonLabel(b)}] to gamepad ${act}.`);
+          gp.playRumble(50, 0.25, 0.4);
+          this.cancelListening();
+          return true;
+        }
+      }
+      return true;
+    }
+
     const nav = gp.getMenuNavigation(dt);
     if (nav.y !== 0) {
       this.selectedIndex = (this.selectedIndex + nav.y + this.selectables.length) % this.selectables.length;
@@ -409,6 +540,94 @@ export class SettingsPanel {
     }
 
     return true;
+  }
+
+  public updateInputButtonLabels(): void {
+    for (const [action, btn] of this.keyRemapButtons.entries()) {
+      if (this.listeningKeyAction === action) {
+        btn.textContent = '[PRESS KEY...]';
+        btn.style.borderColor = 'var(--color-cyan)';
+        btn.style.color = 'var(--color-cyan)';
+      } else {
+        const keys = this.currentBindings.keyboard[action] || [];
+        btn.textContent = keys.length > 0 ? keys.map(formatKeyLabel).join(' / ') : 'NONE';
+        btn.style.borderColor = '#3d6088';
+        btn.style.color = '#fff';
+      }
+    }
+
+    for (const [action, btn] of this.gpRemapButtons.entries()) {
+      if (this.listeningGamepadAction === action) {
+        btn.textContent = '[PRESS BTN...]';
+        btn.style.borderColor = 'var(--color-cyan)';
+        btn.style.color = 'var(--color-cyan)';
+      } else {
+        const btns = this.currentBindings.gamepad[action] || [];
+        btn.textContent = btns.length > 0 ? btns.map(formatButtonLabel).join(' / ') : 'NONE';
+        btn.style.borderColor = '#3d6088';
+        btn.style.color = '#fff';
+      }
+    }
+  }
+
+  private showFeedback(msg: string, isError = false): void {
+    if (!this.remapFeedbackEl) return;
+    this.remapFeedbackEl.style.display = 'block';
+    this.remapFeedbackEl.textContent = msg;
+    this.remapFeedbackEl.style.color = isError ? 'var(--color-danger)' : 'var(--color-amber)';
+    this.remapFeedbackEl.style.borderColor = isError ? 'var(--color-danger)' : 'var(--color-amber)';
+  }
+
+  public startListeningKey(action: InputAction): void {
+    this.cancelListening();
+    this.listeningKeyAction = action;
+    this.updateInputButtonLabels();
+    this.showFeedback(`Awaiting key assignment for [${action.toUpperCase()}]. Press any key or ESC to cancel.`);
+
+    this.keydownHandler = (e: KeyboardEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (e.code === 'Escape' && action !== 'pause') {
+        this.showFeedback('Key remapping canceled.');
+        this.cancelListening();
+        return;
+      }
+
+      // Check conflict
+      const conflict = detectKeyConflict(this.currentBindings.keyboard, action, e.code);
+      if (conflict.hasConflict && conflict.conflictedAction) {
+        this.currentBindings.keyboard[conflict.conflictedAction] = this.currentBindings.keyboard[conflict.conflictedAction].filter((k) => k !== e.code);
+        this.showFeedback(`Reassigned [${formatKeyLabel(e.code)}] from ${conflict.conflictedAction} to ${action}.`);
+      } else {
+        this.showFeedback(`Bound [${formatKeyLabel(e.code)}] to ${action}.`);
+      }
+
+      this.currentBindings.keyboard[action] = [e.code];
+      this.saveManager.updateInputBindings(this.currentBindings);
+      globalEvents.emit('input:rebound', this.currentBindings);
+      this.audioEngine.playUpgradeApplied();
+      this.cancelListening();
+    };
+
+    window.addEventListener('keydown', this.keydownHandler, { capture: true, once: true });
+  }
+
+  public startListeningGamepad(action: 'dash' | 'ability' | 'pause'): void {
+    this.cancelListening();
+    this.listeningGamepadAction = action;
+    this.updateInputButtonLabels();
+    this.showFeedback(`Awaiting controller button for [${action.toUpperCase()}]. Press any button...`);
+  }
+
+  public cancelListening(): void {
+    if (this.keydownHandler) {
+      window.removeEventListener('keydown', this.keydownHandler, { capture: true });
+      this.keydownHandler = undefined;
+    }
+    this.listeningKeyAction = null;
+    this.listeningGamepadAction = null;
+    this.updateInputButtonLabels();
   }
 
   private updateHighlight(): void {

@@ -1,6 +1,7 @@
-import type { BaseWeaponId, ColorBlindMode, DamageNumberSetting, DailyAttemptRecord, GameSettings, LoadoutId, MetaSaveData, MetaUpgradeId, RunHistoryRecord } from '../core/types';
+import type { BaseWeaponId, ColorBlindMode, DamageNumberSetting, DailyAttemptRecord, GameSettings, InputMappingConfig, LoadoutId, MetaSaveData, MetaUpgradeId, RunHistoryRecord } from '../core/types';
 import { LOADOUTS, META_UPGRADES } from '../data/upgrades';
 import { ACHIEVEMENTS, DEFAULT_UNLOCKED_WEAPONS } from '../data/achievements';
+import { DEFAULT_INPUT_MAPPINGS } from '../data/inputDefaults';
 
 const STORAGE_KEY = 'TERMINATOR_SURVIVORS_SAVE_V1';
 
@@ -67,6 +68,7 @@ export class SaveManager {
         colorBlindMode: 'none',
         uiScale: 100
       },
+      inputBindings: JSON.parse(JSON.stringify(DEFAULT_INPUT_MAPPINGS)),
       endlessHighScores: {
         bestTimeSeconds: 0,
         maxKills: 0,
@@ -240,6 +242,24 @@ export class SaveManager {
       }
     }
 
+    // 14. Validate input bindings
+    const inputBindings: InputMappingConfig = {
+      keyboard: {
+        moveUp: Array.isArray(current.inputBindings?.keyboard?.moveUp) ? current.inputBindings.keyboard.moveUp : [...DEFAULT_INPUT_MAPPINGS.keyboard.moveUp],
+        moveDown: Array.isArray(current.inputBindings?.keyboard?.moveDown) ? current.inputBindings.keyboard.moveDown : [...DEFAULT_INPUT_MAPPINGS.keyboard.moveDown],
+        moveLeft: Array.isArray(current.inputBindings?.keyboard?.moveLeft) ? current.inputBindings.keyboard.moveLeft : [...DEFAULT_INPUT_MAPPINGS.keyboard.moveLeft],
+        moveRight: Array.isArray(current.inputBindings?.keyboard?.moveRight) ? current.inputBindings.keyboard.moveRight : [...DEFAULT_INPUT_MAPPINGS.keyboard.moveRight],
+        dash: Array.isArray(current.inputBindings?.keyboard?.dash) ? current.inputBindings.keyboard.dash : [...DEFAULT_INPUT_MAPPINGS.keyboard.dash],
+        ability: Array.isArray(current.inputBindings?.keyboard?.ability) ? current.inputBindings.keyboard.ability : [...DEFAULT_INPUT_MAPPINGS.keyboard.ability],
+        pause: Array.isArray(current.inputBindings?.keyboard?.pause) ? current.inputBindings.keyboard.pause : [...DEFAULT_INPUT_MAPPINGS.keyboard.pause]
+      },
+      gamepad: {
+        dash: Array.isArray(current.inputBindings?.gamepad?.dash) ? current.inputBindings.gamepad.dash : [...DEFAULT_INPUT_MAPPINGS.gamepad.dash],
+        ability: Array.isArray(current.inputBindings?.gamepad?.ability) ? current.inputBindings.gamepad.ability : [...DEFAULT_INPUT_MAPPINGS.gamepad.ability],
+        pause: Array.isArray(current.inputBindings?.gamepad?.pause) ? current.inputBindings.gamepad.pause : [...DEFAULT_INPUT_MAPPINGS.gamepad.pause]
+      }
+    };
+
     return {
       version: SaveManager.CURRENT_VERSION,
       alloyScrap: typeof current.alloyScrap === 'number' && current.alloyScrap >= 0 ? Math.floor(current.alloyScrap) : 0,
@@ -250,6 +270,7 @@ export class SaveManager {
       selectedLoadout: selected,
       upgrades,
       settings,
+      inputBindings,
       endlessHighScores,
       dailyAttempts,
       achievements,
@@ -417,6 +438,25 @@ export class SaveManager {
     this.data.settings = {
       ...this.data.settings,
       ...settings
+    };
+    this.save();
+  }
+
+  public getInputBindings(): InputMappingConfig {
+    return this.data.inputBindings ?? DEFAULT_INPUT_MAPPINGS;
+  }
+
+  public updateInputBindings(bindings: Partial<InputMappingConfig>): void {
+    const cur = this.getInputBindings();
+    this.data.inputBindings = {
+      keyboard: {
+        ...cur.keyboard,
+        ...(bindings.keyboard ?? {})
+      },
+      gamepad: {
+        ...cur.gamepad,
+        ...(bindings.gamepad ?? {})
+      }
     };
     this.save();
   }

@@ -24,6 +24,7 @@ export type GameEventMap = {
   'ability:triggered': { loadoutId: string; abilityId: string; x: number; z: number };
   'run:completed': { victory: boolean; timeSeconds: number; kills: number; alloyScrap: number; stageId: string; loadoutId: string; threatCount: number };
   'settings:updated': import('./types').GameSettings;
+  'input:rebound': import('./types').InputMappingConfig;
 };
 
 type EventCallback<T> = (data: T) => void;

@@ -1,9 +1,21 @@
 import { GamepadManager } from './GamepadManager';
+import type { KeyBindings } from '../core/types';
+import { DEFAULT_KEY_BINDINGS } from '../data/inputDefaults';
+import { globalEvents } from '../core/EventBus';
 
 export class InputManager {
   public readonly gamepadManager: GamepadManager;
   public lastActiveDevice: 'gamepad' | 'mouse_keyboard' | 'touch' = 'mouse_keyboard';
   private keys = new Set<string>();
+  private keyBindings: KeyBindings = { ...DEFAULT_KEY_BINDINGS };
+
+  public setKeyBindings(bindings: KeyBindings): void {
+    this.keyBindings = { ...bindings };
+  }
+
+  public getKeyBindings(): KeyBindings {
+    return { ...this.keyBindings };
+  }
   private touchVec = { x: 0, z: 0 };
   private targetAimAngle: number | null = null;
   private mouseScreenPos: { x: number; y: number } | null = null;
@@ -34,6 +46,11 @@ export class InputManager {
     this.gamepadManager.onPauseCallback = () => {
       this.onPauseCallback?.();
     };
+
+    globalEvents.on('input:rebound', (mappings) => {
+      this.setKeyBindings(mappings.keyboard);
+      this.gamepadManager.setGamepadBindings(mappings.gamepad);
+    });
 
     if (typeof window !== 'undefined') {
       window.addEventListener('keydown', this.onKeyDown);
@@ -169,13 +186,13 @@ export class InputManager {
   private onKeyDown = (e: KeyboardEvent): void => {
     this.lastActiveDevice = 'mouse_keyboard';
     this.keys.add(e.code);
-    if (e.code === 'Space' || e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
+    if (this.keyBindings.dash.includes(e.code) || e.code === 'ShiftRight') {
       this.dashRequested = true;
       this.onDashCallback?.();
-    } else if (e.code === 'KeyE' || e.code === 'KeyQ' || e.code === 'KeyF') {
+    } else if (this.keyBindings.ability.includes(e.code)) {
       this.abilityRequested = true;
       this.onAbilityCallback?.();
-    } else if (e.code === 'Escape') {
+    } else if (this.keyBindings.pause.includes(e.code)) {
       this.onPauseCallback?.();
     }
   };
@@ -185,15 +202,12 @@ export class InputManager {
   };
 
   public hasKeyboardMovement(): boolean {
+    const b = this.keyBindings;
     return (
-      this.keys.has('KeyW') ||
-      this.keys.has('ArrowUp') ||
-      this.keys.has('KeyS') ||
-      this.keys.has('ArrowDown') ||
-      this.keys.has('KeyA') ||
-      this.keys.has('ArrowLeft') ||
-      this.keys.has('KeyD') ||
-      this.keys.has('ArrowRight')
+      b.moveUp.some((k) => this.keys.has(k)) ||
+      b.moveDown.some((k) => this.keys.has(k)) ||
+      b.moveLeft.some((k) => this.keys.has(k)) ||
+      b.moveRight.some((k) => this.keys.has(k))
     );
   }
 
@@ -208,10 +222,10 @@ export class InputManager {
     let kx = 0;
     let kz = 0;
 
-    if (this.keys.has('KeyW') || this.keys.has('ArrowUp')) kz -= 1;
-    if (this.keys.has('KeyS') || this.keys.has('ArrowDown')) kz += 1;
-    if (this.keys.has('KeyA') || this.keys.has('ArrowLeft')) kx -= 1;
-    if (this.keys.has('KeyD') || this.keys.has('ArrowRight')) kx += 1;
+    if (this.keyBindings.moveUp.some((k) => this.keys.has(k))) kz -= 1;
+    if (this.keyBindings.moveDown.some((k) => this.keys.has(k))) kz += 1;
+    if (this.keyBindings.moveLeft.some((k) => this.keys.has(k))) kx -= 1;
+    if (this.keyBindings.moveRight.some((k) => this.keys.has(k))) kx += 1;
 
     // Combine keyboard, touch joystick, and Xbox / Gamepad controller
     const gpMove = this.gamepadManager.getMovement();

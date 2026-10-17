@@ -1,3 +1,6 @@
+import type { GamepadBindings } from '../core/types';
+import { DEFAULT_GAMEPAD_BINDINGS } from '../data/inputDefaults';
+
 export const XBOX_BUTTON = {
   A: 0,
   B: 1,
@@ -57,6 +60,16 @@ export class GamepadManager {
   public onDashCallback: (() => void) | null = null;
   public onAbilityCallback: (() => void) | null = null;
   public onPauseCallback: (() => void) | null = null;
+
+  private gamepadBindings: GamepadBindings = { ...DEFAULT_GAMEPAD_BINDINGS };
+
+  public setGamepadBindings(bindings: GamepadBindings): void {
+    this.gamepadBindings = { ...bindings };
+  }
+
+  public getGamepadBindings(): GamepadBindings {
+    return { ...this.gamepadBindings };
+  }
 
   private abilityRequested = false;
 
@@ -214,11 +227,8 @@ export class GamepadManager {
     this.hasInputThisFrame = hasStickInput || hasButtonInput;
 
     // Gameplay triggers
-    // Combat Dive / Dash: strictly Button B (1), with LB (4), LT (6), or L3 (10) as alternates.
-    // Button A (0) is NEVER used for Dash to prevent accidental dives when exiting menus/modals!
     const dashPressed =
-      this.isButtonJustPressed(XBOX_BUTTON.B) ||
-      this.isButtonJustPressed(XBOX_BUTTON.LB) ||
+      this.gamepadBindings.dash.some((b) => this.isButtonJustPressed(b)) ||
       this.isButtonJustPressed(XBOX_BUTTON.L3) ||
       (this.buttonValues[XBOX_BUTTON.LT] !== undefined &&
         this.buttonValues[XBOX_BUTTON.LT] > 0.45 &&
@@ -230,18 +240,19 @@ export class GamepadManager {
       this.onDashCallback?.();
     }
 
-    const abilityPressed =
-      this.isButtonJustPressed(XBOX_BUTTON.Y) ||
-      this.isButtonJustPressed(XBOX_BUTTON.X) ||
-      this.isButtonJustPressed(XBOX_BUTTON.RB);
+    const abilityPressed = this.gamepadBindings.ability.some((b) => this.isButtonJustPressed(b));
 
     if (abilityPressed) {
       this.abilityRequested = true;
       this.onAbilityCallback?.();
     }
 
-    // Pause: Menu/Start (9) or View/Back (8)
-    if (this.isButtonJustPressed(XBOX_BUTTON.MENU) || this.isButtonJustPressed(XBOX_BUTTON.VIEW)) {
+    // Pause: configured pause buttons or View
+    const pausePressed =
+      this.gamepadBindings.pause.some((b) => this.isButtonJustPressed(b)) ||
+      this.isButtonJustPressed(XBOX_BUTTON.VIEW);
+
+    if (pausePressed) {
       this.pauseRequested = true;
       this.onPauseCallback?.();
     }

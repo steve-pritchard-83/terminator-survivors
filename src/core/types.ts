@@ -299,6 +299,29 @@ export interface GameSettings {
   uiScale: number;
 }
 
+export type InputAction = 'moveUp' | 'moveDown' | 'moveLeft' | 'moveRight' | 'dash' | 'ability' | 'pause';
+
+export interface KeyBindings {
+  moveUp: string[];
+  moveDown: string[];
+  moveLeft: string[];
+  moveRight: string[];
+  dash: string[];
+  ability: string[];
+  pause: string[];
+}
+
+export interface GamepadBindings {
+  dash: number[];
+  ability: number[];
+  pause: number[];
+}
+
+export interface InputMappingConfig {
+  keyboard: KeyBindings;
+  gamepad: GamepadBindings;
+}
+
 export interface MetaSaveData {
   version: number;
   alloyScrap: number;
@@ -309,6 +332,7 @@ export interface MetaSaveData {
   selectedLoadout: LoadoutId;
   upgrades: Record<MetaUpgradeId, number>;
   settings: GameSettings;
+  inputBindings?: InputMappingConfig;
   endlessHighScores?: {
     bestTimeSeconds: number;
     maxKills: number;
