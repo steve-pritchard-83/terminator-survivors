@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { disposeObject3D } from '../graphics/dispose';
 import type { RunState } from '../state/RunState';
 import type { AudioEngine } from '../audio/AudioEngine';
 import type { SpatialEntity } from '../core/types';
@@ -155,6 +156,7 @@ export class PickupSystem {
   private collectPickup(p: ActivePickup, index: number): void {
     this.pickups.splice(index, 1);
     this.group.remove(p.mesh);
+    disposeObject3D(p.mesh);
 
     if (p.kind === 'core') {
       this.comboCount++;
@@ -214,6 +216,7 @@ export class PickupSystem {
   public clear(): void {
     for (const p of this.pickups) {
       this.group.remove(p.mesh);
+      disposeObject3D(p.mesh);
     }
     this.pickups.length = 0;
   }

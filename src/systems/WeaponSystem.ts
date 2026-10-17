@@ -8,6 +8,7 @@ import type { KyleReeseMesh } from '../graphics/meshes/KyleReeseMesh';
 import { ALL_WEAPONS } from '../data/weapons';
 import { globalEvents } from '../core/EventBus';
 import { globalRNG } from '../core/RNG';
+import { disposeObject3D } from '../graphics/dispose';
 
 export type ProjectileMeshCategory = 'pellet' | 'plasma' | 'heavy_plasma' | 'bomb';
 
@@ -105,6 +106,18 @@ export class WeaponSystem {
 
     this.plasmaBoltGeo.rotateX(Math.PI / 2);
     this.heavyPlasmaGeo.rotateX(Math.PI / 2);
+
+    this.plasmaBoltGeo.userData = { shared: true };
+    this.heavyPlasmaGeo.userData = { shared: true };
+    this.pelletGeo.userData = { shared: true };
+    this.bombGeo.userData = { shared: true };
+    this.droneGeo.userData = { shared: true };
+
+    this.plasmaMat.userData = { shared: true };
+    this.heavyPlasmaMat.userData = { shared: true };
+    this.buckshotMat.userData = { shared: true };
+    this.bombMat.userData = { shared: true };
+    this.droneMat.userData = { shared: true };
 
     // Pre-warm mesh pools to prevent GC churn during intense combat
     this.prefillMeshPool('pellet', 32);
@@ -210,6 +223,7 @@ export class WeaponSystem {
       fx.update(progress, dt);
       if (fx.life >= fx.maxLife) {
         this.group.remove(fx.mesh);
+        disposeObject3D(fx.mesh);
         this.transientVfx.splice(i, 1);
       }
     }
@@ -727,6 +741,7 @@ export class WeaponSystem {
     while (this.orbitalDrones.length > count) {
       const removed = this.orbitalDrones.pop()!;
       this.group.remove(removed);
+      disposeObject3D(removed);
     }
 
     for (let i = 0; i < count; i++) {
@@ -821,12 +836,7 @@ export class WeaponSystem {
 
       if (gz.life >= gz.maxLife) {
         this.group.remove(gz.mesh);
-        gz.mesh.traverse((child) => {
-          if (child instanceof THREE.Mesh) {
-            child.geometry.dispose();
-            (child.material as THREE.Material).dispose();
-          }
-        });
+        disposeObject3D(gz.mesh);
         this.groundZones.splice(i, 1);
       }
     }
@@ -840,23 +850,20 @@ export class WeaponSystem {
 
     for (const gz of this.groundZones) {
       this.group.remove(gz.mesh);
-      gz.mesh.traverse((child) => {
-        if (child instanceof THREE.Mesh) {
-          child.geometry.dispose();
-          (child.material as THREE.Material).dispose();
-        }
-      });
+      disposeObject3D(gz.mesh);
     }
     this.groundZones.length = 0;
 
     for (const d of this.orbitalDrones) {
       this.group.remove(d);
+      disposeObject3D(d);
     }
     this.orbitalDrones.length = 0;
     this.droneHitCooldowns.clear();
 
     for (const fx of this.transientVfx) {
       this.group.remove(fx.mesh);
+      disposeObject3D(fx.mesh);
     }
     this.transientVfx.length = 0;
   }

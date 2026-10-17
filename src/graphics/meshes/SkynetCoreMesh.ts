@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { disposeObject3D } from '../dispose';
 
 export class SkynetCoreMesh {
   public readonly group = new THREE.Group();
@@ -154,5 +155,9 @@ export class SkynetCoreMesh {
       this.coreLight.color.setHex(0x00e5ff);
       this.coreLight.intensity = 3.5 + Math.sin(timeSeconds * 4) * 0.8;
     }
+  }
+
+  public dispose(): void {
+    disposeObject3D(this.group);
   }
 }

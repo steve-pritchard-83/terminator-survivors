@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { VolumetricSearchlight } from '../VolumetricSearchlight';
+import { disposeObject3D } from '../dispose';
 
 export class HKAerialMesh {
   public readonly group = new THREE.Group();
@@ -133,5 +134,9 @@ export class HKAerialMesh {
     const groundOffset = groundY - this.group.position.y;
     this.leftSearchlight.update(timeSeconds, alertLevel, groundOffset);
     this.rightSearchlight.update(timeSeconds, alertLevel, groundOffset);
+  }
+
+  public dispose(): void {
+    disposeObject3D(this.group);
   }
 }

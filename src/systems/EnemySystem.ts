@@ -11,6 +11,7 @@ import { HKTankMesh } from '../graphics/meshes/HKTankMesh';
 import { T1000Mesh } from '../graphics/meshes/T1000Mesh';
 import { InfiltratorMesh } from '../graphics/meshes/InfiltratorMesh';
 import { SkynetCoreMesh } from '../graphics/meshes/SkynetCoreMesh';
+import { disposeObject3D } from '../graphics/dispose';
 import { globalEvents } from '../core/EventBus';
 import { globalRNG } from '../core/RNG';
 
@@ -82,6 +83,10 @@ export class EnemySystem {
 
     this.enemyPlasmaGeo.rotateX(Math.PI / 2);
     this.artilleryReticleGeo.rotateX(-Math.PI / 2);
+    this.enemyPlasmaGeo.userData = { shared: true };
+    this.enemyPlasmaMat.userData = { shared: true };
+    this.artilleryReticleGeo.userData = { shared: true };
+    this.artilleryReticleMat.userData = { shared: true };
 
     // Pre-warm enemy projectile pool
     for (let i = 0; i < 24; i++) {
@@ -540,38 +545,45 @@ export class EnemySystem {
     if (this.hkAerialMeshes.has(enemy.id)) {
       const mesh = this.hkAerialMeshes.get(enemy.id)!;
       this.group.remove(mesh.group);
+      mesh.dispose();
       this.hkAerialMeshes.delete(enemy.id);
     }
     if (this.hkTankMeshes.has(enemy.id)) {
       const mesh = this.hkTankMeshes.get(enemy.id)!;
       this.group.remove(mesh.group);
+      mesh.dispose();
       this.hkTankMeshes.delete(enemy.id);
     }
     if (this.t1000Meshes.has(enemy.id)) {
       const mesh = this.t1000Meshes.get(enemy.id)!;
       this.group.remove(mesh.group);
+      mesh.dispose();
       this.t1000Meshes.delete(enemy.id);
     }
     if (this.bossMeshes.has(enemy.id)) {
       const mesh = this.bossMeshes.get(enemy.id)!;
       this.group.remove(mesh);
+      disposeObject3D(mesh);
       this.bossMeshes.delete(enemy.id);
     }
     if (this.infiltratorMeshes.has(enemy.id)) {
       const mesh = this.infiltratorMeshes.get(enemy.id)!;
       this.group.remove(mesh.group);
+      mesh.dispose();
       this.infiltratorMeshes.delete(enemy.id);
       this.infiltratorBurstState.delete(enemy.id);
     }
     if (this.skynetCoreMeshes.has(enemy.id)) {
       const mesh = this.skynetCoreMeshes.get(enemy.id)!;
       this.group.remove(mesh.group);
+      mesh.dispose();
       this.skynetCoreMeshes.delete(enemy.id);
       this.skynetNovaCooldown.delete(enemy.id);
     }
     const reticle = this.tankReticleMeshes.get(enemy.id);
     if (reticle) {
       this.group.remove(reticle);
+      disposeObject3D(reticle);
       this.tankReticleMeshes.delete(enemy.id);
     }
     this.tankTargetCoords.delete(enemy.id);
@@ -592,16 +604,35 @@ export class EnemySystem {
     this.enemyProjectiles.length = 0;
     for (const r of this.tankReticleMeshes.values()) {
       this.group.remove(r);
+      disposeObject3D(r);
     }
     this.tankReticleMeshes.clear();
     this.tankTargetCoords.clear();
 
-    for (const mesh of this.hkAerialMeshes.values()) this.group.remove(mesh.group);
-    for (const mesh of this.hkTankMeshes.values()) this.group.remove(mesh.group);
-    for (const mesh of this.t1000Meshes.values()) this.group.remove(mesh.group);
-    for (const mesh of this.infiltratorMeshes.values()) this.group.remove(mesh.group);
-    for (const mesh of this.skynetCoreMeshes.values()) this.group.remove(mesh.group);
-    for (const mesh of this.bossMeshes.values()) this.group.remove(mesh);
+    for (const mesh of this.hkAerialMeshes.values()) {
+      this.group.remove(mesh.group);
+      mesh.dispose();
+    }
+    for (const mesh of this.hkTankMeshes.values()) {
+      this.group.remove(mesh.group);
+      mesh.dispose();
+    }
+    for (const mesh of this.t1000Meshes.values()) {
+      this.group.remove(mesh.group);
+      mesh.dispose();
+    }
+    for (const mesh of this.infiltratorMeshes.values()) {
+      this.group.remove(mesh.group);
+      mesh.dispose();
+    }
+    for (const mesh of this.skynetCoreMeshes.values()) {
+      this.group.remove(mesh.group);
+      mesh.dispose();
+    }
+    for (const mesh of this.bossMeshes.values()) {
+      this.group.remove(mesh);
+      disposeObject3D(mesh);
+    }
     this.hkAerialMeshes.clear();
     this.hkTankMeshes.clear();
     this.t1000Meshes.clear();

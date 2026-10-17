@@ -173,7 +173,7 @@ export class GamepadManager {
     return null;
   }
 
-  public update(dt: number): void {
+  public update(_dt: number): void {
     const gp = this.getActiveGamepad();
     if (!gp) {
       this.lastButtons = [];

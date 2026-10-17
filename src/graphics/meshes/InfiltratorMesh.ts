@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { disposeObject3D } from '../dispose';
 
 export class InfiltratorMesh {
   public readonly group = new THREE.Group();
@@ -190,5 +191,9 @@ export class InfiltratorMesh {
     // Pulsing cybernetic optic
     const pulse = 1.0 + Math.sin(Date.now() * 0.008) * 0.35;
     this.opticLight.intensity = 0.8 * pulse;
+  }
+
+  public dispose(): void {
+    disposeObject3D(this.group);
   }
 }

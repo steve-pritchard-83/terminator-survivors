@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { disposeObject3D } from '../dispose';
 
 export class T1000Mesh {
   public readonly group = new THREE.Group();
@@ -74,5 +75,9 @@ export class T1000Mesh {
       this.leftBlade.rotation.x = 0;
       this.rightBlade.rotation.x = 0;
     }
+  }
+
+  public dispose(): void {
+    disposeObject3D(this.group);
   }
 }

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { disposeObject3D } from '../dispose';
 import { bakePart, mergeParts } from './geometryUtils';
 import type { ActiveEnemy } from '../../core/types';
 import { ProceduralTextures } from '../ProceduralTextures';
@@ -653,5 +654,9 @@ export class EndoskeletonBatch {
     if (this.crabChassisInstancedMesh.instanceColor) {
       this.crabChassisInstancedMesh.instanceColor.needsUpdate = true;
     }
+  }
+
+  public dispose(): void {
+    disposeObject3D(this.group);
   }
 }

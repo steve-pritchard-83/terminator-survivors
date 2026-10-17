@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { disposeObject3D } from './dispose';
 
 export class VolumetricSearchlight {
   public readonly group = new THREE.Group();
@@ -58,5 +59,9 @@ export class VolumetricSearchlight {
     if (disc) {
       disc.position.set(0, groundYOffset, 6.5);
     }
+  }
+
+  public dispose(): void {
+    disposeObject3D(this.group);
   }
 }

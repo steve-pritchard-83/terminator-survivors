@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { disposeObject3D } from '../dispose';
 
 export class KyleReeseMesh {
   public readonly group = new THREE.Group();
@@ -350,5 +351,9 @@ export class KyleReeseMesh {
       this.coatTails.rotation.x = THREE.MathUtils.lerp(this.coatTails.rotation.x, 0.1, dt * 8);
       this.torsoGroup.position.y = 0.85;
     }
+  }
+
+  public dispose(): void {
+    disposeObject3D(this.group);
   }
 }

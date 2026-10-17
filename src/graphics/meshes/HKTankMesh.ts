@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { VolumetricSearchlight } from '../VolumetricSearchlight';
+import { disposeObject3D } from '../dispose';
 
 export class HKTankMesh {
   public readonly group = new THREE.Group();
@@ -133,5 +134,9 @@ export class HKTankMesh {
     // Telegraph line opacity when charging plasma cannon
     (this.telegraphLine.material as THREE.LineBasicMaterial).opacity =
       chargeProgress > 0 ? 0.3 + chargeProgress * 0.7 : 0;
+  }
+
+  public dispose(): void {
+    disposeObject3D(this.group);
   }
 }
