@@ -47,7 +47,8 @@ export class SpreadShot implements WeaponPattern {
         radius,
         pierceLeft: stats.pierce,
         life: 0,
-        maxLife: stats.duration
+        maxLife: stats.duration,
+        knockback: def.knockback
       });
     }
   }

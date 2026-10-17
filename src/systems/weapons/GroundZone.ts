@@ -28,7 +28,8 @@ export class GroundZone implements WeaponPattern {
         pz + Math.sin(angle) * dist,
         baseRadius * areaMult,
         dmg,
-        stats.duration
+        stats.duration,
+        def.knockback
       );
     }
   }

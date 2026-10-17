@@ -162,6 +162,7 @@ describe('P3-03 weapon behaviour registry', () => {
         projectileVisual: 'plasma',
         projectileRadius: 0.3
       },
+      knockback: 10,
       levels: [
         {
           level: 1,

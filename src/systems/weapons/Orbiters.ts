@@ -104,7 +104,8 @@ export class Orbiters implements WeaponPattern {
         if (target.type !== 'enemy') continue;
         if (!this.droneHitCooldowns.has(target.id)) {
           this.droneHitCooldowns.set(target.id, 0.35);
-          ctx.applyDamageToTarget(target, damage);
+          const hitDir = { x: target.x - px, z: target.z - pz };
+          ctx.applyDamageToTarget(target, damage, def?.knockback, hitDir);
           ctx.audio.playEndoHit();
           ctx.particles.spawnPlasmaImpact(dx, 0.75, dz);
         }

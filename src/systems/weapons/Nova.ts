@@ -25,7 +25,8 @@ export class Nova implements WeaponPattern {
     const hitEnemies = ctx.grid.queryRadius(px, pz, empRadius, ctx.scratch.empHit);
     for (let i = 0; i < hitEnemies.length; i++) {
       const target = hitEnemies[i];
-      const hit = ctx.applyDamageToTarget(target, dmg);
+      const hitDir = { x: target.x - px, z: target.z - pz };
+      const hit = ctx.applyDamageToTarget(target, dmg, def.knockback, hitDir);
       if (hit && target.type === 'enemy') {
         const e = target as ActiveEnemy;
         e.slowTimer = params.slowDuration ?? 2.0;

@@ -41,7 +41,9 @@ export class Strike implements WeaponPattern {
 
       const hit = ctx.grid.queryRadius(target.x, target.z, ionRadius, ctx.scratch.orbitalHit);
       for (let h = 0; h < hit.length; h++) {
-        ctx.applyDamageToTarget(hit[h], dmg);
+        const ent = hit[h];
+        const hitDir = { x: ent.x - target.x, z: ent.z - target.z };
+        ctx.applyDamageToTarget(ent, dmg, def.knockback, hitDir);
       }
       ctx.particles.spawnExplosion(target.x, 0.2, target.z, 1.4);
     }

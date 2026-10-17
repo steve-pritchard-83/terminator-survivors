@@ -50,7 +50,8 @@ export class Lobbed implements WeaponPattern {
         life: 0,
         maxLife: flightTime,
         isAreaOnExpire: true,
-        areaRadius: baseArea * areaMult
+        areaRadius: baseArea * areaMult,
+        knockback: def.knockback
       });
     }
   }

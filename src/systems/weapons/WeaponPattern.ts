@@ -32,6 +32,7 @@ export interface SpawnProjectileParams {
   maxLife: number;
   isAreaOnExpire?: boolean;
   areaRadius?: number;
+  knockback?: number;
 }
 
 export interface WeaponFireContext {
@@ -48,10 +49,16 @@ export interface WeaponFireContext {
     z: number,
     radius: number,
     damagePerSec: number,
-    duration: number
+    duration: number,
+    knockback?: number
   ) => void;
   spawnOrbitalIonBeam: (x: number, z: number, radius: number) => void;
-  applyDamageToTarget: (target: SpatialEntity, damage: number) => boolean;
+  applyDamageToTarget: (
+    target: SpatialEntity,
+    damage: number,
+    knockback?: number,
+    hitDir?: { x: number; z: number }
+  ) => boolean;
   emit: <K extends keyof GameEventMap>(event: K, payload: GameEventMap[K]) => void;
   rng: typeof globalRNG;
   scratch: {

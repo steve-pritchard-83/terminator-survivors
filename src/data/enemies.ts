@@ -11,6 +11,7 @@ export interface EnemyStatsConfig {
   isFlying: boolean;
   xpValue: number;
   color: number;
+  mass: number;
 }
 
 export const ENEMY_CONFIGS: Record<EnemyArchetypeId, EnemyStatsConfig> = {
@@ -24,7 +25,8 @@ export const ENEMY_CONFIGS: Record<EnemyArchetypeId, EnemyStatsConfig> = {
     isBoss: false,
     isFlying: false,
     xpValue: 3,
-    color: 0x8a9ba8
+    color: 0x8a9ba8,
+    mass: 1.0
   },
   t600_rusted: {
     archetype: 't600_rusted',
@@ -36,7 +38,8 @@ export const ENEMY_CONFIGS: Record<EnemyArchetypeId, EnemyStatsConfig> = {
     isBoss: false,
     isFlying: false,
     xpValue: 7,
-    color: 0x4a4642
+    color: 0x4a4642,
+    mass: 4.5
   },
   t700_scout: {
     archetype: 't700_scout',
@@ -48,7 +51,8 @@ export const ENEMY_CONFIGS: Record<EnemyArchetypeId, EnemyStatsConfig> = {
     isBoss: false,
     isFlying: false,
     xpValue: 5,
-    color: 0x7a8694
+    color: 0x7a8694,
+    mass: 2.5
   },
   t800_endoskeleton: {
     archetype: 't800_endoskeleton',
@@ -60,7 +64,8 @@ export const ENEMY_CONFIGS: Record<EnemyArchetypeId, EnemyStatsConfig> = {
     isBoss: false,
     isFlying: false,
     xpValue: 12,
-    color: 0x9ca8b8
+    color: 0x9ca8b8,
+    mass: 6.0
   },
   hk_aerial_patrol: {
     archetype: 'hk_aerial_patrol',
@@ -72,7 +77,8 @@ export const ENEMY_CONFIGS: Record<EnemyArchetypeId, EnemyStatsConfig> = {
     isBoss: false,
     isFlying: true,
     xpValue: 30,
-    color: 0x6e7b8c
+    color: 0x6e7b8c,
+    mass: 12.0
   },
   infiltrator_csm101: {
     archetype: 'infiltrator_csm101',
@@ -84,7 +90,8 @@ export const ENEMY_CONFIGS: Record<EnemyArchetypeId, EnemyStatsConfig> = {
     isBoss: true,
     isFlying: false,
     xpValue: 180,
-    color: 0xb52222
+    color: 0xb52222,
+    mass: 25.0
   },
   hk_tank_goliath: {
     archetype: 'hk_tank_goliath',
@@ -96,7 +103,8 @@ export const ENEMY_CONFIGS: Record<EnemyArchetypeId, EnemyStatsConfig> = {
     isBoss: true,
     isFlying: false,
     xpValue: 400,
-    color: 0x556677
+    color: 0x556677,
+    mass: 100.0
   },
   hk_aerial_squadron_leader: {
     archetype: 'hk_aerial_squadron_leader',
@@ -108,7 +116,8 @@ export const ENEMY_CONFIGS: Record<EnemyArchetypeId, EnemyStatsConfig> = {
     isBoss: true,
     isFlying: true,
     xpValue: 650,
-    color: 0x778899
+    color: 0x778899,
+    mass: 50.0
   },
   t1000_prototype: {
     archetype: 't1000_prototype',
@@ -120,7 +129,8 @@ export const ENEMY_CONFIGS: Record<EnemyArchetypeId, EnemyStatsConfig> = {
     isBoss: true,
     isFlying: false,
     xpValue: 950,
-    color: 0xdce8f8
+    color: 0xdce8f8,
+    mass: 30.0
   },
   skynet_tde_core: {
     archetype: 'skynet_tde_core',
@@ -132,6 +142,7 @@ export const ENEMY_CONFIGS: Record<EnemyArchetypeId, EnemyStatsConfig> = {
     isBoss: true,
     isFlying: false,
     xpValue: 1500,
-    color: 0x00e5ff
+    color: 0x00e5ff,
+    mass: 200.0
   }
 };

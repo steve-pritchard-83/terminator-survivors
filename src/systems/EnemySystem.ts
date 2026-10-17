@@ -53,19 +53,14 @@ export class EnemySystem {
     this.enemyPlasmaGeo.rotateX(Math.PI / 2);
     this.enemyPlasmaGeo.userData = { shared: true };
     this.enemyPlasmaMat.userData = { shared: true };
-
     this.enemyPool = new InstancedPool<EnemyProjectile>(this.enemyPlasmaGeo, this.enemyPlasmaMat, 256, this.group);
 
     this.context = {
-      runState: this.runState,
-      audio: this.audio,
-      particles: this.particles,
+      runState: this.runState, audio: this.audio, particles: this.particles,
       spawnEnemyProjectile: (x, y, z, tx, tz, spd, dmg) => this.spawnEnemyProjectile(x, y, z, tx, tz, spd, dmg),
       applyPlayerDamage: (dmg) => this.applyPlayerDamage(dmg),
       emit: (evt, payload) => globalEvents.emit(evt, payload),
-      rng: globalRNG,
-      group: this.group,
-      timeSeconds: 0
+      rng: globalRNG, group: this.group, timeSeconds: 0
     };
   }
 
@@ -74,7 +69,7 @@ export class EnemySystem {
     const enemy: ActiveEnemy = {
       id: this.nextEnemyId++, type: 'enemy', archetype, x, z,
       radius: cfg.radius, hp: Math.round(cfg.maxHp * hpMult), maxHp: Math.round(cfg.maxHp * hpMult),
-      speed: cfg.speed, damage: Math.round(cfg.damage * dmgMult),
+      speed: cfg.speed, damage: Math.round(cfg.damage * dmgMult), mass: cfg.mass, vx: 0, vz: 0,
       isBoss: cfg.isBoss, isFlying: cfg.isFlying, xpValue: cfg.xpValue,
       hitFlashTimer: 0, slowTimer: 0, armorStripMultiplier: 1.0, attackCooldown: 0,
       chargeTimer: 0, searchlightAngle: 0, searchlightAlertTimer: 0, phaseState: 0, state: {}
@@ -91,12 +86,10 @@ export class EnemySystem {
   }
 
   private spawnEnemyProjectile(x: number, y: number, z: number, targetX: number, targetZ: number, speed = 9.5, damage = 12): void {
-    const dx = targetX - x;
-    const dz = targetZ - z;
+    const dx = targetX - x; const dz = targetZ - z;
     const dist = Math.hypot(dx, dz);
     if (dist < 0.1) return;
-    const vx = (dx / dist) * speed;
-    const vz = (dz / dist) * speed;
+    const vx = (dx / dist) * speed; const vz = (dz / dist) * speed;
     const angle = Math.atan2(dx, dz);
 
     const p = this.enemyProjectilePool.pop() ?? { poolIndex: 0, x, y, z, vx, vz, rotY: angle, damage, radius: 0.35, life: 0, maxLife: 2.2 };
@@ -158,6 +151,17 @@ export class EnemySystem {
         moveX = (nx * effectiveSpeed + sepX) * dt;
         moveZ = (nz * effectiveSpeed + sepZ) * dt;
       }
+      if (enemy.vx || enemy.vz) {
+        const evx = enemy.vx ?? 0;
+        const evz = enemy.vz ?? 0;
+        moveX += evx * dt;
+        moveZ += evz * dt;
+
+        const decay = Math.exp(-8 * dt);
+        enemy.vx = evx * decay;
+        enemy.vz = evz * decay;
+      }
+
       let nextX = enemy.x + moveX;
       let nextZ = enemy.z + moveZ;
 
@@ -210,6 +214,7 @@ export class EnemySystem {
     const spawnDist = ENEMY_RELOCATE_MIN_DIST + globalRNG.next() * (ENEMY_RELOCATE_MAX_DIST - ENEMY_RELOCATE_MIN_DIST);
     enemy.x = px + Math.sin(angle) * spawnDist;
     enemy.z = pz + Math.cos(angle) * spawnDist;
+    enemy.vx = 0; enemy.vz = 0;
     this.behaviours[enemy.archetype]?.onRelocate?.(enemy, this.context);
   }
 
@@ -226,9 +231,8 @@ export class EnemySystem {
     this.runState.kills++;
     this.audio.playEndoDestroy();
     this.particles.spawnExplosion(enemy.x, 0.5, enemy.z, enemy.isBoss ? 2.0 : 0.8);
-    const behaviour = this.behaviours[enemy.archetype];
-    behaviour?.onDeath?.(enemy, this.context);
-    behaviour?.dispose?.(enemy, this.context);
+    const b = this.behaviours[enemy.archetype];
+    b?.onDeath?.(enemy, this.context); b?.dispose?.(enemy, this.context);
     globalEvents.emit('enemy:killed', { enemy, x: enemy.x, z: enemy.z, xp: enemy.xpValue });
   }
 

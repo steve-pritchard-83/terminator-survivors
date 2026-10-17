@@ -15,6 +15,7 @@ import {
   type WeaponFireContext,
   type Orbiters,
   type ProjectileMeshCategory,
+  type SpawnProjectileParams,
   createWeaponPatternRegistry
 } from './weapons';
 
@@ -41,6 +42,7 @@ interface Projectile extends PoolableUser {
   hitEnemyIds: Set<number>;
   isAreaOnExpire?: boolean;
   areaRadius?: number;
+  knockback: number;
 }
 
 interface GroundZone {
@@ -49,6 +51,7 @@ interface GroundZone {
   z: number;
   radius: number;
   damagePerSec: number;
+  knockback: number;
   life: number;
   maxLife: number;
   tickTimer: number;
@@ -152,12 +155,12 @@ export class WeaponSystem {
       spawnProjectile: (params) => this.spawnProjectile(params),
       spawnEmpShockwave: (x, z, maxRadius, isSupernova) =>
         this.spawnEmpShockwave(x, z, maxRadius, isSupernova),
-      spawnGroundZone: (x, z, radius, dmg, dur) =>
-        this.spawnGroundZone(x, z, radius, dmg, dur),
+      spawnGroundZone: (x, z, radius, dmg, dur, knockback) =>
+        this.spawnGroundZone(x, z, radius, dmg, dur, knockback),
       spawnOrbitalIonBeam: (x, z, radius) =>
         this.spawnOrbitalIonBeam(x, z, radius),
-      applyDamageToTarget: (target, damage) =>
-        this.applyDamageToTarget(target, damage),
+      applyDamageToTarget: (target, damage, knockback, hitDir) =>
+        this.applyDamageToTarget(target, damage, knockback, hitDir),
       emit: (evt, payload) => globalEvents.emit(evt, payload),
       rng: globalRNG,
       scratch: {
@@ -328,7 +331,12 @@ export class WeaponSystem {
     });
   }
 
-  private applyDamageToTarget(entity: SpatialEntity, baseDamage: number): boolean {
+  private applyDamageToTarget(
+    entity: SpatialEntity,
+    baseDamage: number,
+    knockback = 0,
+    hitDir?: { x: number; z: number }
+  ): boolean {
     if (entity.type === 'crate') {
       globalEvents.emit('crate:destroyed', { crateId: entity.id, x: entity.x, z: entity.z });
       return true;
@@ -342,6 +350,17 @@ export class WeaponSystem {
     enemy.hp -= finalDamage;
     enemy.hitFlashTimer = isCrit ? 0.2 : 0.12;
 
+    if (knockback > 0 && hitDir) {
+      const dist = Math.hypot(hitDir.x, hitDir.z);
+      const nx = dist > 0.0001 ? hitDir.x / dist : (globalRNG.next() - 0.5) || 1;
+      const nz = dist > 0.0001 ? hitDir.z / dist : (globalRNG.next() - 0.5);
+      const len = Math.hypot(nx, nz) || 1;
+      const mass = Math.max(0.1, enemy.mass || 1.0);
+      const impulse = knockback / mass;
+      enemy.vx = (enemy.vx || 0) + (nx / len) * impulse;
+      enemy.vz = (enemy.vz || 0) + (nz / len) * impulse;
+    }
+
     globalEvents.emit('enemy:damaged', {
       x: enemy.x,
       z: enemy.z,
@@ -352,7 +371,7 @@ export class WeaponSystem {
     return true;
   }
 
-  private spawnProjectile(p: Omit<Projectile, 'id' | 'hitEnemyIds' | 'poolIndex'>): void {
+  private spawnProjectile(p: SpawnProjectileParams): void {
     let proj: Projectile;
     if (this.projectilePool.length > 0) {
       proj = this.projectilePool.pop()!;
@@ -373,10 +392,12 @@ export class WeaponSystem {
       proj.maxLife = p.maxLife;
       proj.isAreaOnExpire = p.isAreaOnExpire;
       proj.areaRadius = p.areaRadius;
+      proj.knockback = p.knockback ?? 0;
       proj.hitEnemyIds.clear();
     } else {
       proj = {
         ...p,
+        knockback: p.knockback ?? 0,
         id: this.nextProjId++,
         poolIndex: 0,
         hitEnemyIds: new Set()
@@ -393,7 +414,8 @@ export class WeaponSystem {
     z: number,
     radius: number,
     dps: number,
-    duration: number
+    duration: number,
+    knockback = 0
   ): void {
     const outerRingGeo = new THREE.RingGeometry(radius * 0.65, radius, 28);
     outerRingGeo.rotateX(-Math.PI / 2);
@@ -431,6 +453,7 @@ export class WeaponSystem {
       z,
       radius,
       damagePerSec: dps,
+      knockback,
       life: 0,
       maxLife: duration,
       tickTimer: 0
@@ -471,7 +494,10 @@ export class WeaponSystem {
         const target = hitCandidates[c];
         if (!p.hitEnemyIds.has(target.id)) {
           p.hitEnemyIds.add(target.id);
-          const hit = this.applyDamageToTarget(target, p.damage);
+          const hitDir = Math.hypot(p.vx, p.vz) > 0.001
+            ? { x: p.vx, z: p.vz }
+            : { x: target.x - p.x, z: target.z - p.z };
+          const hit = this.applyDamageToTarget(target, p.damage, p.knockback, hitDir);
           if (hit) {
             this.audio.playEndoHit();
             this.particles.spawnPlasmaImpact(p.x, p.y, p.z);
@@ -489,7 +515,9 @@ export class WeaponSystem {
           globalEvents.emit('camera:shake', { trauma: p.areaRadius > 3 ? 0.35 : 0.22 });
           const splash = this.grid.queryRadius(p.x, p.z, p.areaRadius, this.projectileSplashScratch);
           for (let s = 0; s < splash.length; s++) {
-            this.applyDamageToTarget(splash[s], p.damage);
+            const target = splash[s];
+            const hitDir = { x: target.x - p.x, z: target.z - p.z };
+            this.applyDamageToTarget(target, p.damage, p.knockback, hitDir);
           }
         }
         this.releaseProjectile(p);
@@ -513,7 +541,9 @@ export class WeaponSystem {
         gz.tickTimer = 0;
         const targets = this.grid.queryRadius(gz.x, gz.z, gz.radius, this.groundZoneScratch);
         for (let e = 0; e < targets.length; e++) {
-          this.applyDamageToTarget(targets[e], gz.damagePerSec * 0.25);
+          const target = targets[e];
+          const hitDir = { x: target.x - gz.x, z: target.z - gz.z };
+          this.applyDamageToTarget(target, gz.damagePerSec * 0.25, gz.knockback, hitDir);
         }
       }
 

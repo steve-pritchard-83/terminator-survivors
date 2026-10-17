@@ -116,6 +116,7 @@ export interface WeaponDefinition {
   iconColor: string;
   pattern: WeaponPatternId;
   patternParams?: WeaponPatternParams;
+  knockback: number;
   levels: WeaponLevelStats[];
 }
 
@@ -176,6 +177,9 @@ export interface ActiveEnemy extends SpatialEntity {
   searchlightAlertTimer?: number;
   phaseState?: number;
   state?: Record<string, number>;
+  mass?: number;
+  vx?: number;
+  vz?: number;
 }
 
 export interface ActiveWeaponSlot {
