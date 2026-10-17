@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { PostProcessingManager } from './PostProcessing';
 import { ProceduralTextures } from './ProceduralTextures';
 import { DynamicLightingManager } from './DynamicLightingManager';
+import { AtmosphereSystem } from './AtmosphereSystem';
 import { globalEvents } from '../core/EventBus';
 
 export class SceneManager {
@@ -10,6 +11,7 @@ export class SceneManager {
   public readonly renderer: THREE.WebGLRenderer;
   public readonly postProcessing: PostProcessingManager;
   public readonly dynamicLighting: DynamicLightingManager;
+  public readonly atmosphere: AtmosphereSystem;
 
   private readonly cameraOffset = new THREE.Vector3(0, 17.5, 12.5);
   private currentCameraTarget = new THREE.Vector3(0, 0, 0);
@@ -108,6 +110,7 @@ export class SceneManager {
     this.postProcessing.setSize(width, height);
 
     this.dynamicLighting = new DynamicLightingManager(this.scene);
+    this.atmosphere = new AtmosphereSystem(this.scene);
 
     window.addEventListener('resize', this.onResize);
   }
@@ -214,6 +217,7 @@ export class SceneManager {
     const height = window.innerHeight || 1;
     this.postProcessing.setSize(width, height);
     this.dynamicLighting.setEnabled(ratio > 1.0);
+    this.atmosphere.setEnabled(ratio > 1.0);
     this.qualityCooldownTimer = 5.0;
     this.lowFpsDuration = 0;
     this.highFpsDuration = 0;
@@ -224,6 +228,7 @@ export class SceneManager {
 
   public render(dt: number, timeSeconds: number): void {
     this.dynamicLighting.update(dt);
+    this.atmosphere.update(dt, this.currentCameraTarget.x, this.currentCameraTarget.z);
     this.postProcessing.update(dt, timeSeconds);
     this.postProcessing.render();
   }
@@ -231,6 +236,7 @@ export class SceneManager {
   public dispose(): void {
     window.removeEventListener('resize', this.onResize);
     this.dynamicLighting.dispose();
+    this.atmosphere.dispose();
     this.renderer.dispose();
   }
 }
