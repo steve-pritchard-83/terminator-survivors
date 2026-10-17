@@ -1,0 +1,73 @@
+# Terminator Survivors — Asset Provenance Register
+
+> [!IMPORTANT]
+> **Human Review Required:** This register documents the source, author, and licence status of every asset in `public/`.
+> Mark as `REPLACE` anything originating from commercial films or games without an explicit commercial license.
+> Status values: `OK` (cleared / original), `UNKNOWN` (unconfirmed provenance), `REPLACE` (infringing or proprietary asset).
+
+| Path | Source | Author | Licence | Proof Link | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `public/audio/backgroundmusic.mp3` | The Terminator (1984) Soundtrack | Brad Fiedel | Proprietary (Film Score) | N/A | **REPLACE** |
+| `public/audio/effects/Frogger_Error.wav` | Frogger / Arcade Rip | Konami | Proprietary | N/A | **REPLACE** |
+| `public/audio/effects/hk_heavy1a_m.wav` | Game rip / extraction | Unknown | Unknown | N/A | **UNKNOWN** |
+| `public/audio/effects/plasma_explosion.wav` | Sound library | Unknown | Unknown | N/A | **UNKNOWN** |
+| `public/audio/effects/Shotgun_shot_spas.wav` | Sound library | Unknown | Unknown | N/A | **UNKNOWN** |
+| `public/audio/effects/S_AddtoArchive.wav` | Sound library / Game rip | Unknown | Unknown | N/A | **UNKNOWN** |
+| `public/audio/effects/S_Alterted.wav` | Sound library | Unknown | Unknown | N/A | **UNKNOWN** |
+| `public/audio/effects/S_BulletHitBody01.wav` | Sound library | Unknown | Unknown | N/A | **UNKNOWN** |
+| `public/audio/effects/S_BulletHitBody02.wav` | Sound library | Unknown | Unknown | N/A | **UNKNOWN** |
+| `public/audio/effects/S_BulletHitMetal01.wav` | Sound library | Unknown | Unknown | N/A | **UNKNOWN** |
+| `public/audio/effects/S_BulletHitMetal02.wav` | Sound library | Unknown | Unknown | N/A | **UNKNOWN** |
+| `public/audio/effects/S_ButtonBeep01.wav` | Sound library | Unknown | Unknown | N/A | **UNKNOWN** |
+| `public/audio/effects/S_ButtonBeep02.wav` | Sound library | Unknown | Unknown | N/A | **UNKNOWN** |
+| `public/audio/effects/S_Buy.wav` | Sound library | Unknown | Unknown | N/A | **UNKNOWN** |
+| `public/audio/effects/S_Click.wav` | Sound library | Unknown | Unknown | N/A | **UNKNOWN** |
+| `public/audio/effects/S_Click02.wav` | Sound library | Unknown | Unknown | N/A | **UNKNOWN** |
+| `public/audio/effects/S_Click03.wav` | Sound library | Unknown | Unknown | N/A | **UNKNOWN** |
+| `public/audio/effects/S_Click04.wav` | Sound library | Unknown | Unknown | N/A | **UNKNOWN** |
+| `public/audio/effects/S_DetectiveModeError.wav` | Batman Arkham / Game Rip | Rocksteady / WB | Proprietary | N/A | **REPLACE** |
+| `public/audio/effects/S_DetectiveModeOff.wav` | Batman Arkham / Game Rip | Rocksteady / WB | Proprietary | N/A | **REPLACE** |
+| `public/audio/effects/S_DetectiveModeOn.wav` | Batman Arkham / Game Rip | Rocksteady / WB | Proprietary | N/A | **REPLACE** |
+| `public/audio/effects/S_DoorLockBreak01.wav` | Sound library | Unknown | Unknown | N/A | **UNKNOWN** |
+| `public/audio/effects/S_ExpLevel.wav` | Sound library | Unknown | Unknown | N/A | **UNKNOWN** |
+| `public/audio/effects/S_Explosion01.wav` | Sound library | Unknown | Unknown | N/A | **UNKNOWN** |
+| `public/audio/effects/S_Explosion02.wav` | Sound library | Unknown | Unknown | N/A | **UNKNOWN** |
+| `public/audio/effects/S_HackingDevice_On.wav` | Sound library | Unknown | Unknown | N/A | **UNKNOWN** |
+| `public/audio/effects/S_HckingCompleat.wav` | Sound library | Unknown | Unknown | N/A | **UNKNOWN** |
+| `public/audio/effects/S_HUD_DetectiveModeOffNew.wav` | Batman Arkham / Game Rip | Rocksteady / WB | Proprietary | N/A | **REPLACE** |
+| `public/audio/effects/S_HUD_DetectiveModeOnNew.wav` | Batman Arkham / Game Rip | Rocksteady / WB | Proprietary | N/A | **REPLACE** |
+| `public/audio/effects/S_HUD_Infiltrator_AnalysingIntelData1.wav` | Terminator Resistance / Rip | Teyon / Reef | Proprietary | N/A | **REPLACE** |
+| `public/audio/effects/S_HUD_Infiltrator_EnemyAnalysis.wav` | Terminator Resistance / Rip | Teyon / Reef | Proprietary | N/A | **REPLACE** |
+| `public/audio/effects/S_HUD_TurretAlarm2.wav` | Sound library | Unknown | Unknown | N/A | **UNKNOWN** |
+| `public/audio/effects/S_Ithica01.wav` | Sound library | Unknown | Unknown | N/A | **UNKNOWN** |
+| `public/audio/effects/S_Ithica02.wav` | Sound library | Unknown | Unknown | N/A | **UNKNOWN** |
+| `public/audio/effects/S_LaserTank01.wav` | Sound library | Unknown | Unknown | N/A | **UNKNOWN** |
+| `public/audio/effects/S_LaserTank02.wav` | Sound library | Unknown | Unknown | N/A | **UNKNOWN** |
+| `public/audio/effects/S_LootPickupQuest.wav` | Sound library | Unknown | Unknown | N/A | **UNKNOWN** |
+| `public/audio/effects/S_LootPickupStuff.wav` | Sound library | Unknown | Unknown | N/A | **UNKNOWN** |
+| `public/audio/effects/S_NewLevel.wav` | Sound library | Unknown | Unknown | N/A | **UNKNOWN** |
+| `public/audio/effects/S_NewLevel2.wav` | Sound library | Unknown | Unknown | N/A | **UNKNOWN** |
+| `public/audio/effects/S_NewLevel3.wav` | Sound library | Unknown | Unknown | N/A | **UNKNOWN** |
+| `public/audio/effects/S_NewQuest.wav` | Sound library | Unknown | Unknown | N/A | **UNKNOWN** |
+| `public/audio/effects/S_ObjectiveComplete.wav` | Sound library | Unknown | Unknown | N/A | **UNKNOWN** |
+| `public/audio/effects/S_PlasmaShot01.wav` | Sound library | Unknown | Unknown | N/A | **UNKNOWN** |
+| `public/audio/effects/S_PlasmaShot02.wav` | Sound library | Unknown | Unknown | N/A | **UNKNOWN** |
+| `public/audio/effects/S_PlasmaShot03.wav` | Sound library | Unknown | Unknown | N/A | **UNKNOWN** |
+| `public/audio/effects/S_PlasmaShot04.wav` | Sound library | Unknown | Unknown | N/A | **UNKNOWN** |
+| `public/audio/effects/S_Plasma_Aerial_New01.wav` | Sound library | Unknown | Unknown | N/A | **UNKNOWN** |
+| `public/audio/effects/S_Plasma_Aerial_New02.wav` | Sound library | Unknown | Unknown | N/A | **UNKNOWN** |
+| `public/audio/effects/S_QuestFaild.wav` | Sound library | Unknown | Unknown | N/A | **UNKNOWN** |
+| `public/audio/effects/S_Splash_Screen_Drums_x1.wav` | Sound library | Unknown | Unknown | N/A | **UNKNOWN** |
+| `public/audio/effects/S_Swing01.wav` | Sound library | Unknown | Unknown | N/A | **UNKNOWN** |
+| `public/audio/effects/S_Swing02.wav` | Sound library | Unknown | Unknown | N/A | **UNKNOWN** |
+| `public/audio/effects/S_TurretAlarm.wav` | Sound library | Unknown | Unknown | N/A | **UNKNOWN** |
+| `public/audio/effects/S_WeaponUpgradesApplied.wav` | Sound library | Unknown | Unknown | N/A | **UNKNOWN** |
+| `public/audio/effects/S_Woosh.wav` | Sound library | Unknown | Unknown | N/A | **UNKNOWN** |
+| `public/audio/effects/terminated.wav` | Movie vocal rip ("You're Terminated") | Orion Pictures / StudioCanal | Proprietary | N/A | **REPLACE** |
+| `public/fonts/terminator-real-nfi.otf` | Norfok Inc. / Thomas W. Otto | Thomas W. Otto | Freeware (Personal / Non-commercial) | http://www.norfok.com | **UNKNOWN** |
+| `public/fonts/terminator-real-nfi.ttf` | Norfok Inc. / Thomas W. Otto | Thomas W. Otto | Freeware (Personal / Non-commercial) | http://www.norfok.com | **UNKNOWN** |
+| `public/icons/favicon.png` | User-uploaded custom artwork | Project Team | Project-owned CC0 | N/A | **OK** |
+| `public/icons/favicon.svg` | Generated SVG markup | Project Team | Project-owned CC0 | N/A | **OK** |
+| `public/icons/icon-192.png` | User-uploaded custom artwork | Project Team | Project-owned CC0 | N/A | **OK** |
+| `public/icons/icon-512.png` | User-uploaded custom artwork | Project Team | Project-owned CC0 | N/A | **OK** |
+| `public/icons/icon-maskable-512.png` | User-uploaded custom artwork | Project Team | Project-owned CC0 | N/A | **OK** |
