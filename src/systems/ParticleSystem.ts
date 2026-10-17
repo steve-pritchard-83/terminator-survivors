@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { ProceduralTextures } from '../graphics/ProceduralTextures';
 import { vfxRNG } from '../core/RNG';
 import { bakePart, mergeParts } from '../graphics/meshes/geometryUtils';
+import { globalEvents } from '../core/EventBus';
 
 export type ParticleType = 'fire' | 'smoke' | 'plasma' | 'dash';
 
@@ -295,6 +296,8 @@ export class ParticleSystem {
       p.scaleEnd = 9.8 * scale;
       this.particles.push(p);
     }
+
+    globalEvents.emit('vfx:explosion', { x, y, z, scale });
   }
 
   public spawnPlasmaImpact(x: number, y: number, z: number): void {
@@ -308,6 +311,8 @@ export class ParticleSystem {
     p.scaleStart = 0.48;
     p.scaleEnd = 2.16;
     this.particles.push(p);
+
+    globalEvents.emit('vfx:plasma', { x, y, z });
   }
 
   public spawnDashAfterimage(x: number, y: number, z: number): void {

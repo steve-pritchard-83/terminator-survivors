@@ -25,6 +25,9 @@ export type GameEventMap = {
   'run:completed': { victory: boolean; timeSeconds: number; kills: number; alloyScrap: number; stageId: string; loadoutId: string; threatCount: number };
   'settings:updated': import('./types').GameSettings;
   'input:rebound': import('./types').InputMappingConfig;
+  'vfx:explosion': { x: number; y?: number; z: number; scale?: number };
+  'vfx:plasma': { x: number; y?: number; z: number; isHeavy?: boolean };
+  'vfx:muzzle': { x: number; y?: number; z: number; color?: number };
 };
 
 type EventCallback<T> = (data: T) => void;

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { PostProcessingManager } from './PostProcessing';
 import { ProceduralTextures } from './ProceduralTextures';
+import { DynamicLightingManager } from './DynamicLightingManager';
 import { globalEvents } from '../core/EventBus';
 
 export class SceneManager {
@@ -8,6 +9,7 @@ export class SceneManager {
   public readonly camera: THREE.PerspectiveCamera;
   public readonly renderer: THREE.WebGLRenderer;
   public readonly postProcessing: PostProcessingManager;
+  public readonly dynamicLighting: DynamicLightingManager;
 
   private readonly cameraOffset = new THREE.Vector3(0, 17.5, 12.5);
   private currentCameraTarget = new THREE.Vector3(0, 0, 0);
@@ -105,6 +107,8 @@ export class SceneManager {
     this.postProcessing = new PostProcessingManager(this.renderer, this.scene, this.camera);
     this.postProcessing.setSize(width, height);
 
+    this.dynamicLighting = new DynamicLightingManager(this.scene);
+
     window.addEventListener('resize', this.onResize);
   }
 
@@ -121,6 +125,7 @@ export class SceneManager {
     this.tempTarget.set(targetX, 0, targetZ);
     // Tight, responsive camera tracking
     this.currentCameraTarget.lerp(this.tempTarget, Math.min(1, dt * 28));
+    this.dynamicLighting.setPlayerPos(this.currentCameraTarget.x, this.currentCameraTarget.z);
 
     // Trauma-based Camera Shake
     let shakeX = 0;
@@ -208,6 +213,7 @@ export class SceneManager {
     const width = window.innerWidth || 1;
     const height = window.innerHeight || 1;
     this.postProcessing.setSize(width, height);
+    this.dynamicLighting.setEnabled(ratio > 1.0);
     this.qualityCooldownTimer = 5.0;
     this.lowFpsDuration = 0;
     this.highFpsDuration = 0;
@@ -217,12 +223,14 @@ export class SceneManager {
   }
 
   public render(dt: number, timeSeconds: number): void {
+    this.dynamicLighting.update(dt);
     this.postProcessing.update(dt, timeSeconds);
     this.postProcessing.render();
   }
 
   public dispose(): void {
     window.removeEventListener('resize', this.onResize);
+    this.dynamicLighting.dispose();
     this.renderer.dispose();
   }
 }
