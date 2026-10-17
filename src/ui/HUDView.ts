@@ -1,8 +1,10 @@
 import type { RunState } from '../state/RunState';
 import { ALL_WEAPONS, PASSIVES } from '../data/weapons';
+import { DamageNumbers } from './DamageNumbers';
 
 export class HUDView {
   public readonly container: HTMLElement;
+  public readonly damageNumbers: DamageNumbers;
   private readonly xpBarContainer: HTMLElement;
   private readonly xpFill: HTMLElement;
   private readonly hpFill: HTMLElement;
@@ -58,7 +60,7 @@ export class HUDView {
       </div>
 
       <div class="hud-boss-warning" id="hud-boss-warning" data-testid="hud-boss-warning">SKYNET PRIORITY THREAT DETECTED</div>
-      <div class="hud-floating-text-layer" id="hud-floating-text-layer"></div>
+      <div class="hud-floating-text-layer" id="floating-text-layer" data-testid="floating-text-layer"></div>
 
       <div class="boss-bar-container" id="hud-boss-bar">
         <div class="boss-title" id="hud-boss-title">WARNING // HUNTER-KILLER GOLIATH</div>
@@ -95,8 +97,10 @@ export class HUDView {
     this.dashStatusEl = this.container.querySelector('#hud-dash-status')!;
     this.pauseBtn = this.container.querySelector('#btn-hud-pause')!;
     this.bossWarningBanner = this.container.querySelector('#hud-boss-warning')!;
-    this.floatingTextLayer = this.container.querySelector('#hud-floating-text-layer')!;
+    this.floatingTextLayer = (this.container.querySelector('#floating-text-layer') ||
+      this.container.querySelector('#hud-floating-text-layer'))!;
     this.desktopHintEl = this.container.querySelector('.hud-desktop-hint')!;
+    this.damageNumbers = new DamageNumbers(this.floatingTextLayer);
 
     this.pauseBtn.addEventListener('click', () => {
       this.onPauseClicked?.();
@@ -240,15 +244,11 @@ export class HUDView {
   }
 
   public spawnFloatingText(text: string, color: string, screenX: number, screenY: number): void {
-    const el = document.createElement('div');
-    el.className = 'floating-text-callout';
-    el.style.left = `${screenX}px`;
-    el.style.top = `${screenY}px`;
-    el.style.color = color;
-    el.textContent = text;
-    this.floatingTextLayer.appendChild(el);
-    window.setTimeout(() => {
-      el.remove();
-    }, 750);
+    this.damageNumbers.spawnText(text, color, screenX, screenY);
+  }
+
+  public updateDamageNumbers(dt: number): void {
+    this.damageNumbers.update(dt);
   }
 }
+

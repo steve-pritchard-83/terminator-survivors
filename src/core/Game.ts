@@ -178,13 +178,17 @@ export class Game {
       this.uiManager.hudView.triggerBossWarning(name);
     });
 
-    globalEvents.on('enemy:damaged', ({ x, z, damage, isCrit }) => {
+    globalEvents.on('enemy:damaged', ({ x, z, damage, isCrit, enemyId }) => {
       if (this.runState.mode !== 'playing') return;
       const screenPos = this.sceneManager.worldToScreen(x, 0.8, z);
       if (screenPos) {
-        const text = isCrit ? `-${damage} CRIT!` : `-${damage}`;
-        const color = isCrit ? 'var(--color-amber)' : 'var(--color-chrome)';
-        this.uiManager.hudView.spawnFloatingText(text, color, screenPos.x, screenPos.y);
+        this.uiManager.hudView.damageNumbers.onEnemyDamaged(
+          damage,
+          isCrit,
+          screenPos.x,
+          screenPos.y,
+          enemyId
+        );
       }
     });
 
@@ -273,6 +277,7 @@ export class Game {
     this.isPaused = false;
 
     this.uiManager.titleScreen.hide();
+    this.uiManager.hudView.damageNumbers.clear();
     this.uiManager.hudView.show();
     this.audioEngine.init();
     this.audioEngine.playRunStart();
@@ -296,6 +301,7 @@ export class Game {
 
     this.uiManager.levelUpModal.hide();
     this.uiManager.vaultModal.hide();
+    this.uiManager.hudView.damageNumbers.clear();
     this.uiManager.hudView.hide();
     this.uiManager.endRunModal.show(
       victory,
@@ -342,6 +348,7 @@ export class Game {
   public abortToTitle(): void {
     this.uiManager.pauseModal.hide();
     this.audioEngine.stopMusic();
+    this.uiManager.hudView.damageNumbers.clear();
     this.uiManager.hudView.hide();
     this.enemySystem.clear();
     this.pickupSystem.clear();
@@ -469,6 +476,7 @@ export class Game {
     if (this.runState.mode === 'playing') {
       const interp = this.playerSystem.setInterpolatedPosition(alpha, this.prevPlayerPos);
       this.sceneManager.updateCamera(interp.x, interp.z, dt);
+      this.uiManager.hudView.updateDamageNumbers(dt);
     } else if (this.runState.mode === 'title') {
       this.sceneManager.updateCamera(0, 0, dt);
     } else {

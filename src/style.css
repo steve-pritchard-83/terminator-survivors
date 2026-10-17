@@ -759,8 +759,11 @@ body,
   text-shadow:
     0 0 4px #000,
     0 0 8px #000;
-  transform: translate(-50%, -50%);
-  animation: float-up-fade 0.75s ease-out forwards;
+  top: 0;
+  left: 0;
+  user-select: none;
+  white-space: nowrap;
+  will-change: transform, opacity;
   pointer-events: none;
 }
 

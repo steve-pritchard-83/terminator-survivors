@@ -540,7 +540,8 @@ export class WeaponSystem {
       x: enemy.x,
       z: enemy.z,
       damage: finalDamage,
-      isCrit
+      isCrit,
+      enemyId: enemy.id
     });
     return true;
   }
