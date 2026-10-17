@@ -107,19 +107,14 @@ export class EnemySystem {
 
     for (let i = this.activeEnemies.length - 1; i >= 0; i--) {
       const enemy = this.activeEnemies[i];
-      if (enemy.hp <= 0) {
-        this.killEnemy(enemy, i);
-        continue;
-      }
+      if (enemy.hp <= 0) { this.killEnemy(enemy, i); continue; }
 
       if (enemy.hitFlashTimer > 0) enemy.hitFlashTimer -= dt;
       if (enemy.slowTimer > 0) enemy.slowTimer -= dt;
       if (enemy.attackCooldown > 0) enemy.attackCooldown = Math.max(0, enemy.attackCooldown - dt);
 
-      const effectiveSpeed = enemy.speed * (enemy.slowTimer > 0 ? 0.6 : 1.0);
-      let dx = px - enemy.x;
-      let dz = pz - enemy.z;
-      let dist = Math.hypot(dx, dz);
+      const effectiveSpeed = enemy.speed * (enemy.slowTimer > 0 ? 0.6 : 1.0) * (this.runState.activeThreats.has('relentless_pursuit') ? 1.15 : 1.0);
+      let dx = px - enemy.x; let dz = pz - enemy.z; let dist = Math.hypot(dx, dz);
 
       if (!enemy.isBoss && dist > ENEMY_LEASH_DISTANCE) {
         this.relocateEnemy(enemy, px, pz);

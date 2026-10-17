@@ -83,6 +83,25 @@ export type MetaUpgradeId =
   | 'scavenger_protocol'
   | 'defibrillator';
 
+export type ThreatModifierId =
+  | 'terminator_reinforcements'
+  | 'plasma_overcharge'
+  | 'relentless_pursuit'
+  | 'emp_damping'
+  | 'supply_starvation'
+  | 'jammed_frequency'
+  | 'scarcity_protocol'
+  | 'hyperalloy_surge'
+  | 'no_second_chances'
+  | 'judgment_hour';
+
+export interface ThreatModifierDefinition {
+  id: ThreatModifierId;
+  name: string;
+  description: string;
+  scrapBonusPercent: number;
+}
+
 export type GameMode =
   'title' | 'playing' | 'levelup' | 'vault' | 'paused' | 'gameover' | 'victory';
 

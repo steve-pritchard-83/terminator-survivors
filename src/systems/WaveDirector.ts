@@ -31,9 +31,10 @@ export class WaveDirector {
 
     this.runState.timeSeconds += dt;
     const totalSec = Math.floor(this.runState.timeSeconds);
+    const maxMinutes = this.runState.activeThreats.has('judgment_hour') ? 8 : RUN_DURATION_MINUTES;
     const minute = this.runState.isEndless
       ? Math.floor(totalSec / 60)
-      : Math.min(RUN_DURATION_MINUTES, Math.floor(totalSec / 60));
+      : Math.min(maxMinutes, Math.floor(totalSec / 60));
     const timeline = STAGES[this.runState.stageId]?.waveTimeline ?? WAVE_TIMELINE;
 
     // Check minute transition
@@ -58,18 +59,34 @@ export class WaveDirector {
         }
       } else {
         const entry = timeline[minute];
-        if (entry?.boss && !this.spawnedBossesThisRun.has(`${minute}_${entry.boss}`)) {
-          this.spawnedBossesThisRun.add(`${minute}_${entry.boss}`);
-          this.spawnBoss(entry.boss, entry.alertBanner);
+        const isJudgmentBossMinute = this.runState.activeThreats.has('judgment_hour') && minute > 0 && minute % 2 === 0;
+        const bossToSpawn = entry?.boss ?? (isJudgmentBossMinute ? 'hk_aerial_patrol' : undefined);
+        const banner = entry?.alertBanner ?? (isJudgmentBossMinute ? `JUDGMENT SIEGE // MINUTE ${minute}` : undefined);
+
+        if (bossToSpawn && !this.spawnedBossesThisRun.has(`${minute}_${bossToSpawn}`)) {
+          this.spawnedBossesThisRun.add(`${minute}_${bossToSpawn}`);
+          this.spawnBoss(bossToSpawn, banner);
         }
       }
     }
 
-    const entry = timeline[Math.min(RUN_DURATION_MINUTES, this.currentMinute)];
+    const entry = timeline[Math.min(maxMinutes, this.currentMinute)];
     if (!entry) return;
 
     let hpMultiplier = entry.hpMultiplier;
     let damageMultiplier = entry.damageMultiplier;
+    let eliteChance = entry.eliteChance;
+
+    if (this.runState.activeThreats.has('terminator_reinforcements')) {
+      hpMultiplier *= 1.25;
+    }
+    if (this.runState.activeThreats.has('plasma_overcharge')) {
+      damageMultiplier *= 1.20;
+    }
+    if (this.runState.activeThreats.has('hyperalloy_surge')) {
+      eliteChance = Math.min(1.0, eliteChance + 0.30);
+    }
+
     if (this.runState.isEndless && this.currentMinute > RUN_DURATION_MINUTES) {
       const endlessScale = Math.pow(1.15, this.currentMinute - RUN_DURATION_MINUTES);
       hpMultiplier *= endlessScale;
@@ -83,7 +100,7 @@ export class WaveDirector {
       this.enemySystem.activeEnemies.length < entry.minEnemies
     ) {
       this.spawnTimer = 0;
-      this.spawnPerimeterEnemy(entry.pool, hpMultiplier, damageMultiplier, entry.eliteChance);
+      this.spawnPerimeterEnemy(entry.pool, hpMultiplier, damageMultiplier, eliteChance);
     }
   }
 

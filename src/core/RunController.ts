@@ -11,9 +11,10 @@ import type { ParticleSystem } from '../systems/ParticleSystem';
 import type { WaveDirector } from '../systems/WaveDirector';
 import type { InteractiveEnvironmentSystem } from '../systems/InteractiveEnvironmentSystem';
 import type { GameLoop } from './GameLoop';
-import type { LoadoutId, StageId, UpgradeChoice, WeaponId, ActiveEnemy } from './types';
+import type { LoadoutId, StageId, ThreatModifierId, UpgradeChoice, WeaponId, ActiveEnemy } from './types';
 import { globalEvents } from './EventBus';
 import { globalRNG } from './RNG';
+import { computeThreatScrapMultiplier } from '../data/threatModifiers';
 
 export interface RunControllerHost {
   readonly runState: RunState;
@@ -102,11 +103,12 @@ export class RunController {
     customSeed?: number,
     stageId: StageId = 'la_2029_wasteland',
     isDaily = false,
-    dailyDateKey = ''
+    dailyDateKey = '',
+    activeThreats?: ThreatModifierId[]
   ): void {
     const seed = (customSeed !== undefined ? customSeed : Date.now()) >>> 0;
     globalRNG.setSeed(seed);
-    this.host.runState.initRun(loadoutId, this.host.saveManager.getData().upgrades, seed, stageId);
+    this.host.runState.initRun(loadoutId, this.host.saveManager.getData().upgrades, seed, stageId, activeThreats);
     this.host.runState.isDailyOperation = isDaily;
     this.host.runState.dailyDateKey = dailyDateKey;
     this.host.runState.autoAimEnabled = this.host.saveManager.getData().settings.autoAim;
@@ -136,10 +138,13 @@ export class RunController {
     this.host.audioEngine.stopMusic();
     this.host.audioEngine.playRunEnd(victory);
 
+    const threatMult = computeThreatScrapMultiplier(Array.from(this.host.runState.activeThreats));
+    const finalScrap = Math.round(this.host.runState.alloyScrapEarned * threatMult);
+
     this.host.saveManager.addRunResults(
       this.host.runState.kills,
       this.host.runState.timeSeconds,
-      this.host.runState.alloyScrapEarned,
+      finalScrap,
       victory,
       this.host.runState.bossesKilled,
       this.host.runState.isEndless
@@ -149,10 +154,10 @@ export class RunController {
       this.host.saveManager.recordDailyAttempt({
         dateKey: this.host.runState.dailyDateKey,
         completed: victory,
-        score: Math.floor(this.host.runState.timeSeconds * 10 + this.host.runState.kills * 25 + this.host.runState.alloyScrapEarned * 2),
+        score: Math.floor(this.host.runState.timeSeconds * 10 + this.host.runState.kills * 25 + finalScrap * 2),
         timeSeconds: this.host.runState.timeSeconds,
         kills: this.host.runState.kills,
-        alloyScrap: this.host.runState.alloyScrapEarned
+        alloyScrap: finalScrap
       });
     }
 
@@ -165,7 +170,7 @@ export class RunController {
       this.host.runState.timeSeconds,
       this.host.runState.kills,
       this.host.runState.level,
-      this.host.runState.alloyScrapEarned,
+      finalScrap,
       this.host.runState.seed,
       () => {
         this.host.audioEngine.playHudScanClose();

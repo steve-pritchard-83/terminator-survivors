@@ -7,6 +7,7 @@ import type {
   PassiveId,
   PlayerComputedStats,
   StageId,
+  ThreatModifierId,
   UpgradeChoice,
   WeaponId
 } from '../core/types';
@@ -71,6 +72,7 @@ export class RunState {
   public isEndless = false;
   public isDailyOperation = false;
   public dailyDateKey = '';
+  public activeThreats = new Set<ThreatModifierId>();
   private purchasedMetaUpgrades: Record<string, number> = {};
 
   public godMode = false;
@@ -101,7 +103,8 @@ export class RunState {
     loadoutId: LoadoutId,
     purchasedMetaUpgrades: Record<string, number>,
     seed = 0,
-    stageId: StageId = 'la_2029_wasteland'
+    stageId: StageId = 'la_2029_wasteland',
+    activeThreats?: ThreatModifierId[]
   ): void {
     if (this.mode !== 'title') {
       this.stateMachine.reset('title');
@@ -112,6 +115,7 @@ export class RunState {
     this.isEndless = false;
     this.isDailyOperation = false;
     this.dailyDateKey = '';
+    this.activeThreats = new Set(activeThreats ?? []);
     this.timeSeconds = 0;
     this.level = 1;
     this.xp = 0;
@@ -154,13 +158,14 @@ export class RunState {
     const base = this.getDefaultStats();
     const loadout = LOADOUTS[this.loadoutId];
 
-    // 1. Apply Meta Upgrades
+    // 1. Apply Meta Upgrades (halved under scarcity_protocol)
+    const metaScale = this.activeThreats.has('scarcity_protocol') ? 0.5 : 1.0;
     for (const [upId, lv] of Object.entries(this.purchasedMetaUpgrades)) {
       const cfg = META_UPGRADES[upId as keyof typeof META_UPGRADES];
       if (cfg && lv > 0) {
         for (const [stat, val] of Object.entries(cfg.statPerLevel)) {
           const k = stat as keyof PlayerComputedStats;
-          base[k] = (base[k] as number) + (val as number) * lv;
+          base[k] = (base[k] as number) + (val as number) * lv * metaScale;
         }
       }
     }
@@ -184,6 +189,15 @@ export class RunState {
       }
     }
 
+    // Threat modifier penalties
+    if (this.activeThreats.has('emp_damping')) {
+      base.cooldownMultiplier *= 1.15;
+    }
+    if (this.activeThreats.has('no_second_chances')) {
+      base.revivals = 0;
+      base.revivalChance = 0;
+    }
+
     // Clamp cooldownMultiplier to a safe floor of 0.35
     base.cooldownMultiplier = Math.max(0.35, base.cooldownMultiplier);
 
@@ -192,7 +206,9 @@ export class RunState {
     this.computedStats = base;
     this.maxHp = base.maxHp;
     this.hp = Math.max(1, Math.min(this.maxHp, Math.round(this.maxHp * hpPercent)));
-    if (base.revivals > prevRevivals) {
+    if (this.activeThreats.has('no_second_chances')) {
+      this.revivalsLeft = 0;
+    } else if (base.revivals > prevRevivals) {
       this.revivalsLeft += base.revivals - prevRevivals;
     }
   }
