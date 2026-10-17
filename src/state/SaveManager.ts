@@ -43,7 +43,15 @@ export class SaveManager {
         salvage_magnet: 0,
         phase_capacitor: 0,
         scavenger_protocol: 0,
-        defibrillator: 0
+        defibrillator: 0,
+        crit_core: 0,
+        high_caliber: 0,
+        blast_dampeners: 0,
+        extended_capacitors: 0,
+        plasma_accelerator: 0,
+        tactical_relay: 0,
+        reroll_protocol: 0,
+        veteran_resilience: 0
       },
       settings: {
         masterVolume: 0.8,
@@ -308,6 +316,25 @@ export class SaveManager {
     this.data.upgrades[id] = curLevel + 1;
     this.save();
     return true;
+  }
+
+  public refundAllUpgrades(): number {
+    let totalRefunded = 0;
+    for (const key of Object.keys(META_UPGRADES) as MetaUpgradeId[]) {
+      const cfg = META_UPGRADES[key];
+      const curLevel = this.data.upgrades[key] ?? 0;
+      if (cfg && curLevel > 0) {
+        for (let i = 0; i < curLevel; i++) {
+          totalRefunded += Math.round(cfg.baseCost * Math.pow(cfg.costMultiplier, i));
+        }
+        this.data.upgrades[key] = 0;
+      }
+    }
+    if (totalRefunded > 0) {
+      this.data.alloyScrap += totalRefunded;
+      this.save();
+    }
+    return totalRefunded;
   }
 
   public unlockLoadout(id: LoadoutId): boolean {

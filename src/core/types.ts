@@ -87,7 +87,15 @@ export type MetaUpgradeId =
   | 'salvage_magnet'
   | 'phase_capacitor'
   | 'scavenger_protocol'
-  | 'defibrillator';
+  | 'defibrillator'
+  | 'crit_core'
+  | 'high_caliber'
+  | 'blast_dampeners'
+  | 'extended_capacitors'
+  | 'plasma_accelerator'
+  | 'tactical_relay'
+  | 'reroll_protocol'
+  | 'veteran_resilience';
 
 export type ThreatModifierId =
   | 'terminator_reinforcements'
@@ -209,6 +217,8 @@ export interface PlayerComputedStats {
   xpGainMultiplier: number;
   revivals: number;
   revivalChance?: number;
+  rerolls?: number;
+  lowHpDamageReduction?: number;
 }
 
 export interface SpatialEntity {

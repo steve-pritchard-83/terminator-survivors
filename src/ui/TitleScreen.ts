@@ -121,6 +121,9 @@ export class TitleScreen {
           <div id="bunker-upgrades-list" class="upgrade-card-list"></div>
 
           <div style="display:flex; justify-content:center; align-items:center; gap:12px; margin-top:14px;">
+            <button class="btn-secondary" id="btn-refund-upgrades" style="border-color:#ff8844; color:#ffaa66;">
+              REFUND ALL ALLOY
+            </button>
             <button class="btn-secondary" id="btn-close-bunker" style="align-self:center;">
               RETURN TO COMMAND
             </button>
@@ -621,6 +624,20 @@ export class TitleScreen {
 
       upgradeList.appendChild(card);
       this.bunkerSelectables.push(card);
+    }
+
+    const refundBtn = this.bunkerModal.querySelector('#btn-refund-upgrades') as HTMLButtonElement | null;
+    if (refundBtn) {
+      refundBtn.onclick = () => {
+        const refunded = this.saveManager.refundAllUpgrades();
+        if (refunded > 0) {
+          this.audioEngine.playUiBuy();
+        } else {
+          this.audioEngine.playUiError();
+        }
+        this.renderBunkerContents();
+      };
+      this.bunkerSelectables.push(refundBtn);
     }
 
     const closeBtn = this.bunkerModal.querySelector('#btn-close-bunker') as HTMLElement | null;

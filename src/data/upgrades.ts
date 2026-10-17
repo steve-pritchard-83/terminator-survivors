@@ -211,5 +211,77 @@ export const META_UPGRADES: Record<MetaUpgradeId, MetaUpgradeConfig> = {
     baseCost: 1000,
     costMultiplier: 1.0,
     statPerLevel: { revivals: 1 }
+  },
+  crit_core: {
+    id: 'crit_core',
+    name: 'Focus Targeting Sensor',
+    description: '+3% critical strike chance and +15% crit damage per level.',
+    maxLevel: 5,
+    baseCost: 160,
+    costMultiplier: 1.6,
+    statPerLevel: { critChance: 0.03, critMultiplier: 0.15 }
+  },
+  high_caliber: {
+    id: 'high_caliber',
+    name: 'High-Caliber Munitions',
+    description: '+10% projectile blast area and +10% projectile speed per level.',
+    maxLevel: 5,
+    baseCost: 140,
+    costMultiplier: 1.55,
+    statPerLevel: { areaMultiplier: 0.1, speedMultiplier: 0.1 }
+  },
+  blast_dampeners: {
+    id: 'blast_dampeners',
+    name: 'Kinetic Blast Dampeners',
+    description: '+1 armor and +10 max HP per level.',
+    maxLevel: 5,
+    baseCost: 130,
+    costMultiplier: 1.5,
+    statPerLevel: { armor: 1, maxHp: 10 }
+  },
+  extended_capacitors: {
+    id: 'extended_capacitors',
+    name: 'Extended Capacitors',
+    description: '+15% weapon effect and zone duration per level.',
+    maxLevel: 5,
+    baseCost: 110,
+    costMultiplier: 1.5,
+    statPerLevel: { durationMultiplier: 0.15 }
+  },
+  plasma_accelerator: {
+    id: 'plasma_accelerator',
+    name: 'Hyper-Coil Accelerator',
+    description: '+12% projectile flight speed per level.',
+    maxLevel: 5,
+    baseCost: 100,
+    costMultiplier: 1.45,
+    statPerLevel: { speedMultiplier: 0.12 }
+  },
+  tactical_relay: {
+    id: 'tactical_relay',
+    name: 'Tactical Field Relay',
+    description: '+15% Luck per level (improves loot drop and upgrade rolls).',
+    maxLevel: 5,
+    baseCost: 120,
+    costMultiplier: 1.5,
+    statPerLevel: { luckMultiplier: 0.15 }
+  },
+  reroll_protocol: {
+    id: 'reroll_protocol',
+    name: 'Requisition Protocol',
+    description: '+1 field upgrade reroll option per level.',
+    maxLevel: 3,
+    baseCost: 350,
+    costMultiplier: 2.0,
+    statPerLevel: { rerolls: 1 }
+  },
+  veteran_resilience: {
+    id: 'veteran_resilience',
+    name: 'Veteran Survival Grit',
+    description: '+15% revival chance and 5% low-HP damage reduction per level.',
+    maxLevel: 3,
+    baseCost: 400,
+    costMultiplier: 2.2,
+    statPerLevel: { revivalChance: 0.15, lowHpDamageReduction: 0.05 }
   }
 };

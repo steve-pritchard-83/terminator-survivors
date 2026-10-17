@@ -115,7 +115,9 @@ export class RunState {
       luckMultiplier: 1.0,
       xpGainMultiplier: 1.0,
       revivals: 0,
-      revivalChance: 0
+      revivalChance: 0,
+      rerolls: 0,
+      lowHpDamageReduction: 0
     };
   }
 
