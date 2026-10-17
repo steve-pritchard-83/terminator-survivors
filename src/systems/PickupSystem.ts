@@ -109,6 +109,8 @@ export class PickupSystem {
   }
 
   public update(dt: number): void {
+    if (this.runState.mode !== 'playing') return;
+
     const px = this.runState.playerPos.x;
     const pz = this.runState.playerPos.z;
     const magnetRadius = this.runState.computedStats.magnetRadius;
@@ -119,6 +121,7 @@ export class PickupSystem {
     }
 
     for (let i = this.pickups.length - 1; i >= 0; i--) {
+      if (this.runState.mode !== 'playing') break;
       const p = this.pickups[i];
       p.mesh.rotation.y += dt * 2.8; // Spin animation
 
