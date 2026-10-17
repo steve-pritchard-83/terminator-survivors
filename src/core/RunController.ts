@@ -9,6 +9,7 @@ import type { EnemySystem } from '../systems/EnemySystem';
 import type { PickupSystem } from '../systems/PickupSystem';
 import type { ParticleSystem } from '../systems/ParticleSystem';
 import type { WaveDirector } from '../systems/WaveDirector';
+import type { GameLoop } from './GameLoop';
 import type { LoadoutId, UpgradeChoice, WeaponId, ActiveEnemy } from './types';
 import { globalEvents } from './EventBus';
 import { globalRNG } from './RNG';
@@ -25,6 +26,7 @@ export interface RunControllerHost {
   readonly pickupSystem: PickupSystem;
   readonly particles: ParticleSystem;
   readonly waveDirector: WaveDirector;
+  readonly gameLoop: GameLoop;
   onRunStarted?: () => void;
 }
 
@@ -68,6 +70,15 @@ export class RunController {
             screenPos.y,
             enemyId
           );
+        }
+        if (isCrit) {
+          this.host.audioEngine.playCritCrunch();
+          const enemy = this.host.enemySystem.activeEnemies.find((e) => e.id === enemyId);
+          if (enemy?.isBoss) {
+            this.host.gameLoop.hitStop(0.04);
+          } else {
+            this.host.gameLoop.hitStop(0.02);
+          }
         }
       }),
       globalEvents.on('pickup:reward', ({ x, z, text, color }) => {
@@ -236,12 +247,15 @@ export class RunController {
     if (enemy.isBoss) {
       this.host.runState.bossesKilled++;
       this.host.sceneManager.addScreenShake(0.55);
+      this.host.gameLoop.hitStop(0.10);
       if (this.activeBoss) {
         this.activeBoss = null;
       }
       if (enemy.archetype === 'skynet_tde_core') {
         this.endRun(true);
       }
+    } else if (enemy.state?.isElite) {
+      this.host.gameLoop.hitStop(0.06);
     }
   }
 

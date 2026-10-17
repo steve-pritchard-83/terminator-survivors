@@ -6,6 +6,7 @@ export class GameLoop {
   private animFrameId: number | null = null;
   private lastTime = 0;
   private accumulator = 0;
+  public hitStopTimer = 0;
 
   // Performance telemetry
   public fps = 60;
@@ -22,6 +23,11 @@ export class GameLoop {
   ) {
     this.onUpdate = onUpdate;
     this.onRender = onRender;
+  }
+
+  public hitStop(seconds: number): void {
+    const clamped = Math.min(0.10, Math.max(0, seconds));
+    this.hitStopTimer = Math.min(0.12, this.hitStopTimer + clamped);
   }
 
   public start(): void {
@@ -44,7 +50,7 @@ export class GameLoop {
     return this.isRunning;
   }
 
-  private tick = (currentTime: number): void => {
+  public tick = (currentTime: number): void => {
     if (!this.isRunning) return;
 
     let deltaSeconds = (currentTime - this.lastTime) / 1000;
@@ -66,7 +72,12 @@ export class GameLoop {
 
     this.accumulator += deltaSeconds;
     while (this.accumulator >= GameLoop.FIXED_DT) {
-      this.onUpdate(GameLoop.FIXED_DT);
+      if (this.hitStopTimer > 0) {
+        this.hitStopTimer = Math.max(0, this.hitStopTimer - GameLoop.FIXED_DT);
+        this.onUpdate(0);
+      } else {
+        this.onUpdate(GameLoop.FIXED_DT);
+      }
       this.accumulator -= GameLoop.FIXED_DT;
     }
 

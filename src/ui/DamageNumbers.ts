@@ -78,6 +78,7 @@ export class DamageNumbers {
         if (isCrit) {
           existing.isCrit = true;
           existing.element.style.color = 'var(--color-amber)';
+          existing.element.style.fontWeight = 'bold';
           existing.element.style.fontSize = '1.25rem';
         }
         existing.element.textContent = existing.isCrit
@@ -108,6 +109,7 @@ export class DamageNumbers {
     const el = slot.element;
     el.textContent = isCrit ? `-${damage} CRIT!` : `-${damage}`;
     el.style.color = isCrit ? 'var(--color-amber)' : 'var(--color-chrome)';
+    el.style.fontWeight = isCrit ? 'bold' : 'normal';
     el.style.fontSize = isCrit ? '1.25rem' : '1.0rem';
     el.style.display = 'block';
 
@@ -191,7 +193,7 @@ export class DamageNumbers {
       scale = 1.15 - ((t - 0.25) / 0.75) * 0.25;
     }
     if (slot.isCrit) {
-      scale *= 1.1;
+      scale *= 1.4;
     }
 
     // Opacity: stay 1 until 60% of duration, then fade to 0

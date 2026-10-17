@@ -547,6 +547,32 @@ export class AudioEngine {
     this.playSample('empBlast', 0.7, 1.0, 0.02);
   }
 
+  public playCritCrunch(): void {
+    this.triggerHaptic([40, 45, 60], 50);
+    if (this.gamepadManager) {
+      this.gamepadManager.playRumble(110, 0.9, 0.6);
+    }
+    this.playSample('endoHit', 0.85, 0.72);
+    if (this.ctx && this.sfxGain && !this.isMuted) {
+      try {
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(175, now);
+        osc.frequency.exponentialRampToValueAtTime(38, now + 0.045);
+        gain.gain.setValueAtTime(0.55, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+        osc.connect(gain);
+        gain.connect(this.sfxGain);
+        osc.start(now);
+        osc.stop(now + 0.052);
+      } catch {
+        // Fallback silently if audio context is in an unsupported state
+      }
+    }
+  }
+
   public playEndoHit(): void {
     this.playSample('endoHit', 0.42);
   }
