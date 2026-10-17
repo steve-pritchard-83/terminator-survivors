@@ -39,15 +39,16 @@ export const CameronGradingShader = {
       float b = texture2D(tDiffuse, vUv - offset).b;
       vec3 col = vec3(r, g, b);
 
-      // Cold James Cameron 2029 Cobalt-Teal shadow grading & silver highlight curve
-      vec3 coldShadows = vec3(0.03, 0.09, 0.19);
+      // Cold James Cameron 2029 Cobalt-Teal shadow lift & bright silver highlight curve
+      col = pow(max(col, vec3(0.0)), vec3(0.84)) * 1.18;
+      vec3 coldShadows = vec3(0.05, 0.13, 0.26);
       float luma = dot(col, vec3(0.299, 0.587, 0.114));
-      col = mix(col + coldShadows * (1.0 - luma) * 0.45, col * vec3(0.95, 1.02, 1.12), smoothstep(0.1, 0.8, luma));
+      col = mix(col + coldShadows * (1.0 - luma) * 0.55, col * vec3(0.96, 1.04, 1.15), smoothstep(0.08, 0.75, luma));
 
-      // 35mm film grain & radial vignette
-      float grain = (rand(vUv + fract(uTime)) - 0.5) * 0.035;
-      float vignette = smoothstep(0.88, 0.32, dist);
-      col = (col + grain) * mix(0.42, 1.0, vignette);
+      // Subtle 35mm film grain & gentle vignette
+      float grain = (rand(vUv + fract(uTime)) - 0.5) * 0.024;
+      float vignette = smoothstep(0.95, 0.35, dist);
+      col = (col + grain) * mix(0.76, 1.0, vignette);
 
       // Crimson optical damage flash
       col = mix(col, vec3(0.95, 0.08, 0.08), clamp(uDamageFlash, 0.0, 0.65));

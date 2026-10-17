@@ -72,6 +72,35 @@ export class ProceduralTextures {
     return tex;
   }
 
+  private static envMap: THREE.CanvasTexture | null = null;
+
+  public static getMetallicEnvMap(): THREE.CanvasTexture {
+    if (this.envMap) return this.envMap;
+    const width = 512;
+    const height = 256;
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = this.get2DContext(canvas);
+
+    if (ctx) {
+      // Bright Cameron cobalt-silver sky dome gradient for chrome specular reflections
+      const grad = ctx.createLinearGradient(0, 0, 0, height);
+      grad.addColorStop(0.0, '#4a88d9');
+      grad.addColorStop(0.45, '#b8d8ff');
+      grad.addColorStop(0.5, '#ffffff'); // Horizon specular studio strip
+      grad.addColorStop(0.55, '#5a7898');
+      grad.addColorStop(1.0, '#1e2f48');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, width, height);
+    }
+
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.mapping = THREE.EquirectangularReflectionMapping;
+    this.envMap = tex;
+    return tex;
+  }
+
   public static getWastelandGroundAlbedo(): THREE.CanvasTexture {
     if (this.groundAlbedo) return this.groundAlbedo;
     const size = 512;
@@ -81,24 +110,38 @@ export class ProceduralTextures {
     const ctx = this.get2DContext(canvas);
 
     if (ctx) {
-      // Base nocturnal cold slate ground #101824
-      ctx.fillStyle = '#101824';
+      // Moonlit cobalt-slate ash ground (#2b3e58)
+      ctx.fillStyle = '#2b3e58';
       ctx.fillRect(0, 0, size, size);
 
-      // Ash dust noise
+      // Ash dust & rubble texture noise
       const imgData = ctx.getImageData(0, 0, size, size);
       const data = imgData.data;
       for (let i = 0; i < data.length; i += 4) {
-        const noise = (Math.random() - 0.5) * 28;
-        data[i] = Math.max(8, Math.min(45, 16 + noise * 0.6));
-        data[i + 1] = Math.max(14, Math.min(60, 24 + noise * 0.8));
-        data[i + 2] = Math.max(24, Math.min(80, 36 + noise * 1.1));
+        const noise = (Math.random() - 0.5) * 38;
+        data[i] = Math.max(24, Math.min(95, 44 + noise * 0.8));
+        data[i + 1] = Math.max(38, Math.min(115, 64 + noise * 0.9));
+        data[i + 2] = Math.max(55, Math.min(145, 90 + noise * 1.1));
       }
       ctx.putImageData(imgData, 0, 0);
 
-      // Cracked asphalt veins & bleached bone fragments
-      ctx.strokeStyle = 'rgba(4, 8, 16, 0.45)';
-      ctx.lineWidth = 2;
+      // Tactical grid & cracked highway slab lines
+      ctx.strokeStyle = 'rgba(110, 165, 225, 0.18)';
+      ctx.lineWidth = 1.5;
+      for (let g = 0; g <= size; g += 64) {
+        ctx.beginPath();
+        ctx.moveTo(g, 0);
+        ctx.lineTo(g, size);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(0, g);
+        ctx.lineTo(size, g);
+        ctx.stroke();
+      }
+
+      // Cracked asphalt veins
+      ctx.strokeStyle = 'rgba(12, 20, 32, 0.55)';
+      ctx.lineWidth = 2.5;
       for (let i = 0; i < 18; i++) {
         ctx.beginPath();
         let x = Math.random() * size;
@@ -112,12 +155,12 @@ export class ProceduralTextures {
         ctx.stroke();
       }
 
-      // Bleached skull bone flecks #B8C2CC
-      ctx.fillStyle = 'rgba(184, 194, 204, 0.35)';
-      for (let i = 0; i < 90; i++) {
+      // Bleached skull bone flecks #d8e2ec
+      ctx.fillStyle = 'rgba(216, 226, 236, 0.55)';
+      for (let i = 0; i < 110; i++) {
         const bx = Math.random() * size;
         const by = Math.random() * size;
-        const br = 1 + Math.random() * 2.5;
+        const br = 1.2 + Math.random() * 2.8;
         ctx.beginPath();
         ctx.arc(bx, by, br, 0, Math.PI * 2);
         ctx.fill();

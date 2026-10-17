@@ -42,6 +42,7 @@ html, body, #app {
   background-color: var(--color-bg);
   color: #fff;
   font-family: var(--font-tactical);
+  cursor: crosshair;
 }
 
 /* CRT Scanline Overlay */
@@ -54,8 +55,8 @@ html, body, #app {
   pointer-events: none;
   background: repeating-linear-gradient(
     0deg,
-    rgba(0, 0, 0, 0.22) 0px,
-    rgba(0, 0, 0, 0.22) 1px,
+    rgba(0, 0, 0, 0.07) 0px,
+    rgba(0, 0, 0, 0.07) 1px,
     transparent 1px,
     transparent 3px
   );

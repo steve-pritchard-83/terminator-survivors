@@ -39,7 +39,7 @@ export class RunState {
   public dashTimer = 0;
   public dashCooldownTimer = 0;
   public readonly dashDuration = 0.28;
-  public readonly dashCooldown = 3.5;
+  public readonly dashCooldown = 1.8;
 
   public weapons = new Map<WeaponId, ActiveWeaponSlot>();
   public passives = new Map<PassiveId, number>();
@@ -53,7 +53,7 @@ export class RunState {
     return {
       maxHp: 100,
       regenPerSec: 0,
-      moveSpeed: 5.5,
+      moveSpeed: 7.8,
       armor: 0,
       mightMultiplier: 1.0,
       areaMultiplier: 1.0,

@@ -1,8 +1,9 @@
 export class InputManager {
   private keys = new Set<string>();
-  private moveVec = { x: 0, z: 0 };
   private touchVec = { x: 0, z: 0 };
   private targetAimAngle: number | null = null;
+  private mouseScreenPos: { x: number; y: number } | null = null;
+  private leftMouseDown = false;
   private dashRequested = false;
   public onDashCallback: (() => void) | null = null;
 
@@ -17,8 +18,52 @@ export class InputManager {
     if (typeof window !== 'undefined') {
       window.addEventListener('keydown', this.onKeyDown);
       window.addEventListener('keyup', this.onKeyUp);
+      window.addEventListener('pointermove', this.onWindowPointerMove);
+      window.addEventListener('pointerdown', this.onWindowPointerDown);
+      window.addEventListener('pointerup', this.onWindowPointerUp);
+      window.addEventListener('blur', this.onWindowBlur);
+      window.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+      });
     }
   }
+
+  private isInteractiveUiTarget(target: EventTarget | null): boolean {
+    if (!(target instanceof HTMLElement)) return false;
+    return Boolean(
+      target.closest('button, .upgrade-card, .btn-primary, .btn-secondary, .btn-mobile-dash, input')
+    );
+  }
+
+  private onWindowPointerMove = (e: PointerEvent): void => {
+    if (e.pointerType === 'mouse' && window.innerWidth > 900) {
+      this.mouseScreenPos = { x: e.clientX, y: e.clientY };
+    }
+  };
+
+  private onWindowPointerDown = (e: PointerEvent): void => {
+    if (e.pointerType === 'mouse' && window.innerWidth > 900) {
+      this.mouseScreenPos = { x: e.clientX, y: e.clientY };
+      if (e.button === 2) {
+        // Right-click triggers Combat Dive / Dash
+        this.dashRequested = true;
+        this.onDashCallback?.();
+      } else if (e.button === 0 && !this.isInteractiveUiTarget(e.target)) {
+        this.leftMouseDown = true;
+      }
+    }
+  };
+
+  private onWindowPointerUp = (e: PointerEvent): void => {
+    if (e.pointerType === 'mouse' && e.button === 0) {
+      this.leftMouseDown = false;
+    }
+  };
+
+  private onWindowBlur = (): void => {
+    this.keys.clear();
+    this.leftMouseDown = false;
+  };
 
   public setupTouchControls(
     touchZoneEl: HTMLElement,
@@ -30,6 +75,8 @@ export class InputManager {
     this.joystickKnobEl = knobEl;
 
     touchZoneEl.addEventListener('pointerdown', (e: PointerEvent) => {
+      // On desktop viewports (> 900px), ignore mouse clicks so virtual joystick doesn't pop up
+      if (e.pointerType === 'mouse' && window.innerWidth > 900) return;
       if (this.activePointerId !== null) return;
       this.activePointerId = e.pointerId;
       this.joystickOrigin = { x: e.clientX, y: e.clientY };
@@ -81,7 +128,7 @@ export class InputManager {
 
   private onKeyDown = (e: KeyboardEvent): void => {
     this.keys.add(e.code);
-    if (e.code === 'Space' || e.code === 'ShiftLeft') {
+    if (e.code === 'Space' || e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
       this.dashRequested = true;
       this.onDashCallback?.();
     }
@@ -90,6 +137,19 @@ export class InputManager {
   private onKeyUp = (e: KeyboardEvent): void => {
     this.keys.delete(e.code);
   };
+
+  public hasKeyboardMovement(): boolean {
+    return (
+      this.keys.has('KeyW') ||
+      this.keys.has('ArrowUp') ||
+      this.keys.has('KeyS') ||
+      this.keys.has('ArrowDown') ||
+      this.keys.has('KeyA') ||
+      this.keys.has('ArrowLeft') ||
+      this.keys.has('KeyD') ||
+      this.keys.has('ArrowRight')
+    );
+  }
 
   public getMovement(): { x: number; z: number } {
     let kx = 0;
@@ -111,6 +171,18 @@ export class InputManager {
     }
 
     return { x: finalX, z: finalZ };
+  }
+
+  public getMouseScreenPos(): { x: number; y: number } | null {
+    return this.mouseScreenPos;
+  }
+
+  public isMouseMoveActive(): boolean {
+    return this.leftMouseDown;
+  }
+
+  public setAimAngle(angle: number | null): void {
+    this.targetAimAngle = angle;
   }
 
   public getAimAngle(): number | null {

@@ -13,40 +13,65 @@ export class KyleReeseMesh {
 
   constructor() {
     const trouserMat = new THREE.MeshStandardMaterial({
-      color: 0x2e353b, // Dark olive/slate combat trousers
-      roughness: 0.85,
-      metalness: 0.1
+      color: 0x455260, // Combat slate trousers
+      emissive: 0x101824,
+      emissiveIntensity: 0.35,
+      roughness: 0.75,
+      metalness: 0.15
     });
 
     const bootMat = new THREE.MeshStandardMaterial({
-      color: 0x141618,
-      roughness: 0.7,
-      metalness: 0.2
+      color: 0x22262c,
+      roughness: 0.65,
+      metalness: 0.25
     });
 
     const coatMat = new THREE.MeshStandardMaterial({
-      color: 0x4a473f, // Weathered canvas/trenchcoat grey-brown
-      roughness: 0.9,
-      metalness: 0.05
+      color: 0x70695b, // Weathered khaki/olive trenchcoat
+      emissive: 0x1c1a15,
+      emissiveIntensity: 0.35,
+      roughness: 0.8,
+      metalness: 0.1
     });
 
     const skinMat = new THREE.MeshStandardMaterial({
-      color: 0xb58a6d,
-      roughness: 0.6,
+      color: 0xd2a484,
+      emissive: 0x241810,
+      emissiveIntensity: 0.25,
+      roughness: 0.55,
       metalness: 0.0
     });
 
     const bandolierMat = new THREE.MeshStandardMaterial({
-      color: 0x2b1e16,
-      roughness: 0.6,
-      metalness: 0.2
+      color: 0x4a3525,
+      roughness: 0.55,
+      metalness: 0.25
     });
 
     const gunMat = new THREE.MeshStandardMaterial({
-      color: 0x1c2128,
-      metalness: 0.85,
+      color: 0x687686,
+      emissive: 0x182230,
+      emissiveIntensity: 0.3,
+      metalness: 0.75,
       roughness: 0.25
     });
+
+    // Tactical Ground Ring & Tech-Com Perimeter Light (illuminates Kyle & immediate surroundings)
+    const ringGeo = new THREE.RingGeometry(0.58, 0.7, 24);
+    ringGeo.rotateX(-Math.PI / 2);
+    const ringMat = new THREE.MeshBasicMaterial({
+      color: 0x00e5ff,
+      transparent: true,
+      opacity: 0.55,
+      side: THREE.DoubleSide
+    });
+    const groundRing = new THREE.Mesh(ringGeo, ringMat);
+    groundRing.position.y = 0.04;
+    this.group.add(groundRing);
+
+    const playerLight = new THREE.PointLight(0x88ccff, 6.5, 22, 1.1);
+    playerLight.position.set(0, 4.2, 0);
+    this.group.add(playerLight);
 
     // 1. Legs
     this.leftLeg = new THREE.Group();
@@ -79,13 +104,18 @@ export class KyleReeseMesh {
     bandolier.position.set(0, 0.28, 0);
     bandolier.rotation.z = -0.45;
 
+    // Glowing Tech-Com shoulder beacon
+    const beaconMat = new THREE.MeshBasicMaterial({ color: 0x00e5ff });
+    const shoulderBeacon = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.06, 0.12), beaconMat);
+    shoulderBeacon.position.set(-0.24, 0.54, 0.02);
+
     // Trenchcoat tails that flare when running
     const coatTailGeo = new THREE.BoxGeometry(0.48, 0.42, 0.06);
     coatTailGeo.translate(0, -0.21, -0.12);
     this.coatTails = new THREE.Mesh(coatTailGeo, coatMat);
     this.coatTails.position.set(0, 0.12, 0);
 
-    this.torsoGroup.add(torsoMesh, bandolier, this.coatTails);
+    this.torsoGroup.add(torsoMesh, bandolier, shoulderBeacon, this.coatTails);
 
     // 3. Head & Hair/Headband
     const headGroup = new THREE.Group();
@@ -111,11 +141,24 @@ export class KyleReeseMesh {
     gunBarrel.rotation.x = Math.PI / 2;
     gunBarrel.position.set(0, 0.03, 0.62);
 
+    // Tactical Laser Sight Line (shows exact firing/aiming direction)
+    const laserSightGeo = new THREE.CylinderGeometry(0.012, 0.012, 11.0, 6);
+    laserSightGeo.rotateX(Math.PI / 2);
+    laserSightGeo.translate(0, 0.03, 6.2);
+    const laserSightMat = new THREE.MeshBasicMaterial({
+      color: 0xff2222,
+      transparent: true,
+      opacity: 0.42,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+    const laserSightMesh = new THREE.Mesh(laserSightGeo, laserSightMat);
+
     // Dynamic Muzzle Flash PointLight
-    this.muzzleLight = new THREE.PointLight(0xffa500, 0, 8);
+    this.muzzleLight = new THREE.PointLight(0xffa500, 0, 12);
     this.muzzleLight.position.set(0, 0.03, 0.85);
 
-    this.weaponGroup.add(armMesh, gunReceiver, gunBarrel, this.muzzleLight);
+    this.weaponGroup.add(armMesh, gunReceiver, gunBarrel, laserSightMesh, this.muzzleLight);
     this.torsoGroup.add(this.weaponGroup);
 
     this.group.add(this.torsoGroup);

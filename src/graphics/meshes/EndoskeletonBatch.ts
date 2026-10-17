@@ -54,9 +54,11 @@ export class EndoskeletonBatch {
     const chassisGeo = mergeParts(chassisParts);
 
     const chassisMat = new THREE.MeshStandardMaterial({
-      color: 0x9ca8b8,
-      metalness: 0.92,
-      roughness: 0.18,
+      color: 0xd4e2f2,
+      emissive: 0x24364d,
+      emissiveIntensity: 0.48,
+      metalness: 0.68,
+      roughness: 0.22,
       normalMap: ProceduralTextures.getBrushedMetalNormal(),
       roughnessMap: ProceduralTextures.getBrushedMetalRoughness()
     });

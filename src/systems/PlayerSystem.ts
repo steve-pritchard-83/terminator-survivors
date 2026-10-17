@@ -21,7 +21,7 @@ export class PlayerSystem {
 
     let speed = this.runState.computedStats.moveSpeed;
     if (this.runState.isDashing) {
-      speed *= 2.6; // Combat dive burst speed
+      speed *= 2.8; // Combat dive burst speed
     }
 
     const inputLen = Math.hypot(moveInput.x, moveInput.z);
@@ -32,6 +32,10 @@ export class PlayerSystem {
       const normZ = moveInput.z / inputLen;
       vx = normX * speed * dt;
       vz = normZ * speed * dt;
+    } else if (this.runState.isDashing) {
+      const dashAngle = targetAngle !== null ? targetAngle : this.runState.playerFacing;
+      vx = Math.sin(dashAngle) * speed * dt;
+      vz = Math.cos(dashAngle) * speed * dt;
     }
 
     let nextX = this.runState.playerPos.x + vx;

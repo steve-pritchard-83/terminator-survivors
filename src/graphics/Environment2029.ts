@@ -27,12 +27,12 @@ export class Environment2029 {
     this.groundGeo.rotateX(-Math.PI / 2);
 
     this.groundMat = new THREE.MeshStandardMaterial({
-      color: 0x101824,
+      color: 0x3b5272,
       map: ProceduralTextures.getWastelandGroundAlbedo(),
       bumpMap: ProceduralTextures.getWastelandGroundBump(),
-      bumpScale: 0.12,
-      roughness: 0.88,
-      metalness: 0.15
+      bumpScale: 0.14,
+      roughness: 0.78,
+      metalness: 0.12
     });
 
     // 1. Build composite skull geometry
@@ -46,9 +46,11 @@ export class Environment2029 {
     ];
     const skullGeo = mergeParts(skullParts);
     const skullMat = new THREE.MeshStandardMaterial({
-      color: 0xb8c2cc, // Bleached bone white
-      roughness: 0.85,
-      metalness: 0.1
+      color: 0xd8e4f0, // Bright moonlit bone white
+      emissive: 0x162436,
+      emissiveIntensity: 0.35,
+      roughness: 0.65,
+      metalness: 0.12
     });
 
     // 2. Build composite twisted rebar & concrete pillar geometry
@@ -62,9 +64,11 @@ export class Environment2029 {
     ];
     const rebarGeo = mergeParts(rebarParts);
     const concreteMat = new THREE.MeshStandardMaterial({
-      color: 0x242e3b, // Dark nocturnal concrete
-      roughness: 0.9,
-      metalness: 0.2
+      color: 0x4e627a, // Moonlit ruined concrete
+      emissive: 0x121d2b,
+      emissiveIntensity: 0.4,
+      roughness: 0.75,
+      metalness: 0.25
     });
 
     // 3. Build burnt-out car wreckage geometry
@@ -81,9 +85,11 @@ export class Environment2029 {
     ];
     const carGeo = mergeParts(carParts);
     const carMat = new THREE.MeshStandardMaterial({
-      color: 0x181e26, // Scorched blackened metal
-      metalness: 0.8,
-      roughness: 0.45
+      color: 0x46586e, // Scorched steel chassis catching moonlight
+      emissive: 0x101a28,
+      emissiveIntensity: 0.35,
+      metalness: 0.65,
+      roughness: 0.38
     });
 
     // Instanced props across 3x3 active grid

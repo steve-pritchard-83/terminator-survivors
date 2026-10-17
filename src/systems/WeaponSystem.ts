@@ -86,7 +86,7 @@ export class WeaponSystem {
     this.heavyPlasmaGeo.rotateX(Math.PI / 2);
   }
 
-  public update(dt: number, enemies: ActiveEnemy[]): void {
+  public update(dt: number, enemies: ActiveEnemy[], aimAngle: number | null = null): void {
     const px = this.runState.playerPos.x;
     const pz = this.runState.playerPos.z;
 
@@ -102,7 +102,7 @@ export class WeaponSystem {
         const effectiveCd = stats.cooldown * this.runState.computedStats.cooldownMultiplier;
         slot.cooldownTimer = effectiveCd;
 
-        this.fireWeapon(wId, stats, px, pz, enemies);
+        this.fireWeapon(wId, stats, px, pz, enemies, aimAngle);
       }
     }
 
@@ -121,18 +121,21 @@ export class WeaponSystem {
     stats: { damage: number; speed: number; amount: number; pierce: number; area: number; duration: number },
     px: number,
     pz: number,
-    enemies: ActiveEnemy[]
+    enemies: ActiveEnemy[],
+    aimAngle: number | null
   ): void {
     const might = this.runState.computedStats.mightMultiplier;
     const areaMult = this.runState.computedStats.areaMultiplier;
     const dmg = Math.round(stats.damage * might);
     const amount = stats.amount + this.runState.computedStats.bonusAmount;
 
-    // Find nearest target for directional weapons
+    // Find nearest target for auto-targeted weapons (or fallback when mouse aim is not active)
     const nearest = this.grid.findNearest(px, pz, 28, (e) => e.type === 'enemy') as ActiveEnemy | null;
 
     let targetAngle = this.runState.playerFacing;
-    if (nearest) {
+    if (aimAngle !== null) {
+      targetAngle = aimAngle;
+    } else if (nearest) {
       targetAngle = Math.atan2(nearest.x - px, nearest.z - pz);
     }
 
@@ -193,9 +196,11 @@ export class WeaponSystem {
         this.playerMesh.pulseMuzzleFlash(0xd400ff);
         for (let i = 0; i < amount; i++) {
           const offset = (i - (amount - 1) / 2) * 0.12;
+          const boltMesh = new THREE.Mesh(this.plasmaBoltGeo, this.plasmaMat);
+          boltMesh.rotation.y = targetAngle;
           this.spawnProjectile({
             weaponId: wId,
-            mesh: new THREE.Mesh(this.plasmaBoltGeo, this.plasmaMat),
+            mesh: boltMesh,
             x: px + Math.cos(targetAngle) * offset,
             y: 0.85,
             z: pz - Math.sin(targetAngle) * offset,
@@ -217,9 +222,11 @@ export class WeaponSystem {
         this.playerMesh.pulseMuzzleFlash(0xff00ea);
         for (let i = 0; i < amount; i++) {
           const a = targetAngle + (Math.random() - 0.5) * 0.1;
+          const boltMesh = new THREE.Mesh(this.heavyPlasmaGeo, this.heavyPlasmaMat);
+          boltMesh.rotation.y = a;
           this.spawnProjectile({
             weaponId: wId,
-            mesh: new THREE.Mesh(this.heavyPlasmaGeo, this.heavyPlasmaMat),
+            mesh: boltMesh,
             x: px + (Math.random() - 0.5) * 0.4,
             y: 0.85,
             z: pz + (Math.random() - 0.5) * 0.4,

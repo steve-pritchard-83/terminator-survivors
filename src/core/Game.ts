@@ -245,7 +245,32 @@ export class Game {
       }
     }
 
-    const move = this.inputManager.getMovement();
+    let move = this.inputManager.getMovement();
+    const mousePos = this.inputManager.getMouseScreenPos();
+    if (mousePos) {
+      const worldMouse = this.sceneManager.screenToWorldGround(mousePos.x, mousePos.y);
+      if (worldMouse) {
+        const dx = worldMouse.x - this.runState.playerPos.x;
+        const dz = worldMouse.z - this.runState.playerPos.z;
+        const dist = Math.hypot(dx, dz);
+        if (dist > 0.15) {
+          this.inputManager.setAimAngle(Math.atan2(dx, dz));
+        }
+        // Desktop Left-Click hold-to-move toward cursor when keyboard isn't overriding
+        if (
+          this.inputManager.isMouseMoveActive() &&
+          !this.inputManager.hasKeyboardMovement() &&
+          dist > 0.65
+        ) {
+          const speedScale = Math.min(1.0, (dist - 0.5) / 1.5);
+          move = {
+            x: (dx / dist) * speedScale,
+            z: (dz / dist) * speedScale
+          };
+        }
+      }
+    }
+
     const aim = this.inputManager.getAimAngle();
 
     // 1. Player Update
@@ -261,7 +286,7 @@ export class Game {
     }
 
     // 3. Systems Update
-    this.weaponSystem.update(dt, this.enemySystem.activeEnemies);
+    this.weaponSystem.update(dt, this.enemySystem.activeEnemies, aim);
     this.enemySystem.update(dt, this.runState.timeSeconds);
     this.waveDirector.update(dt);
     this.pickupSystem.update(dt);

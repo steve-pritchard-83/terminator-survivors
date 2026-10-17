@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { PALETTE } from '../data/palette';
 import { PostProcessingManager } from './PostProcessing';
+import { ProceduralTextures } from './ProceduralTextures';
 
 export class SceneManager {
   public readonly scene: THREE.Scene;
@@ -8,18 +9,23 @@ export class SceneManager {
   public readonly renderer: THREE.WebGLRenderer;
   public readonly postProcessing: PostProcessingManager;
 
-  private readonly cameraOffset = new THREE.Vector3(0, 18, 13);
+  private readonly cameraOffset = new THREE.Vector3(0, 17.5, 12.5);
   private currentCameraTarget = new THREE.Vector3(0, 0, 0);
+  private readonly raycaster = new THREE.Raycaster();
+  private readonly aimPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.8);
+  private readonly intersectPt = new THREE.Vector3();
+  private readonly ndcMouse = new THREE.Vector2();
 
   constructor(container: HTMLElement) {
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(PALETTE.skyZenith);
-    this.scene.fog = new THREE.FogExp2(PALETTE.fogColor, PALETTE.fogDensity);
+    this.scene.background = new THREE.Color(0x0b192e);
+    this.scene.fog = new THREE.FogExp2(0x102544, 0.011);
+    this.scene.environment = ProceduralTextures.getMetallicEnvMap();
 
     const width = container.clientWidth || window.innerWidth;
     const height = container.clientHeight || window.innerHeight;
 
-    this.camera = new THREE.PerspectiveCamera(52, width / height, 0.1, 250);
+    this.camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 250);
     this.camera.position.copy(this.cameraOffset);
     this.camera.lookAt(0, 0, 0);
 
@@ -32,21 +38,24 @@ export class SceneManager {
     this.renderer.setSize(width, height);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.05;
+    this.renderer.toneMappingExposure = 1.48;
 
     container.appendChild(this.renderer.domElement);
 
-    // Setup Lighting (Cameron Cobalt Moonlight & Ambient Glow)
-    const ambientLight = new THREE.AmbientLight(PALETTE.ambientColor, 0.95);
+    // High-contrast James Cameron Cobalt Moonlight & Battlefield Illumination
+    const hemiLight = new THREE.HemisphereLight(0x8cc8ff, 0x2c4260, 2.8);
+    this.scene.add(hemiLight);
+
+    const ambientLight = new THREE.AmbientLight(0x3b628f, 2.1);
     this.scene.add(ambientLight);
 
-    const moonLight = new THREE.DirectionalLight(PALETTE.moonlightColor, 1.8);
-    moonLight.position.set(-15, 30, -20);
+    const moonLight = new THREE.DirectionalLight(0x98ccff, 4.2);
+    moonLight.position.set(-15, 32, -18);
     this.scene.add(moonLight);
 
-    // Subtle counter-rim light
-    const rimLight = new THREE.DirectionalLight(0x0e2038, 0.8);
-    rimLight.position.set(20, 10, 25);
+    // Strong silver-blue counter-rim light for Endoskeleton silhouettes
+    const rimLight = new THREE.DirectionalLight(0x66aaff, 2.5);
+    rimLight.position.set(18, 16, 24);
     this.scene.add(rimLight);
 
     this.postProcessing = new PostProcessingManager(this.renderer, this.scene, this.camera);
@@ -66,7 +75,8 @@ export class SceneManager {
 
   public updateCamera(targetX: number, targetZ: number, dt: number): void {
     const target = new THREE.Vector3(targetX, 0, targetZ);
-    this.currentCameraTarget.lerp(target, Math.min(1, dt * 10));
+    // Tight, responsive camera tracking
+    this.currentCameraTarget.lerp(target, Math.min(1, dt * 28));
 
     this.camera.position.set(
       this.currentCameraTarget.x + this.cameraOffset.x,
@@ -74,6 +84,21 @@ export class SceneManager {
       this.currentCameraTarget.z + this.cameraOffset.z
     );
     this.camera.lookAt(this.currentCameraTarget);
+  }
+
+  public screenToWorldGround(
+    clientX: number,
+    clientY: number
+  ): { x: number; z: number } | null {
+    const width = window.innerWidth || 1;
+    const height = window.innerHeight || 1;
+    this.ndcMouse.x = (clientX / width) * 2 - 1;
+    this.ndcMouse.y = -(clientY / height) * 2 + 1;
+
+    this.raycaster.setFromCamera(this.ndcMouse, this.camera);
+    const hit = this.raycaster.ray.intersectPlane(this.aimPlane, this.intersectPt);
+    if (!hit) return null;
+    return { x: this.intersectPt.x, z: this.intersectPt.z };
   }
 
   public adjustQuality(fps: number): void {
