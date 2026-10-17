@@ -75,10 +75,17 @@ export class PlayerSystem {
 
     // Facing angle: prioritize aiming angle if provided, otherwise movement direction
     let facing = this.runState.playerFacing;
+    if (inputLen > 0.05) {
+      this.runState.playerMoveAngle = Math.atan2(moveInput.x, moveInput.z);
+      this.runState.isMoving = true;
+    } else {
+      this.runState.isMoving = false;
+    }
+
     if (targetAngle !== null) {
       facing = targetAngle;
-    } else if (inputLen > 0.05) {
-      facing = Math.atan2(moveInput.x, moveInput.z);
+    } else if (this.runState.isMoving) {
+      facing = this.runState.playerMoveAngle;
     }
     this.runState.playerFacing = facing;
 

@@ -15,6 +15,11 @@ import { disposeObject3D } from '../graphics/dispose';
 import { InstancedPool, type PoolableUser } from '../graphics/InstancedPool';
 import { globalEvents } from '../core/EventBus';
 import { globalRNG } from '../core/RNG';
+import {
+  ENEMY_LEASH_DISTANCE,
+  ENEMY_RELOCATE_MAX_DIST,
+  ENEMY_RELOCATE_MIN_DIST
+} from '../data/waves';
 
 export interface EnemyProjectile extends PoolableUser {
   poolIndex: number;
@@ -253,9 +258,17 @@ export class EnemySystem {
       const effectiveSpeed = enemy.speed * (enemy.slowTimer > 0 ? 0.6 : 1.0);
 
       // Steering toward Kyle Reese
-      const dx = px - enemy.x;
-      const dz = pz - enemy.z;
-      const dist = Math.hypot(dx, dz);
+      let dx = px - enemy.x;
+      let dz = pz - enemy.z;
+      let dist = Math.hypot(dx, dz);
+
+      // Leash & relocation: non-boss enemies farther than 40m are teleported to the 22-28m forward ring
+      if (!enemy.isBoss && dist > ENEMY_LEASH_DISTANCE) {
+        this.relocateEnemy(enemy, px, pz);
+        dx = px - enemy.x;
+        dz = pz - enemy.z;
+        dist = Math.hypot(dx, dz);
+      }
 
       // Soft Boids Separation Force (pushes overlapping enemies apart)
       const neighbors = this.grid.queryRadius(
@@ -348,6 +361,29 @@ export class EnemySystem {
 
     // Update Endoskeleton & Crab Scuttler instanced mesh batches
     this.endoBatch.updateBatch(this.activeEnemies, timeSeconds, px, pz);
+  }
+
+  public relocateEnemy(enemy: ActiveEnemy, px: number, pz: number): void {
+    const heading = this.runState.isMoving
+      ? this.runState.playerMoveAngle
+      : this.runState.playerFacing;
+    const spread = (globalRNG.next() - 0.5) * (Math.PI * 0.4);
+    const angle = heading + spread;
+    const spawnDist =
+      ENEMY_RELOCATE_MIN_DIST +
+      globalRNG.next() * (ENEMY_RELOCATE_MAX_DIST - ENEMY_RELOCATE_MIN_DIST);
+
+    enemy.x = px + Math.sin(angle) * spawnDist;
+    enemy.z = pz + Math.cos(angle) * spawnDist;
+
+    const hkAerial = this.hkAerialMeshes.get(enemy.id);
+    if (hkAerial) {
+      hkAerial.group.position.set(enemy.x, 6.5, enemy.z);
+    }
+    const hkTank = this.hkTankMeshes.get(enemy.id);
+    if (hkTank) {
+      hkTank.group.position.set(enemy.x, 0, enemy.z);
+    }
   }
 
   private applyPlayerDamage(rawDamage: number): void {

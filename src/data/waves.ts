@@ -12,6 +12,9 @@ export interface WaveMinuteEntry {
 }
 
 export const RUN_DURATION_MINUTES = 10;
+export const ENEMY_LEASH_DISTANCE = 40;
+export const ENEMY_RELOCATE_MIN_DIST = 22;
+export const ENEMY_RELOCATE_MAX_DIST = 28;
 
 export const WAVE_TIMELINE: WaveMinuteEntry[] = Array.from(
   { length: RUN_DURATION_MINUTES + 1 },

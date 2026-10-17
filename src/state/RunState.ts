@@ -41,6 +41,8 @@ export class RunState {
 
   public playerPos = { x: 0, z: 0 };
   public playerFacing = 0; // radians
+  public playerMoveAngle = 0; // radians
+  public isMoving = false;
   public isDashing = false;
   public dashTimer = 0;
   public dashCooldownTimer = 0;
@@ -94,6 +96,8 @@ export class RunState {
     this.alloyScrapEarned = 0;
     this.playerPos = { x: 0, z: 0 };
     this.playerFacing = 0;
+    this.playerMoveAngle = 0;
+    this.isMoving = false;
     this.isDashing = false;
     this.dashTimer = 0;
     this.dashCooldownTimer = 0;
