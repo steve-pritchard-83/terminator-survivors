@@ -4,6 +4,7 @@ import { RUN_DURATION_MINUTES, WAVE_TIMELINE } from '../data/waves';
 import { globalEvents } from '../core/EventBus';
 import { globalRNG } from '../core/RNG';
 import type { EnemyArchetypeId } from '../core/types';
+import { ELITE_AFFIXES, type EliteAffix } from '../data/enemies';
 
 export class WaveDirector {
   private readonly runState: RunState;
@@ -53,7 +54,7 @@ export class WaveDirector {
       this.enemySystem.activeEnemies.length < entry.minEnemies
     ) {
       this.spawnTimer = 0;
-      this.spawnPerimeterEnemy(entry.pool, entry.hpMultiplier, entry.damageMultiplier);
+      this.spawnPerimeterEnemy(entry.pool, entry.hpMultiplier, entry.damageMultiplier, entry.eliteChance);
     }
   }
 
@@ -76,7 +77,8 @@ export class WaveDirector {
   private spawnPerimeterEnemy(
     pool: Array<{ archetype: EnemyArchetypeId; weight: number }>,
     hpMult: number,
-    dmgMult: number
+    dmgMult: number,
+    eliteChance = 0
   ): void {
     if (pool.length === 0) return;
 
@@ -101,6 +103,9 @@ export class WaveDirector {
     const sx = px + Math.cos(angle) * dist;
     const sz = pz + Math.sin(angle) * dist;
 
-    this.enemySystem.spawnEnemy(chosenArchetype, sx, sz, hpMult, dmgMult);
+    const isElite = eliteChance > 0 && globalRNG.chance(eliteChance);
+    const affix = isElite ? (globalRNG.pick(Object.keys(ELITE_AFFIXES) as EliteAffix[])) : undefined;
+
+    this.enemySystem.spawnEnemy(chosenArchetype, sx, sz, hpMult, dmgMult, affix);
   }
 }

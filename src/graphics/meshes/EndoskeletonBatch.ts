@@ -3,6 +3,7 @@ import { disposeObject3D } from '../dispose';
 import { bakePart, mergeParts } from './geometryUtils';
 import type { ActiveEnemy } from '../../core/types';
 import { ProceduralTextures } from '../ProceduralTextures';
+import { ELITE_AFFIXES } from '../../data/enemies';
 
 export class EndoskeletonBatch {
   public readonly group = new THREE.Group();
@@ -551,9 +552,10 @@ export class EndoskeletonBatch {
         const scuttleBob = Math.abs(Math.sin(timeSeconds * 18 + enemy.id)) * 0.045;
         const scuttleTilt = Math.sin(timeSeconds * 18 + enemy.id) * 0.09;
 
+        const eliteScale = enemy.isElite ? (enemy.scale ?? 1.4) : 1.0;
         this.dummy.position.set(enemy.x, scuttleBob, enemy.z);
         this.dummy.rotation.set(0, facingAngle, scuttleTilt);
-        this.dummy.scale.set(1, 1, 1);
+        this.dummy.scale.set(eliteScale, eliteScale, eliteScale);
         this.dummy.updateMatrix();
 
         this.crabChassisInstancedMesh.setMatrixAt(crabIndex, this.dummy.matrix);
@@ -561,6 +563,8 @@ export class EndoskeletonBatch {
 
         if (enemy.hitFlashTimer > 0) {
           this.dummyColor.setHex(0xffffff);
+        } else if (enemy.isElite && enemy.affix) {
+          this.dummyColor.setHex(ELITE_AFFIXES[enemy.affix]?.tintColor ?? 0xffab00);
         } else {
           this.dummyColor.setHex(0x9fb2c4);
         }
@@ -583,6 +587,7 @@ export class EndoskeletonBatch {
       let scale = 1.0;
       if (enemy.archetype === 't600_rusted') scale = 1.25;
       else if (enemy.archetype === 't700_scout') scale = 0.94;
+      if (enemy.isElite) scale *= (enemy.scale ?? 1.4);
 
       // Animatronic mechanical gait & stride
       const phase = timeSeconds * 7.5 + enemy.id * 1.3;
@@ -613,6 +618,8 @@ export class EndoskeletonBatch {
       // Color tint & hit flash
       if (enemy.hitFlashTimer > 0) {
         this.dummyColor.setHex(0xffffff);
+      } else if (enemy.isElite && enemy.affix) {
+        this.dummyColor.setHex(ELITE_AFFIXES[enemy.affix]?.tintColor ?? 0xffab00);
       } else if (enemy.archetype === 't600_rusted') {
         this.dummyColor.setHex(0x8c7662); // Weathered bronze/iron T-600
       } else if (enemy.archetype === 't700_scout') {

@@ -346,7 +346,23 @@ export class WeaponSystem {
     const enemy = entity as ActiveEnemy;
     const isCrit = globalRNG.chance(this.runState.computedStats.critChance);
     const vulnMult = 1 / Math.max(0.4, enemy.armorStripMultiplier);
-    const finalDamage = Math.max(1, Math.round(baseDamage * vulnMult * (isCrit ? 1.75 : 1.0)));
+    let finalDamage = Math.max(1, Math.round(baseDamage * vulnMult * (isCrit ? 1.75 : 1.0)));
+
+    if (enemy.affix === 'Armored' && enemy.armorStripMultiplier >= 1.0) {
+      finalDamage = Math.max(1, Math.round(finalDamage * 0.5));
+    }
+
+    if (enemy.affix === 'Shielded' && (enemy.shieldHp ?? 0) > 0) {
+      const shield = enemy.shieldHp ?? 0;
+      if (finalDamage <= shield) {
+        enemy.shieldHp = shield - finalDamage;
+        finalDamage = 0;
+      } else {
+        finalDamage -= shield;
+        enemy.shieldHp = 0;
+      }
+    }
+
     enemy.hp -= finalDamage;
     enemy.hitFlashTimer = isCrit ? 0.2 : 0.12;
 

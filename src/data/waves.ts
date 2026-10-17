@@ -6,6 +6,7 @@ export interface WaveMinuteEntry {
   minEnemies: number;
   hpMultiplier: number;
   damageMultiplier: number;
+  eliteChance: number;
   pool: Array<{ archetype: EnemyArchetypeId; weight: number }>;
   boss?: EnemyArchetypeId;
   alertBanner?: string;
@@ -24,6 +25,7 @@ export const WAVE_TIMELINE: WaveMinuteEntry[] = Array.from(
     const minEnemies = Math.min(320, Math.floor(24 + minute * 28));
     const hpMultiplier = Number((1 + minute * 0.32 + Math.pow(minute, 1.35) * 0.08).toFixed(2));
     const damageMultiplier = Number((1 + minute * 0.14).toFixed(2));
+    const eliteChance = Math.min(0.35, Number((0.02 + minute * 0.03).toFixed(3)));
 
     let pool: Array<{ archetype: EnemyArchetypeId; weight: number }> = [];
     let boss: EnemyArchetypeId | undefined;
@@ -89,6 +91,7 @@ export const WAVE_TIMELINE: WaveMinuteEntry[] = Array.from(
       minEnemies,
       hpMultiplier,
       damageMultiplier,
+      eliteChance,
       pool,
       boss,
       alertBanner

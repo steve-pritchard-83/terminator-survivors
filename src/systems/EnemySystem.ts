@@ -1,11 +1,11 @@
 import * as THREE from 'three';
-import type { ActiveEnemy, EnemyArchetypeId, SpatialEntity } from '../core/types';
+import type { ActiveEnemy, EnemyArchetypeId, SpatialEntity, EliteAffix } from '../core/types';
 import type { RunState } from '../state/RunState';
 import type { SpatialHashGrid } from '../core/SpatialHashGrid';
 import type { AudioEngine } from '../audio/AudioEngine';
 import type { ParticleSystem } from './ParticleSystem';
 import type { EndoskeletonBatch } from '../graphics/meshes/EndoskeletonBatch';
-import { ENEMY_CONFIGS } from '../data/enemies';
+import { ENEMY_CONFIGS, applyEliteAffix, handleEliteDeath } from '../data/enemies';
 import { InstancedPool, type PoolableUser } from '../graphics/InstancedPool';
 import { globalEvents } from '../core/EventBus';
 import { globalRNG } from '../core/RNG';
@@ -25,7 +25,6 @@ export class EnemySystem {
   public readonly activeEnemies: ActiveEnemy[] = [];
   public readonly enemyProjectiles: EnemyProjectile[] = [];
   private nextEnemyId = 1;
-
   private readonly runState: RunState;
   private readonly grid: SpatialHashGrid;
   private readonly audio: AudioEngine;
@@ -33,7 +32,6 @@ export class EnemySystem {
   private readonly endoBatch: EndoskeletonBatch;
   public readonly behaviours: Record<string, EnemyBehaviour>;
   private readonly context: EnemyContext;
-
   private readonly separationScratch: SpatialEntity[] = [];
   private readonly enemyPool: InstancedPool<EnemyProjectile>;
   private readonly enemyProjectilePool: EnemyProjectile[] = [];
@@ -51,8 +49,7 @@ export class EnemySystem {
     this.runState = runState; this.grid = grid; this.audio = audio;
     this.particles = particles; this.endoBatch = endoBatch; this.behaviours = behaviours;
     this.enemyPlasmaGeo.rotateX(Math.PI / 2);
-    this.enemyPlasmaGeo.userData = { shared: true };
-    this.enemyPlasmaMat.userData = { shared: true };
+    this.enemyPlasmaGeo.userData = { shared: true }; this.enemyPlasmaMat.userData = { shared: true };
     this.enemyPool = new InstancedPool<EnemyProjectile>(this.enemyPlasmaGeo, this.enemyPlasmaMat, 256, this.group);
 
     this.context = {
@@ -65,7 +62,7 @@ export class EnemySystem {
     };
   }
 
-  public spawnEnemy(archetype: EnemyArchetypeId, x: number, z: number, hpMult = 1.0, dmgMult = 1.0): ActiveEnemy {
+  public spawnEnemy(archetype: EnemyArchetypeId, x: number, z: number, hpMult = 1.0, dmgMult = 1.0, affix?: EliteAffix): ActiveEnemy {
     const cfg = ENEMY_CONFIGS[archetype];
     const enemy: ActiveEnemy = {
       id: this.nextEnemyId++, type: 'enemy', archetype, x, z,
@@ -75,6 +72,7 @@ export class EnemySystem {
       hitFlashTimer: 0, slowTimer: 0, armorStripMultiplier: 1.0, attackCooldown: 0,
       chargeTimer: 0, searchlightAngle: 0, searchlightAlertTimer: 0, phaseState: 0, state: {}
     };
+    if (affix && !cfg.isBoss) applyEliteAffix(enemy, affix);
 
     this.activeEnemies.push(enemy);
     this.behaviours[archetype]?.createVisual?.(enemy, this.context);
@@ -185,7 +183,9 @@ export class EnemySystem {
         enemy.attackCooldown = 0.55;
         this.applyPlayerDamage(enemy.damage);
       }
-
+      if (enemy.affix === 'Regenerating' && enemy.hp < enemy.maxHp && enemy.hp > 0) {
+        enemy.hp = Math.min(enemy.maxHp, enemy.hp + enemy.maxHp * 0.03 * dt);
+      }
       this.behaviours[enemy.archetype]?.update(enemy, dt, this.context);
     }
 
@@ -210,8 +210,7 @@ export class EnemySystem {
 
   public relocateEnemy(enemy: ActiveEnemy, px: number, pz: number): void {
     const heading = this.runState.isMoving ? this.runState.playerMoveAngle : this.runState.playerFacing;
-    const spread = (globalRNG.next() - 0.5) * (Math.PI * 0.4);
-    const angle = heading + spread;
+    const angle = heading + (globalRNG.next() - 0.5) * (Math.PI * 0.4);
     const spawnDist = ENEMY_RELOCATE_MIN_DIST + globalRNG.next() * (ENEMY_RELOCATE_MAX_DIST - ENEMY_RELOCATE_MIN_DIST);
     enemy.x = px + Math.sin(angle) * spawnDist;
     enemy.z = pz + Math.cos(angle) * spawnDist;
@@ -232,6 +231,7 @@ export class EnemySystem {
     this.runState.kills++; this.audio.playEndoDestroy();
     this.particles.spawnExplosion(enemy.x, 0.5, enemy.z, enemy.isBoss ? 2.0 : 0.8);
     this.particles.spawnEnemyDebris(enemy.x, 0.5, enemy.z, enemy.isBoss ? 8 : undefined);
+    if (enemy.isElite) handleEliteDeath(enemy, this.context);
     const b = this.behaviours[enemy.archetype];
     b?.onDeath?.(enemy, this.context); b?.dispose?.(enemy, this.context);
     globalEvents.emit('enemy:killed', { enemy, x: enemy.x, z: enemy.z, xp: enemy.xpValue });

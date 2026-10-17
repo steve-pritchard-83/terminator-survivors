@@ -1,4 +1,5 @@
-import type { EnemyArchetypeId } from '../core/types';
+import type { EnemyArchetypeId, EliteAffix } from '../core/types';
+export type { EliteAffix };
 
 export interface EnemyStatsConfig {
   archetype: EnemyArchetypeId;
@@ -146,3 +147,76 @@ export const ENEMY_CONFIGS: Record<EnemyArchetypeId, EnemyStatsConfig> = {
     mass: 200.0
   }
 };
+
+
+export interface EliteAffixConfig {
+  id: EliteAffix;
+  name: string;
+  tintColor: number;
+  description: string;
+}
+
+export const ELITE_AFFIXES: Record<EliteAffix, EliteAffixConfig> = {
+  Armored: {
+    id: 'Armored',
+    name: 'Armored',
+    tintColor: 0x90a4ae,
+    description: '-50% damage taken until armor stripped by EMP'
+  },
+  Overclocked: {
+    id: 'Overclocked',
+    name: 'Overclocked',
+    tintColor: 0xffab00,
+    description: '+60% movement speed'
+  },
+  Shielded: {
+    id: 'Shielded',
+    name: 'Shielded',
+    tintColor: 0x00e5ff,
+    description: 'Energy barrier absorbs first 30% of max HP'
+  },
+  'Self-Destruct': {
+    id: 'Self-Destruct',
+    name: 'Self-Destruct',
+    tintColor: 0xff1744,
+    description: 'Detonates upon termination in a telegraphed blast'
+  },
+  Regenerating: {
+    id: 'Regenerating',
+    name: 'Regenerating',
+    tintColor: 0x00e676,
+    description: 'Repairs 3% max HP per second'
+  }
+};
+
+export function applyEliteAffix(enemy: import('../core/types').ActiveEnemy, affix: EliteAffix): void {
+  enemy.isElite = true;
+  enemy.affix = affix;
+  enemy.scale = 1.4;
+  enemy.radius *= 1.4;
+  enemy.hp = Math.round(enemy.hp * 2.0);
+  enemy.maxHp = enemy.hp;
+
+  if (affix === 'Overclocked') {
+    enemy.speed = Number((enemy.speed * 1.6).toFixed(2));
+  } else if (affix === 'Shielded') {
+    enemy.shieldHp = Math.round(enemy.maxHp * 0.30);
+    enemy.maxShieldHp = enemy.shieldHp;
+  }
+}
+
+export function handleEliteDeath(
+  enemy: import('../core/types').ActiveEnemy,
+  ctx: import('../systems/enemies/EnemyBehaviour').EnemyContext
+): void {
+  if (enemy.affix === 'Self-Destruct') {
+    ctx.particles.spawnExplosion(enemy.x, 0.5, enemy.z, 2.8);
+    ctx.audio.playExplosion(1.8);
+    ctx.emit('camera:shake', { trauma: 0.5 });
+    const px = ctx.runState.playerPos.x;
+    const pz = ctx.runState.playerPos.z;
+    if (Math.hypot(px - enemy.x, pz - enemy.z) < 3.8) {
+      ctx.applyPlayerDamage(28);
+    }
+  }
+}

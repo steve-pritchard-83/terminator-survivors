@@ -181,7 +181,14 @@ export interface ActiveEnemy extends SpatialEntity {
   mass?: number;
   vx?: number;
   vz?: number;
+  isElite?: boolean;
+  affix?: EliteAffix;
+  shieldHp?: number;
+  maxShieldHp?: number;
+  scale?: number;
 }
+
+export type EliteAffix = 'Armored' | 'Overclocked' | 'Shielded' | 'Self-Destruct' | 'Regenerating';
 
 export interface ActiveWeaponSlot {
   id: WeaponId;

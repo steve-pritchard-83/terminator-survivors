@@ -98,8 +98,10 @@ export class PickupSystem {
           if (globalRNG.chance(0.25)) {
             this.runState.addScrap(2);
           }
-          // 7% chance to drop destructible supply crate in condensed 10-minute runs
-          if (globalRNG.chance(0.07)) {
+          // Guaranteed crate drop for elites; otherwise 7% chance on normal kills
+          if (enemy.isElite || enemy.state?.isElite) {
+            this.spawnSupplyCrate(x, z);
+          } else if (globalRNG.chance(0.07)) {
             this.spawnSupplyCrate(
               x + (globalRNG.next() - 0.5) * 2,
               z + (globalRNG.next() - 0.5) * 2
