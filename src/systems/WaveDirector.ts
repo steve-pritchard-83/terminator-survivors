@@ -1,6 +1,6 @@
 import type { RunState } from '../state/RunState';
 import type { EnemySystem } from './EnemySystem';
-import { WAVE_TIMELINE } from '../data/waves';
+import { RUN_DURATION_MINUTES, WAVE_TIMELINE } from '../data/waves';
 import { globalEvents } from '../core/EventBus';
 import { globalRNG } from '../core/RNG';
 import type { EnemyArchetypeId } from '../core/types';
@@ -29,7 +29,7 @@ export class WaveDirector {
 
     this.runState.timeSeconds += dt;
     const totalSec = Math.floor(this.runState.timeSeconds);
-    const minute = Math.min(30, Math.floor(totalSec / 60));
+    const minute = Math.min(RUN_DURATION_MINUTES, Math.floor(totalSec / 60));
 
     // Check minute transition
     if (minute !== this.currentMinute) {
@@ -43,7 +43,7 @@ export class WaveDirector {
       }
     }
 
-    const entry = WAVE_TIMELINE[Math.min(30, this.currentMinute)];
+    const entry = WAVE_TIMELINE[Math.min(RUN_DURATION_MINUTES, this.currentMinute)];
     if (!entry) return;
 
     // Normal wave spawns

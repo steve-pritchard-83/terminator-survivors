@@ -29,7 +29,7 @@ export const LOADOUTS: Record<LoadoutId, LoadoutConfig> = {
     startingWeapon: 'pipe_bomb',
     description: 'Wearing the stolen trenchcoat. Increased explosive area and salvage magnet range.',
     bonusStats: { areaMultiplier: 0.25, magnetRadius: 1.5 },
-    unlockRequirement: 'Survive 10 minutes in Sector 44 or 500 Alloy Scrap.',
+    unlockRequirement: 'Survive 4 minutes in Sector 44 or 500 Alloy Scrap.',
     cost: 500
   },
   techcom_sapper: {

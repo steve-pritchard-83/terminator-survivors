@@ -38,8 +38,8 @@ export class PickupSystem {
         this.spawnBossVault(x, z);
       } else {
         this.spawnDataCore(x, z, xp);
-        // 4% chance to drop destructible supply crate
-        if (Math.random() < 0.04) {
+        // 7% chance to drop destructible supply crate in condensed 10-minute runs
+        if (Math.random() < 0.07) {
           this.spawnSupplyCrate(x + (Math.random() - 0.5) * 2, z + (Math.random() - 0.5) * 2);
         }
       }
@@ -162,9 +162,9 @@ export class PickupSystem {
       // Random crate rewards: Heal, EMP blast, or Alloy Scrap
       const roll = Math.random();
       if (roll < 0.4) {
-        this.runState.heal(30);
+        this.runState.heal(35);
       } else if (roll < 0.7) {
-        this.runState.alloyScrapEarned += 25;
+        this.runState.alloyScrapEarned += 45;
       } else {
         // Vacuum all cores on screen
         for (const core of this.pickups) {
@@ -187,7 +187,7 @@ export class PickupSystem {
         }
         if (upgradesAwarded === 0) upgradesAwarded = 3;
       }
-      const alloyBonus = 150;
+      const alloyBonus = 220;
       this.runState.alloyScrapEarned += alloyBonus;
 
       globalEvents.emit('vault:opened', {

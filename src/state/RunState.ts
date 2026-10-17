@@ -14,7 +14,10 @@ import { LOADOUTS, META_UPGRADES } from '../data/upgrades';
 import { globalRNG } from '../core/RNG';
 
 export function getXpForNextLevel(level: number): number {
-  return Math.floor(10 + 8 * level + 2.5 * Math.pow(level, 1.65));
+  if (level <= 2) {
+    return Math.floor(10 + 8 * level + 2.5 * Math.pow(level, 1.65));
+  }
+  return Math.floor(14 + 6.5 * level + 1.55 * Math.pow(level, 1.48));
 }
 
 export function computeMitigatedDamage(rawDamage: number, armor: number): number {
