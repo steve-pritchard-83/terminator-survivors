@@ -3,7 +3,7 @@ import type { AudioEngine } from '../audio/AudioEngine';
 import { LOADOUTS, META_UPGRADES } from '../data/upgrades';
 import { LORE } from '../data/lore';
 import { ACHIEVEMENTS, TOTAL_ACHIEVEMENTS } from '../data/achievements';
-import { CodexModal } from './CodexModal';
+import type { CodexModal } from './CodexModal';
 import { TutorialModal } from './TutorialModal';
 import type { LoadoutId, MetaUpgradeId } from '../core/types';
 import type { GamepadManager } from '../input/GamepadManager';
@@ -18,7 +18,7 @@ export class TitleScreen {
   public readonly container: HTMLElement;
   private readonly bunkerModal: HTMLElement;
   private readonly achievementsModal: HTMLElement;
-  public readonly codexModal: CodexModal;
+  public codexModal: CodexModal | null = null;
   public readonly tutorialModal: TutorialModal;
   private readonly pwaModal: HTMLElement;
   private readonly installBtn: HTMLElement;
@@ -182,7 +182,6 @@ export class TitleScreen {
     this.codexBtn = this.container.querySelector('#btn-codex')!;
     this.historyBtn = this.container.querySelector('#btn-history')!;
     this.settingsBtn = this.container.querySelector('#btn-settings')!;
-    this.codexModal = new CodexModal(this.container, this.saveManager, this.audioEngine);
     this.tutorialModal = new TutorialModal(this.container, this.saveManager, this.audioEngine);
 
     this.bunkerA11y = new ModalA11y(this.bunkerModal, {
@@ -273,8 +272,9 @@ export class TitleScreen {
       this.openAchievements();
     });
 
-    this.codexBtn.addEventListener('click', () => {
-      this.codexModal.show();
+    this.codexBtn.addEventListener('click', async () => {
+      const modal = await this.getOrLoadCodexModal();
+      modal.show();
     });
 
     this.historyBtn.addEventListener('click', () => {
@@ -310,7 +310,7 @@ export class TitleScreen {
         this.isBunkerVisible() ||
         this.isAchievementsVisible() ||
         this.isPwaModalVisible() ||
-        this.codexModal.isVisible() ||
+        Boolean(this.codexModal?.isVisible()) ||
         this.tutorialModal.isVisible()
       ) {
         return;
@@ -522,6 +522,14 @@ export class TitleScreen {
     });
   }
 
+  public async getOrLoadCodexModal(): Promise<CodexModal> {
+    if (!this.codexModal) {
+      const { CodexModal } = await import('./CodexModal');
+      this.codexModal = new CodexModal(this.container, this.saveManager, this.audioEngine);
+    }
+    return this.codexModal;
+  }
+
   public handleGamepad(gp: GamepadManager, dt: number): boolean {
     if (!this.isVisible()) return false;
 
@@ -537,7 +545,7 @@ export class TitleScreen {
         gp.hasActiveController &&
         !this.isBunkerVisible() &&
         !this.isAchievementsVisible() &&
-        !this.codexModal.isVisible() &&
+        !this.codexModal?.isVisible() &&
         !this.tutorialModal.isVisible()
           ? 'block'
           : 'none';
@@ -646,7 +654,7 @@ export class TitleScreen {
     }
 
     // 4. Codex Modal Open
-    if (this.codexModal.isVisible()) {
+    if (this.codexModal?.isVisible()) {
       if (gp.isMenuCancelPressed()) {
         this.codexModal.hide();
         gp.playRumble(40, 0.15, 0.3);

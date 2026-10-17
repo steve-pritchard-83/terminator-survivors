@@ -8,7 +8,7 @@ if (!fs.existsSync(distAssetsDir)) {
 }
 
 const args = process.argv.slice(2);
-let maxKb = 1000;
+let maxKb = 450; // P10-02 target < 450 KB
 const maxKbIdx = args.indexOf('--max-kb');
 if (maxKbIdx !== -1 && args[maxKbIdx + 1]) {
   maxKb = parseFloat(args[maxKbIdx + 1]);

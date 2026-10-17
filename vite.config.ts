@@ -67,6 +67,24 @@ export default defineConfig({
   ],
   build: {
     target: 'es2022',
-    chunkSizeWarningLimit: 1200
+    chunkSizeWarningLimit: 1200,
+    rollupOptions: {
+      output: {
+        manualChunks: (id) => {
+          if (id.includes('node_modules/three/')) {
+            return 'three-vendor';
+          }
+          if (id.includes('src/graphics/environments/')) {
+            return 'stage-environments';
+          }
+          if (id.includes('src/ui/CodexModal') || id.includes('src/data/lore')) {
+            return 'codex';
+          }
+          if (id.includes('src/ui/SettingsPanel')) {
+            return 'settings';
+          }
+        }
+      }
+    }
   }
 });

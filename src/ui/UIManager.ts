@@ -8,7 +8,7 @@ import { LevelUpModal } from './LevelUpModal';
 import { VaultJackpotModal } from './VaultJackpotModal';
 import { EndRunModal } from './EndRunModal';
 import { PauseModal } from './PauseModal';
-import { SettingsPanel } from './SettingsPanel';
+import type { SettingsPanel } from './SettingsPanel';
 import type { LoadoutId } from '../core/types';
 
 export class UIManager {
@@ -18,7 +18,10 @@ export class UIManager {
   public readonly vaultModal: VaultJackpotModal;
   public readonly endRunModal: EndRunModal;
   public readonly pauseModal: PauseModal;
-  public readonly settingsPanel: SettingsPanel;
+  public settingsPanel: SettingsPanel | null = null;
+  private readonly root: HTMLElement;
+  private readonly saveManager: SaveManager;
+  private readonly audioEngine: AudioEngine;
 
   constructor(
     root: HTMLElement,
@@ -28,22 +31,24 @@ export class UIManager {
     onStartRun: (loadoutId: LoadoutId) => void,
     getRunState: () => RunState
   ) {
+    this.root = root;
+    this.saveManager = saveManager;
+    this.audioEngine = audioEngine;
     this.hudView = new HUDView(root);
     this.endRunModal = new EndRunModal(root, saveManager, audioEngine);
-    this.settingsPanel = new SettingsPanel(root, saveManager, audioEngine);
     this.titleScreen = new TitleScreen(
       root,
       saveManager,
       audioEngine,
       onStartRun,
       () => this.endRunModal.showArchives(() => this.titleScreen.show()),
-      () => this.settingsPanel.show(() => this.titleScreen.show())
+      () => this.openSettings(() => this.titleScreen.show())
     );
     this.levelUpModal = new LevelUpModal(root);
     this.vaultModal = new VaultJackpotModal(root);
     this.pauseModal = new PauseModal(root, saveManager, audioEngine, getRunState);
     this.pauseModal.onOpenSettings = () => {
-      this.settingsPanel.show(() => {
+      this.openSettings(() => {
         if (this.pauseModal.onResumeCallback && this.pauseModal.onAbortCallback) {
           this.pauseModal.show(this.pauseModal.onResumeCallback, this.pauseModal.onAbortCallback);
         }
@@ -115,11 +120,24 @@ export class UIManager {
     checkOrientation();
   }
 
+  public async getOrLoadSettingsPanel(): Promise<SettingsPanel> {
+    if (!this.settingsPanel) {
+      const { SettingsPanel } = await import('./SettingsPanel');
+      this.settingsPanel = new SettingsPanel(this.root, this.saveManager, this.audioEngine);
+    }
+    return this.settingsPanel;
+  }
+
+  public async openSettings(onClose?: () => void): Promise<void> {
+    const panel = await this.getOrLoadSettingsPanel();
+    panel.show(onClose);
+  }
+
   public updateGamepad(gp: import('../input/GamepadManager').GamepadManager, dt: number): void {
     if (!gp.hasActiveController) return;
 
     // 0. Settings Panel
-    if (this.settingsPanel.handleGamepadMenuNavigation(gp, dt)) return;
+    if (this.settingsPanel?.handleGamepadMenuNavigation(gp, dt)) return;
 
     // 1. Level Up Requisition Modal
     if (this.levelUpModal.handleGamepad(gp, dt)) return;
