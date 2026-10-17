@@ -225,8 +225,18 @@ export class Game {
       this.uiManager.vaultModal.show(upgradesAwarded, evolvedWeapon, alloyBonus, () => {
         this.audioEngine.playUpgradeApplied();
         this.inputManager.clearDashRequest();
-        this.isPaused = false;
-        this.runState.mode = 'playing';
+        if (!evolvedWeapon) {
+          this.runState.pendingLevelUps += 3;
+          if (this.runState.pendingLevelUps > 0) {
+            this.runState.pendingLevelUps--;
+            this.audioEngine.playLevelUp();
+            const choices = this.runState.generateUpgradeChoices();
+            showLevelUpModal(this.runState.level, choices);
+          }
+        } else {
+          this.isPaused = false;
+          this.runState.mode = 'playing';
+        }
       });
     });
 

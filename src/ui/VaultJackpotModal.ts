@@ -68,7 +68,7 @@ export class VaultJackpotModal {
       this.titleEl.style.color = 'var(--color-amber)';
       this.descEl.innerHTML = `
         <div style="font-family:var(--font-display); font-size:18px; color:var(--color-cyan); margin-bottom:8px;">
-          ${upgradesAwarded}x TACTICAL ADVANCEMENTS GRANTED
+          3 REQUISITIONS AUTHORISED
         </div>
         <div style="color:var(--color-amber);">+${alloyBonus} ALLOY SCRAP SECURED</div>
       `;
