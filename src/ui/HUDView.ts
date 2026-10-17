@@ -3,6 +3,7 @@ import { ALL_WEAPONS, PASSIVES } from '../data/weapons';
 
 export class HUDView {
   public readonly container: HTMLElement;
+  private readonly xpBarContainer: HTMLElement;
   private readonly xpFill: HTMLElement;
   private readonly hpFill: HTMLElement;
   private readonly clockEl: HTMLElement;
@@ -14,6 +15,9 @@ export class HUDView {
   private readonly bossBarContainer: HTMLElement;
   private readonly bossTitle: HTMLElement;
   private readonly bossFill: HTMLElement;
+  private lastXp = 0;
+  private lastLevel = 1;
+  private xpPulseTimer: number | null = null;
 
   constructor(root: HTMLElement) {
     this.container = document.createElement('div');
@@ -23,7 +27,7 @@ export class HUDView {
 
     this.container.innerHTML = `
       <div class="hud-top-bar">
-        <div class="xp-bar-container">
+        <div class="xp-bar-container" id="hud-xp-container">
           <div class="xp-bar-fill" id="hud-xp-fill"></div>
         </div>
         <div class="hud-info-row">
@@ -62,6 +66,7 @@ export class HUDView {
 
     root.appendChild(this.container);
 
+    this.xpBarContainer = this.container.querySelector('#hud-xp-container')!;
     this.xpFill = this.container.querySelector('#hud-xp-fill')!;
     this.hpFill = this.container.querySelector('#hud-hp-fill')!;
     this.clockEl = this.container.querySelector('#hud-clock-text')!;
@@ -84,7 +89,20 @@ export class HUDView {
   }
 
   public update(runState: RunState, activeBoss: { name: string; hp: number; maxHp: number } | null): void {
-    // XP bar
+    // XP bar & pickup pulse
+    if (runState.xp > this.lastXp || runState.level > this.lastLevel) {
+      this.xpBarContainer.classList.add('xp-pickup-pulse');
+      if (this.xpPulseTimer !== null) {
+        window.clearTimeout(this.xpPulseTimer);
+      }
+      this.xpPulseTimer = window.setTimeout(() => {
+        this.xpBarContainer.classList.remove('xp-pickup-pulse');
+        this.xpPulseTimer = null;
+      }, 115);
+    }
+    this.lastXp = runState.xp;
+    this.lastLevel = runState.level;
+
     const xpPercent = Math.min(100, (runState.xp / runState.xpToNext) * 100);
     this.xpFill.style.width = `${xpPercent}%`;
 

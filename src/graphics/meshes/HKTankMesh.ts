@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import { VolumetricSearchlight } from '../VolumetricSearchlight';
-import { ProceduralTextures } from '../ProceduralTextures';
 
 export class HKTankMesh {
   public readonly group = new THREE.Group();
@@ -12,27 +11,25 @@ export class HKTankMesh {
   private readonly telegraphLine: THREE.Line;
 
   constructor() {
-    const scale = 2.4;
+    const scale = 2.2;
 
     const tankMat = new THREE.MeshStandardMaterial({
       color: 0x48525e,
-      metalness: 0.9,
-      roughness: 0.25,
-      normalMap: ProceduralTextures.getBrushedMetalNormal(),
-      roughnessMap: ProceduralTextures.getBrushedMetalRoughness()
+      metalness: 0.48,
+      roughness: 0.48
     });
 
     const treadMat = new THREE.MeshStandardMaterial({
       color: 0x24282e,
-      metalness: 0.65,
-      roughness: 0.7
+      metalness: 0.35,
+      roughness: 0.72
     });
 
     const opticRedMat = new THREE.MeshStandardMaterial({
-      color: 0xff0000,
-      emissive: 0xff0000,
-      emissiveIntensity: 5.0,
-      roughness: 0.2
+      color: 0xff1111,
+      emissive: 0xff1111,
+      emissiveIntensity: 2.0,
+      roughness: 0.3
     });
 
     // 1. Lower Track Chassis (Left & Right Caterpillar Tread Pods)
@@ -83,12 +80,12 @@ export class HKTankMesh {
 
     this.turretGroup.add(this.leftCannon, this.rightCannon);
 
-    // 4. Dual Volumetric Searchlights
-    this.leftSearchlight = new VolumetricSearchlight(18, 4.5);
+    // 4. Dual Volumetric Searchlights (sized in local space before 2.2x parent scale)
+    this.leftSearchlight = new VolumetricSearchlight(6.5, 1.6);
     this.leftSearchlight.group.position.set(-1.2, 1.4, 1.2);
     this.leftSearchlight.group.rotation.x = -0.15;
 
-    this.rightSearchlight = new VolumetricSearchlight(18, 4.5);
+    this.rightSearchlight = new VolumetricSearchlight(6.5, 1.6);
     this.rightSearchlight.group.position.set(1.2, 1.4, 1.2);
     this.rightSearchlight.group.rotation.x = -0.15;
 

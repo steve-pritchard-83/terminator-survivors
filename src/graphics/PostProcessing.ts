@@ -39,10 +39,16 @@ export const CameronGradingShader = {
       float b = texture2D(tDiffuse, vUv - offset).b;
       vec3 col = vec3(r, g, b);
 
+      // Guard against NaN / Inf values from mobile GPU half-float buffers
+      if (!(col.r >= 0.0 && col.r <= 16.0)) col.r = 0.0;
+      if (!(col.g >= 0.0 && col.g <= 16.0)) col.g = 0.0;
+      if (!(col.b >= 0.0 && col.b <= 16.0)) col.b = 0.0;
+      col = clamp(col, vec3(0.0), vec3(4.0));
+
       // Cold James Cameron 2029 Cobalt-Teal shadow lift & crisp silver highlight curve
-      col = pow(max(col, vec3(0.0)), vec3(0.92)) * 1.06;
+      col = pow(max(col, vec3(0.0001)), vec3(0.92)) * 1.06;
       vec3 coldShadows = vec3(0.03, 0.08, 0.16);
-      float luma = dot(col, vec3(0.299, 0.587, 0.114));
+      float luma = clamp(dot(col, vec3(0.299, 0.587, 0.114)), 0.0, 1.0);
       col = mix(col + coldShadows * (1.0 - luma) * 0.35, col * vec3(0.96, 1.02, 1.10), smoothstep(0.08, 0.75, luma));
 
       // Subtle 35mm film grain & moonlit slate-blue fog haze at outer screen edges
@@ -78,6 +84,13 @@ export function isSoftwareOrAutomatedRenderer(renderer: THREE.WebGLRenderer): bo
   return false;
 }
 
+export function isMobileGpuDevice(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  if (/iPhone|iPad|iPod|Android|Mobile/i.test(navigator.userAgent)) return true;
+  if (typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)')?.matches) return true;
+  return false;
+}
+
 export class PostProcessingManager {
   public readonly composer: EffectComposer;
   private readonly renderer: THREE.WebGLRenderer;
@@ -96,16 +109,17 @@ export class PostProcessingManager {
     this.scene = scene;
     this.camera = camera;
     this.useFastPath = isSoftwareOrAutomatedRenderer(renderer);
+    const isMobile = isMobileGpuDevice();
 
     const size = new THREE.Vector2();
     renderer.getSize(size);
     const pixelRatio = renderer.getPixelRatio();
 
-    // Use WebGL2 multisampled render target (4x MSAA) on hardware GPUs; single-sample on software SwiftShader
+    // Use UnsignedByteType on mobile GPUs to prevent HalfFloatType NaN bloom blackouts when HK bosses spawn
     const renderTarget = new THREE.WebGLRenderTarget(
       Math.max(1, Math.floor(size.x * pixelRatio)),
       Math.max(1, Math.floor(size.y * pixelRatio)),
-      this.useFastPath
+      this.useFastPath || isMobile
         ? { type: THREE.UnsignedByteType, samples: 0 }
         : { type: THREE.HalfFloatType, samples: 4 }
     );

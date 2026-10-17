@@ -338,20 +338,135 @@ export class AudioEngine {
     if (this.sfxGain) this.sfxGain.gain.value = this.sfxVol;
   }
 
+  private lastHapticTimeMs = 0;
+  private iosHapticLabel: HTMLLabelElement | null = null;
+  private iosHapticInput: HTMLInputElement | null = null;
+
+  private ensureIosHapticSwitch(): void {
+    if (this.iosHapticLabel || typeof document === 'undefined' || !document.body) return;
+    try {
+      const label = document.createElement('label');
+      label.setAttribute('aria-hidden', 'true');
+      label.style.cssText =
+        'position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0;pointer-events:none;overflow:hidden;';
+      const input = document.createElement('input');
+      input.type = 'checkbox';
+      input.setAttribute('switch', '');
+      label.appendChild(input);
+      document.body.appendChild(label);
+      this.iosHapticLabel = label;
+      this.iosHapticInput = input;
+    } catch {
+      // Ignore DOM errors in headless/test environments
+    }
+  }
+
+  public triggerHaptic(pattern: number | number[] = 10, minIntervalMs = 22): void {
+    if (this.isMuted || typeof window === 'undefined' || typeof navigator === 'undefined') return;
+    if (navigator.webdriver === true || /jsdom|HeadlessChrome/i.test(navigator.userAgent)) return;
+
+    const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
+    if (now - this.lastHapticTimeMs < minIntervalMs) return;
+    this.lastHapticTimeMs = now;
+
+    try {
+      if (typeof navigator.vibrate === 'function') {
+        navigator.vibrate(pattern);
+        return;
+      }
+    } catch {
+      // Fall through to iOS switch Taptic fallback
+    }
+
+    // iOS 17.4+ / 18 Safari Taptic Engine switch fallback when triggered from user interaction
+    try {
+      if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+        this.ensureIosHapticSwitch();
+        if (this.iosHapticLabel && this.iosHapticInput) {
+          this.iosHapticInput.checked = !this.iosHapticInput.checked;
+        }
+      }
+    } catch {
+      // Ignored
+    }
+  }
+
+  private playXpTactileClick(combo = 0): void {
+    if (this.isMuted) return;
+    if (!this.initialized) {
+      this.init();
+    }
+    if (!this.ctx || !this.sfxGain) return;
+
+    try {
+      const now = this.ctx.currentTime;
+      const step = Math.min(16, Math.max(0, combo));
+      // Pentatonic ascending crystal pitch ratio
+      const semitones = [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24, 26, 28, 31, 33, 36, 38][step] ?? 0;
+      const pitchMult = Math.pow(2, semitones / 12);
+
+      // 1. Crisp mechanical micro-switch click transient (2.8kHz -> 920Hz in 9ms)
+      const clickOsc = this.ctx.createOscillator();
+      const clickGain = this.ctx.createGain();
+      clickOsc.type = 'triangle';
+      clickOsc.frequency.setValueAtTime(2800 * Math.min(1.35, pitchMult), now);
+      clickOsc.frequency.exponentialRampToValueAtTime(920, now + 0.009);
+      clickGain.gain.setValueAtTime(0.42, now);
+      clickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.011);
+      clickOsc.connect(clickGain);
+      clickGain.connect(this.sfxGain);
+      clickOsc.start(now);
+      clickOsc.stop(now + 0.012);
+
+      // 2. Crystalline harmonic chime ping (1180Hz * pitchMult)
+      const chimeOsc = this.ctx.createOscillator();
+      const chimeGain = this.ctx.createGain();
+      chimeOsc.type = 'sine';
+      const baseFreq = 1046.5 * pitchMult; // C6 ascending
+      chimeOsc.frequency.setValueAtTime(baseFreq, now + 0.002);
+      chimeOsc.frequency.exponentialRampToValueAtTime(baseFreq * 1.015, now + 0.075);
+      chimeGain.gain.setValueAtTime(0.001, now);
+      chimeGain.gain.linearRampToValueAtTime(0.28, now + 0.004);
+      chimeGain.gain.exponentialRampToValueAtTime(0.001, now + 0.085);
+      chimeOsc.connect(chimeGain);
+      chimeGain.connect(this.sfxGain);
+      chimeOsc.start(now);
+      chimeOsc.stop(now + 0.09);
+
+      // 3. Subtle low-end tactile thump (145Hz -> 58Hz in 18ms) for physical weight on phone speakers
+      const thumpOsc = this.ctx.createOscillator();
+      const thumpGain = this.ctx.createGain();
+      thumpOsc.type = 'sine';
+      thumpOsc.frequency.setValueAtTime(145, now);
+      thumpOsc.frequency.exponentialRampToValueAtTime(58, now + 0.018);
+      thumpGain.gain.setValueAtTime(0.32, now);
+      thumpGain.gain.exponentialRampToValueAtTime(0.001, now + 0.02);
+      thumpOsc.connect(thumpGain);
+      thumpGain.connect(this.sfxGain);
+      thumpOsc.start(now);
+      thumpOsc.stop(now + 0.022);
+    } catch {
+      // Ignore synthesis errors in restricted contexts
+    }
+  }
+
   // Authentic WAV Sound Effect Triggers (Combat & UI)
   public playPlasmaShot(isHeavy = false): void {
     this.playSample(isHeavy ? 'plasmaHeavy' : 'plasmaLight', isHeavy ? 0.65 : 0.5);
   }
 
   public playShotgunBlast(): void {
+    this.triggerHaptic(12, 80);
     this.playSample('shotgun', 0.72);
   }
 
   public playExplosion(scale = 1.0): void {
+    this.triggerHaptic(scale > 1.3 ? [28, 30, 40] : 22, 90);
     this.playSample('explosion', Math.min(0.9, 0.55 * scale), scale > 1.3 ? 0.88 : 1.0);
   }
 
   public playEmpBlast(): void {
+    this.triggerHaptic([18, 25, 30], 100);
     this.playSample('empBlast', 0.7, 1.0, 0.02);
   }
 
@@ -360,68 +475,85 @@ export class AudioEngine {
   }
 
   public playEndoDestroy(): void {
+    this.triggerHaptic(10, 65);
     this.playSample('endoDestroy', 0.52, 1.05);
   }
 
   public playSearchlightAlert(): void {
+    this.triggerHaptic([35, 50, 35, 50, 55], 250);
     this.playSample('hkAlert', 0.62, 1.0, 0.0);
   }
 
   public playPickupGem(combo = 0): void {
-    const pitch = Math.min(1.45, 1.0 + (combo % 12) * 0.035);
-    this.playSample('pickupGem', 0.55, pitch, 0.0);
+    this.triggerHaptic(9, 24);
+    this.playXpTactileClick(combo);
+    const pitch = Math.min(1.5, 1.05 + (combo % 14) * 0.035);
+    this.playSample('pickupGem', 0.42, pitch, 0.02);
   }
 
   public playLevelUp(): void {
+    this.triggerHaptic([18, 35, 22, 35, 45], 150);
     this.playSample('levelUp', 0.78, 1.0, 0.0);
   }
 
   public playVaultJackpot(): void {
+    this.triggerHaptic([22, 40, 28, 40, 60], 150);
     this.playSample('vaultJackpot', 0.85, 1.0, 0.0);
   }
 
   public playCombatDive(): void {
+    this.triggerHaptic(16, 60);
     this.playSample('combatDive', 0.68);
   }
 
   public playPlayerHit(): void {
+    this.triggerHaptic([32, 35, 45], 90);
     this.playSample('playerHit', 0.72);
   }
 
   // Dedicated Authentic UI Sound Effects
   public playUiClick(): void {
+    this.triggerHaptic(10, 20);
     this.playSample('uiClick', 0.65, 1.0, 0.02);
   }
 
   public playUiBeep(): void {
+    this.triggerHaptic(8, 20);
     this.playSample('uiBeep', 0.45, 1.0, 0.0);
   }
 
   public playUiBuy(): void {
+    this.triggerHaptic([12, 28, 20], 40);
     this.playSample('uiBuy', 0.75, 1.0, 0.0);
   }
 
   public playUiError(): void {
+    this.triggerHaptic([25, 40, 25], 60);
     this.playSample('uiError', 0.65, 1.0, 0.0);
   }
 
   public playUpgradeApplied(): void {
+    this.triggerHaptic([14, 30, 24], 40);
     this.playSample('uiUpgradeApplied', 0.8, 1.0, 0.0);
   }
 
   public playHudScanOpen(): void {
+    this.triggerHaptic(12, 30);
     this.playSample('uiModalOpen', 0.68, 1.0, 0.0);
   }
 
   public playHudScanClose(): void {
+    this.triggerHaptic(10, 30);
     this.playSample('uiModalClose', 0.6, 1.0, 0.0);
   }
 
   public playRunStart(): void {
+    this.triggerHaptic([20, 40, 35], 80);
     this.playSample('runStart', 0.82, 1.0, 0.0);
   }
 
   public playRunEnd(victory: boolean): void {
+    this.triggerHaptic(victory ? [25, 45, 30, 45, 65] : [45, 60, 70], 120);
     this.playSample(victory ? 'runVictory' : 'runDefeat', 0.82, 1.0, 0.0);
   }
 }

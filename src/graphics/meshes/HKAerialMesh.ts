@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import { VolumetricSearchlight } from '../VolumetricSearchlight';
-import { ProceduralTextures } from '../ProceduralTextures';
 
 export class HKAerialMesh {
   public readonly group = new THREE.Group();
@@ -13,32 +12,30 @@ export class HKAerialMesh {
   private readonly plasmaBarrels: THREE.Group;
 
   constructor(isSquadronLeader = false) {
-    const scale = isSquadronLeader ? 1.6 : 1.1;
+    const scale = isSquadronLeader ? 1.55 : 1.1;
 
     const hullMat = new THREE.MeshStandardMaterial({
       color: isSquadronLeader ? 0x778899 : 0x6e7b8c,
-      metalness: 0.9,
-      roughness: 0.22,
-      normalMap: ProceduralTextures.getBrushedMetalNormal(),
-      roughnessMap: ProceduralTextures.getBrushedMetalRoughness()
+      metalness: 0.48,
+      roughness: 0.48
     });
 
     const glowCyanMat = new THREE.MeshStandardMaterial({
       color: 0x00e5ff,
-      emissive: 0x00e5ff,
-      emissiveIntensity: 3.5,
-      roughness: 0.3
+      emissive: 0x00b8e6,
+      emissiveIntensity: 1.6,
+      roughness: 0.35
     });
 
     const strobeRedMat = new THREE.MeshStandardMaterial({
-      color: 0xff0000,
-      emissive: 0xff0000,
-      emissiveIntensity: 5.0,
-      roughness: 0.2
+      color: 0xff1111,
+      emissive: 0xff1111,
+      emissiveIntensity: 2.0,
+      roughness: 0.3
     });
 
-    // 1. Central fuselage hull & forward sensor nose
-    const noseGeo = new THREE.ConeGeometry(0.7, 2.2, 8);
+    // 1. Central fuselage hull & forward sensor nose (non-zero tip cylinder avoids degenerate cone apex normals)
+    const noseGeo = new THREE.CylinderGeometry(0.18, 0.7, 2.2, 8);
     noseGeo.rotateX(Math.PI / 2);
     const noseMesh = new THREE.Mesh(noseGeo, hullMat);
     noseMesh.position.set(0, 0, 1.4);
@@ -97,12 +94,12 @@ export class HKAerialMesh {
     this.plasmaBarrels.add(barrelL, barrelR);
     this.group.add(this.plasmaBarrels);
 
-    // 5. Dual Volumetric Searchlights
-    this.leftSearchlight = new VolumetricSearchlight(16, 4.2);
+    // 5. Dual Volumetric Searchlights (scaled appropriately for parent group)
+    this.leftSearchlight = new VolumetricSearchlight(9.5, 2.2);
     this.leftSearchlight.group.position.set(-0.8, -0.4, 0.5);
     this.leftSearchlight.group.rotation.x = -0.35; // Angled forward down to ground
 
-    this.rightSearchlight = new VolumetricSearchlight(16, 4.2);
+    this.rightSearchlight = new VolumetricSearchlight(9.5, 2.2);
     this.rightSearchlight.group.position.set(0.8, -0.4, 0.5);
     this.rightSearchlight.group.rotation.x = -0.35;
 
