@@ -7,6 +7,7 @@ import { CircleTelegraph } from '../../graphics/Telegraphs';
 export class SkynetCoreBehaviour implements EnemyBehaviour {
   private readonly meshes = new Map<number, SkynetCoreMesh>();
   private readonly telegraphs = new Map<number, CircleTelegraph>();
+  private readonly pullTelegraphs = new Map<number, CircleTelegraph>();
 
   public createVisual(enemy: ActiveEnemy, ctx: EnemyContext): THREE.Object3D | null {
     const core = new SkynetCoreMesh();
@@ -20,31 +21,80 @@ export class SkynetCoreBehaviour implements EnemyBehaviour {
     const core = this.meshes.get(enemy.id);
     if (!core) return;
 
+    const px = ctx.runState.playerPos.x;
+    const pz = ctx.runState.playerPos.z;
+
     core.group.position.set(enemy.x, 0, enemy.z);
-    const isEnraged = enemy.hp < enemy.maxHp * 0.5;
+
+    // Multi-phase threshold calculation
+    let phase = 1;
+    if (enemy.hp < enemy.maxHp * 0.20) {
+      phase = 3;
+    } else if (enemy.hp < enemy.maxHp * 0.50) {
+      phase = 2;
+    }
+    enemy.phase = phase;
+
+    const isEnraged = phase >= 2;
     core.updateAnimation(dt, ctx.timeSeconds, isEnraged);
 
-    let telegraph = this.telegraphs.get(enemy.id);
-    if (!telegraph) {
-      telegraph = new CircleTelegraph(12.0, 0x00e5ff);
-      ctx.group.add(telegraph.group);
-      this.telegraphs.set(enemy.id, telegraph);
+    const state = (enemy.state = enemy.state ?? {});
+
+    // Phase 2 trigger: Spawn wave of 4 T-800 Endoskeletons
+    if (phase >= 2 && !state.t800WaveSpawned) {
+      state.t800WaveSpawned = 1;
+      ctx.audio.playSearchlightAlert();
+      ctx.emit('camera:shake', { trauma: 0.65 });
+      if (ctx.spawnEnemy) {
+        for (let t = 0; t < 4; t++) {
+          const angle = (t * Math.PI * 2) / 4;
+          ctx.spawnEnemy('t800_endoskeleton', enemy.x + Math.sin(angle) * 4.5, enemy.z + Math.cos(angle) * 4.5);
+        }
+      }
     }
 
-    // Phase 2 Enraged Temporal Nova: radial ring of plasma bolts
-    if (isEnraged) {
-      const state = (enemy.state = enemy.state ?? {});
-      let cd = state.novaCooldown ?? 3.5;
-      cd -= dt;
+    // Telegraph setups
+    let novaTelegraph = this.telegraphs.get(enemy.id);
+    if (!novaTelegraph) {
+      novaTelegraph = new CircleTelegraph(12.0, 0x00e5ff);
+      ctx.group.add(novaTelegraph.group);
+      this.telegraphs.set(enemy.id, novaTelegraph);
+    }
 
-      if (cd <= 0.6 && cd > 0) {
-        const progress = (0.6 - cd) / 0.6;
-        telegraph.update(enemy.x, enemy.z, progress, 12.0);
-      } else if (cd <= 0) {
-        cd = 4.8;
-        state.novaCooldown = cd;
-        telegraph.setVisible(false);
-        ctx.emit('camera:shake', { trauma: 0.45 });
+    let pullTelegraph = this.pullTelegraphs.get(enemy.id);
+    if (!pullTelegraph) {
+      pullTelegraph = new CircleTelegraph(16.0, 0x7700ff);
+      ctx.group.add(pullTelegraph.group);
+      this.pullTelegraphs.set(enemy.id, pullTelegraph);
+    }
+
+    // ATTACK 1: Rotating plasma spokes (every 1.8s fires a 4-bolt spoke rotating in an X/+)
+    const spokeTimer = (state.spokeTimer ?? 1.8) - dt;
+    state.spokeTimer = spokeTimer;
+    if (spokeTimer <= 0) {
+      state.spokeTimer = 1.8;
+      const baseAngle = ctx.timeSeconds * 0.8;
+      for (let s = 0; s < 4; s++) {
+        const spokeAngle = baseAngle + (s * Math.PI) / 2;
+        const tx = enemy.x + Math.sin(spokeAngle) * 14.0;
+        const tz = enemy.z + Math.cos(spokeAngle) * 14.0;
+        ctx.spawnEnemyProjectile(enemy.x, 2.5, enemy.z, tx, tz, 9.0, 16);
+      }
+      ctx.audio.playPlasmaShot(false);
+    }
+
+    // ATTACK 2 (Phase 2+): Temporal Nova radial burst
+    if (phase >= 2) {
+      const novaCd = (state.novaCooldown ?? 3.5) - dt;
+      state.novaCooldown = novaCd;
+
+      if (novaCd <= 0.6 && novaCd > 0) {
+        const progress = (0.6 - novaCd) / 0.6;
+        novaTelegraph.update(enemy.x, enemy.z, progress, 12.0);
+      } else if (novaCd <= 0) {
+        state.novaCooldown = 4.8;
+        novaTelegraph.setVisible(false);
+        ctx.emit('camera:shake', { trauma: 0.5 });
         ctx.audio.playPlasmaShot(true);
 
         const boltCount = 10;
@@ -56,12 +106,47 @@ export class SkynetCoreBehaviour implements EnemyBehaviour {
           ctx.spawnEnemyProjectile(enemy.x, 3.6, enemy.z, targetX, targetZ, 8.5, 18);
         }
       } else {
-        telegraph.setVisible(false);
-        state.novaCooldown = cd;
+        novaTelegraph.setVisible(false);
       }
     } else {
-      telegraph.setVisible(false);
+      novaTelegraph.setVisible(false);
     }
+
+    // ATTACK 3 (Phase 3 Singularity Pulse): Gravitational pull toward core center
+    if (phase === 3) {
+      const pullTimer = (state.pullTimer ?? 3.0) - dt;
+      state.pullTimer = pullTimer;
+
+      if (pullTimer <= 1.0 && pullTimer > 0) {
+        const progress = (1.0 - pullTimer) / 1.0;
+        pullTelegraph.update(enemy.x, enemy.z, progress, 16.0);
+      } else if (pullTimer <= 0) {
+        pullTelegraph.setVisible(false);
+        state.pullTimer = 3.5;
+        ctx.audio.playEmpBlast();
+        ctx.emit('camera:shake', { trauma: 0.7 });
+
+        // Pull player towards core
+        const distToCore = Math.hypot(px - enemy.x, pz - enemy.z);
+        if (distToCore < 16.0 && distToCore > 0.5) {
+          const pullForce = 4.0;
+          ctx.runState.playerPos.x += ((enemy.x - px) / distToCore) * pullForce;
+          ctx.runState.playerPos.z += ((enemy.z - pz) / distToCore) * pullForce;
+          ctx.applyPlayerDamage(14);
+        }
+      } else {
+        pullTelegraph.setVisible(false);
+      }
+    } else {
+      pullTelegraph.setVisible(false);
+    }
+  }
+
+  public onDeath(enemy: ActiveEnemy, ctx: EnemyContext): void {
+    ctx.audio.playExplosion(2.8);
+    ctx.particles.spawnExplosion(enemy.x, 1.5, enemy.z, 5.0);
+    ctx.particles.spawnEnemyDebris(enemy.x, 1.5, enemy.z, 24);
+    ctx.emit('camera:shake', { trauma: 0.95 });
   }
 
   public dispose(enemy: ActiveEnemy, ctx: EnemyContext): void {
@@ -71,11 +156,17 @@ export class SkynetCoreBehaviour implements EnemyBehaviour {
       core.dispose();
       this.meshes.delete(enemy.id);
     }
-    const telegraph = this.telegraphs.get(enemy.id);
-    if (telegraph) {
-      ctx.group.remove(telegraph.group);
-      telegraph.dispose();
+    const novaTelegraph = this.telegraphs.get(enemy.id);
+    if (novaTelegraph) {
+      ctx.group.remove(novaTelegraph.group);
+      novaTelegraph.dispose();
       this.telegraphs.delete(enemy.id);
+    }
+    const pullTelegraph = this.pullTelegraphs.get(enemy.id);
+    if (pullTelegraph) {
+      ctx.group.remove(pullTelegraph.group);
+      pullTelegraph.dispose();
+      this.pullTelegraphs.delete(enemy.id);
     }
   }
 
@@ -89,5 +180,10 @@ export class SkynetCoreBehaviour implements EnemyBehaviour {
       t.dispose();
     }
     this.telegraphs.clear();
+
+    for (const p of this.pullTelegraphs.values()) {
+      p.dispose();
+    }
+    this.pullTelegraphs.clear();
   }
 }

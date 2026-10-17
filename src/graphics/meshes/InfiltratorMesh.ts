@@ -193,6 +193,20 @@ export class InfiltratorMesh {
     this.opticLight.intensity = 0.8 * pulse;
   }
 
+  public setPhase3Endoskeleton(): void {
+    this.group.traverse((obj) => {
+      const mesh = obj as THREE.Mesh;
+      if (mesh.isMesh && mesh.material) {
+        const mat = mesh.material as THREE.MeshStandardMaterial;
+        if (mat.color && mat.color.getHex() !== 0xff0022) {
+          mat.color.setHex(0xb0bcc8);
+          mat.metalness = 0.95;
+          mat.roughness = 0.2;
+        }
+      }
+    });
+  }
+
   public dispose(): void {
     disposeObject3D(this.group);
   }

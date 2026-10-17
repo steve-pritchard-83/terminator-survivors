@@ -58,6 +58,7 @@ export class EnemySystem {
     this.context = {
       runState: this.runState, audio: this.audio, particles: this.particles,
       spawnEnemyProjectile: (x, y, z, tx, tz, spd, dmg) => this.spawnEnemyProjectile(x, y, z, tx, tz, spd, dmg),
+      spawnEnemy: (arch, x, z) => this.spawnEnemy(arch, x, z),
       applyPlayerDamage: (dmg) => this.applyPlayerDamage(dmg),
       emit: (evt, payload) => globalEvents.emit(evt, payload),
       rng: globalRNG, group: this.group, timeSeconds: 0

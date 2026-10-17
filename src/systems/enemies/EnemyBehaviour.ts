@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import type { ActiveEnemy } from '../../core/types';
+import type { ActiveEnemy, EnemyArchetypeId } from '../../core/types';
 import type { RunState } from '../../state/RunState';
 import type { AudioEngine } from '../../audio/AudioEngine';
 import type { ParticleSystem } from '../ParticleSystem';
@@ -19,6 +19,7 @@ export interface EnemyContext {
     speed?: number,
     damage?: number
   ) => void;
+  spawnEnemy?: (archetype: EnemyArchetypeId, x: number, z: number) => void;
   applyPlayerDamage: (rawDamage: number) => void;
   emit: <K extends keyof GameEventMap>(event: K, payload: GameEventMap[K]) => void;
   rng: typeof globalRNG;

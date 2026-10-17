@@ -246,7 +246,7 @@ export class RunController {
   public handleEnemyKilled(enemy: ActiveEnemy): void {
     if (enemy.isBoss) {
       this.host.runState.bossesKilled++;
-      this.host.sceneManager.addScreenShake(0.55);
+      this.host.sceneManager.addScreenShake(0.75);
       this.host.gameLoop.hitStop(0.10);
       if (this.activeBoss) {
         this.activeBoss = null;

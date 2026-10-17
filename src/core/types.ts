@@ -176,6 +176,7 @@ export interface ActiveEnemy extends SpatialEntity {
   searchlightAngle?: number;
   searchlightAlertTimer?: number;
   phaseState?: number;
+  phase?: number;
   state?: Record<string, number>;
   mass?: number;
   vx?: number;
