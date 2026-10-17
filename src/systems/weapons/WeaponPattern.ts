@@ -1,5 +1,6 @@
 import type * as THREE from 'three';
 import type {
+  ActiveEnemy,
   SpatialEntity,
   WeaponDefinition,
   WeaponLevelStats
@@ -78,4 +79,12 @@ export interface WeaponPattern {
     targetAngle: number,
     ctx: WeaponFireContext
   ): void;
+  update?(
+    dt: number,
+    px: number,
+    pz: number,
+    enemies: ActiveEnemy[],
+    ctx: WeaponFireContext
+  ): void;
+  clear?(group: THREE.Group): void;
 }

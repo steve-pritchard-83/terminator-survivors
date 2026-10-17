@@ -31,7 +31,7 @@ describe('P1-06 weapon level text matches stats', () => {
 
   it('verifies for every base weapon, every level-up description mentions each stat that changed', () => {
     const weaponIds = Object.keys(BASE_WEAPONS) as BaseWeaponId[];
-    expect(weaponIds).toHaveLength(8);
+    expect(weaponIds).toHaveLength(14);
 
     for (const wId of weaponIds) {
       const weapon = BASE_WEAPONS[wId];

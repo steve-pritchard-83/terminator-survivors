@@ -6,7 +6,13 @@ export type BaseWeaponId =
   | 'emp_emitter'
   | 'm79_thumper'
   | 'napalm_canister'
-  | 'laser_designator';
+  | 'laser_designator'
+  | 'm16_carbine'
+  | 'rpg_launcher'
+  | 'molotov'
+  | 'resistance_k9'
+  | 'reprogrammed_t800'
+  | 'coltan_knife';
 
 export type EvolvedWeaponId =
   | 'trench_sweeper'
@@ -16,7 +22,13 @@ export type EvolvedWeaponId =
   | 'emp_supernova'
   | 'mm1_barrage'
   | 'firestorm_wall'
-  | 'orbital_ion';
+  | 'orbital_ion'
+  | 'phased_plasma_assault'
+  | 'tandem_warhead'
+  | 'firestorm_lane'
+  | 'k9_pack'
+  | 'guardian_protocol'
+  | 'hyperalloy_blade';
 
 export type WeaponId = BaseWeaponId | EvolvedWeaponId;
 
@@ -28,7 +40,11 @@ export type PassiveId =
   | 'flux_coil'
   | 'bandolier'
   | 'fuel_tank'
-  | 'comms_uplink';
+  | 'comms_uplink'
+  | 'ammo_belt'
+  | 'infrared_goggles'
+  | 'polaroid_luck'
+  | 'dog_tags';
 
 export type EnemyArchetypeId =
   | 'skynet_crab_drone'
@@ -82,7 +98,10 @@ export type WeaponPatternId =
   | 'Nova'
   | 'Orbiters'
   | 'GroundZone'
-  | 'Strike';
+  | 'Strike'
+  | 'MeleeSweep'
+  | 'DogUnit'
+  | 'AllySummon';
 
 export interface WeaponPatternParams {
   spreadAngle?: number;
@@ -109,6 +128,9 @@ export interface WeaponPatternParams {
   droneCount?: number;
   orbitRadius?: number;
   orbitSpeedMult?: number;
+  isLine?: boolean;
+  lineSpacing?: number;
+  arcAngle?: number;
 }
 
 export interface WeaponDefinition {
@@ -150,9 +172,11 @@ export interface PlayerComputedStats {
   bonusAmount: number;
   magnetRadius: number;
   critChance: number;
+  critMultiplier?: number;
   luckMultiplier: number;
   xpGainMultiplier: number;
   revivals: number;
+  revivalChance?: number;
 }
 
 export interface SpatialEntity {

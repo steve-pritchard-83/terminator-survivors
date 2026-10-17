@@ -226,6 +226,108 @@ export const BASE_WEAPONS: Record<BaseWeaponId, WeaponDefinition> = {
       ['Paints heavy targets with a red laser, calling down Resistance artillery.'],
       'STRIKE'
     )
+  },
+  m16_carbine: {
+    id: 'm16_carbine',
+    name: 'M-16 Plasma Carbine',
+    codeName: 'TECH-COM 5.56 PLASMA',
+    isEvolved: false,
+    pairedPassive: 'ammo_belt',
+    evolvesInto: 'phased_plasma_assault',
+    iconColor: '#00b4d8',
+    pattern: 'StraightShot',
+    patternParams: { projectileVisual: 'plasma', flashColor: 0x00b4d8, parallelOffset: 0, jitterAngle: 0.08, projectileRadius: 0.3, sfx: 'plasma_light' },
+    knockback: 7,
+    levels: buildWeaponLevels(
+      { damage: 22, cooldown: 0.85, area: 1.0, speed: 32, amount: 3, duration: 0.9, pierce: 2 },
+      ['Fires a 3-round burst of phased plasma cartridges.'],
+      'BOLT'
+    )
+  },
+  rpg_launcher: {
+    id: 'rpg_launcher',
+    name: 'RPG-7 Heavy Launcher',
+    codeName: 'ANTI-ARMOR THERMITE',
+    isEvolved: false,
+    pairedPassive: 'infrared_goggles',
+    evolvesInto: 'tandem_warhead',
+    iconColor: '#ff3b00',
+    pattern: 'Lobbed',
+    patternParams: { projectileVisual: 'bomb', arcSpread: 0.15, minDist: 8, maxDist: 18, vy: 5.5, flightTime: 0.65, areaRadius: 3.8 },
+    knockback: 25,
+    levels: buildWeaponLevels(
+      { damage: 75, cooldown: 3.2, area: 1.5, speed: 18, amount: 1, duration: 1.0, pierce: 99 },
+      ['Fires a high-impact shaped charge rocket detonating in a massive explosion.'],
+      'BOMB'
+    )
+  },
+  molotov: {
+    id: 'molotov',
+    name: 'Incendiary Molotov',
+    codeName: 'PROMETHEUM TRAIL',
+    isEvolved: false,
+    pairedPassive: 'fuel_tank',
+    evolvesInto: 'firestorm_lane',
+    iconColor: '#ff7700',
+    pattern: 'GroundZone',
+    patternParams: { baseRadius: 1.6, isLine: true, lineSpacing: 2.2 },
+    knockback: 4,
+    levels: buildWeaponLevels(
+      { damage: 20, cooldown: 2.8, area: 1.2, speed: 12, amount: 3, duration: 3.5, pierce: 99 },
+      ['Hurls an incendiary cocktail creating a burning lane of fire.'],
+      'CANISTER'
+    )
+  },
+  resistance_k9: {
+    id: 'resistance_k9',
+    name: 'Resistance K-9 Scout',
+    codeName: 'INFILTRATOR DETECTOR',
+    isEvolved: false,
+    pairedPassive: 'dog_tags',
+    evolvesInto: 'k9_pack',
+    iconColor: '#38bdf8',
+    pattern: 'DogUnit',
+    patternParams: { baseRadius: 1.2 },
+    knockback: 10,
+    levels: buildWeaponLevels(
+      { damage: 35, cooldown: 0.5, area: 1.0, speed: 10.5, amount: 1, duration: 1.0, pierce: 1 },
+      ['Loyal scout dog that bites machines, revealing Infiltrators and T-1000s.'],
+      'PROJECTILE'
+    )
+  },
+  reprogrammed_t800: {
+    id: 'reprogrammed_t800',
+    name: 'Reprogrammed T-800 Ally',
+    codeName: 'CYBERDYNE PROTECTOR',
+    isEvolved: false,
+    pairedPassive: 'polaroid_luck',
+    evolvesInto: 'guardian_protocol',
+    iconColor: '#00e5ff',
+    pattern: 'AllySummon',
+    patternParams: { baseRadius: 2.5 },
+    knockback: 12,
+    levels: buildWeaponLevels(
+      { damage: 40, cooldown: 0.65, area: 1.0, speed: 28, amount: 1, duration: 1.0, pierce: 2 },
+      ['Captured Terminator reprogrammed to protect Reese with plasma suppressive fire.'],
+      'BOLT'
+    )
+  },
+  coltan_knife: {
+    id: 'coltan_knife',
+    name: 'Coltan Combat Knife',
+    codeName: 'HYPERALLOY BLADE',
+    isEvolved: false,
+    pairedPassive: 'might_shells',
+    evolvesInto: 'hyperalloy_blade',
+    iconColor: '#e2e8f0',
+    pattern: 'MeleeSweep',
+    patternParams: { arcAngle: Math.PI * 0.65, flashColor: 0x00e5ff },
+    knockback: 20,
+    levels: buildWeaponLevels(
+      { damage: 55, cooldown: 1.1, area: 1.2, speed: 1.0, amount: 1, duration: 0.16, pierce: 99 },
+      ['Slashes an arc with a heavy coltan blade, severing endoskeleton joints.'],
+      'PROJECTILE'
+    )
   }
 };
 
@@ -429,6 +531,150 @@ export const EVOLVED_WEAPONS: Record<EvolvedWeaponId, WeaponDefinition> = {
           'Sweeps colossal sky-piercing cyan-magenta orbital ion beams across enemy hordes every 1.8 seconds.'
       }
     ]
+  },
+  phased_plasma_assault: {
+    id: 'phased_plasma_assault',
+    name: 'Phased Plasma Assault Carbine',
+    codeName: 'SUPERWEAPON: ION CYCLER',
+    isEvolved: true,
+    evolvesFrom: 'm16_carbine',
+    iconColor: '#38bdf8',
+    pattern: 'StraightShot',
+    patternParams: { projectileVisual: 'heavy_plasma', flashColor: 0x38bdf8, parallelOffset: 0.1, jitterAngle: 0.05, projectileRadius: 0.45, sfx: 'plasma_heavy' },
+    knockback: 12,
+    levels: [
+      {
+        level: 1,
+        damage: 65,
+        cooldown: 0.35,
+        area: 1.35,
+        speed: 38,
+        amount: 5,
+        duration: 1.2,
+        pierce: 6,
+        description: 'Continuous 5-round ionized hyper-bursts that shred enemy armor and energy shields.'
+      }
+    ]
+  },
+  tandem_warhead: {
+    id: 'tandem_warhead',
+    name: 'Tandem Warhead RPG',
+    codeName: 'SUPERWEAPON: BUNKER BREAKER',
+    isEvolved: true,
+    evolvesFrom: 'rpg_launcher',
+    iconColor: '#ff2200',
+    pattern: 'Lobbed',
+    patternParams: { projectileVisual: 'bomb', arcSpread: 0.25, minDist: 8, maxDist: 20, vy: 6.5, flightTime: 0.6, areaRadius: 5.5 },
+    knockback: 35,
+    levels: [
+      {
+        level: 1,
+        damage: 220,
+        cooldown: 2.0,
+        area: 2.8,
+        speed: 22,
+        amount: 2,
+        duration: 1.0,
+        pierce: 99,
+        description: 'Dual-stage shaped charges that obliterate heavy machine armor in colossal detonations.'
+      }
+    ]
+  },
+  firestorm_lane: {
+    id: 'firestorm_lane',
+    name: 'Firestorm Incendiary Lane',
+    codeName: 'SUPERWEAPON: SCORCHED HIGHWAY',
+    isEvolved: true,
+    evolvesFrom: 'molotov',
+    iconColor: '#ff5500',
+    pattern: 'GroundZone',
+    patternParams: { baseRadius: 2.2, isLine: true, lineSpacing: 2.6 },
+    knockback: 6,
+    levels: [
+      {
+        level: 1,
+        damage: 60,
+        cooldown: 1.8,
+        area: 1.8,
+        speed: 14,
+        amount: 6,
+        duration: 5.5,
+        pierce: 99,
+        description: 'Unleashes long continuous highways of prometheum fire that scorch and melt entire columns of machines.'
+      }
+    ]
+  },
+  k9_pack: {
+    id: 'k9_pack',
+    name: 'Resistance K-9 Wolfpack',
+    codeName: 'SUPERWEAPON: PACK HUNT',
+    isEvolved: true,
+    evolvesFrom: 'resistance_k9',
+    iconColor: '#00f0ff',
+    pattern: 'DogUnit',
+    patternParams: { baseRadius: 1.8 },
+    knockback: 18,
+    levels: [
+      {
+        level: 1,
+        damage: 105,
+        cooldown: 0.32,
+        area: 1.4,
+        speed: 12.5,
+        amount: 3,
+        duration: 1.0,
+        pierce: 3,
+        description: 'Pack of 3 cybernetically armored war dogs that hunt down and shred synthetic machines together.'
+      }
+    ]
+  },
+  guardian_protocol: {
+    id: 'guardian_protocol',
+    name: 'Guardian Protocol T-800',
+    codeName: 'SUPERWEAPON: CONNOR GUARDIAN',
+    isEvolved: true,
+    evolvesFrom: 'reprogrammed_t800',
+    iconColor: '#00ffff',
+    pattern: 'AllySummon',
+    patternParams: { baseRadius: 3.5 },
+    knockback: 20,
+    levels: [
+      {
+        level: 1,
+        damage: 125,
+        cooldown: 0.28,
+        area: 1.5,
+        speed: 34,
+        amount: 2,
+        duration: 1.2,
+        pierce: 6,
+        description: 'Armored heavy Terminator with 750 HP, dual heavy plasma miniguns, and an impenetrable taunt aura.'
+      }
+    ]
+  },
+  hyperalloy_blade: {
+    id: 'hyperalloy_blade',
+    name: 'Hyperalloy Combat Blade',
+    codeName: 'SUPERWEAPON: VIBRO-CLEAVER',
+    isEvolved: true,
+    evolvesFrom: 'coltan_knife',
+    iconColor: '#d946ef',
+    pattern: 'MeleeSweep',
+    patternParams: { arcAngle: Math.PI * 2.0, flashColor: 0xd946ef },
+    knockback: 30,
+    levels: [
+      {
+        level: 1,
+        damage: 160,
+        cooldown: 0.75,
+        area: 1.8,
+        speed: 1.0,
+        amount: 1,
+        duration: 0.2,
+        pierce: 99,
+        description: 'Full 360-degree sonic vibro-cleave that slices through all surrounding endoskeletons in a single stroke.'
+      }
+    ]
   }
 };
 
@@ -517,6 +763,46 @@ export const PASSIVES: Record<PassiveId, PassiveDefinition> = {
     iconColor: '#ff0055',
     descriptionPerLevel: '+8% critical strike chance and +15% Luck.',
     statPerLevel: { critChance: 0.08, luckMultiplier: 0.15 }
+  },
+  ammo_belt: {
+    id: 'ammo_belt',
+    name: 'Munitions Ammo Belt',
+    codeName: 'DURATION EXTENDER',
+    maxLevel: 5,
+    evolvesWeapon: 'm16_carbine',
+    iconColor: '#00b4d8',
+    descriptionPerLevel: '+15% projectile duration and +5% projectile speed.',
+    statPerLevel: { durationMultiplier: 0.15, speedMultiplier: 0.05 }
+  },
+  infrared_goggles: {
+    id: 'infrared_goggles',
+    name: 'Infrared Tactical Goggles',
+    codeName: 'CRITICAL TARGETER',
+    maxLevel: 5,
+    evolvesWeapon: 'rpg_launcher',
+    iconColor: '#ff3b00',
+    descriptionPerLevel: '+20% critical damage and +4% critical strike chance.',
+    statPerLevel: { critMultiplier: 0.2, critChance: 0.04 }
+  },
+  polaroid_luck: {
+    id: 'polaroid_luck',
+    name: "Sarah's Polaroid",
+    codeName: 'FORTUNE UPLINK',
+    maxLevel: 5,
+    evolvesWeapon: 'reprogrammed_t800',
+    iconColor: '#e2e8f0',
+    descriptionPerLevel: '+25% Luck and +10% XP gain.',
+    statPerLevel: { luckMultiplier: 0.25, xpGainMultiplier: 0.1 }
+  },
+  dog_tags: {
+    id: 'dog_tags',
+    name: 'Fallen Comrade Dog Tags',
+    codeName: 'SURVIVOR RESOLVE',
+    maxLevel: 5,
+    evolvesWeapon: 'resistance_k9',
+    iconColor: '#f59e0b',
+    descriptionPerLevel: '+15% chance to survive lethal damage and +10 max HP.',
+    statPerLevel: { revivalChance: 0.15, maxHp: 10 }
   }
 };
 

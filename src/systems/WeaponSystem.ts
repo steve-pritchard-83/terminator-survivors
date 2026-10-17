@@ -198,8 +198,10 @@ export class WeaponSystem {
       }
     }
 
-    // 2. Update Orbiting Seeker Drones
-    this.updateOrbitingDrones(dt, px, pz, enemies);
+    // 2. Update Continuous Weapon Patterns (Orbiters, DogUnit, AllySummon)
+    for (const p of Object.values(this.patterns)) {
+      p.update?.(dt, px, pz, enemies, this.fireContext);
+    }
 
     // 3. Update Moving Projectiles
     this.updateProjectiles(dt);
@@ -346,7 +348,8 @@ export class WeaponSystem {
     const enemy = entity as ActiveEnemy;
     const isCrit = globalRNG.chance(this.runState.computedStats.critChance);
     const vulnMult = 1 / Math.max(0.4, enemy.armorStripMultiplier);
-    let finalDamage = Math.max(1, Math.round(baseDamage * vulnMult * (isCrit ? 1.75 : 1.0)));
+    const critMult = this.runState.computedStats.critMultiplier ?? 1.75;
+    let finalDamage = Math.max(1, Math.round(baseDamage * vulnMult * (isCrit ? critMult : 1.0)));
 
     if (enemy.affix === 'Armored' && enemy.armorStripMultiplier >= 1.0) {
       finalDamage = Math.max(1, Math.round(finalDamage * 0.5));
@@ -586,7 +589,9 @@ export class WeaponSystem {
     }
     this.groundZones.length = 0;
 
-    this.orbitersPattern.clear(this.group);
+    for (const p of Object.values(this.patterns)) {
+      p.clear?.(this.group);
+    }
 
     for (const fx of this.transientVfx) {
       this.group.remove(fx.mesh);

@@ -7,6 +7,9 @@ import { Nova } from './Nova';
 import { Orbiters } from './Orbiters';
 import { GroundZone } from './GroundZone';
 import { Strike } from './Strike';
+import { MeleeSweep } from './MeleeSweep';
+import { DogUnit } from './DogUnit';
+import { AllySummon } from './AllySummon';
 
 export * from './WeaponPattern';
 export * from './SpreadShot';
@@ -16,12 +19,19 @@ export * from './Nova';
 export * from './Orbiters';
 export * from './GroundZone';
 export * from './Strike';
+export * from './MeleeSweep';
+export * from './DogUnit';
+export * from './AllySummon';
 
 export function createWeaponPatternRegistry(): {
   registry: Record<WeaponPatternId, WeaponPattern>;
   orbiters: Orbiters;
+  dogUnit: DogUnit;
+  allySummon: AllySummon;
 } {
   const orbiters = new Orbiters();
+  const dogUnit = new DogUnit();
+  const allySummon = new AllySummon();
   const registry: Record<WeaponPatternId, WeaponPattern> = {
     SpreadShot: new SpreadShot(),
     StraightShot: new StraightShot(),
@@ -29,7 +39,10 @@ export function createWeaponPatternRegistry(): {
     Nova: new Nova(),
     Orbiters: orbiters,
     GroundZone: new GroundZone(),
-    Strike: new Strike()
+    Strike: new Strike(),
+    MeleeSweep: new MeleeSweep(),
+    DogUnit: dogUnit,
+    AllySummon: allySummon
   };
-  return { registry, orbiters };
+  return { registry, orbiters, dogUnit, allySummon };
 }

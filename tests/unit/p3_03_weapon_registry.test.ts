@@ -47,7 +47,7 @@ describe('P3-03 weapon behaviour registry', () => {
       ...Object.values(EVOLVED_WEAPONS)
     ];
 
-    expect(allDefs).toHaveLength(16);
+    expect(allDefs).toHaveLength(28);
     const validPatterns: WeaponPatternId[] = [
       'SpreadShot',
       'StraightShot',
@@ -55,7 +55,10 @@ describe('P3-03 weapon behaviour registry', () => {
       'Nova',
       'Orbiters',
       'GroundZone',
-      'Strike'
+      'Strike',
+      'MeleeSweep',
+      'DogUnit',
+      'AllySummon'
     ];
 
     for (const def of allDefs) {
@@ -64,7 +67,7 @@ describe('P3-03 weapon behaviour registry', () => {
     }
   });
 
-  it('createWeaponPatternRegistry provides handlers for all 7 pattern types', () => {
+  it('createWeaponPatternRegistry provides handlers for all 10 pattern types', () => {
     const { registry, orbiters } = createWeaponPatternRegistry();
     expect(registry.SpreadShot).toBeDefined();
     expect(registry.StraightShot).toBeDefined();
@@ -73,6 +76,9 @@ describe('P3-03 weapon behaviour registry', () => {
     expect(registry.Orbiters).toBe(orbiters);
     expect(registry.GroundZone).toBeDefined();
     expect(registry.Strike).toBeDefined();
+    expect(registry.MeleeSweep).toBeDefined();
+    expect(registry.DogUnit).toBeDefined();
+    expect(registry.AllySummon).toBeDefined();
   });
 
   it('fires SpreadShot (Ithaca 37) and spawns multiple pellets with spread', () => {

@@ -84,9 +84,11 @@ export class RunState {
       bonusAmount: 0,
       magnetRadius: 3.5,
       critChance: 0.05,
+      critMultiplier: 1.75,
       luckMultiplier: 1.0,
       xpGainMultiplier: 1.0,
-      revivals: 0
+      revivals: 0,
+      revivalChance: 0
     };
   }
 
@@ -223,6 +225,14 @@ export class RunState {
       this.invulnerabilityTimer = 0;
       return 'revived';
     }
+    if (
+      (this.computedStats.revivalChance ?? 0) > 0 &&
+      globalRNG.chance(this.computedStats.revivalChance ?? 0)
+    ) {
+      this.hp = Math.round(this.maxHp * 0.5);
+      this.invulnerabilityTimer = 0;
+      return 'revived';
+    }
     return 'dead';
   }
 
@@ -303,7 +313,7 @@ export class RunState {
           currentLevel: lv,
           nextLevel: nextLv,
           description: def.descriptionPerLevel,
-          synergyHint: `Evolves: ${BASE_WEAPONS[def.evolvesWeapon].name}`,
+          synergyHint: `Evolves: ${BASE_WEAPONS[def.evolvesWeapon]?.name ?? ''}`,
           accentColor: def.iconColor
         });
       }
@@ -344,7 +354,7 @@ export class RunState {
             currentLevel: 0,
             nextLevel: 1,
             description: def.descriptionPerLevel,
-            synergyHint: `Evolves: ${BASE_WEAPONS[def.evolvesWeapon].name}`,
+            synergyHint: `Evolves: ${BASE_WEAPONS[def.evolvesWeapon]?.name ?? ''}`,
             accentColor: def.iconColor
           });
         }

@@ -7,7 +7,7 @@ export class GroundZone implements WeaponPattern {
     stats: WeaponLevelStats,
     px: number,
     pz: number,
-    _targetAngle: number,
+    targetAngle: number,
     ctx: WeaponFireContext
   ): void {
     const params = def.patternParams ?? {};
@@ -17,6 +17,23 @@ export class GroundZone implements WeaponPattern {
     const amount = stats.amount + ctx.runState.computedStats.bonusAmount;
 
     const baseRadius = params.baseRadius ?? 2.0;
+
+    if (params.isLine) {
+      const step = (params.lineSpacing ?? 2.4) * areaMult;
+      for (let i = 0; i < amount; i++) {
+        const dist = 2.5 + i * step;
+        ctx.spawnGroundZone(
+          px + Math.sin(targetAngle) * dist,
+          pz + Math.cos(targetAngle) * dist,
+          baseRadius * areaMult,
+          dmg,
+          stats.duration,
+          def.knockback
+        );
+      }
+      return;
+    }
+
     const minDist = params.minDist ?? 4;
     const maxDist = params.maxDist ?? 7;
 
