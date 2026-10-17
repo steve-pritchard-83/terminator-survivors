@@ -198,7 +198,7 @@ export interface UpgradeChoice {
 }
 
 export interface MetaSaveData {
-  version: 1;
+  version: number;
   alloyScrap: number;
   totalKills: number;
   bestTimeSeconds: number;

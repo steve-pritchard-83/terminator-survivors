@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { SaveManager } from '../../src/state/SaveManager';
+import { META_UPGRADES } from '../../src/data/upgrades';
 
 describe('SaveManager and Bunker Persistence', () => {
   beforeEach(() => {
@@ -9,6 +10,7 @@ describe('SaveManager and Bunker Persistence', () => {
   it('loads clean default data when storage is empty', () => {
     const sm = new SaveManager();
     const data = sm.getData();
+    expect(data.version).toBe(SaveManager.CURRENT_VERSION);
     expect(data.alloyScrap).toBe(0);
     expect(data.selectedLoadout).toBe('reese_2029');
     expect(data.unlockedLoadouts).toContain('reese_2029');
@@ -65,5 +67,95 @@ describe('SaveManager and Bunker Persistence', () => {
     // Run 3: victory -> unlocks john_connor
     sm.addRunResults(300, 600, 500, true, 2);
     expect(sm.getData().unlockedLoadouts).toContain('john_connor');
+  });
+
+  describe('P3-07 Schema versioning, migrations and import/export', () => {
+    it('migrates a v1 save to v2 and preserves progress', () => {
+      const v1Save = {
+        version: 1,
+        alloyScrap: 350,
+        totalKills: 120,
+        bestTimeSeconds: 420,
+        victories: 1,
+        unlockedLoadouts: ['reese_2029', 'reese_1984'],
+        selectedLoadout: 'reese_1984',
+        upgrades: {
+          armor_vest: 2,
+          combat_stims: 1
+        }
+      };
+      window.localStorage.setItem('TERMINATOR_SURVIVORS_SAVE_V1', JSON.stringify(v1Save));
+
+      const sm = new SaveManager();
+      const data = sm.getData();
+      expect(data.version).toBe(2);
+      expect(data.alloyScrap).toBe(350);
+      expect(data.totalKills).toBe(120);
+      expect(data.bestTimeSeconds).toBe(420);
+      expect(data.selectedLoadout).toBe('reese_1984');
+      expect(data.upgrades.armor_vest).toBe(2);
+      expect(data.upgrades.combat_stims).toBe(1);
+    });
+
+    it('clamps corrupted upgrade values to [0, maxLevel] and restores locked selectedLoadout', () => {
+      const corruptedSave = {
+        version: 2,
+        alloyScrap: -500,
+        unlockedLoadouts: ['reese_2029'],
+        selectedLoadout: 'locked_or_nonexistent_loadout',
+        upgrades: {
+          armor_vest: 999999, // Exceeds maxLevel (5)
+          combat_stims: -10, // Below 0
+          plasma_overclock: NaN
+        }
+      };
+      window.localStorage.setItem('TERMINATOR_SURVIVORS_SAVE_V1', JSON.stringify(corruptedSave));
+
+      const sm = new SaveManager();
+      const data = sm.getData();
+
+      // Scrap cannot be negative
+      expect(data.alloyScrap).toBe(0);
+
+      // Selected loadout must be among unlocked loadouts
+      expect(data.selectedLoadout).toBe('reese_2029');
+
+      // Upgrades clamped to maxLevel and 0
+      expect(data.upgrades.armor_vest).toBe(META_UPGRADES.armor_vest.maxLevel);
+      expect(data.upgrades.combat_stims).toBe(0);
+      expect(data.upgrades.plasma_overclock).toBe(0);
+    });
+
+    it('round-trips exportSave and importSave via base64 encoded JSON', () => {
+      const sm1 = new SaveManager();
+      sm1.addRunResults(75, 300, 850, true, 1);
+      sm1.purchaseUpgrade('armor_vest');
+      sm1.selectLoadout('reese_1984');
+
+      const exportedString = sm1.exportSave();
+      expect(typeof exportedString).toBe('string');
+      expect(exportedString.length).toBeGreaterThan(20);
+
+      // New SaveManager on a different instance / storage
+      window.localStorage.clear();
+      const sm2 = new SaveManager();
+      expect(sm2.getData().alloyScrap).toBe(0);
+
+      const success = sm2.importSave(exportedString);
+      expect(success).toBe(true);
+
+      const data1 = sm1.getData();
+      const data2 = sm2.getData();
+      expect(data2).toEqual(data1);
+      expect(data2.alloyScrap).toBe(data1.alloyScrap);
+      expect(data2.selectedLoadout).toBe('reese_1984');
+    });
+
+    it('rejects malformed or invalid strings during importSave', () => {
+      const sm = new SaveManager();
+      expect(sm.importSave('')).toBe(false);
+      expect(sm.importSave('!!!not_base_64!!!')).toBe(false);
+      expect(sm.importSave(Buffer.from('not json at all').toString('base64'))).toBe(false);
+    });
   });
 });

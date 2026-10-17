@@ -4,6 +4,17 @@ import { LOADOUTS, META_UPGRADES } from '../data/upgrades';
 const STORAGE_KEY = 'TERMINATOR_SURVIVORS_SAVE_V1';
 
 export class SaveManager {
+  public static readonly CURRENT_VERSION = 2;
+
+  public static readonly migrations: Record<number, (old: Record<string, any>) => Record<string, any>> = {
+    1: (old: Record<string, any>) => {
+      return {
+        ...old,
+        version: 2
+      };
+    }
+  };
+
   private data: MetaSaveData;
 
   constructor() {
@@ -16,7 +27,7 @@ export class SaveManager {
 
   private getDefaultData(): MetaSaveData {
     return {
-      version: 1,
+      version: SaveManager.CURRENT_VERSION,
       alloyScrap: 0,
       totalKills: 0,
       bestTimeSeconds: 0,
@@ -43,6 +54,79 @@ export class SaveManager {
     };
   }
 
+  public sanitizeAndMigrate(parsed: any): MetaSaveData {
+    const def = this.getDefaultData();
+    if (!parsed || typeof parsed !== 'object') {
+      return def;
+    }
+
+    let current = { ...parsed };
+    let version = typeof current.version === 'number' ? current.version : 1;
+
+    while (version < SaveManager.CURRENT_VERSION) {
+      const migration = SaveManager.migrations[version];
+      if (migration) {
+        current = migration(current);
+        version = typeof current.version === 'number' ? current.version : version + 1;
+      } else {
+        version = SaveManager.CURRENT_VERSION;
+      }
+    }
+
+    // 1. Validate unlockedLoadouts
+    const unlocked: LoadoutId[] = ['reese_2029'];
+    if (Array.isArray(current.unlockedLoadouts)) {
+      for (const id of current.unlockedLoadouts) {
+        if (id in LOADOUTS && !unlocked.includes(id as LoadoutId)) {
+          unlocked.push(id as LoadoutId);
+        }
+      }
+    }
+
+    // 2. Validate and clamp selectedLoadout (must be unlocked)
+    let selected: LoadoutId = 'reese_2029';
+    if (typeof current.selectedLoadout === 'string' && unlocked.includes(current.selectedLoadout as LoadoutId)) {
+      selected = current.selectedLoadout as LoadoutId;
+    } else {
+      selected = unlocked[0];
+    }
+
+    // 3. Validate and clamp upgrades to [0, maxLevel]
+    const upgrades = { ...def.upgrades };
+    if (current.upgrades && typeof current.upgrades === 'object') {
+      for (const key of Object.keys(META_UPGRADES) as MetaUpgradeId[]) {
+        const cfg = META_UPGRADES[key];
+        const val = current.upgrades[key];
+        if (typeof val === 'number' && !isNaN(val)) {
+          upgrades[key] = Math.max(0, Math.min(cfg.maxLevel, Math.floor(val)));
+        } else {
+          upgrades[key] = 0;
+        }
+      }
+    }
+
+    // 4. Validate settings
+    const settings = {
+      masterVolume: typeof current.settings?.masterVolume === 'number' ? Math.max(0, Math.min(1, current.settings.masterVolume)) : def.settings.masterVolume,
+      musicVolume: typeof current.settings?.musicVolume === 'number' ? Math.max(0, Math.min(1, current.settings.musicVolume)) : def.settings.musicVolume,
+      sfxVolume: typeof current.settings?.sfxVolume === 'number' ? Math.max(0, Math.min(1, current.settings.sfxVolume)) : def.settings.sfxVolume,
+      crtScanlines: typeof current.settings?.crtScanlines === 'boolean' ? current.settings.crtScanlines : def.settings.crtScanlines,
+      autoAim: typeof current.settings?.autoAim === 'boolean' ? current.settings.autoAim : def.settings.autoAim
+    };
+
+    return {
+      version: SaveManager.CURRENT_VERSION,
+      alloyScrap: typeof current.alloyScrap === 'number' && current.alloyScrap >= 0 ? Math.floor(current.alloyScrap) : 0,
+      totalKills: typeof current.totalKills === 'number' && current.totalKills >= 0 ? Math.floor(current.totalKills) : 0,
+      bestTimeSeconds: typeof current.bestTimeSeconds === 'number' && current.bestTimeSeconds >= 0 ? current.bestTimeSeconds : 0,
+      victories: typeof current.victories === 'number' && current.victories >= 0 ? Math.floor(current.victories) : 0,
+      unlockedLoadouts: unlocked,
+      selectedLoadout: selected,
+      upgrades,
+      settings
+    };
+  }
+
   public load(): MetaSaveData {
     try {
       if (typeof window === 'undefined' || !window.localStorage) {
@@ -50,29 +134,8 @@ export class SaveManager {
       }
       const raw = window.localStorage.getItem(STORAGE_KEY);
       if (!raw) return this.getDefaultData();
-      const parsed = JSON.parse(raw) as Partial<MetaSaveData>;
-      const def = this.getDefaultData();
-
-      return {
-        version: 1,
-        alloyScrap: typeof parsed.alloyScrap === 'number' ? parsed.alloyScrap : def.alloyScrap,
-        totalKills: typeof parsed.totalKills === 'number' ? parsed.totalKills : def.totalKills,
-        bestTimeSeconds:
-          typeof parsed.bestTimeSeconds === 'number' ? parsed.bestTimeSeconds : def.bestTimeSeconds,
-        victories: typeof parsed.victories === 'number' ? parsed.victories : def.victories,
-        unlockedLoadouts: Array.isArray(parsed.unlockedLoadouts)
-          ? parsed.unlockedLoadouts
-          : def.unlockedLoadouts,
-        selectedLoadout: parsed.selectedLoadout ?? def.selectedLoadout,
-        upgrades: {
-          ...def.upgrades,
-          ...(parsed.upgrades || {})
-        },
-        settings: {
-          ...def.settings,
-          ...(parsed.settings || {})
-        }
-      };
+      const parsed = JSON.parse(raw);
+      return this.sanitizeAndMigrate(parsed);
     } catch {
       return this.getDefaultData();
     }
@@ -85,6 +148,33 @@ export class SaveManager {
       }
     } catch {
       // Ignored if local storage disabled/quota exceeded
+    }
+  }
+
+  public exportSave(): string {
+    const json = JSON.stringify(this.data);
+    if (typeof Buffer !== 'undefined') {
+      return Buffer.from(json, 'utf-8').toString('base64');
+    }
+    return btoa(unescape(encodeURIComponent(json)));
+  }
+
+  public importSave(str: string): boolean {
+    if (!str || typeof str !== 'string') return false;
+    try {
+      let json: string;
+      if (typeof Buffer !== 'undefined') {
+        json = Buffer.from(str.trim(), 'base64').toString('utf-8');
+      } else {
+        json = decodeURIComponent(escape(atob(str.trim())));
+      }
+      const parsed = JSON.parse(json);
+      if (!parsed || typeof parsed !== 'object') return false;
+      this.data = this.sanitizeAndMigrate(parsed);
+      this.save();
+      return true;
+    } catch {
+      return false;
     }
   }
 
