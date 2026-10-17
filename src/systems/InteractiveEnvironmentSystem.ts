@@ -162,7 +162,7 @@ export class InteractiveEnvironmentSystem {
     const blastDamage = 220;
 
     // Visual & Audio effects
-    this.audio.playExplosion(1.6);
+    this.audio.playExplosion(1.6, x, z, this.runState.playerPos.x, this.runState.playerPos.z);
     this.particles.spawnExplosion(x, 0.4, z, 1.6);
     globalEvents.emit('camera:shake', { trauma: 0.38 });
 
@@ -292,7 +292,7 @@ export class InteractiveEnvironmentSystem {
 
     if (car.hp <= 0) {
       car.isDestroyed = true;
-      this.audio.playExplosion(1.2);
+      this.audio.playExplosion(1.2, car.x, car.z, this.runState.playerPos.x, this.runState.playerPos.z);
       this.particles.spawnExplosion(car.x, 0.5, car.z, 1.3);
       globalEvents.emit('camera:shake', { trauma: 0.25 });
 

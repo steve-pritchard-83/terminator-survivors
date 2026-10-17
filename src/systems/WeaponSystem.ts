@@ -543,7 +543,7 @@ export class WeaponSystem {
             p.weaponId as WeaponId
           );
           if (hit) {
-            this.audio.playEndoHit();
+            this.audio.playEndoHit(p.x, p.z, this.runState.playerPos.x, this.runState.playerPos.z);
             this.particles.spawnPlasmaImpact(p.x, p.y, p.z);
             p.pierceLeft--;
             if (p.pierceLeft <= 0) break;
@@ -554,7 +554,13 @@ export class WeaponSystem {
       // Expire or ground hit
       if (p.life >= p.maxLife || p.pierceLeft <= 0 || (p.vy !== 0 && p.y <= 0.2)) {
         if (p.isAreaOnExpire && p.areaRadius) {
-          this.audio.playExplosion(p.areaRadius > 3 ? 1.5 : 1.0);
+          this.audio.playExplosion(
+            p.areaRadius > 3 ? 1.5 : 1.0,
+            p.x,
+            p.z,
+            this.runState.playerPos.x,
+            this.runState.playerPos.z
+          );
           this.particles.spawnExplosion(p.x, 0.2, p.z, p.areaRadius > 3 ? 1.4 : 1.0);
           globalEvents.emit('camera:shake', { trauma: p.areaRadius > 3 ? 0.35 : 0.22 });
           const splash = this.grid.queryRadius(p.x, p.z, p.areaRadius, this.projectileSplashScratch);

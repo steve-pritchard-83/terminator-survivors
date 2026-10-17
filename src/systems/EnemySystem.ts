@@ -223,7 +223,7 @@ export class EnemySystem {
 
   private killEnemy(enemy: ActiveEnemy, index: number): void {
     this.activeEnemies.splice(index, 1);
-    this.runState.kills++; this.audio.playEndoDestroy();
+    this.runState.kills++; this.audio.playEndoDestroy(enemy.x, enemy.z, this.runState.playerPos.x, this.runState.playerPos.z);
     this.particles.spawnExplosion(enemy.x, 0.5, enemy.z, enemy.isBoss ? 2.0 : 0.8);
     this.particles.spawnEnemyDebris(enemy.x, 0.5, enemy.z, enemy.isBoss ? 8 : undefined);
     if (enemy.isElite) handleEliteDeath(enemy, this.context);

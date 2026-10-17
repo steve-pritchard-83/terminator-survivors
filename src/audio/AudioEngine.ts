@@ -311,7 +311,8 @@ export class AudioEngine {
     category: string,
     gainValue = 0.65,
     playbackRate = 1.0,
-    pitchJitter = 0.06
+    pitchJitter = 0.06,
+    pan = 0
   ): boolean {
     if (this.isMuted) return false;
     if (!this.initialized) {
@@ -328,6 +329,11 @@ export class AudioEngine {
       const buffer = list[Math.floor(Math.random() * list.length)];
       const source = this.ctx.createBufferSource();
       const gain = this.ctx.createGain();
+      let panner: StereoPannerNode | null = null;
+      if (typeof this.ctx.createStereoPanner === 'function' && Math.abs(pan) > 0.001) {
+        panner = this.ctx.createStereoPanner();
+        panner.pan.value = Math.max(-1, Math.min(1, pan));
+      }
       slot.source = source;
 
       source.buffer = buffer;
@@ -336,7 +342,12 @@ export class AudioEngine {
       gain.gain.value = gainValue;
 
       source.connect(gain);
-      gain.connect(this.sfxGain);
+      if (panner) {
+        gain.connect(panner);
+        panner.connect(this.sfxGain);
+      } else {
+        gain.connect(this.sfxGain);
+      }
       source.start(0);
       source.onended = () => {
         if (slot.source === source) {
@@ -344,6 +355,9 @@ export class AudioEngine {
         }
         source.disconnect();
         gain.disconnect();
+        if (panner) {
+          panner.disconnect();
+        }
       };
       return true;
     }
@@ -649,19 +663,95 @@ export class AudioEngine {
     }
   }
 
+  /**
+   * Calculates stereo pan (-1 to 1) and distance attenuation (0.12 to 1)
+   * relative to player/camera position.
+   */
+  public calculateSpatialParams(
+    sourceX: number,
+    sourceZ: number,
+    playerX: number,
+    playerZ: number,
+    referenceDist = 8,
+    maxPanSpread = 16
+  ): { pan: number; attenuation: number; dist: number } {
+    const dx = sourceX - playerX;
+    const dz = sourceZ - playerZ;
+    const dist = Math.hypot(dx, dz);
+    const pan = Math.max(-1, Math.min(1, dx / maxPanSpread));
+    const dropoff = Math.max(0, dist - referenceDist);
+    const attenuation = Math.max(0.12, 1 / (1 + dropoff * 0.09));
+    return { pan, attenuation, dist };
+  }
+
+  /**
+   * Maps a viewport screen-space x coordinate (0 to screenWidth) to stereo pan (-1 to 1).
+   */
+  public calculateScreenPan(
+    screenX: number,
+    screenWidth = typeof window !== 'undefined' ? window.innerWidth : 1280
+  ): number {
+    if (screenWidth <= 0) return 0;
+    return Math.max(-1, Math.min(1, (screenX / screenWidth) * 2 - 1));
+  }
+
   // Authentic WAV Sound Effect Triggers (Combat & UI)
-  public playPlasmaShot(isHeavy = false): void {
-    this.playSample(isHeavy ? 'plasmaHeavy' : 'plasmaLight', isHeavy ? 0.65 : 0.5);
+  public playPlasmaShot(
+    isHeavy = false,
+    sourceX?: number,
+    sourceZ?: number,
+    playerX?: number,
+    playerZ?: number
+  ): void {
+    let pan = 0;
+    let attenuation = 1.0;
+    if (sourceX !== undefined && sourceZ !== undefined && playerX !== undefined && playerZ !== undefined) {
+      const spatial = this.calculateSpatialParams(sourceX, sourceZ, playerX, playerZ, 6, 16);
+      pan = spatial.pan;
+      attenuation = spatial.attenuation;
+    }
+    const baseGain = isHeavy ? 0.65 : 0.5;
+    this.playSample(isHeavy ? 'plasmaHeavy' : 'plasmaLight', baseGain * attenuation, 1.0, 0.06, pan);
   }
 
-  public playShotgunBlast(): void {
+  public playShotgunBlast(
+    sourceX?: number,
+    sourceZ?: number,
+    playerX?: number,
+    playerZ?: number
+  ): void {
+    let pan = 0;
+    let attenuation = 1.0;
+    if (sourceX !== undefined && sourceZ !== undefined && playerX !== undefined && playerZ !== undefined) {
+      const spatial = this.calculateSpatialParams(sourceX, sourceZ, playerX, playerZ, 6, 16);
+      pan = spatial.pan;
+      attenuation = spatial.attenuation;
+    }
     this.triggerHaptic(12, 80);
-    this.playSample('shotgun', 0.72);
+    this.playSample('shotgun', 0.72 * attenuation, 1.0, 0.06, pan);
   }
 
-  public playExplosion(scale = 1.0): void {
-    this.triggerHaptic(scale > 1.3 ? [28, 30, 40] : 22, 90);
-    this.playSample('explosion', Math.min(0.9, 0.55 * scale), scale > 1.3 ? 0.88 : 1.0);
+  public playExplosion(
+    scale = 1.0,
+    sourceX?: number,
+    sourceZ?: number,
+    playerX?: number,
+    playerZ?: number
+  ): void {
+    let pan = 0;
+    let attenuation = 1.0;
+    let dist = 0;
+    if (sourceX !== undefined && sourceZ !== undefined && playerX !== undefined && playerZ !== undefined) {
+      const spatial = this.calculateSpatialParams(sourceX, sourceZ, playerX, playerZ, 8, 18);
+      pan = spatial.pan;
+      attenuation = spatial.attenuation;
+      dist = spatial.dist;
+    }
+    if (dist < 24) {
+      this.triggerHaptic(scale > 1.3 ? [28, 30, 40] : 22, 90);
+    }
+    const finalGain = Math.min(0.9, 0.55 * scale * attenuation);
+    this.playSample('explosion', finalGain, scale > 1.3 ? 0.88 : 1.0, 0.06, pan);
   }
 
   public playEmpBlast(): void {
@@ -695,13 +785,41 @@ export class AudioEngine {
     }
   }
 
-  public playEndoHit(): void {
-    this.playSample('endoHit', 0.42);
+  public playEndoHit(
+    sourceX?: number,
+    sourceZ?: number,
+    playerX?: number,
+    playerZ?: number
+  ): void {
+    let pan = 0;
+    let attenuation = 1.0;
+    if (sourceX !== undefined && sourceZ !== undefined && playerX !== undefined && playerZ !== undefined) {
+      const spatial = this.calculateSpatialParams(sourceX, sourceZ, playerX, playerZ, 6, 14);
+      pan = spatial.pan;
+      attenuation = spatial.attenuation;
+    }
+    this.playSample('endoHit', 0.42 * attenuation, 1.0, 0.06, pan);
   }
 
-  public playEndoDestroy(): void {
-    this.triggerHaptic(10, 65);
-    this.playSample('endoDestroy', 0.52, 1.05);
+  public playEndoDestroy(
+    sourceX?: number,
+    sourceZ?: number,
+    playerX?: number,
+    playerZ?: number
+  ): void {
+    let pan = 0;
+    let attenuation = 1.0;
+    let dist = 0;
+    if (sourceX !== undefined && sourceZ !== undefined && playerX !== undefined && playerZ !== undefined) {
+      const spatial = this.calculateSpatialParams(sourceX, sourceZ, playerX, playerZ, 7, 16);
+      pan = spatial.pan;
+      attenuation = spatial.attenuation;
+      dist = spatial.dist;
+    }
+    if (dist < 20) {
+      this.triggerHaptic(10, 65);
+    }
+    this.playSample('endoDestroy', 0.52 * attenuation, 1.05, 0.06, pan);
   }
 
   public playBossStinger(): void {
