@@ -9,22 +9,17 @@ fs.mkdirSync(iconDir, { recursive: true });
 fs.mkdirSync(fontDir, { recursive: true });
 fs.mkdirSync(audioDir, { recursive: true });
 
-// Stage authentic reference font files & looping background music into public/
-const refDir = path.resolve('docs/reference');
-if (fs.existsSync(path.join(refDir, 'terminator real nfi.ttf'))) {
-  fs.copyFileSync(path.join(refDir, 'terminator real nfi.ttf'), path.join(fontDir, 'terminator-real-nfi.ttf'));
-}
-if (fs.existsSync(path.join(refDir, 'terminator real nfi.otf'))) {
-  fs.copyFileSync(path.join(refDir, 'terminator real nfi.otf'), path.join(fontDir, 'terminator-real-nfi.otf'));
-}
-if (fs.existsSync(path.join(refDir, 'backgroundmusic.mp3'))) {
-  fs.copyFileSync(path.join(refDir, 'backgroundmusic.mp3'), path.join(audioDir, 'backgroundmusic.mp3'));
+// Verify fonts and audio assets in public/
+const fontTtf = path.join(fontDir, 'terminator-real-nfi.ttf');
+const audioBg = path.join(audioDir, 'backgroundmusic.mp3');
+if (!fs.existsSync(fontTtf) || !fs.existsSync(audioBg)) {
+  console.warn('Warning: Core font or background music asset missing in public/');
 }
 
 // Preserve custom artwork PWA icons if already staged in public/icons
 const existingIcon512 = path.join(iconDir, 'icon-512.png');
 if (fs.existsSync(existingIcon512) && fs.statSync(existingIcon512).size > 8192) {
-  console.log('Staged fonts, backgroundmusic.mp3, and verified custom PWA icons in public/icons/');
+  console.log('Verified core fonts, audio, and custom PWA icons in public/');
   process.exit(0);
 }
 
@@ -90,4 +85,4 @@ fs.writeFileSync(
   path.join(iconDir, 'favicon.svg'),
   `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"><rect width="128" height="128" rx="20" fill="#050d1a"/><path d="M32 40 L96 40 L88 84 L74 104 L54 104 L40 84 Z" fill="#9ca8b8" stroke="#4dd2ff" stroke-width="3"/><circle cx="48" cy="60" r="10" fill="#ff1111"/><circle cx="80" cy="60" r="10" fill="#ff1111"/></svg>`
 );
-console.log('Staged fonts, backgroundmusic.mp3, and generated PWA icons in public/');
+console.log('Generated PWA icons in public/');
