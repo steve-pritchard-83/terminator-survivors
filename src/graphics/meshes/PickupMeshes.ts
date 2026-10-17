@@ -7,8 +7,16 @@ function markShared<T extends THREE.BufferGeometry | THREE.Material>(asset: T): 
   return asset;
 }
 
+export type GemTier = 1 | 2 | 3;
+
+export function getGemTier(xpValue: number): GemTier {
+  if (xpValue >= 20) return 3;
+  if (xpValue >= 5) return 2;
+  return 1;
+}
+
 export class PickupMeshFactory {
-  private static crystalGeo = markShared(
+  public static readonly crystalGeo = markShared(
     mergeParts([
       // Tall floating vertical diamond crystal (stretched octahedron)
       bakePart(
@@ -25,15 +33,17 @@ export class PickupMeshFactory {
       bakePart(new THREE.TorusGeometry(0.2, 0.022, 6, 8), 0, 0.12, 0, Math.PI / 2, 0, 0, 0xd8f8ff)
     ])
   );
-  private static beamGeo = markShared(new THREE.CylinderGeometry(0.025, 0.11, 1.25, 8, 1, true));
-  private static groundRingGeo = markShared(new THREE.RingGeometry(0.16, 0.26, 16));
-  private static crateGeo = markShared(new THREE.BoxGeometry(0.8, 0.8, 0.8));
-  private static vaultGeo = markShared(new THREE.BoxGeometry(1.4, 0.9, 1.0));
-  private static chevronGeo = markShared(new THREE.BoxGeometry(0.5, 0.08, 0.82));
-  private static screenGeo = markShared(new THREE.BoxGeometry(0.8, 0.24, 1.02));
+  public static readonly beamGeo = markShared(
+    new THREE.CylinderGeometry(0.025, 0.11, 1.25, 8, 1, true)
+  );
+  public static readonly groundRingGeo = markShared(new THREE.RingGeometry(0.16, 0.26, 16));
+  public static readonly crateGeo = markShared(new THREE.BoxGeometry(0.8, 0.8, 0.8));
+  public static readonly vaultGeo = markShared(new THREE.BoxGeometry(1.4, 0.9, 1.0));
+  public static readonly chevronGeo = markShared(new THREE.BoxGeometry(0.5, 0.08, 0.82));
+  public static readonly screenGeo = markShared(new THREE.BoxGeometry(0.8, 0.24, 1.02));
 
   // Tier 1 XP: Vibrant Neon Emerald Green
-  private static emeraldMat = markShared(
+  public static readonly emeraldMat = markShared(
     new THREE.MeshStandardMaterial({
       color: 0x00ff66,
       vertexColors: true,
@@ -43,7 +53,7 @@ export class PickupMeshFactory {
       roughness: 0.25
     })
   );
-  private static emeraldBeamMat = markShared(
+  public static readonly emeraldBeamMat = markShared(
     new THREE.MeshBasicMaterial({
       color: 0x00ff66,
       transparent: true,
@@ -55,7 +65,7 @@ export class PickupMeshFactory {
   );
 
   // Tier 2 XP (xp >= 5): Vibrant Solar Gold
-  private static goldMat = markShared(
+  public static readonly goldMat = markShared(
     new THREE.MeshStandardMaterial({
       color: 0xffc400,
       vertexColors: true,
@@ -65,7 +75,7 @@ export class PickupMeshFactory {
       roughness: 0.22
     })
   );
-  private static goldBeamMat = markShared(
+  public static readonly goldBeamMat = markShared(
     new THREE.MeshBasicMaterial({
       color: 0xffc400,
       transparent: true,
@@ -77,7 +87,7 @@ export class PickupMeshFactory {
   );
 
   // Tier 3 XP (xp >= 20): High-energy Neon Magenta-Ruby
-  private static rubyMat = markShared(
+  public static readonly rubyMat = markShared(
     new THREE.MeshStandardMaterial({
       color: 0xff0066,
       vertexColors: true,
@@ -87,7 +97,7 @@ export class PickupMeshFactory {
       roughness: 0.2
     })
   );
-  private static rubyBeamMat = markShared(
+  public static readonly rubyBeamMat = markShared(
     new THREE.MeshBasicMaterial({
       color: 0xff0066,
       transparent: true,
@@ -98,7 +108,7 @@ export class PickupMeshFactory {
     })
   );
 
-  private static crateMat = markShared(
+  public static readonly crateMat = markShared(
     new THREE.MeshStandardMaterial({
       color: 0x3d4734, // Olive drab army crate
       metalness: 0.3,
@@ -106,7 +116,7 @@ export class PickupMeshFactory {
     })
   );
 
-  private static vaultMat = markShared(
+  public static readonly vaultMat = markShared(
     new THREE.MeshStandardMaterial({
       color: 0x2b313a,
       metalness: 0.6,
@@ -114,8 +124,8 @@ export class PickupMeshFactory {
     })
   );
 
-  private static chevronMat = markShared(new THREE.MeshBasicMaterial({ color: 0xdfe8f0 }));
-  private static screenMat = markShared(new THREE.MeshBasicMaterial({ color: 0xff2222 }));
+  public static readonly chevronMat = markShared(new THREE.MeshBasicMaterial({ color: 0xdfe8f0 }));
+  public static readonly screenMat = markShared(new THREE.MeshBasicMaterial({ color: 0xff2222 }));
 
   public static createDataCore(xpValue: number): THREE.Group {
     let mat = this.emeraldMat;

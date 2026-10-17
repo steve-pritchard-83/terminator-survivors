@@ -1,15 +1,19 @@
 import * as THREE from 'three';
 import { disposeObject3D } from '../graphics/dispose';
+import { InstancedPool, type PoolableUser } from '../graphics/InstancedPool';
 import type { RunState } from '../state/RunState';
 import type { AudioEngine } from '../audio/AudioEngine';
 import type { SpatialEntity } from '../core/types';
-import { PickupMeshFactory } from '../graphics/meshes/PickupMeshes';
+import { PickupMeshFactory, type GemTier, getGemTier } from '../graphics/meshes/PickupMeshes';
 import { globalEvents } from '../core/EventBus';
 import { globalRNG } from '../core/RNG';
 
-export interface ActivePickup extends SpatialEntity {
-  mesh: THREE.Object3D;
+export interface ActivePickup extends SpatialEntity, PoolableUser {
+  mesh?: THREE.Object3D;
   kind: 'core' | 'crate' | 'vault';
+  tier?: GemTier;
+  poolIndex: number;
+  rotationY: number;
   xpValue: number;
   attracted: boolean;
 }
@@ -22,12 +26,58 @@ export class PickupSystem {
   private readonly runState: RunState;
   private readonly audio: AudioEngine;
 
+  private readonly crystalPools: Record<GemTier, InstancedPool<ActivePickup>>;
+  private readonly beamPools: Record<GemTier, InstancedPool>;
+  private coreCount = 0;
+
   private comboCount = 0;
   private comboTimer = 0;
 
   constructor(runState: RunState, audio: AudioEngine) {
     this.runState = runState;
     this.audio = audio;
+
+    this.crystalPools = {
+      1: new InstancedPool<ActivePickup>(
+        PickupMeshFactory.crystalGeo,
+        PickupMeshFactory.emeraldMat,
+        512,
+        this.group
+      ),
+      2: new InstancedPool<ActivePickup>(
+        PickupMeshFactory.crystalGeo,
+        PickupMeshFactory.goldMat,
+        256,
+        this.group
+      ),
+      3: new InstancedPool<ActivePickup>(
+        PickupMeshFactory.crystalGeo,
+        PickupMeshFactory.rubyMat,
+        128,
+        this.group
+      )
+    };
+
+    this.beamPools = {
+      1: new InstancedPool(
+        PickupMeshFactory.beamGeo,
+        PickupMeshFactory.emeraldBeamMat,
+        512,
+        this.group
+      ),
+      2: new InstancedPool(
+        PickupMeshFactory.beamGeo,
+        PickupMeshFactory.goldBeamMat,
+        256,
+        this.group
+      ),
+      3: new InstancedPool(
+        PickupMeshFactory.beamGeo,
+        PickupMeshFactory.rubyBeamMat,
+        128,
+        this.group
+      )
+    };
 
     // Listen for enemy kill events to drop data cores or crates
     globalEvents.on('enemy:killed', ({ enemy, x, z, xp }) => {
@@ -60,21 +110,117 @@ export class PickupSystem {
   }
 
   public spawnDataCore(x: number, z: number, xpValue: number): void {
-    const mesh = PickupMeshFactory.createDataCore(xpValue);
-    mesh.position.set(x, 0.35, z);
-    this.group.add(mesh);
-
-    this.pickups.push({
+    const tier = getGemTier(xpValue);
+    const pickup: ActivePickup = {
       id: this.nextPickupId++,
       type: 'pickup',
       kind: 'core',
+      tier,
+      poolIndex: 0,
+      rotationY: globalRNG.next() * Math.PI * 2,
       x,
       z,
       radius: 0.5,
       xpValue,
-      attracted: false,
-      mesh
-    });
+      attracted: false
+    };
+
+    pickup.poolIndex = this.crystalPools[tier].acquire(pickup);
+    this.beamPools[tier].acquire();
+
+    const scale = tier === 3 ? 1.38 : tier === 2 ? 1.18 : 1.0;
+    this.crystalPools[tier].setTransform(
+      pickup.poolIndex,
+      x,
+      0.35,
+      z,
+      pickup.rotationY,
+      0,
+      scale,
+      scale,
+      scale
+    );
+    this.beamPools[tier].setTransform(pickup.poolIndex, x, 0.9, z, 0, 0, scale, 1, scale);
+
+    this.pickups.push(pickup);
+    this.coreCount++;
+
+    if (this.coreCount > 250) {
+      this.mergeOldestCore();
+    }
+  }
+
+  private mergeOldestCore(): void {
+    // Find the oldest core that has another core within 3m
+    for (let i = 0; i < this.pickups.length; i++) {
+      const oldest = this.pickups[i];
+      if (oldest.kind !== 'core') continue;
+
+      let nearestTarget: ActivePickup | null = null;
+      let minDistSq = 9.0; // 3m * 3m
+
+      for (let j = 0; j < this.pickups.length; j++) {
+        const other = this.pickups[j];
+        if (i === j || other.kind !== 'core') continue;
+        const dx = other.x - oldest.x;
+        const dz = other.z - oldest.z;
+        const distSq = dx * dx + dz * dz;
+        if (
+          distSq < minDistSq ||
+          (distSq === minDistSq && other.xpValue > (nearestTarget?.xpValue ?? 0))
+        ) {
+          minDistSq = distSq;
+          nearestTarget = other;
+        }
+      }
+
+      if (nearestTarget) {
+        // Merge oldest into nearestTarget
+        nearestTarget.xpValue += oldest.xpValue;
+
+        const oldTier = nearestTarget.tier!;
+        const newTier = getGemTier(nearestTarget.xpValue);
+        if (newTier !== oldTier) {
+          this.crystalPools[oldTier].release(nearestTarget.poolIndex);
+          this.beamPools[oldTier].release(nearestTarget.poolIndex);
+          nearestTarget.tier = newTier;
+          nearestTarget.poolIndex = this.crystalPools[newTier].acquire(nearestTarget);
+          this.beamPools[newTier].acquire();
+
+          const scale = newTier === 3 ? 1.38 : newTier === 2 ? 1.18 : 1.0;
+          this.crystalPools[newTier].setTransform(
+            nearestTarget.poolIndex,
+            nearestTarget.x,
+            0.35,
+            nearestTarget.z,
+            nearestTarget.rotationY,
+            0,
+            scale,
+            scale,
+            scale
+          );
+          this.beamPools[newTier].setTransform(
+            nearestTarget.poolIndex,
+            nearestTarget.x,
+            0.9,
+            nearestTarget.z,
+            0,
+            0,
+            scale,
+            1,
+            scale
+          );
+        }
+
+        // Release oldest core from pool and array
+        const oldestTier = oldest.tier!;
+        this.crystalPools[oldestTier].release(oldest.poolIndex);
+        this.beamPools[oldestTier].release(oldest.poolIndex);
+        this.pickups.splice(i, 1);
+        this.coreCount--;
+        return;
+      }
+    }
   }
 
   public spawnSupplyCrate(x: number, z: number): void {
@@ -86,6 +232,8 @@ export class PickupSystem {
       id: this.nextPickupId++,
       type: 'crate',
       kind: 'crate',
+      poolIndex: 0,
+      rotationY: 0,
       x,
       z,
       radius: 0.8,
@@ -104,6 +252,8 @@ export class PickupSystem {
       id: this.nextPickupId++,
       type: 'pickup',
       kind: 'vault',
+      poolIndex: 0,
+      rotationY: 0,
       x,
       z,
       radius: 1.2,
@@ -128,7 +278,10 @@ export class PickupSystem {
     for (let i = this.pickups.length - 1; i >= 0; i--) {
       if (this.runState.mode !== 'playing') break;
       const p = this.pickups[i];
-      p.mesh.rotation.y += dt * 2.8; // Spin animation
+      p.rotationY += dt * 2.8; // Spin animation
+      if (p.mesh) {
+        p.mesh.rotation.y = p.rotationY;
+      }
 
       const dx = px - p.x;
       const dz = pz - p.z;
@@ -143,7 +296,32 @@ export class PickupSystem {
           p.x += (dx / dist) * pullSpeed * dt;
           p.z += (dz / dist) * pullSpeed * dt;
         }
-        p.mesh.position.set(p.x, bobY, p.z);
+
+        if (p.tier !== undefined) {
+          const scale = p.tier === 3 ? 1.38 : p.tier === 2 ? 1.18 : 1.0;
+          this.crystalPools[p.tier].setTransform(
+            p.poolIndex,
+            p.x,
+            bobY,
+            p.z,
+            p.rotationY,
+            0,
+            scale,
+            scale,
+            scale
+          );
+          this.beamPools[p.tier].setTransform(
+            p.poolIndex,
+            p.x,
+            bobY + 0.55,
+            p.z,
+            0,
+            0,
+            scale,
+            1,
+            scale
+          );
+        }
       }
 
       // Collect pickup if player reaches it
@@ -155,10 +333,17 @@ export class PickupSystem {
 
   private collectPickup(p: ActivePickup, index: number): void {
     this.pickups.splice(index, 1);
-    this.group.remove(p.mesh);
-    disposeObject3D(p.mesh);
+    if (p.mesh) {
+      this.group.remove(p.mesh);
+      disposeObject3D(p.mesh);
+    }
 
     if (p.kind === 'core') {
+      this.coreCount--;
+      if (p.tier !== undefined) {
+        this.crystalPools[p.tier].release(p.poolIndex);
+        this.beamPools[p.tier].release(p.poolIndex);
+      }
       this.comboCount++;
       this.comboTimer = 1.2;
       this.audio.playPickupGem(this.comboCount);
@@ -215,9 +400,14 @@ export class PickupSystem {
 
   public clear(): void {
     for (const p of this.pickups) {
-      this.group.remove(p.mesh);
-      disposeObject3D(p.mesh);
+      if (p.mesh) {
+        this.group.remove(p.mesh);
+        disposeObject3D(p.mesh);
+      }
     }
     this.pickups.length = 0;
+    this.coreCount = 0;
+    for (const pool of Object.values(this.crystalPools)) pool.clear();
+    for (const pool of Object.values(this.beamPools)) pool.clear();
   }
 }
