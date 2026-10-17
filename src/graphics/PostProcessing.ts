@@ -39,16 +39,16 @@ export const CameronGradingShader = {
       float b = texture2D(tDiffuse, vUv - offset).b;
       vec3 col = vec3(r, g, b);
 
-      // Cold James Cameron 2029 Cobalt-Teal shadow lift & bright silver highlight curve
-      col = pow(max(col, vec3(0.0)), vec3(0.84)) * 1.18;
-      vec3 coldShadows = vec3(0.05, 0.13, 0.26);
+      // Cold James Cameron 2029 Cobalt-Teal shadow lift & crisp silver highlight curve
+      col = pow(max(col, vec3(0.0)), vec3(0.92)) * 1.06;
+      vec3 coldShadows = vec3(0.03, 0.08, 0.16);
       float luma = dot(col, vec3(0.299, 0.587, 0.114));
-      col = mix(col + coldShadows * (1.0 - luma) * 0.55, col * vec3(0.96, 1.04, 1.15), smoothstep(0.08, 0.75, luma));
+      col = mix(col + coldShadows * (1.0 - luma) * 0.35, col * vec3(0.96, 1.02, 1.10), smoothstep(0.08, 0.75, luma));
 
       // Subtle 35mm film grain & gentle vignette
-      float grain = (rand(vUv + fract(uTime)) - 0.5) * 0.024;
-      float vignette = smoothstep(0.95, 0.35, dist);
-      col = (col + grain) * mix(0.76, 1.0, vignette);
+      float grain = (rand(vUv + fract(uTime)) - 0.5) * 0.018;
+      float vignette = smoothstep(0.98, 0.38, dist);
+      col = (col + grain) * mix(0.78, 1.0, vignette);
 
       // Crimson optical damage flash
       col = mix(col, vec3(0.95, 0.08, 0.08), clamp(uDamageFlash, 0.0, 0.65));
@@ -63,24 +63,36 @@ export class PostProcessingManager {
   private readonly bloomPass: UnrealBloomPass;
   private readonly gradingPass: ShaderPass;
 
-  private aberrationTarget = 0.0012;
-  private currentAberration = 0.0012;
+  private aberrationTarget = 0.0008;
+  private currentAberration = 0.0008;
   private damageFlash = 0.0;
 
   constructor(renderer: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.Camera) {
-    this.composer = new EffectComposer(renderer);
+    const size = new THREE.Vector2();
+    renderer.getSize(size);
+    const pixelRatio = renderer.getPixelRatio();
+
+    // Use WebGL2 multisampled render target (4x MSAA) for razor-sharp mesh edges
+    const renderTarget = new THREE.WebGLRenderTarget(
+      Math.max(1, Math.floor(size.x * pixelRatio)),
+      Math.max(1, Math.floor(size.y * pixelRatio)),
+      {
+        type: THREE.HalfFloatType,
+        samples: 4
+      }
+    );
+
+    this.composer = new EffectComposer(renderer, renderTarget);
 
     const renderPass = new RenderPass(scene, camera);
     this.composer.addPass(renderPass);
 
-    const size = new THREE.Vector2();
-    renderer.getSize(size);
-
+    // High threshold (1.35) ensures ONLY high-emissive lasers, plasma bolts, and red optics bloom
     this.bloomPass = new UnrealBloomPass(
-      new THREE.Vector2(size.x * 0.5, size.y * 0.5),
-      1.15, // strength
-      0.45, // radius
-      0.72  // threshold
+      new THREE.Vector2(Math.max(1, size.x), Math.max(1, size.y)),
+      0.42, // controlled strength (no nuclear blobs)
+      0.28, // tight halo radius
+      1.35  // strict HDR threshold so skulls/cars/ground never bloom
     );
     this.composer.addPass(this.bloomPass);
 
@@ -90,7 +102,7 @@ export class PostProcessingManager {
 
   public setSize(width: number, height: number): void {
     this.composer.setSize(width, height);
-    this.bloomPass.resolution.set(width * 0.5, height * 0.5);
+    this.bloomPass.resolution.set(width, height);
   }
 
   public triggerDamageFlash(): void {

@@ -13,152 +13,252 @@ export class KyleReeseMesh {
 
   constructor() {
     const trouserMat = new THREE.MeshStandardMaterial({
-      color: 0x455260, // Combat slate trousers
-      emissive: 0x101824,
-      emissiveIntensity: 0.35,
-      roughness: 0.75,
-      metalness: 0.15
+      color: 0x3b4856, // Combat slate trousers
+      roughness: 0.78,
+      metalness: 0.12
     });
 
     const bootMat = new THREE.MeshStandardMaterial({
-      color: 0x22262c,
+      color: 0x1c2026,
       roughness: 0.65,
       metalness: 0.25
     });
 
     const coatMat = new THREE.MeshStandardMaterial({
-      color: 0x70695b, // Weathered khaki/olive trenchcoat
-      emissive: 0x1c1a15,
-      emissiveIntensity: 0.35,
-      roughness: 0.8,
+      color: 0x5c584c, // Weathered olive-charcoal trenchcoat
+      roughness: 0.82,
       metalness: 0.1
     });
 
+    const vestMat = new THREE.MeshStandardMaterial({
+      color: 0x2c353e, // Tactical under-vest & shoulder armor
+      roughness: 0.6,
+      metalness: 0.35
+    });
+
     const skinMat = new THREE.MeshStandardMaterial({
-      color: 0xd2a484,
-      emissive: 0x241810,
-      emissiveIntensity: 0.25,
+      color: 0xd4a383,
       roughness: 0.55,
       metalness: 0.0
     });
 
-    const bandolierMat = new THREE.MeshStandardMaterial({
-      color: 0x4a3525,
-      roughness: 0.55,
-      metalness: 0.25
+    const hairMat = new THREE.MeshStandardMaterial({
+      color: 0x3a2b20,
+      roughness: 0.85,
+      metalness: 0.05
     });
 
-    const gunMat = new THREE.MeshStandardMaterial({
-      color: 0x687686,
-      emissive: 0x182230,
-      emissiveIntensity: 0.3,
-      metalness: 0.75,
+    const bandolierMat = new THREE.MeshStandardMaterial({
+      color: 0x4a3322,
+      roughness: 0.6,
+      metalness: 0.2
+    });
+
+    const brassMat = new THREE.MeshStandardMaterial({
+      color: 0xd4af37,
+      metalness: 0.85,
       roughness: 0.25
     });
 
-    // Tactical Ground Ring & Tech-Com Perimeter Light (illuminates Kyle & immediate surroundings)
-    const ringGeo = new THREE.RingGeometry(0.58, 0.7, 24);
+    const gunMat = new THREE.MeshStandardMaterial({
+      color: 0x556474,
+      metalness: 0.8,
+      roughness: 0.25
+    });
+
+    // Subtle Tactical Ground Ring & Soft Rim Light (never blows out bloom)
+    const ringGeo = new THREE.RingGeometry(0.56, 0.64, 32);
     ringGeo.rotateX(-Math.PI / 2);
     const ringMat = new THREE.MeshBasicMaterial({
-      color: 0x00e5ff,
+      color: 0x00b8e6,
       transparent: true,
-      opacity: 0.55,
+      opacity: 0.42,
       side: THREE.DoubleSide
     });
     const groundRing = new THREE.Mesh(ringGeo, ringMat);
-    groundRing.position.y = 0.04;
+    groundRing.position.y = 0.03;
     this.group.add(groundRing);
 
-    const playerLight = new THREE.PointLight(0x88ccff, 6.5, 22, 1.1);
-    playerLight.position.set(0, 4.2, 0);
+    const playerLight = new THREE.PointLight(0x70a8e8, 1.15, 14, 1.4);
+    playerLight.position.set(0, 3.6, 0);
     this.group.add(playerLight);
 
-    // 1. Legs
-    this.leftLeg = new THREE.Group();
-    this.leftLeg.position.set(-0.16, 0.75, 0);
-    const leftThigh = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.07, 0.45, 8), trouserMat);
-    leftThigh.position.y = -0.22;
-    const leftBoot = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.28, 0.24), bootMat);
-    leftBoot.position.set(0, -0.58, 0.04);
-    this.leftLeg.add(leftThigh, leftBoot);
+    // 1. Articulated Legs (Thigh, Knee Pad, Shin, Combat Boot)
+    const createLeg = (xOffset: number): THREE.Group => {
+      const leg = new THREE.Group();
+      leg.position.set(xOffset, 0.76, 0);
 
-    this.rightLeg = new THREE.Group();
-    this.rightLeg.position.set(0.16, 0.75, 0);
-    const rightThigh = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.07, 0.45, 8), trouserMat);
-    rightThigh.position.y = -0.22;
-    const rightBoot = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.28, 0.24), bootMat);
-    rightBoot.position.set(0, -0.58, 0.04);
-    this.rightLeg.add(rightThigh, rightBoot);
+      const thigh = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.075, 0.38, 10), trouserMat);
+      thigh.position.y = -0.18;
 
+      const kneePad = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.11, 0.14), vestMat);
+      kneePad.position.set(0, -0.36, 0.03);
+
+      const shin = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.065, 0.32, 10), trouserMat);
+      shin.position.y = -0.48;
+
+      const bootShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.078, 0.072, 0.24, 10), bootMat);
+      bootShaft.position.y = -0.58;
+
+      const bootFoot = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.11, 0.26), bootMat);
+      bootFoot.position.set(0, -0.69, 0.05);
+
+      leg.add(thigh, kneePad, shin, bootShaft, bootFoot);
+      return leg;
+    };
+
+    this.leftLeg = createLeg(-0.16);
+    this.rightLeg = createLeg(0.16);
     this.group.add(this.leftLeg, this.rightLeg);
 
-    // 2. Torso & Trenchcoat
+    // 2. Torso, Duster Coat, Shoulder Epaulettes & Ammo Bandolier
     this.torsoGroup = new THREE.Group();
     this.torsoGroup.position.set(0, 0.85, 0);
 
-    const torsoMesh = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.55, 0.26), coatMat);
-    torsoMesh.position.y = 0.28;
+    // Inner tactical vest & outer open duster coat panels
+    const vestMesh = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.54, 0.25), vestMat);
+    vestMesh.position.y = 0.28;
 
-    // Cross-body ammo bandolier strap
-    const bandolier = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.08, 0.28), bandolierMat);
-    bandolier.position.set(0, 0.28, 0);
-    bandolier.rotation.z = -0.45;
+    const coatBack = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.56, 0.14), coatMat);
+    coatBack.position.set(0, 0.28, -0.07);
 
-    // Glowing Tech-Com shoulder beacon
-    const beaconMat = new THREE.MeshBasicMaterial({ color: 0x00e5ff });
-    const shoulderBeacon = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.06, 0.12), beaconMat);
-    shoulderBeacon.position.set(-0.24, 0.54, 0.02);
+    const coatSideL = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.56, 0.28), coatMat);
+    coatSideL.position.set(-0.18, 0.28, 0.01);
 
-    // Trenchcoat tails that flare when running
-    const coatTailGeo = new THREE.BoxGeometry(0.48, 0.42, 0.06);
-    coatTailGeo.translate(0, -0.21, -0.12);
+    const coatSideR = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.56, 0.28), coatMat);
+    coatSideR.position.set(0.18, 0.28, 0.01);
+
+    // Upturned Trenchcoat Collar & Shoulder Pads
+    const collarMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.21, 0.14, 10, 1, true, 0.8, 4.7), coatMat);
+    collarMesh.position.set(0, 0.57, -0.01);
+
+    const shoulderPadL = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.08, 0.28), vestMat);
+    shoulderPadL.position.set(-0.27, 0.53, 0);
+    shoulderPadL.rotation.z = 0.18;
+
+    const shoulderPadR = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.08, 0.28), vestMat);
+    shoulderPadR.position.set(0.27, 0.53, 0);
+    shoulderPadR.rotation.z = -0.18;
+
+    // Cross-body ammo bandolier strap with 12-gauge brass shells
+    const bandolierGroup = new THREE.Group();
+    bandolierGroup.position.set(0, 0.29, 0);
+    bandolierGroup.rotation.z = -0.52;
+    const strap = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.07, 0.30), bandolierMat);
+    bandolierGroup.add(strap);
+    for (let s = -2; s <= 2; s++) {
+      const shell = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.06, 6), brassMat);
+      shell.position.set(s * 0.075, 0.01, 0.155);
+      bandolierGroup.add(shell);
+    }
+
+    // Utility Belt & Ammo Pouches
+    const belt = new THREE.Mesh(new THREE.BoxGeometry(0.49, 0.08, 0.29), bandolierMat);
+    belt.position.set(0, 0.02, 0);
+
+    // Tech-Com shoulder comms beacon
+    const beaconMat = new THREE.MeshStandardMaterial({
+      color: 0x00e5ff,
+      emissive: 0x00b8e6,
+      emissiveIntensity: 1.4
+    });
+    const shoulderBeacon = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.05, 0.09), beaconMat);
+    shoulderBeacon.position.set(-0.26, 0.58, 0.02);
+
+    // Flaring Trenchcoat Tails (segmented)
+    const coatTailGeo = new THREE.BoxGeometry(0.50, 0.44, 0.08);
+    coatTailGeo.translate(0, -0.22, -0.12);
     this.coatTails = new THREE.Mesh(coatTailGeo, coatMat);
-    this.coatTails.position.set(0, 0.12, 0);
+    this.coatTails.position.set(0, 0.10, 0);
 
-    this.torsoGroup.add(torsoMesh, bandolier, shoulderBeacon, this.coatTails);
+    this.torsoGroup.add(
+      vestMesh,
+      coatBack,
+      coatSideL,
+      coatSideR,
+      collarMesh,
+      shoulderPadL,
+      shoulderPadR,
+      bandolierGroup,
+      belt,
+      shoulderBeacon,
+      this.coatTails
+    );
 
-    // 3. Head & Hair/Headband
+    // 3. Sculpted Head, Hair & Tech-Com Tactical Headband
     const headGroup = new THREE.Group();
-    headGroup.position.set(0, 0.65, 0.02);
-    const headMesh = new THREE.Mesh(new THREE.SphereGeometry(0.13, 10, 8), skinMat);
-    const hairMesh = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.12, 0.24), trouserMat);
-    hairMesh.position.set(0, 0.08, -0.02);
-    headGroup.add(headMesh, hairMesh);
+    headGroup.position.set(0, 0.68, 0.02);
+    const neckMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.075, 0.12, 8), skinMat);
+    neckMesh.position.y = -0.08;
+    const headMesh = new THREE.Mesh(new THREE.SphereGeometry(0.135, 14, 12), skinMat);
+    const jawMesh = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.10, 0.16), skinMat);
+    jawMesh.position.set(0, -0.04, 0.03);
+    const headband = new THREE.Mesh(new THREE.CylinderGeometry(0.142, 0.142, 0.045, 12), vestMat);
+    headband.position.set(0, 0.04, 0);
+    const hairTop = new THREE.Mesh(new THREE.SphereGeometry(0.145, 12, 10), hairMat);
+    hairTop.position.set(0, 0.05, -0.02);
+    hairTop.scale.set(1.0, 0.85, 1.08);
+    headGroup.add(neckMesh, headMesh, jawMesh, headband, hairTop);
     this.torsoGroup.add(headGroup);
 
-    // 4. Arms & Weapon Mount
+    // 4. Two-Handed Arms & Detailed Tech-Com Weapon Assembly
     this.weaponGroup = new THREE.Group();
-    this.weaponGroup.position.set(0.18, 0.35, 0.12);
+    this.weaponGroup.position.set(0, 0.34, 0.10);
 
-    const armMesh = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.38, 0.1), coatMat);
-    armMesh.rotation.x = Math.PI / 3;
-    armMesh.position.set(0.08, 0, 0.12);
+    // Right trigger arm (shoulder + forearm)
+    const rightArm = new THREE.Mesh(new THREE.CylinderGeometry(0.058, 0.048, 0.40, 8), coatMat);
+    rightArm.rotation.x = Math.PI / 2.4;
+    rightArm.rotation.z = -0.15;
+    rightArm.position.set(0.22, 0.02, 0.12);
 
-    // Shotgun / Plasma Rifle receiver & barrel
-    const gunReceiver = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.1, 0.48), gunMat);
-    gunReceiver.position.set(0, 0.02, 0.32);
-    const gunBarrel = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.028, 0.42, 8), gunMat);
+    // Left support arm reaching forward to pump/handguard
+    const leftArm = new THREE.Mesh(new THREE.CylinderGeometry(0.058, 0.048, 0.44, 8), coatMat);
+    leftArm.rotation.x = Math.PI / 2.2;
+    leftArm.rotation.z = 0.42;
+    leftArm.position.set(-0.08, 0.01, 0.22);
+
+    // Detailed Rifle/Shotgun Receiver, Stock, Pump Handguard, Barrel & Cooling Shroud
+    const gunReceiver = new THREE.Mesh(new THREE.BoxGeometry(0.085, 0.12, 0.52), gunMat);
+    gunReceiver.position.set(0.12, 0.02, 0.30);
+
+    const gunHandguard = new THREE.Mesh(new THREE.BoxGeometry(0.095, 0.09, 0.28), bandolierMat);
+    gunHandguard.position.set(0.12, -0.01, 0.48);
+
+    const gunBarrel = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.026, 0.48, 10), gunMat);
     gunBarrel.rotation.x = Math.PI / 2;
-    gunBarrel.position.set(0, 0.03, 0.62);
+    gunBarrel.position.set(0.12, 0.04, 0.66);
 
-    // Tactical Laser Sight Line (shows exact firing/aiming direction)
-    const laserSightGeo = new THREE.CylinderGeometry(0.012, 0.012, 11.0, 6);
+    const magTube = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.40, 8), gunMat);
+    magTube.rotation.x = Math.PI / 2;
+    magTube.position.set(0.12, -0.01, 0.62);
+
+    // Crisp Tactical Laser Sight Line (shows exact mouse aim direction)
+    const laserSightGeo = new THREE.CylinderGeometry(0.01, 0.01, 11.0, 6);
     laserSightGeo.rotateX(Math.PI / 2);
-    laserSightGeo.translate(0, 0.03, 6.2);
+    laserSightGeo.translate(0.12, 0.04, 6.4);
     const laserSightMat = new THREE.MeshBasicMaterial({
       color: 0xff2222,
       transparent: true,
-      opacity: 0.42,
+      opacity: 0.45,
       blending: THREE.AdditiveBlending,
       depthWrite: false
     });
     const laserSightMesh = new THREE.Mesh(laserSightGeo, laserSightMat);
 
     // Dynamic Muzzle Flash PointLight
-    this.muzzleLight = new THREE.PointLight(0xffa500, 0, 12);
-    this.muzzleLight.position.set(0, 0.03, 0.85);
+    this.muzzleLight = new THREE.PointLight(0xffa500, 0, 10);
+    this.muzzleLight.position.set(0.12, 0.04, 0.95);
 
-    this.weaponGroup.add(armMesh, gunReceiver, gunBarrel, laserSightMesh, this.muzzleLight);
+    this.weaponGroup.add(
+      rightArm,
+      leftArm,
+      gunReceiver,
+      gunHandguard,
+      gunBarrel,
+      magTube,
+      laserSightMesh,
+      this.muzzleLight
+    );
     this.torsoGroup.add(this.weaponGroup);
 
     this.group.add(this.torsoGroup);
@@ -166,16 +266,14 @@ export class KyleReeseMesh {
 
   public pulseMuzzleFlash(color = 0xffaa00): void {
     this.muzzleLight.color.setHex(color);
-    this.muzzleLight.intensity = 4.5;
+    this.muzzleLight.intensity = 2.8;
   }
 
   public updateAnimation(dt: number, speed: number, aimAngle: number, isDashing: boolean): void {
-    // Fade muzzle light
     if (this.muzzleLight.intensity > 0) {
-      this.muzzleLight.intensity = Math.max(0, this.muzzleLight.intensity - dt * 25);
+      this.muzzleLight.intensity = Math.max(0, this.muzzleLight.intensity - dt * 22);
     }
 
-    // Aim rotation
     this.group.rotation.y = aimAngle;
 
     if (isDashing) {

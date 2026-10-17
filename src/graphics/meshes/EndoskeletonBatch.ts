@@ -6,109 +6,207 @@ import { ProceduralTextures } from '../ProceduralTextures';
 export class EndoskeletonBatch {
   public readonly group = new THREE.Group();
   public readonly chassisInstancedMesh: THREE.InstancedMesh;
+  public readonly leftLegInstancedMesh: THREE.InstancedMesh;
+  public readonly rightLegInstancedMesh: THREE.InstancedMesh;
   public readonly opticsInstancedMesh: THREE.InstancedMesh;
   public readonly crabChassisInstancedMesh: THREE.InstancedMesh;
   public readonly crabOpticsInstancedMesh: THREE.InstancedMesh;
   private readonly maxCount: number;
 
   private readonly dummy = new THREE.Object3D();
+  private readonly legDummy = new THREE.Object3D();
   private readonly dummyColor = new THREE.Color();
 
   constructor(maxCount = 650) {
     this.maxCount = maxCount;
 
-    // 1. Build composite hyperalloy chassis geometry
+    const chromeBright = 0xe2eef8;
+    const chromeMid = 0xb0c2d4;
+    const darkSocket = 0x10161e;
+    const pistonSteel = 0x708294;
+    const gunmetal = 0x2e3846;
+    const teethIvory = 0xd8e0e8;
+
+    // 1. Build detailed T-800 Upper Body, Skull, Ribcage, Pelvis & M-25 Rifle
     const chassisParts: THREE.BufferGeometry[] = [
-      // Cranium dome
-      bakePart(new THREE.SphereGeometry(0.19, 10, 8), 0, 1.72, 0),
-      // Supraorbital brow bar
-      bakePart(new THREE.BoxGeometry(0.30, 0.07, 0.22), 0, 1.73, 0.07),
-      // Maxilla & teeth block
-      bakePart(new THREE.BoxGeometry(0.22, 0.16, 0.20), 0, 1.56, 0.05),
+      // Sculpted cranium dome & occipital rear plate
+      bakePart(new THREE.SphereGeometry(0.185, 14, 12), 0, 1.75, -0.01, 0, 0, 0, chromeBright),
+      bakePart(new THREE.CylinderGeometry(0.15, 0.12, 0.16, 10), 0, 1.66, -0.02, 0, 0, 0, chromeMid),
+      // Heavy supraorbital brow ridge
+      bakePart(new THREE.BoxGeometry(0.31, 0.065, 0.18), 0, 1.75, 0.09, 0.08, 0, 0, chromeBright),
+      // Recessed dark orbital eye socket cavity (prevents glowing eyes from washing out face)
+      bakePart(new THREE.BoxGeometry(0.26, 0.075, 0.12), 0, 1.69, 0.10, 0, 0, 0, darkSocket),
+      // Zygomatic cheekbones L/R
+      bakePart(new THREE.BoxGeometry(0.06, 0.08, 0.16), -0.135, 1.65, 0.08, 0, 0.15, 0, chromeBright),
+      bakePart(new THREE.BoxGeometry(0.06, 0.08, 0.16), 0.135, 1.65, 0.08, 0, -0.15, 0, chromeBright),
+      // Dark triangular nasal aperture
+      bakePart(new THREE.BoxGeometry(0.055, 0.065, 0.08), 0, 1.64, 0.155, 0, 0, 0, darkSocket),
+      // Upper maxilla & metallic teeth grille
+      bakePart(new THREE.BoxGeometry(0.18, 0.065, 0.16), 0, 1.59, 0.09, 0, 0, 0, chromeMid),
+      bakePart(new THREE.BoxGeometry(0.15, 0.04, 0.14), 0, 1.545, 0.11, 0, 0, 0, teethIvory),
+      // Articulated lower mandible jawbone
+      bakePart(new THREE.BoxGeometry(0.19, 0.065, 0.18), 0, 1.495, 0.07, 0.08, 0, 0, chromeBright),
       // Cheek hydraulic pistons L/R
-      bakePart(new THREE.CylinderGeometry(0.025, 0.025, 0.18, 6), -0.13, 1.60, 0.04, 0, 0, 0.2),
-      bakePart(new THREE.CylinderGeometry(0.025, 0.025, 0.18, 6), 0.13, 1.60, 0.04, 0, 0, -0.2),
-      // Cervical spine & pistons
-      bakePart(new THREE.CylinderGeometry(0.07, 0.08, 0.18, 8), 0, 1.44, -0.02),
-      // Clavicle yoke
-      bakePart(new THREE.BoxGeometry(0.62, 0.09, 0.20), 0, 1.34, 0),
-      // Thoracic ribcage core
-      bakePart(new THREE.CylinderGeometry(0.18, 0.14, 0.42, 8), 0, 1.12, 0),
-      // Spinal column rod
-      bakePart(new THREE.CylinderGeometry(0.055, 0.055, 0.65, 6), 0, 0.95, -0.06),
-      // Pelvic H-Chassis
-      bakePart(new THREE.BoxGeometry(0.42, 0.16, 0.22), 0, 0.72, 0),
-      // Thigh twin struts L/R
-      bakePart(new THREE.CylinderGeometry(0.065, 0.055, 0.38, 6), -0.14, 0.48, 0),
-      bakePart(new THREE.CylinderGeometry(0.065, 0.055, 0.38, 6), 0.14, 0.48, 0),
-      // Shin pistons L/R
-      bakePart(new THREE.CylinderGeometry(0.05, 0.04, 0.36, 6), -0.14, 0.18, 0),
-      bakePart(new THREE.CylinderGeometry(0.05, 0.04, 0.36, 6), 0.14, 0.18, 0),
-      // Upper arms L/R
-      bakePart(new THREE.CylinderGeometry(0.05, 0.045, 0.34, 6), -0.34, 1.15, 0.05, 0.35, 0, 0),
-      bakePart(new THREE.CylinderGeometry(0.05, 0.045, 0.34, 6), 0.34, 1.15, 0.05, 0.35, 0, 0),
-      // Forearm & M-25 rifle barrel
-      bakePart(new THREE.BoxGeometry(0.08, 0.09, 0.58), 0.26, 1.02, 0.32)
+      bakePart(new THREE.CylinderGeometry(0.022, 0.022, 0.19, 8), -0.13, 1.58, 0.03, 0.15, 0, 0.18, pistonSteel),
+      bakePart(new THREE.CylinderGeometry(0.022, 0.022, 0.19, 8), 0.13, 1.58, 0.03, 0.15, 0, -0.18, pistonSteel),
+
+      // Cervical spine & dual neck hydraulic dampers
+      bakePart(new THREE.CylinderGeometry(0.065, 0.075, 0.18, 10), 0, 1.43, -0.02, 0, 0, 0, pistonSteel),
+      bakePart(new THREE.CylinderGeometry(0.02, 0.02, 0.18, 6), -0.07, 1.43, 0.02, 0, 0, -0.15, chromeBright),
+      bakePart(new THREE.CylinderGeometry(0.02, 0.02, 0.18, 6), 0.07, 1.43, 0.02, 0, 0, 0.15, chromeBright),
+
+      // Broad armored trapezius & clavicle yoke (strong top-down silhouette)
+      bakePart(new THREE.BoxGeometry(0.70, 0.10, 0.28), 0, 1.35, -0.01, 0, 0, 0, chromeBright),
+      // Shoulder ball-joint rotary actuators L/R
+      bakePart(new THREE.SphereGeometry(0.11, 10, 8), -0.37, 1.34, 0, 0, 0, 0, chromeMid),
+      bakePart(new THREE.SphereGeometry(0.11, 10, 8), 0.37, 1.34, 0, 0, 0, 0, chromeMid),
+
+      // Dark inner hydraulic chest core + breastplate sternum + 3 segmented rib arches
+      bakePart(new THREE.CylinderGeometry(0.19, 0.14, 0.44, 10), 0, 1.13, -0.01, 0, 0, 0, darkSocket),
+      bakePart(new THREE.BoxGeometry(0.14, 0.36, 0.24), 0, 1.15, 0.03, 0, 0, 0, chromeBright),
+      bakePart(new THREE.BoxGeometry(0.50, 0.065, 0.26), 0, 1.26, 0.01, 0, 0, 0, chromeBright),
+      bakePart(new THREE.BoxGeometry(0.46, 0.06, 0.24), 0, 1.15, 0.01, 0, 0, 0, chromeMid),
+      bakePart(new THREE.BoxGeometry(0.40, 0.055, 0.21), 0, 1.04, 0.0, 0, 0, 0, chromeBright),
+
+      // Lumbar spinal vertebrae column & twin abdominal hydraulic struts
+      bakePart(new THREE.CylinderGeometry(0.06, 0.065, 0.34, 8), 0, 0.88, -0.04, 0, 0, 0, chromeMid),
+      bakePart(new THREE.CylinderGeometry(0.024, 0.024, 0.30, 6), -0.11, 0.88, 0.03, 0, 0, 0.12, pistonSteel),
+      bakePart(new THREE.CylinderGeometry(0.024, 0.024, 0.30, 6), 0.11, 0.88, 0.03, 0, 0, -0.12, pistonSteel),
+
+      // Heavy pelvic H-Chassis & hip sockets
+      bakePart(new THREE.BoxGeometry(0.46, 0.15, 0.25), 0, 0.72, 0, 0, 0, 0, chromeBright),
+      bakePart(new THREE.BoxGeometry(0.14, 0.20, 0.27), 0, 0.70, 0, 0, 0, 0, pistonSteel),
+
+      // Left & Right Upper Humerus Struts & Elbow Servos
+      bakePart(new THREE.CylinderGeometry(0.055, 0.048, 0.34, 8), -0.37, 1.16, 0.04, 0.35, 0, 0.08, chromeBright),
+      bakePart(new THREE.CylinderGeometry(0.055, 0.048, 0.34, 8), 0.37, 1.16, 0.04, 0.35, 0, -0.08, chromeBright),
+      bakePart(new THREE.SphereGeometry(0.065, 8, 8), -0.35, 1.00, 0.12, 0, 0, 0, pistonSteel),
+      bakePart(new THREE.SphereGeometry(0.065, 8, 8), 0.35, 1.00, 0.12, 0, 0, 0, pistonSteel),
+
+      // Left support forearm reaching across to rifle handguard
+      bakePart(new THREE.CylinderGeometry(0.045, 0.04, 0.36, 8), -0.16, 0.98, 0.26, 1.25, 0.55, 0, chromeMid),
+      // Right trigger forearm
+      bakePart(new THREE.CylinderGeometry(0.045, 0.04, 0.34, 8), 0.28, 0.98, 0.25, 1.35, -0.2, 0, chromeMid),
+
+      // Westinghouse M-25 40W Phased Plasma Rifle (receiver, cooling shroud, barrel, stock, magazine)
+      bakePart(new THREE.BoxGeometry(0.09, 0.13, 0.56), 0.18, 1.00, 0.38, 0, -0.08, 0, gunmetal),
+      bakePart(new THREE.CylinderGeometry(0.032, 0.032, 0.38, 8), 0.16, 1.02, 0.72, Math.PI / 2, 0, 0.08, chromeMid),
+      bakePart(new THREE.BoxGeometry(0.06, 0.14, 0.09), 0.18, 0.89, 0.42, 0.2, -0.08, 0, darkSocket)
     ];
 
     const chassisGeo = mergeParts(chassisParts);
 
+    // 2. Build Articulated Leg Geometry (origin at hip y = 0.68 so rotation.x swings the leg naturally)
+    const buildLegGeo = (sideOffset: number): THREE.BufferGeometry => {
+      return mergeParts([
+        // Upper femur main strut + parallel hydraulic piston
+        bakePart(new THREE.CylinderGeometry(0.065, 0.055, 0.34, 8), sideOffset, -0.16, 0, 0, 0, 0, chromeBright),
+        bakePart(new THREE.CylinderGeometry(0.025, 0.025, 0.32, 6), sideOffset, -0.16, -0.055, 0, 0, 0, pistonSteel),
+        // Knee actuator joint drum
+        bakePart(new THREE.SphereGeometry(0.068, 8, 8), sideOffset, -0.34, 0.01, 0, 0, 0, chromeMid),
+        // Lower tibia shin strut
+        bakePart(new THREE.CylinderGeometry(0.052, 0.042, 0.32, 8), sideOffset, -0.50, 0, 0, 0, 0, chromeBright),
+        // Skeletal mechanical foot & heel spur
+        bakePart(new THREE.BoxGeometry(0.11, 0.06, 0.24), sideOffset, -0.65, 0.04, 0, 0, 0, pistonSteel)
+      ]);
+    };
+
+    const leftLegGeo = buildLegGeo(-0.15);
+    const rightLegGeo = buildLegGeo(0.15);
+
     const chassisMat = new THREE.MeshStandardMaterial({
-      color: 0xd4e2f2,
-      emissive: 0x24364d,
-      emissiveIntensity: 0.48,
-      metalness: 0.68,
-      roughness: 0.22,
+      color: 0xffffff,
+      vertexColors: true,
+      emissive: 0x101a28,
+      emissiveIntensity: 0.22,
+      metalness: 0.72,
+      roughness: 0.24,
       normalMap: ProceduralTextures.getBrushedMetalNormal(),
       roughnessMap: ProceduralTextures.getBrushedMetalRoughness()
     });
 
     this.chassisInstancedMesh = new THREE.InstancedMesh(chassisGeo, chassisMat, maxCount);
     this.chassisInstancedMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-    this.chassisInstancedMesh.castShadow = false;
-    this.chassisInstancedMesh.receiveShadow = false;
+    this.chassisInstancedMesh.frustumCulled = false;
 
-    // 2. Build glowing crimson optics geometry
+    this.leftLegInstancedMesh = new THREE.InstancedMesh(leftLegGeo, chassisMat, maxCount);
+    this.leftLegInstancedMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    this.leftLegInstancedMesh.frustumCulled = false;
+
+    this.rightLegInstancedMesh = new THREE.InstancedMesh(rightLegGeo, chassisMat, maxCount);
+    this.rightLegInstancedMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    this.rightLegInstancedMesh.frustumCulled = false;
+
+    // 3. Build glowing pinpoint crimson optics & rifle plasma coil
     const opticsParts: THREE.BufferGeometry[] = [
-      bakePart(new THREE.SphereGeometry(0.038, 8, 8), -0.075, 1.68, 0.17),
-      bakePart(new THREE.SphereGeometry(0.038, 8, 8), 0.075, 1.68, 0.17),
-      bakePart(new THREE.BoxGeometry(0.10, 0.08, 0.22), 0, 1.16, 0.04)
+      // Left & Right pinpoint crimson optical sensors inside the dark eye sockets
+      bakePart(new THREE.SphereGeometry(0.026, 8, 8), -0.068, 1.69, 0.165, 0, 0, 0, 0xff2222),
+      bakePart(new THREE.SphereGeometry(0.026, 8, 8), 0.068, 1.69, 0.165, 0, 0, 0, 0xff2222),
+      // M-25 rifle glowing plasma chamber strip
+      bakePart(new THREE.BoxGeometry(0.098, 0.04, 0.22), 0.18, 1.03, 0.44, 0, -0.08, 0, 0xd400ff)
     ];
     const opticsGeo = mergeParts(opticsParts);
 
     const opticsMat = new THREE.MeshStandardMaterial({
-      color: 0xff2222,
-      emissive: 0xff0000,
-      emissiveIntensity: 4.5,
+      color: 0xffffff,
+      vertexColors: true,
+      emissive: 0xff1111,
+      emissiveIntensity: 2.8,
       roughness: 0.2,
       metalness: 0.1
     });
 
     this.opticsInstancedMesh = new THREE.InstancedMesh(opticsGeo, opticsMat, maxCount);
     this.opticsInstancedMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    this.opticsInstancedMesh.frustumCulled = false;
 
-    // 3. Build Skynet Recon Crab Scuttler instanced mesh (quadruped spider-tank drone)
+    // 4. Build Detailed 6-Legged Cyberdyne Recon Crab-Walker (spider-tank scuttler)
     const crabParts: THREE.BufferGeometry[] = [
-      // Armored low-profile carapace dome
-      bakePart(new THREE.CylinderGeometry(0.28, 0.38, 0.22, 8), 0, 0.32, 0),
-      // Front sensor visor cowl
-      bakePart(new THREE.BoxGeometry(0.32, 0.14, 0.24), 0, 0.30, 0.22),
-      // 4 articulated mechanical scuttle legs
-      bakePart(new THREE.CylinderGeometry(0.035, 0.025, 0.48, 6), -0.34, 0.20, 0.22, 0.3, 0, 0.6),
-      bakePart(new THREE.CylinderGeometry(0.035, 0.025, 0.48, 6), 0.34, 0.20, 0.22, 0.3, 0, -0.6),
-      bakePart(new THREE.CylinderGeometry(0.035, 0.025, 0.48, 6), -0.34, 0.20, -0.22, -0.3, 0, 0.6),
-      bakePart(new THREE.CylinderGeometry(0.035, 0.025, 0.48, 6), 0.34, 0.20, -0.22, -0.3, 0, -0.6)
+      // Main sloped octagonal armored carapace
+      bakePart(new THREE.CylinderGeometry(0.28, 0.44, 0.20, 8), 0, 0.34, 0, 0, Math.PI / 8, 0, chromeBright),
+      // Dorsal reactor cooling dome & spine vents
+      bakePart(new THREE.CylinderGeometry(0.16, 0.22, 0.12, 8), 0, 0.46, -0.04, 0, 0, 0, pistonSteel),
+      bakePart(new THREE.BoxGeometry(0.24, 0.08, 0.28), 0, 0.42, -0.10, -0.15, 0, 0, gunmetal),
+      // Dark recessed front optical visor bay
+      bakePart(new THREE.BoxGeometry(0.34, 0.12, 0.20), 0, 0.31, 0.28, 0, 0, 0, darkSocket),
+      // Twin forward plasma pincer barrels
+      bakePart(new THREE.CylinderGeometry(0.028, 0.028, 0.32, 6), -0.14, 0.24, 0.40, Math.PI / 2, 0, -0.12, chromeMid),
+      bakePart(new THREE.CylinderGeometry(0.028, 0.028, 0.32, 6), 0.14, 0.24, 0.40, Math.PI / 2, 0, 0.12, chromeMid),
+      // 6 Multi-jointed Arachnid Scuttle Legs (Upper Femur + Angled Lower Tibia)
+      // Front Pair
+      bakePart(new THREE.BoxGeometry(0.32, 0.055, 0.06), -0.38, 0.32, 0.22, 0, -0.45, 0.25, pistonSteel),
+      bakePart(new THREE.CylinderGeometry(0.03, 0.015, 0.36, 6), -0.54, 0.16, 0.32, 0.2, 0, 0.35, chromeBright),
+      bakePart(new THREE.BoxGeometry(0.32, 0.055, 0.06), 0.38, 0.32, 0.22, 0, 0.45, -0.25, pistonSteel),
+      bakePart(new THREE.CylinderGeometry(0.03, 0.015, 0.36, 6), 0.54, 0.16, 0.32, 0.2, 0, -0.35, chromeBright),
+      // Mid Pair
+      bakePart(new THREE.BoxGeometry(0.36, 0.055, 0.06), -0.44, 0.32, 0.0, 0, 0, 0.25, pistonSteel),
+      bakePart(new THREE.CylinderGeometry(0.03, 0.015, 0.36, 6), -0.62, 0.16, 0.0, 0, 0, 0.38, chromeBright),
+      bakePart(new THREE.BoxGeometry(0.36, 0.055, 0.06), 0.44, 0.32, 0.0, 0, 0, -0.25, pistonSteel),
+      bakePart(new THREE.CylinderGeometry(0.03, 0.015, 0.36, 6), 0.62, 0.16, 0.0, 0, 0, -0.38, chromeBright),
+      // Rear Pair
+      bakePart(new THREE.BoxGeometry(0.32, 0.055, 0.06), -0.38, 0.32, -0.22, 0, 0.45, 0.25, pistonSteel),
+      bakePart(new THREE.CylinderGeometry(0.03, 0.015, 0.36, 6), -0.54, 0.16, -0.32, -0.2, 0, 0.35, chromeBright),
+      bakePart(new THREE.BoxGeometry(0.32, 0.055, 0.06), 0.38, 0.32, -0.22, 0, -0.45, -0.25, pistonSteel),
+      bakePart(new THREE.CylinderGeometry(0.03, 0.015, 0.36, 6), 0.54, 0.16, -0.32, -0.2, 0, -0.35, chromeBright)
     ];
     const crabGeo = mergeParts(crabParts);
     this.crabChassisInstancedMesh = new THREE.InstancedMesh(crabGeo, chassisMat, maxCount);
     this.crabChassisInstancedMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    this.crabChassisInstancedMesh.frustumCulled = false;
 
-    const crabEyeGeo = bakePart(new THREE.SphereGeometry(0.06, 8, 8), 0, 0.31, 0.35);
-    this.crabOpticsInstancedMesh = new THREE.InstancedMesh(crabEyeGeo, opticsMat, maxCount);
+    const crabOpticsGeo = mergeParts([
+      bakePart(new THREE.BoxGeometry(0.22, 0.045, 0.06), 0, 0.32, 0.37, 0, 0, 0, 0xff2222),
+      bakePart(new THREE.SphereGeometry(0.03, 8, 8), -0.07, 0.32, 0.38, 0, 0, 0, 0xff4444),
+      bakePart(new THREE.SphereGeometry(0.03, 8, 8), 0.07, 0.32, 0.38, 0, 0, 0, 0xff4444)
+    ]);
+    this.crabOpticsInstancedMesh = new THREE.InstancedMesh(crabOpticsGeo, opticsMat, maxCount);
     this.crabOpticsInstancedMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    this.crabOpticsInstancedMesh.frustumCulled = false;
 
     this.group.add(
       this.chassisInstancedMesh,
+      this.leftLegInstancedMesh,
+      this.rightLegInstancedMesh,
       this.opticsInstancedMesh,
       this.crabChassisInstancedMesh,
       this.crabOpticsInstancedMesh
@@ -130,8 +228,8 @@ export class EndoskeletonBatch {
 
       if (enemy.archetype === 'skynet_crab_drone') {
         if (crabIndex >= this.maxCount) continue;
-        const scuttleBob = Math.abs(Math.sin(timeSeconds * 16 + enemy.id)) * 0.05;
-        const scuttleTilt = Math.sin(timeSeconds * 16 + enemy.id) * 0.1;
+        const scuttleBob = Math.abs(Math.sin(timeSeconds * 18 + enemy.id)) * 0.045;
+        const scuttleTilt = Math.sin(timeSeconds * 18 + enemy.id) * 0.09;
 
         this.dummy.position.set(enemy.x, scuttleBob, enemy.z);
         this.dummy.rotation.set(0, facingAngle, scuttleTilt);
@@ -144,7 +242,7 @@ export class EndoskeletonBatch {
         if (enemy.hitFlashTimer > 0) {
           this.dummyColor.setHex(0xffffff);
         } else {
-          this.dummyColor.setHex(0x8a9ba8);
+          this.dummyColor.setHex(0x9fb2c4);
         }
         this.crabChassisInstancedMesh.setColorAt(crabIndex, this.dummyColor);
         crabIndex++;
@@ -161,45 +259,72 @@ export class EndoskeletonBatch {
       }
       if (activeIndex >= this.maxCount) continue;
 
-      // Animatronic mechanical limp / bob
-      const bobY = Math.abs(Math.sin(timeSeconds * 8 + enemy.id)) * 0.08;
-      const rollZ = Math.sin(timeSeconds * 8 + enemy.id) * 0.07;
-
-      this.dummy.position.set(enemy.x, bobY, enemy.z);
-      this.dummy.rotation.set(0, facingAngle, rollZ);
-
       // Scale variation for T-600 heavy vs T-700 runner
       let scale = 1.0;
       if (enemy.archetype === 't600_rusted') scale = 1.25;
-      else if (enemy.archetype === 't700_scout') scale = 0.92;
-      this.dummy.scale.set(scale, scale, scale);
+      else if (enemy.archetype === 't700_scout') scale = 0.94;
 
+      // Animatronic mechanical gait & stride
+      const phase = timeSeconds * 7.5 + enemy.id * 1.3;
+      const bobY = Math.abs(Math.sin(phase)) * 0.06;
+      const rollZ = Math.sin(phase) * 0.055;
+      const legStride = Math.sin(phase) * 0.52;
+
+      this.dummy.position.set(enemy.x, bobY, enemy.z);
+      this.dummy.rotation.set(0, facingAngle, rollZ);
+      this.dummy.scale.set(scale, scale, scale);
       this.dummy.updateMatrix();
 
       this.chassisInstancedMesh.setMatrixAt(activeIndex, this.dummy.matrix);
       this.opticsInstancedMesh.setMatrixAt(activeIndex, this.dummy.matrix);
 
+      // Left Leg articulated matrix
+      this.legDummy.position.set(enemy.x, bobY + 0.68 * scale, enemy.z);
+      this.legDummy.rotation.set(legStride, facingAngle, rollZ);
+      this.legDummy.scale.set(scale, scale, scale);
+      this.legDummy.updateMatrix();
+      this.leftLegInstancedMesh.setMatrixAt(activeIndex, this.legDummy.matrix);
+
+      // Right Leg articulated matrix
+      this.legDummy.rotation.set(-legStride, facingAngle, rollZ);
+      this.legDummy.updateMatrix();
+      this.rightLegInstancedMesh.setMatrixAt(activeIndex, this.legDummy.matrix);
+
       // Color tint & hit flash
       if (enemy.hitFlashTimer > 0) {
         this.dummyColor.setHex(0xffffff);
       } else if (enemy.archetype === 't600_rusted') {
-        this.dummyColor.setHex(0x5a524c); // Dark rusted iron
+        this.dummyColor.setHex(0x8c7662); // Weathered bronze/iron T-600
       } else if (enemy.archetype === 't700_scout') {
-        this.dummyColor.setHex(0x707c8a);
+        this.dummyColor.setHex(0x8899ad); // Gunmetal T-700
       } else {
-        this.dummyColor.setHex(0x9ca8b8); // Chrome T-800
+        this.dummyColor.setHex(0xd0e0f0); // Gleaming Hyperalloy Chrome T-800
       }
       this.chassisInstancedMesh.setColorAt(activeIndex, this.dummyColor);
+      this.leftLegInstancedMesh.setColorAt(activeIndex, this.dummyColor);
+      this.rightLegInstancedMesh.setColorAt(activeIndex, this.dummyColor);
 
       activeIndex++;
     }
 
     this.chassisInstancedMesh.count = activeIndex;
+    this.leftLegInstancedMesh.count = activeIndex;
+    this.rightLegInstancedMesh.count = activeIndex;
     this.opticsInstancedMesh.count = activeIndex;
+
     this.chassisInstancedMesh.instanceMatrix.needsUpdate = true;
+    this.leftLegInstancedMesh.instanceMatrix.needsUpdate = true;
+    this.rightLegInstancedMesh.instanceMatrix.needsUpdate = true;
     this.opticsInstancedMesh.instanceMatrix.needsUpdate = true;
+
     if (this.chassisInstancedMesh.instanceColor) {
       this.chassisInstancedMesh.instanceColor.needsUpdate = true;
+    }
+    if (this.leftLegInstancedMesh.instanceColor) {
+      this.leftLegInstancedMesh.instanceColor.needsUpdate = true;
+    }
+    if (this.rightLegInstancedMesh.instanceColor) {
+      this.rightLegInstancedMesh.instanceColor.needsUpdate = true;
     }
 
     this.crabChassisInstancedMesh.count = crabIndex;

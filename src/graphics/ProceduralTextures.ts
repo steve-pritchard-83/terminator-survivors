@@ -110,57 +110,58 @@ export class ProceduralTextures {
     const ctx = this.get2DContext(canvas);
 
     if (ctx) {
-      // Moonlit cobalt-slate ash ground (#2b3e58)
-      ctx.fillStyle = '#2b3e58';
+      // Moonlit scorched slate-ash battlefield (#1e2b3c)
+      ctx.fillStyle = '#1e2b3c';
       ctx.fillRect(0, 0, size, size);
 
-      // Ash dust & rubble texture noise
+      // Multi-scale ash dust & soil grain
       const imgData = ctx.getImageData(0, 0, size, size);
       const data = imgData.data;
       for (let i = 0; i < data.length; i += 4) {
-        const noise = (Math.random() - 0.5) * 38;
-        data[i] = Math.max(24, Math.min(95, 44 + noise * 0.8));
-        data[i + 1] = Math.max(38, Math.min(115, 64 + noise * 0.9));
-        data[i + 2] = Math.max(55, Math.min(145, 90 + noise * 1.1));
+        const noise = (Math.random() - 0.5) * 24;
+        data[i] = Math.max(18, Math.min(68, 30 + noise * 0.8));
+        data[i + 1] = Math.max(28, Math.min(85, 43 + noise * 0.9));
+        data[i + 2] = Math.max(40, Math.min(110, 60 + noise * 1.0));
       }
       ctx.putImageData(imgData, 0, 0);
 
-      // Tactical grid & cracked highway slab lines
-      ctx.strokeStyle = 'rgba(110, 165, 225, 0.18)';
-      ctx.lineWidth = 1.5;
-      for (let g = 0; g <= size; g += 64) {
+      // Soft blast craters & scorched ash patches
+      for (let c = 0; c < 14; c++) {
+        const cx = Math.random() * size;
+        const cy = Math.random() * size;
+        const cr = 18 + Math.random() * 36;
+        const grad = ctx.createRadialGradient(cx, cy, cr * 0.1, cx, cy, cr);
+        grad.addColorStop(0, 'rgba(10, 15, 22, 0.55)');
+        grad.addColorStop(0.65, 'rgba(42, 58, 78, 0.25)');
+        grad.addColorStop(1, 'rgba(30, 43, 60, 0)');
+        ctx.fillStyle = grad;
         ctx.beginPath();
-        ctx.moveTo(g, 0);
-        ctx.lineTo(g, size);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(0, g);
-        ctx.lineTo(size, g);
-        ctx.stroke();
+        ctx.arc(cx, cy, cr, 0, Math.PI * 2);
+        ctx.fill();
       }
 
-      // Cracked asphalt veins
-      ctx.strokeStyle = 'rgba(12, 20, 32, 0.55)';
-      ctx.lineWidth = 2.5;
-      for (let i = 0; i < 18; i++) {
+      // Cracked asphalt fault lines
+      ctx.strokeStyle = 'rgba(10, 16, 24, 0.45)';
+      ctx.lineWidth = 1.8;
+      for (let i = 0; i < 16; i++) {
         ctx.beginPath();
         let x = Math.random() * size;
         let y = Math.random() * size;
         ctx.moveTo(x, y);
-        for (let j = 0; j < 6; j++) {
-          x += (Math.random() - 0.5) * 60;
-          y += (Math.random() - 0.5) * 60;
+        for (let j = 0; j < 5; j++) {
+          x += (Math.random() - 0.5) * 48;
+          y += (Math.random() - 0.5) * 48;
           ctx.lineTo(x, y);
         }
         ctx.stroke();
       }
 
-      // Bleached skull bone flecks #d8e2ec
-      ctx.fillStyle = 'rgba(216, 226, 236, 0.55)';
-      for (let i = 0; i < 110; i++) {
+      // Subtle weathered gravel & ash flecks (no bright glowing dots)
+      ctx.fillStyle = 'rgba(95, 112, 132, 0.32)';
+      for (let i = 0; i < 90; i++) {
         const bx = Math.random() * size;
         const by = Math.random() * size;
-        const br = 1.2 + Math.random() * 2.8;
+        const br = 0.8 + Math.random() * 1.6;
         ctx.beginPath();
         ctx.arc(bx, by, br, 0, Math.PI * 2);
         ctx.fill();
@@ -170,7 +171,7 @@ export class ProceduralTextures {
     const tex = new THREE.CanvasTexture(canvas);
     tex.wrapS = THREE.RepeatWrapping;
     tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(8, 8);
+    tex.repeat.set(6, 6);
     this.groundAlbedo = tex;
     return tex;
   }

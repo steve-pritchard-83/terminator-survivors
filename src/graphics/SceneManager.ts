@@ -18,44 +18,44 @@ export class SceneManager {
 
   constructor(container: HTMLElement) {
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x0b192e);
-    this.scene.fog = new THREE.FogExp2(0x102544, 0.011);
+    this.scene.background = new THREE.Color(0x091322);
+    this.scene.fog = new THREE.FogExp2(0x0c192c, 0.011);
     this.scene.environment = ProceduralTextures.getMetallicEnvMap();
 
     const width = container.clientWidth || window.innerWidth;
     const height = container.clientHeight || window.innerHeight;
 
-    this.camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 250);
+    this.camera = new THREE.PerspectiveCamera(48, width / height, 0.1, 250);
     this.camera.position.copy(this.cameraOffset);
     this.camera.lookAt(0, 0, 0);
 
     this.renderer = new THREE.WebGLRenderer({
       powerPreference: 'high-performance',
-      antialias: false,
+      antialias: true,
       stencil: false,
       depth: true
     });
     this.renderer.setSize(width, height);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.48;
+    this.renderer.toneMappingExposure = 1.12;
 
     container.appendChild(this.renderer.domElement);
 
-    // High-contrast James Cameron Cobalt Moonlight & Battlefield Illumination
-    const hemiLight = new THREE.HemisphereLight(0x8cc8ff, 0x2c4260, 2.8);
+    // Balanced James Cameron Cobalt Moonlight & Directional Key/Rim Lighting for 3D Mesh Definition
+    const hemiLight = new THREE.HemisphereLight(0x78b0f0, 0x1a2636, 1.15);
     this.scene.add(hemiLight);
 
-    const ambientLight = new THREE.AmbientLight(0x3b628f, 2.1);
+    const ambientLight = new THREE.AmbientLight(0x28405c, 0.85);
     this.scene.add(ambientLight);
 
-    const moonLight = new THREE.DirectionalLight(0x98ccff, 4.2);
-    moonLight.position.set(-15, 32, -18);
+    const moonLight = new THREE.DirectionalLight(0xa8d4ff, 1.85);
+    moonLight.position.set(-18, 34, -14);
     this.scene.add(moonLight);
 
-    // Strong silver-blue counter-rim light for Endoskeleton silhouettes
-    const rimLight = new THREE.DirectionalLight(0x66aaff, 2.5);
-    rimLight.position.set(18, 16, 24);
+    // Crisp silver-blue counter-rim light for Endoskeleton silhouettes
+    const rimLight = new THREE.DirectionalLight(0x5599ee, 1.15);
+    rimLight.position.set(20, 14, 22);
     this.scene.add(rimLight);
 
     this.postProcessing = new PostProcessingManager(this.renderer, this.scene, this.camera);

@@ -364,16 +364,34 @@ export class WeaponSystem {
   }
 
   private spawnGroundZone(x: number, z: number, radius: number, dps: number, duration: number): void {
-    const geo = new THREE.CylinderGeometry(radius, radius, 0.1, 16);
-    const mat = new THREE.MeshBasicMaterial({
-      color: 0xff4400,
+    const outerRingGeo = new THREE.RingGeometry(radius * 0.65, radius, 28);
+    outerRingGeo.rotateX(-Math.PI / 2);
+    const outerMat = new THREE.MeshBasicMaterial({
+      color: 0xff5500,
       transparent: true,
-      opacity: 0.45,
+      opacity: 0.65,
       blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide,
       depthWrite: false
     });
-    const mesh = new THREE.Mesh(geo, mat);
-    mesh.position.set(x, 0.05, z);
+    const mesh = new THREE.Mesh(outerRingGeo, outerMat);
+    mesh.position.set(x, 0.06, z);
+
+    // Inner molten core ring
+    const innerGeo = new THREE.CircleGeometry(radius * 0.72, 24);
+    innerGeo.rotateX(-Math.PI / 2);
+    const innerMat = new THREE.MeshBasicMaterial({
+      color: 0xffaa00,
+      transparent: true,
+      opacity: 0.28,
+      blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide,
+      depthWrite: false
+    });
+    const innerMesh = new THREE.Mesh(innerGeo, innerMat);
+    innerMesh.position.y = 0.01;
+    mesh.add(innerMesh);
+
     this.group.add(mesh);
 
     this.groundZones.push({
@@ -388,7 +406,7 @@ export class WeaponSystem {
     });
   }
 
-  private updateOrbitingDrones(dt: number, px: number, pz: number, enemies: ActiveEnemy[]): void {
+  private updateOrbitingDrones(dt: number, px: number, pz: number, _enemies: ActiveEnemy[]): void {
     const seekerSlot = this.runState.weapons.get('seeker_drone');
     const ringSlot = this.runState.weapons.get('perimeter_ring');
     const activeSlot = ringSlot || seekerSlot;
@@ -492,6 +510,11 @@ export class WeaponSystem {
       gz.life += dt;
       gz.tickTimer += dt;
 
+      // Flickering flame pulse & rotation
+      const flicker = 0.94 + Math.sin(gz.life * 18 + i) * 0.06;
+      gz.mesh.scale.set(flicker, 1, flicker);
+      gz.mesh.rotation.y += dt * 1.4;
+
       if (gz.tickTimer >= 0.25) {
         gz.tickTimer = 0;
         const enemies = this.grid.queryRadius(gz.x, gz.z, gz.radius);
@@ -504,8 +527,12 @@ export class WeaponSystem {
 
       if (gz.life >= gz.maxLife) {
         this.group.remove(gz.mesh);
-        gz.mesh.geometry.dispose();
-        (gz.mesh.material as THREE.Material).dispose();
+        gz.mesh.traverse((child) => {
+          if (child instanceof THREE.Mesh) {
+            child.geometry.dispose();
+            (child.material as THREE.Material).dispose();
+          }
+        });
         this.groundZones.splice(i, 1);
       }
     }
@@ -519,8 +546,12 @@ export class WeaponSystem {
 
     for (const gz of this.groundZones) {
       this.group.remove(gz.mesh);
-      gz.mesh.geometry.dispose();
-      (gz.mesh.material as THREE.Material).dispose();
+      gz.mesh.traverse((child) => {
+        if (child instanceof THREE.Mesh) {
+          child.geometry.dispose();
+          (child.material as THREE.Material).dispose();
+        }
+      });
     }
     this.groundZones.length = 0;
 
