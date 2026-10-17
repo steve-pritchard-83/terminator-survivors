@@ -10,7 +10,6 @@ export interface Particle {
   maxLife: number;
   scaleStart: number;
   scaleEnd: number;
-  isAdditive: boolean;
 }
 
 export class ParticleSystem {
@@ -70,8 +69,7 @@ export class ParticleSystem {
         life: 0,
         maxLife: 0.45 + Math.random() * 0.25,
         scaleStart: 1.2 * scale,
-        scaleEnd: 5.2 * scale,
-        isAdditive: true
+        scaleEnd: 5.2 * scale
       });
     }
 
@@ -88,8 +86,7 @@ export class ParticleSystem {
         life: 0,
         maxLife: 0.8 + Math.random() * 0.4,
         scaleStart: 2.8 * scale,
-        scaleEnd: 9.8 * scale,
-        isAdditive: false
+        scaleEnd: 9.8 * scale
       });
     }
   }
@@ -106,8 +103,7 @@ export class ParticleSystem {
       life: 0,
       maxLife: 0.22,
       scaleStart: 0.48,
-      scaleEnd: 2.16,
-      isAdditive: true
+      scaleEnd: 2.16
     });
   }
 

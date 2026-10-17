@@ -9,7 +9,7 @@ import type {
   UpgradeChoice,
   WeaponId
 } from '../core/types';
-import { BASE_WEAPONS, EVOLVED_WEAPONS, PASSIVES, canEvolveWeapon } from '../data/weapons';
+import { BASE_WEAPONS, PASSIVES, canEvolveWeapon } from '../data/weapons';
 import { LOADOUTS, META_UPGRADES } from '../data/upgrades';
 import { globalRNG } from '../core/RNG';
 

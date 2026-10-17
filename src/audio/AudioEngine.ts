@@ -92,11 +92,6 @@ export const SFX_WAV_MANIFEST: Record<string, string[]> = {
     './audio/effects/S_HUD_DetectiveModeOffNew.wav',
     './audio/effects/S_DetectiveModeOff.wav'
   ],
-  uiTypewriter: [
-    './audio/effects/S_UI_TypewriterNew01.wav',
-    './audio/effects/S_UI_TypewriterNew02.wav',
-    './audio/effects/S_UI_TypewriterNew03.wav'
-  ],
   runStart: [
     './audio/effects/S_Splash_Screen_Drums_x1.wav',
     './audio/effects/S_NewQuest.wav'

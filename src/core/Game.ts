@@ -1,4 +1,3 @@
-import * as THREE from 'three';
 import { SceneManager } from '../graphics/SceneManager';
 import { GameLoop } from './GameLoop';
 import { RunState } from '../state/RunState';
@@ -91,7 +90,7 @@ export class Game {
       this.endoBatch
     );
     this.waveDirector = new WaveDirector(this.runState, this.enemySystem);
-    this.pickupSystem = new PickupSystem(this.runState, this.grid, this.audioEngine);
+    this.pickupSystem = new PickupSystem(this.runState, this.audioEngine);
 
     this.sceneManager.scene.add(
       this.weaponSystem.group,

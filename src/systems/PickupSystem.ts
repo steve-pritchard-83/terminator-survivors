@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import type { RunState } from '../state/RunState';
-import type { SpatialHashGrid } from '../core/SpatialHashGrid';
 import type { AudioEngine } from '../audio/AudioEngine';
 import type { SpatialEntity } from '../core/types';
 import { PickupMeshFactory } from '../graphics/meshes/PickupMeshes';
@@ -11,8 +10,6 @@ export interface ActivePickup extends SpatialEntity {
   kind: 'core' | 'crate' | 'vault';
   xpValue: number;
   attracted: boolean;
-  vx: number;
-  vz: number;
 }
 
 export class PickupSystem {
@@ -21,15 +18,13 @@ export class PickupSystem {
   private nextPickupId = 10000;
 
   private readonly runState: RunState;
-  private readonly grid: SpatialHashGrid;
   private readonly audio: AudioEngine;
 
   private comboCount = 0;
   private comboTimer = 0;
 
-  constructor(runState: RunState, grid: SpatialHashGrid, audio: AudioEngine) {
+  constructor(runState: RunState, audio: AudioEngine) {
     this.runState = runState;
-    this.grid = grid;
     this.audio = audio;
 
     // Listen for enemy kill events to drop data cores or crates
@@ -60,8 +55,6 @@ export class PickupSystem {
       radius: 0.5,
       xpValue,
       attracted: false,
-      vx: 0,
-      vz: 0,
       mesh
     });
   }
@@ -80,8 +73,6 @@ export class PickupSystem {
       radius: 0.8,
       xpValue: 0,
       attracted: false,
-      vx: 0,
-      vz: 0,
       mesh
     });
   }
@@ -100,8 +91,6 @@ export class PickupSystem {
       radius: 1.2,
       xpValue: 0,
       attracted: false,
-      vx: 0,
-      vz: 0,
       mesh
     });
   }

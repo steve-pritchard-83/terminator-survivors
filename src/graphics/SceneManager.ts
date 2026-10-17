@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { PALETTE } from '../data/palette';
 import { PostProcessingManager } from './PostProcessing';
 import { ProceduralTextures } from './ProceduralTextures';
 
