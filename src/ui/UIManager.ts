@@ -96,4 +96,23 @@ export class UIManager {
     window.addEventListener('orientationchange', checkOrientation);
     checkOrientation();
   }
+
+  public updateGamepad(gp: import('../input/GamepadManager').GamepadManager, dt: number): void {
+    if (!gp.hasActiveController) return;
+
+    // 1. Level Up Requisition Modal
+    if (this.levelUpModal.handleGamepad(gp, dt)) return;
+
+    // 2. Vault Decryption Modal
+    if (this.vaultModal.handleGamepad(gp)) return;
+
+    // 3. Pause Modal
+    if (this.pauseModal.handleGamepad(gp, dt)) return;
+
+    // 4. End Run Modal (Victory / Defeat)
+    if (this.endRunModal.handleGamepad(gp)) return;
+
+    // 5. Title Screen & Tech-Com Bunker Modal
+    if (this.titleScreen.handleGamepad(gp, dt)) return;
+  }
 }

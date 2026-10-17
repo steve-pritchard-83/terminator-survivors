@@ -20,6 +20,7 @@ export class HUDView {
   private readonly pauseBtn: HTMLElement;
   private readonly bossWarningBanner: HTMLElement;
   private readonly floatingTextLayer: HTMLElement;
+  private readonly desktopHintEl: HTMLElement;
   public onPauseClicked: (() => void) | null = null;
   private lastXp = 0;
   private lastLevel = 1;
@@ -95,6 +96,7 @@ export class HUDView {
     this.pauseBtn = this.container.querySelector('#btn-hud-pause')!;
     this.bossWarningBanner = this.container.querySelector('#hud-boss-warning')!;
     this.floatingTextLayer = this.container.querySelector('#hud-floating-text-layer')!;
+    this.desktopHintEl = this.container.querySelector('.hud-desktop-hint')!;
 
     this.pauseBtn.addEventListener('click', () => {
       this.onPauseClicked?.();
@@ -107,6 +109,40 @@ export class HUDView {
 
   public hide(): void {
     this.container.style.display = 'none';
+  }
+
+  public showControllerNotification(name: string, connected: boolean): void {
+    const existing = this.container.querySelector('.hud-controller-notification');
+    existing?.remove();
+
+    const notif = document.createElement('div');
+    notif.className = 'hud-controller-notification';
+    notif.innerHTML = connected
+      ? `<span style="font-size:16px;">🎮</span> <span>${name} CONNECTED // TACTICAL HAPTICS ENGAGED</span>`
+      : `<span style="font-size:16px;">⚠</span> <span>CONTROLLER DISCONNECTED // FALLBACK CONTROLS ENGAGED</span>`;
+
+    if (!connected) {
+      notif.style.borderColor = 'var(--color-red)';
+      notif.style.boxShadow = '0 0 20px rgba(255, 40, 40, 0.6)';
+    }
+
+    this.container.appendChild(notif);
+    window.setTimeout(() => {
+      notif.remove();
+    }, 3600);
+  }
+
+  public setGamepadActive(active: boolean, isXbox: boolean): void {
+    if (active) {
+      this.desktopHintEl.innerHTML = isXbox
+        ? '[LS / D-PAD] MOVE &nbsp;//&nbsp; [RS] TWIN-STICK AIM &nbsp;//&nbsp; [A / LT / LB] COMBAT DIVE &nbsp;//&nbsp; [START] PAUSE'
+        : '[STICK / D-PAD] MOVE &nbsp;//&nbsp; [RIGHT STICK] AIM &nbsp;//&nbsp; [A / TRIGGER] DIVE &nbsp;//&nbsp; [START] PAUSE';
+      this.mobileDashBtn.style.opacity = '0.35';
+    } else {
+      this.desktopHintEl.innerHTML =
+        '[WASD / L-CLICK] MOVE &nbsp;//&nbsp; [MOUSE] LASER AIM &nbsp;//&nbsp; [SPACE / R-CLICK] DIVE &nbsp;//&nbsp; [ESC] PAUSE';
+      this.mobileDashBtn.style.opacity = '1';
+    }
   }
 
   public update(runState: RunState, activeBoss: { name: string; hp: number; maxHp: number } | null): void {
@@ -158,23 +194,23 @@ export class HUDView {
       const def = PASSIVES[pId];
       const slotEl = document.createElement('div');
       slotEl.className = 'rack-slot';
-      slotEl.style.color = def?.iconColor ?? '#00e5ff';
-      slotEl.textContent = `P${lv}`;
+      slotEl.style.color = def?.iconColor ?? '#00ff88';
+      slotEl.textContent = `${lv}`;
       this.passiveRack.appendChild(slotEl);
     }
 
-    // Dash cooldown indicator
+    // Dash status & Mobile Dash Button visual cooldown
     if (runState.dashCooldownTimer > 0) {
       const cdSec = runState.dashCooldownTimer.toFixed(1);
       this.dashStatusEl.textContent = `DIVE: ${cdSec}s`;
-      this.dashStatusEl.style.color = 'var(--color-amber)';
+      this.dashStatusEl.style.color = '#888';
       this.mobileDashBtn.classList.add('on-cooldown');
-      this.mobileDashBtn.textContent = `${cdSec}s`;
+      this.mobileDashBtn.textContent = cdSec;
     } else {
       this.dashStatusEl.textContent = 'DIVE: READY';
       this.dashStatusEl.style.color = 'var(--color-cyan)';
       this.mobileDashBtn.classList.remove('on-cooldown');
-      this.mobileDashBtn.textContent = 'DASH';
+      this.mobileDashBtn.textContent = 'DIVE';
     }
 
     // Boss Bar

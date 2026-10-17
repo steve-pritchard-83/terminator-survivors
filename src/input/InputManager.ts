@@ -1,4 +1,7 @@
+import { GamepadManager } from './GamepadManager';
+
 export class InputManager {
+  public readonly gamepadManager: GamepadManager;
   private keys = new Set<string>();
   private touchVec = { x: 0, z: 0 };
   private targetAimAngle: number | null = null;
@@ -16,6 +19,15 @@ export class InputManager {
   private joystickKnobEl: HTMLElement | null = null;
 
   constructor() {
+    this.gamepadManager = new GamepadManager();
+    this.gamepadManager.onDashCallback = () => {
+      this.dashRequested = true;
+      this.onDashCallback?.();
+    };
+    this.gamepadManager.onPauseCallback = () => {
+      this.onPauseCallback?.();
+    };
+
     if (typeof window !== 'undefined') {
       window.addEventListener('keydown', this.onKeyDown);
       window.addEventListener('keyup', this.onKeyUp);
@@ -154,6 +166,10 @@ export class InputManager {
     );
   }
 
+  public update(dt: number): void {
+    this.gamepadManager.update(dt);
+  }
+
   public getMovement(): { x: number; z: number } {
     let kx = 0;
     let kz = 0;
@@ -163,9 +179,10 @@ export class InputManager {
     if (this.keys.has('KeyA') || this.keys.has('ArrowLeft')) kx -= 1;
     if (this.keys.has('KeyD') || this.keys.has('ArrowRight')) kx += 1;
 
-    // Combine keyboard and touch joystick
-    let finalX = kx !== 0 ? kx : this.touchVec.x;
-    let finalZ = kz !== 0 ? kz : this.touchVec.z;
+    // Combine keyboard, touch joystick, and Xbox / Gamepad controller
+    const gpMove = this.gamepadManager.getMovement();
+    let finalX = kx !== 0 ? kx : (gpMove ? gpMove.x : this.touchVec.x);
+    let finalZ = kz !== 0 ? kz : (gpMove ? gpMove.z : this.touchVec.z);
 
     const len = Math.hypot(finalX, finalZ);
     if (len > 1.0) {
@@ -189,11 +206,16 @@ export class InputManager {
   }
 
   public getAimAngle(): number | null {
+    // Twin-stick right stick aiming takes priority when pushed
+    const gpAim = this.gamepadManager.getAimAngle();
+    if (gpAim !== null) {
+      return gpAim;
+    }
     return this.targetAimAngle;
   }
 
   public consumeDash(): boolean {
-    const dash = this.dashRequested;
+    const dash = this.dashRequested || this.gamepadManager.consumeDash();
     this.dashRequested = false;
     return dash;
   }

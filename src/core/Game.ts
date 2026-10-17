@@ -47,6 +47,7 @@ export class Game {
     this.saveManager = new SaveManager();
     this.inputManager = new InputManager();
     this.audioEngine = new AudioEngine();
+    this.audioEngine.gamepadManager = this.inputManager.gamepadManager;
     this.grid = new SpatialHashGrid(4.0);
 
     // Apply saved volume settings
@@ -143,6 +144,16 @@ export class Game {
 
     this.inputManager.onPauseCallback = () => {
       this.togglePause();
+    };
+
+    this.inputManager.gamepadManager.onConnectCallback = (status) => {
+      this.uiManager.hudView.showControllerNotification(status.name, true);
+      this.uiManager.hudView.setGamepadActive(true, status.isXbox);
+    };
+
+    this.inputManager.gamepadManager.onDisconnectCallback = (status) => {
+      this.uiManager.hudView.showControllerNotification(status.name, false);
+      this.uiManager.hudView.setGamepadActive(false, false);
     };
 
     this.uiManager.hudView.onPauseClicked = () => {
@@ -311,6 +322,10 @@ export class Game {
   }
 
   private fixedUpdate(dt: number): void {
+    // 1. Process Input & Gamepad navigation across all screens and modes
+    this.inputManager.update(dt);
+    this.uiManager.updateGamepad(this.inputManager.gamepadManager, dt);
+
     if (this.isPaused || this.runState.mode !== 'playing') {
       // Idle rotation in title screen
       if (this.runState.mode === 'title') {

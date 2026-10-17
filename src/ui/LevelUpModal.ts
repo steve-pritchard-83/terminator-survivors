@@ -1,12 +1,15 @@
 import type { UpgradeChoice } from '../core/types';
 import { LORE } from '../data/lore';
 import { globalRNG } from '../core/RNG';
+import type { GamepadManager } from '../input/GamepadManager';
 
 export class LevelUpModal {
   public readonly container: HTMLElement;
   private readonly cardContainer: HTMLElement;
   private readonly tickerEl: HTMLElement;
   private onSelectCallback: ((choice: UpgradeChoice) => void) | null = null;
+  private cards: HTMLElement[] = [];
+  private selectedIndex = 0;
 
   constructor(root: HTMLElement) {
     this.container = document.createElement('div');
@@ -19,6 +22,9 @@ export class LevelUpModal {
         <div class="t800-header">TACTICAL UPGRADE // CSM-101</div>
         <div class="t800-ticker" id="levelup-ticker">03A0: A9 01 8D 20 D0 // SCANNING ARSENAL</div>
         <div class="upgrade-card-list" id="levelup-cards"></div>
+        <div id="levelup-controller-hint" style="font-family:var(--font-telemetry); font-size:12px; color:var(--color-cyan); margin-top:8px; text-align:center; display:none;">
+          [D-PAD / LS] SELECT UPGRADE &nbsp;//&nbsp; [A / RT] CONFIRM REQUISITION
+        </div>
       </div>
     `;
 
@@ -31,6 +37,8 @@ export class LevelUpModal {
   public show(level: number, choices: UpgradeChoice[], onSelect: (choice: UpgradeChoice) => void): void {
     this.onSelectCallback = onSelect;
     this.container.style.display = 'flex';
+    this.selectedIndex = 0;
+    this.cards = [];
 
     // Pick random 6502 assembly line for flavor
     const tickerLine = globalRNG.pick(LORE.assembly6502);
@@ -58,7 +66,50 @@ export class LevelUpModal {
       };
 
       this.cardContainer.appendChild(card);
+      this.cards.push(card);
     });
+
+    this.updateCardHighlight();
+  }
+
+  public updateCardHighlight(): void {
+    this.cards.forEach((c, i) => {
+      if (i === this.selectedIndex) {
+        c.classList.add('controller-selected');
+        c.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      } else {
+        c.classList.remove('controller-selected');
+      }
+    });
+  }
+
+  public handleGamepad(gp: GamepadManager, dt: number): boolean {
+    if (this.container.style.display === 'none' || this.cards.length === 0) return false;
+
+    // Show controller hint if connected
+    const hintEl = this.container.querySelector('#levelup-controller-hint') as HTMLElement | null;
+    if (hintEl) {
+      hintEl.style.display = gp.hasActiveController ? 'block' : 'none';
+    }
+
+    const nav = gp.getMenuNavigation(dt);
+    if (nav.y !== 0 || nav.x !== 0) {
+      const dir = nav.y !== 0 ? nav.y : nav.x;
+      this.selectedIndex = (this.selectedIndex + dir + this.cards.length) % this.cards.length;
+      this.updateCardHighlight();
+      gp.playRumble(30, 0.05, 0.22);
+      return true;
+    }
+
+    if (gp.isMenuConfirmPressed()) {
+      if (this.cards[this.selectedIndex]) {
+        gp.playRumble(90, 0.45, 0.55);
+        this.cards[this.selectedIndex].click();
+        return true;
+      }
+    }
+
+    return true;
   }
 
   public hide(): void {

@@ -1,5 +1,6 @@
 import type { WeaponId } from '../core/types';
 import { ALL_WEAPONS } from '../data/weapons';
+import type { GamepadManager } from '../input/GamepadManager';
 
 export class VaultJackpotModal {
   public readonly container: HTMLElement;
@@ -24,6 +25,9 @@ export class VaultJackpotModal {
         <button class="btn-primary" data-testid="btn-claim-vault" id="btn-claim-vault" style="align-self:center;">
           SECURE SALVAGE
         </button>
+        <div id="vault-controller-hint" style="font-family:var(--font-telemetry); font-size:12px; color:var(--color-cyan); margin-top:12px; display:none;">
+          [A / START] SECURE SALVAGE
+        </div>
       </div>
     `;
 
@@ -69,6 +73,27 @@ export class VaultJackpotModal {
         <div style="color:var(--color-amber);">+${alloyBonus} ALLOY SCRAP SECURED</div>
       `;
     }
+  }
+
+  public isVisible(): boolean {
+    return this.container.style.display !== 'none';
+  }
+
+  public handleGamepad(gp: GamepadManager): boolean {
+    if (!this.isVisible()) return false;
+
+    const hintEl = this.container.querySelector('#vault-controller-hint') as HTMLElement | null;
+    if (hintEl) {
+      hintEl.style.display = gp.hasActiveController ? 'block' : 'none';
+    }
+
+    if (gp.isMenuConfirmPressed() || gp.isMenuCancelPressed()) {
+      gp.playRumble(80, 0.35, 0.5);
+      this.claimBtn.click();
+      return true;
+    }
+
+    return true;
   }
 
   public hide(): void {

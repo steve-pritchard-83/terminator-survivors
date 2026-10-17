@@ -108,7 +108,10 @@ export const SFX_WAV_MANIFEST: Record<string, string[]> = {
   ]
 };
 
+import type { GamepadManager } from '../input/GamepadManager';
+
 export class AudioEngine {
+  public gamepadManager: GamepadManager | null = null;
   private ctx: AudioContext | null = null;
   private masterGain: GainNode | null = null;
   private musicGain: GainNode | null = null;
@@ -373,6 +376,14 @@ export class AudioEngine {
     if (now - this.lastHapticTimeMs < minIntervalMs) return;
     this.lastHapticTimeMs = now;
 
+    // 1. Xbox & Gamepad Controller Dual-Rumble Haptics
+    try {
+      this.gamepadManager?.triggerRumblePattern(pattern);
+    } catch {
+      // Suppress controller haptic errors
+    }
+
+    // 2. Mobile device navigator.vibrate
     try {
       if (typeof navigator.vibrate === 'function') {
         navigator.vibrate(pattern);
@@ -382,7 +393,7 @@ export class AudioEngine {
       // Fall through to iOS switch Taptic fallback
     }
 
-    // iOS 17.4+ / 18 Safari Taptic Engine switch fallback when triggered from user interaction
+    // 3. iOS 17.4+ / 18 Safari Taptic Engine switch fallback when triggered from user interaction
     try {
       if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
         this.ensureIosHapticSwitch();

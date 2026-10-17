@@ -1,4 +1,5 @@
 import { LORE } from '../data/lore';
+import type { GamepadManager } from '../input/GamepadManager';
 
 export class EndRunModal {
   public readonly container: HTMLElement;
@@ -21,6 +22,9 @@ export class EndRunModal {
         <button class="btn-primary" id="btn-return-bunker" style="align-self:center;">
           RETURN TO COMMAND
         </button>
+        <div id="end-controller-hint" style="font-family:var(--font-telemetry); font-size:12px; color:var(--color-cyan); margin-top:12px; display:none;">
+          [A / B / START] RETURN TO COMMAND
+        </div>
       </div>
     `;
 
@@ -68,6 +72,28 @@ export class EndRunModal {
       <div>FIELD LEVEL: <span style="color:var(--color-cyan)">LV ${level}</span></div>
       <div>ALLOY SCRAP RECOVERED: <span style="color:#ffd700">+${scrap}</span></div>
     `;
+  }
+
+  public isVisible(): boolean {
+    return this.container.style.display !== 'none';
+  }
+
+  public handleGamepad(gp: GamepadManager): boolean {
+    if (!this.isVisible()) return false;
+
+    const hintEl = this.container.querySelector('#end-controller-hint') as HTMLElement | null;
+    if (hintEl) {
+      hintEl.style.display = gp.hasActiveController ? 'block' : 'none';
+    }
+
+    if (gp.isMenuConfirmPressed() || gp.isMenuCancelPressed()) {
+      gp.playRumble(80, 0.35, 0.5);
+      const btn = this.container.querySelector('#btn-return-bunker') as HTMLElement | null;
+      btn?.click();
+      return true;
+    }
+
+    return true;
   }
 
   public hide(): void {

@@ -3,6 +3,7 @@ import type { AudioEngine } from '../audio/AudioEngine';
 import { LOADOUTS, META_UPGRADES } from '../data/upgrades';
 import { LORE } from '../data/lore';
 import type { LoadoutId, MetaUpgradeId } from '../core/types';
+import type { GamepadManager } from '../input/GamepadManager';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -14,10 +15,16 @@ export class TitleScreen {
   private readonly bunkerModal: HTMLElement;
   private readonly pwaModal: HTMLElement;
   private readonly installBtn: HTMLElement;
+  private readonly startBtn: HTMLElement;
+  private readonly bunkerBtn: HTMLElement;
   private readonly saveManager: SaveManager;
   private readonly audioEngine: AudioEngine;
   private readonly onStartRun: (loadoutId: LoadoutId) => void;
   private deferredInstallPrompt: BeforeInstallPromptEvent | null = null;
+
+  private selectedBtnIndex = 0;
+  private bunkerSelectables: HTMLElement[] = [];
+  private selectedBunkerIndex = 0;
 
   constructor(
     root: HTMLElement,
@@ -50,6 +57,9 @@ export class TitleScreen {
           <button class="btn-secondary" id="btn-install-pwa" style="display:none; border-color:var(--color-cyan); color:var(--color-cyan);">
             INSTALL APP (PWA)
           </button>
+          <div id="title-controller-hint" style="font-family:var(--font-telemetry); font-size:12px; color:var(--color-cyan); margin-top:8px; text-align:center; display:none;">
+            [A / START] DEPLOY TO SECTOR 44 &nbsp;//&nbsp; [D-PAD] SELECT
+          </div>
         </div>
       </div>
 
@@ -89,9 +99,14 @@ export class TitleScreen {
           </div>
           <div id="bunker-upgrades-list" class="upgrade-card-list"></div>
 
-          <button class="btn-secondary" id="btn-close-bunker" style="margin-top:14px; align-self:center;">
-            RETURN TO COMMAND
-          </button>
+          <div style="display:flex; justify-content:center; align-items:center; gap:12px; margin-top:14px;">
+            <button class="btn-secondary" id="btn-close-bunker" style="align-self:center;">
+              RETURN TO COMMAND
+            </button>
+          </div>
+          <div id="bunker-controller-hint" style="font-family:var(--font-telemetry); font-size:12px; color:var(--color-cyan); margin-top:6px; text-align:center; display:none;">
+            [D-PAD] BROWSE &nbsp;//&nbsp; [A] PURCHASE/SELECT &nbsp;//&nbsp; [B] RETURN
+          </div>
         </div>
       </div>
     `;
@@ -101,24 +116,29 @@ export class TitleScreen {
     this.bunkerModal = this.container.querySelector('#bunker-modal')!;
     this.pwaModal = this.container.querySelector('#pwa-install-modal')!;
     this.installBtn = this.container.querySelector('#btn-install-pwa')!;
+    this.startBtn = this.container.querySelector('#btn-start-run')!;
+    this.bunkerBtn = this.container.querySelector('#btn-bunker-shop')!;
 
     this.setupPwaInstallPrompt();
 
     // Button event listeners
-    this.container.querySelector('#btn-start-run')?.addEventListener('click', () => {
+    this.startBtn.addEventListener('click', () => {
       this.tryLockMobileLandscape();
       this.hide();
       this.onStartRun(this.saveManager.getData().selectedLoadout);
     });
 
-    this.container.querySelector('#btn-bunker-shop')?.addEventListener('click', () => {
+    this.bunkerBtn.addEventListener('click', () => {
       this.openBunkerShop();
     });
 
     this.container.querySelector('#btn-close-bunker')?.addEventListener('click', () => {
       this.audioEngine.playHudScanClose();
       this.bunkerModal.style.display = 'none';
+      this.updateTitleButtonHighlight();
     });
+
+    this.updateTitleButtonHighlight();
   }
 
   private tryLockMobileLandscape(): void {
@@ -232,10 +252,137 @@ export class TitleScreen {
 
   public show(): void {
     this.container.style.display = 'flex';
+    this.selectedBtnIndex = 0;
+    this.updateTitleButtonHighlight();
   }
 
   public hide(): void {
     this.container.style.display = 'none';
+  }
+
+  public isVisible(): boolean {
+    return this.container.style.display !== 'none';
+  }
+
+  public isBunkerVisible(): boolean {
+    return this.bunkerModal.style.display !== 'none';
+  }
+
+  public isPwaModalVisible(): boolean {
+    return this.pwaModal.style.display !== 'none';
+  }
+
+  private getActiveTitleButtons(): HTMLElement[] {
+    const btns: HTMLElement[] = [this.startBtn, this.bunkerBtn];
+    if (this.installBtn.style.display !== 'none') {
+      btns.push(this.installBtn);
+    }
+    return btns;
+  }
+
+  private updateTitleButtonHighlight(): void {
+    const btns = this.getActiveTitleButtons();
+    btns.forEach((btn, i) => {
+      if (i === this.selectedBtnIndex) {
+        btn.classList.add('controller-selected');
+      } else {
+        btn.classList.remove('controller-selected');
+      }
+    });
+  }
+
+  private updateBunkerHighlight(): void {
+    this.bunkerSelectables.forEach((el, i) => {
+      if (i === this.selectedBunkerIndex) {
+        el.classList.add('controller-selected');
+        el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      } else {
+        el.classList.remove('controller-selected');
+      }
+    });
+  }
+
+  public handleGamepad(gp: GamepadManager, dt: number): boolean {
+    if (!this.isVisible()) return false;
+
+    // Show hints if controller connected
+    const hintEl = this.container.querySelector('#title-controller-hint') as HTMLElement | null;
+    if (hintEl) {
+      hintEl.style.display = gp.hasActiveController && !this.isBunkerVisible() ? 'block' : 'none';
+    }
+    const bunkerHintEl = this.container.querySelector('#bunker-controller-hint') as HTMLElement | null;
+    if (bunkerHintEl) {
+      bunkerHintEl.style.display = gp.hasActiveController && this.isBunkerVisible() ? 'block' : 'none';
+    }
+
+    // 1. PWA Modal Open
+    if (this.isPwaModalVisible()) {
+      if (gp.isMenuCancelPressed()) {
+        const dismissBtn = this.pwaModal.querySelector('#btn-dismiss-pwa-modal') as HTMLElement | null;
+        dismissBtn?.click();
+        gp.playRumble(40, 0.15, 0.3);
+        return true;
+      }
+      if (gp.isMenuConfirmPressed()) {
+        const triggerBtn = this.pwaModal.querySelector('#btn-trigger-pwa-install') as HTMLElement | null;
+        triggerBtn?.click();
+        gp.playRumble(60, 0.25, 0.4);
+        return true;
+      }
+      return true;
+    }
+
+    // 2. Bunker Modal Open
+    if (this.isBunkerVisible()) {
+      if (gp.isMenuCancelPressed()) {
+        const closeBtn = this.bunkerModal.querySelector('#btn-close-bunker') as HTMLElement | null;
+        closeBtn?.click();
+        gp.playRumble(40, 0.15, 0.3);
+        return true;
+      }
+
+      const nav = gp.getMenuNavigation(dt);
+      if (nav.y !== 0 || nav.x !== 0) {
+        const dir = nav.y !== 0 ? nav.y : nav.x;
+        if (this.bunkerSelectables.length > 0) {
+          this.selectedBunkerIndex =
+            (this.selectedBunkerIndex + dir + this.bunkerSelectables.length) %
+            this.bunkerSelectables.length;
+          this.updateBunkerHighlight();
+          gp.playRumble(25, 0.05, 0.2);
+        }
+        return true;
+      }
+
+      if (gp.isMenuConfirmPressed()) {
+        if (this.bunkerSelectables[this.selectedBunkerIndex]) {
+          gp.playRumble(60, 0.25, 0.4);
+          this.bunkerSelectables[this.selectedBunkerIndex].click();
+          return true;
+        }
+      }
+
+      return true;
+    }
+
+    // 3. Main Title Screen
+    const nav = gp.getMenuNavigation(dt);
+    const btns = this.getActiveTitleButtons();
+    if (nav.y !== 0) {
+      this.selectedBtnIndex = (this.selectedBtnIndex + nav.y + btns.length) % btns.length;
+      this.updateTitleButtonHighlight();
+      gp.playRumble(25, 0.05, 0.2);
+      return true;
+    }
+
+    if (gp.isMenuConfirmPressed()) {
+      const activeBtn = btns[this.selectedBtnIndex] ?? this.startBtn;
+      gp.playRumble(90, 0.4, 0.55);
+      activeBtn.click();
+      return true;
+    }
+
+    return true;
   }
 
   private openBunkerShop(): void {
@@ -248,6 +395,8 @@ export class TitleScreen {
     const data = this.saveManager.getData();
     const scrapHeader = this.bunkerModal.querySelector('#bunker-scrap-header')!;
     scrapHeader.textContent = `AVAILABLE ALLOY SCRAP: ${data.alloyScrap} // TOTAL KILLS: ${data.totalKills}`;
+
+    this.bunkerSelectables = [];
 
     // Render Loadouts
     const loadoutGrid = this.bunkerModal.querySelector('#loadout-selection-grid')!;
@@ -264,6 +413,7 @@ export class TitleScreen {
         border: 1px solid ${isSelected ? 'var(--color-cyan)' : 'rgba(77,210,255,0.3)'};
         border-radius: 3px;
         cursor: pointer;
+        transition: all 0.15s ease;
       `;
       card.innerHTML = `
         <div style="font-family:var(--font-display); font-size:11px; color:#fff;">${cfg.name}</div>
@@ -287,6 +437,7 @@ export class TitleScreen {
         }
       };
       loadoutGrid.appendChild(card);
+      this.bunkerSelectables.push(card);
     }
 
     // Render Upgrades
@@ -327,6 +478,14 @@ export class TitleScreen {
       }
 
       upgradeList.appendChild(card);
+      this.bunkerSelectables.push(card);
     }
+
+    const closeBtn = this.bunkerModal.querySelector('#btn-close-bunker') as HTMLElement | null;
+    if (closeBtn) {
+      this.bunkerSelectables.push(closeBtn);
+    }
+
+    this.updateBunkerHighlight();
   }
 }
