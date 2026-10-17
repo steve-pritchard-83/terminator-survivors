@@ -12,6 +12,8 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "test:unit": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:bundle-size": "node scripts/check-bundle-size.mjs",
     "test:e2e": "playwright test",
     "test": "npm run typecheck && npm run lint && npm run test:unit && npm run test:e2e"
   },

@@ -37,8 +37,8 @@ jobs:
       - name: Run ESLint
         run: npm run lint
 
-      - name: Run Vitest Unit Tests
-        run: npm run test:unit
+      - name: Run Vitest Unit Tests & Coverage
+        run: npm run test:coverage
 
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps chromium
@@ -46,8 +46,19 @@ jobs:
       - name: Build Production PWA
         run: npm run build
 
+      - name: Check Production Bundle Size
+        run: npm run test:bundle-size
+
       - name: Run Playwright E2E & Offline PWA Tests
         run: npm run test:e2e
+
+      - name: Upload Playwright Report on Failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 14
 
       - name: Upload GitHub Pages Artifact
         if: github.ref == 'refs/heads/main'
