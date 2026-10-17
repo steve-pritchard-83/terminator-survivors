@@ -15,11 +15,12 @@ import { EnemySystem } from '../systems/EnemySystem';
 import { WaveDirector } from '../systems/WaveDirector';
 import { PickupSystem } from '../systems/PickupSystem';
 import { UIManager } from '../ui/UIManager';
-import { globalEvents } from './EventBus';
-import { globalRNG } from './RNG';
-import type { EnemyArchetypeId, GameDebugAPI, LoadoutId, PerfTelemetry, UpgradeChoice } from './types';
+import { RunController, type RunControllerHost } from './RunController';
+import { InputRouter, type InputRouterHost } from './InputRouter';
+import { DebugAPI, type DebugAPIHost } from './DebugAPI';
+import type { LoadoutId } from './types';
 
-export class Game {
+export class Game implements RunControllerHost, InputRouterHost, DebugAPIHost {
   public readonly sceneManager: SceneManager;
   public readonly gameLoop: GameLoop;
   public readonly runState: RunState;
@@ -38,8 +39,10 @@ export class Game {
   public readonly waveDirector: WaveDirector;
   public readonly pickupSystem: PickupSystem;
   public readonly uiManager: UIManager;
+  public readonly runController: RunController;
+  public readonly inputRouter: InputRouter;
+  public readonly debugAPI: DebugAPI;
 
-  private activeBoss: { name: string; hp: number; maxHp: number } | null = null;
   private prevPlayerPos = { x: 0, z: 0 };
 
   constructor(appContainer: HTMLElement) {
@@ -51,7 +54,6 @@ export class Game {
     this.audioEngine.gamepadManager = this.inputManager.gamepadManager;
     this.grid = new SpatialHashGrid(4.0);
 
-    // Apply saved volume settings
     const settings = this.saveManager.getData().settings;
     this.audioEngine.setMasterVolume(settings.masterVolume);
     this.audioEngine.setMusicVolume(settings.musicVolume);
@@ -77,35 +79,16 @@ export class Game {
 
     // 3. Gameplay Systems
     this.playerSystem = new PlayerSystem(this.runState, this.playerMesh, this.particles);
-    this.weaponSystem = new WeaponSystem(
-      this.runState,
-      this.grid,
-      this.audioEngine,
-      this.particles,
-      this.playerMesh
-    );
-    this.enemySystem = new EnemySystem(
-      this.runState,
-      this.grid,
-      this.audioEngine,
-      this.particles,
-      this.endoBatch
-    );
+    this.weaponSystem = new WeaponSystem(this.runState, this.grid, this.audioEngine, this.particles, this.playerMesh);
+    this.enemySystem = new EnemySystem(this.runState, this.grid, this.audioEngine, this.particles, this.endoBatch);
     this.waveDirector = new WaveDirector(this.runState, this.enemySystem);
     this.pickupSystem = new PickupSystem(this.runState, this.audioEngine);
-
-    this.sceneManager.scene.add(
-      this.weaponSystem.group,
-      this.enemySystem.group,
-      this.pickupSystem.group
-    );
+    this.sceneManager.scene.add(this.weaponSystem.group, this.enemySystem.group, this.pickupSystem.group);
 
     // 4. UI Layer & CRT Overlay
     const crtOverlay = document.createElement('div');
     crtOverlay.className = 'crt-overlay';
-    if (!settings.crtScanlines) {
-      crtOverlay.style.display = 'none';
-    }
+    if (!settings.crtScanlines) crtOverlay.style.display = 'none';
     appContainer.appendChild(crtOverlay);
 
     this.uiManager = new UIManager(
@@ -117,351 +100,61 @@ export class Game {
       () => this.runState
     );
 
-    // 5. Game Loop
+    // 5. RunController, InputRouter, DebugAPI & GameLoop
+    this.runController = new RunController(this);
+    this.inputRouter = new InputRouter(this, () => this.togglePause());
     this.gameLoop = new GameLoop(
       (dt) => this.fixedUpdate(dt),
       (alpha, dt) => this.render(alpha, dt)
     );
-
-    // 6. Hook up Events
-    this.setupEvents();
-
-    // 7. Setup Debug Interface
-    this.setupDebugAPI();
-
-    // Start in Title Mode (camera flyover)
+    this.debugAPI = new DebugAPI(this);
     this.gameLoop.start();
   }
 
-  private setupEvents(): void {
-    this.inputManager.onDashCallback = () => {
-      if (this.runState.mode === 'playing') {
-        this.inputManager.consumeDash();
-        if (this.runState.triggerDash()) {
-          this.audioEngine.playCombatDive();
-        }
-      }
-    };
+  public onRunStarted(): void {
+    this.prevPlayerPos.x = this.runState.playerPos.x;
+    this.prevPlayerPos.z = this.runState.playerPos.z;
+  }
 
-    this.inputManager.onPauseCallback = () => {
-      this.togglePause();
-    };
-
-    this.inputManager.gamepadManager.onConnectCallback = (status) => {
-      this.uiManager.hudView.showControllerNotification(status.name, true);
-      this.uiManager.hudView.setGamepadActive(true, status.isXbox);
-    };
-
-    this.inputManager.gamepadManager.onDisconnectCallback = (status) => {
-      this.uiManager.hudView.showControllerNotification(status.name, false);
-      this.uiManager.hudView.setGamepadActive(false, false);
-    };
-
-    this.uiManager.hudView.onPauseClicked = () => {
-      this.togglePause();
-    };
-
-    globalEvents.on('camera:shake', ({ trauma }) => {
-      this.sceneManager.addScreenShake(trauma);
-    });
-
-    globalEvents.on('player:damaged', () => {
-      this.sceneManager.postProcessing.triggerDamageFlash();
-      this.sceneManager.addScreenShake(0.42);
-    });
-
-    globalEvents.on('boss:spawned', ({ name, maxHp }) => {
-      this.activeBoss = { name, hp: maxHp, maxHp };
-      this.audioEngine.playSearchlightAlert();
-      this.sceneManager.addScreenShake(0.65);
-      this.uiManager.hudView.triggerBossWarning(name);
-    });
-
-    globalEvents.on('enemy:damaged', ({ x, z, damage, isCrit, enemyId }) => {
-      if (this.runState.mode !== 'playing') return;
-      const screenPos = this.sceneManager.worldToScreen(x, 0.8, z);
-      if (screenPos) {
-        this.uiManager.hudView.damageNumbers.onEnemyDamaged(
-          damage,
-          isCrit,
-          screenPos.x,
-          screenPos.y,
-          enemyId
-        );
-      }
-    });
-
-    globalEvents.on('pickup:reward', ({ x, z, text, color }) => {
-      if (this.runState.mode !== 'playing') return;
-      const screenPos = this.sceneManager.worldToScreen(x, 0.8, z);
-      if (screenPos) {
-        this.uiManager.hudView.spawnFloatingText(text, color, screenPos.x, screenPos.y);
-      }
-    });
-
-    const showLevelUpModal = (level: number, choices: UpgradeChoice[]): void => {
-      this.runState.mode = 'levelup';
-      this.audioEngine.playHudScanOpen();
-      this.uiManager.levelUpModal.show(level, choices, (choice) => {
-        this.audioEngine.playUpgradeApplied();
-        this.runState.applyUpgrade(choice);
-        this.inputManager.clearDashRequest();
-        if (this.runState.pendingLevelUps > 0) {
-          this.runState.pendingLevelUps--;
-          this.audioEngine.playLevelUp();
-          const nextChoices = this.runState.generateUpgradeChoices();
-          showLevelUpModal(this.runState.level, nextChoices);
-        } else {
-          this.runState.mode = 'playing';
-        }
-      });
-    };
-
-    globalEvents.on('levelup:triggered', ({ level, choices }) => {
-      showLevelUpModal(level, choices);
-    });
-
-    globalEvents.on('vault:opened', ({ upgradesAwarded, evolvedWeapon, alloyBonus }) => {
-      this.runState.mode = 'vault';
-      this.sceneManager.addScreenShake(0.35);
-      this.uiManager.vaultModal.show(upgradesAwarded, evolvedWeapon, alloyBonus, () => {
-        this.audioEngine.playUpgradeApplied();
-        this.inputManager.clearDashRequest();
-        this.runState.mode = 'playing';
-        if (!evolvedWeapon) {
-          this.runState.pendingLevelUps += 3;
-          if (this.runState.pendingLevelUps > 0) {
-            this.runState.pendingLevelUps--;
-            this.audioEngine.playLevelUp();
-            const choices = this.runState.generateUpgradeChoices();
-            showLevelUpModal(this.runState.level, choices);
-          }
-        }
-      });
-    });
-
-    globalEvents.on('enemy:killed', ({ enemy }) => {
-      if (enemy.isBoss) {
-        this.runState.bossesKilled++;
-        this.sceneManager.addScreenShake(0.55);
-        if (this.activeBoss) {
-          this.activeBoss = null;
-        }
-        if (enemy.archetype === 'skynet_tde_core') {
-          this.endRun(true);
-        }
-      }
-    });
+  public get activeBoss(): { name: string; hp: number; maxHp: number } | null {
+    return this.runController.activeBoss;
   }
 
   public startRun(loadoutId: LoadoutId, customSeed?: number): void {
-    const seed = (customSeed !== undefined ? customSeed : Date.now()) >>> 0;
-    globalRNG.setSeed(seed);
-    this.runState.initRun(loadoutId, this.saveManager.getData().upgrades, seed);
-    this.prevPlayerPos.x = this.runState.playerPos.x;
-    this.prevPlayerPos.z = this.runState.playerPos.z;
-    this.runState.autoAimEnabled = this.saveManager.getData().settings.autoAim;
-    this.weaponSystem.clear();
-    this.enemySystem.clear();
-    this.pickupSystem.clear();
-    this.particles.clear();
-    this.waveDirector.reset();
-    this.activeBoss = null;
-    this.inputManager.clearDashRequest();
-
-    this.uiManager.titleScreen.hide();
-    this.uiManager.hudView.damageNumbers.clear();
-    this.uiManager.hudView.show();
-    this.audioEngine.init();
-    this.audioEngine.playRunStart();
-    this.audioEngine.startMusic();
+    this.runController.startRun(loadoutId, customSeed);
   }
 
-  public endRun(victory: boolean): void {
-    if (this.runState.mode === 'gameover' || this.runState.mode === 'victory') return;
-    this.runState.mode = victory ? 'victory' : 'gameover';
-    this.audioEngine.stopMusic();
-    this.audioEngine.playRunEnd(victory);
-
-    this.saveManager.addRunResults(
-      this.runState.kills,
-      this.runState.timeSeconds,
-      this.runState.alloyScrapEarned,
-      victory,
-      this.runState.bossesKilled
-    );
-
-    this.uiManager.levelUpModal.hide();
-    this.uiManager.vaultModal.hide();
-    this.uiManager.hudView.damageNumbers.clear();
-    this.uiManager.hudView.hide();
-    this.uiManager.endRunModal.show(
-      victory,
-      this.runState.timeSeconds,
-      this.runState.kills,
-      this.runState.level,
-      this.runState.alloyScrapEarned,
-      this.runState.seed,
-      () => {
-        this.audioEngine.playHudScanClose();
-        this.runState.mode = 'title';
-        this.uiManager.titleScreen.show();
-      }
-    );
-  }
-
-  public togglePause(): void {
-    if (this.runState.mode === 'paused') {
-      this.resumeFromPause();
-    } else if (this.runState.mode === 'playing') {
-      this.pauseGame();
-    }
-  }
-
-  public pauseGame(): void {
-    if (this.runState.mode !== 'playing') return;
-    this.runState.mode = 'paused';
-    this.audioEngine.playHudScanOpen();
-    this.uiManager.pauseModal.show(
-      () => this.resumeFromPause(),
-      () => this.abortToTitle()
-    );
-  }
-
-  public resumeFromPause(): void {
-    if (this.runState.mode !== 'paused') return;
-    this.uiManager.pauseModal.hide();
-    this.audioEngine.playHudScanClose();
-    this.inputManager.clearDashRequest();
-    this.runState.mode = 'playing';
-  }
-
-  public abortToTitle(): void {
-    this.uiManager.pauseModal.hide();
-    this.audioEngine.stopMusic();
-    this.uiManager.hudView.damageNumbers.clear();
-    this.uiManager.hudView.hide();
-    this.enemySystem.clear();
-    this.pickupSystem.clear();
-    this.weaponSystem.clear();
-    this.particles.clear();
-    this.activeBoss = null;
-    if (this.runState.mode === 'playing') {
-      this.runState.mode = 'paused';
-    }
-    this.runState.mode = 'title';
-    this.uiManager.titleScreen.show();
-  }
+  public endRun(victory: boolean): void { this.runController.endRun(victory); }
+  public togglePause(): void { this.runController.togglePause(); }
+  public pauseGame(): void { this.runController.pauseGame(); }
+  public resumeFromPause(): void { this.runController.resumeFromPause(); }
+  public abortToTitle(): void { this.runController.abortToTitle(); }
 
   private fixedUpdate(dt: number): void {
-    // 1. Process Input & Gamepad navigation across all screens and modes
-    this.inputManager.update(dt);
-    this.uiManager.updateGamepad(this.inputManager.gamepadManager, dt);
+    const input = this.inputRouter.update(dt);
 
     if (this.runState.mode !== 'playing') {
-      // Idle rotation in title screen
-      if (this.runState.mode === 'title') {
-        this.environment.update(0, 0);
-      }
+      if (this.runState.mode === 'title') this.environment.update(0, 0);
       return;
     }
 
     this.prevPlayerPos.x = this.runState.playerPos.x;
     this.prevPlayerPos.z = this.runState.playerPos.z;
 
-    // Input & Dash
-    if (this.inputManager.consumeDash()) {
-      const dashed = this.runState.triggerDash();
-      if (dashed) {
-        this.audioEngine.playCombatDive();
-      }
-    }
+    this.playerSystem.update(dt, input.move, input.aim, this.environment.obstacleColliders);
 
-    let move = this.inputManager.getMovement();
-    if (this.inputManager.isMouseAimActive()) {
-      const mousePos = this.inputManager.getMouseScreenPos();
-      if (mousePos) {
-        const worldMouse = this.sceneManager.screenToWorldGround(mousePos.x, mousePos.y);
-        if (worldMouse) {
-          const dx = worldMouse.x - this.runState.playerPos.x;
-          const dz = worldMouse.z - this.runState.playerPos.z;
-          const dist = Math.hypot(dx, dz);
-          if (dist > 0.15) {
-            this.inputManager.setAimAngle(Math.atan2(dx, dz));
-          }
-          // Desktop Left-Click hold-to-move toward cursor when keyboard isn't overriding
-          if (
-            this.inputManager.isMouseMoveActive() &&
-            !this.inputManager.hasKeyboardMovement() &&
-            dist > 0.65
-          ) {
-            const speedScale = Math.min(1.0, (dist - 0.5) / 1.5);
-            move = {
-              x: (dx / dist) * speedScale,
-              z: (dz / dist) * speedScale
-            };
-          }
-        }
-      }
-    } else {
-      this.inputManager.setAimAngle(null);
-    }
-
-    const aim = this.inputManager.getAimAngle();
-
-    // 1. Player Update
-    this.playerSystem.update(dt, move, aim, this.environment.obstacleColliders);
-
-    // 2. Rebuild Spatial Hash Grid
     this.grid.clear();
-    for (const enemy of this.enemySystem.activeEnemies) {
-      this.grid.insert(enemy);
-    }
-    for (const pickup of this.pickupSystem.pickups) {
-      this.grid.insert(pickup);
-    }
+    for (const enemy of this.enemySystem.activeEnemies) this.grid.insert(enemy);
+    for (const pickup of this.pickupSystem.pickups) this.grid.insert(pickup);
 
-    // 3. Systems Update
-    this.weaponSystem.update(dt, this.enemySystem.activeEnemies, aim);
+    this.weaponSystem.update(dt, this.enemySystem.activeEnemies, input.aim);
     this.enemySystem.update(dt, this.runState.timeSeconds, this.environment.obstacleColliders);
     this.waveDirector.update(dt);
     this.pickupSystem.update(dt);
     this.particles.update(dt);
     this.environment.update(this.runState.playerPos.x, this.runState.playerPos.z);
 
-    // Update active boss HP telemetry
-    if (this.activeBoss) {
-      const boss = this.enemySystem.activeEnemies.find((e) => e.isBoss);
-      if (boss) {
-        this.activeBoss.hp = Math.max(0, boss.hp);
-      }
-    }
-
-    // Update HUD
-    this.uiManager.hudView.update(this.runState, this.activeBoss);
-
-    // 4. Resolve Lethal Damage once per tick
-    const lethalStatus = this.runState.resolveLethalDamage();
-    if (lethalStatus === 'revived') {
-      this.sceneManager.postProcessing.triggerEmpGlitch();
-      this.audioEngine.playEmpBlast();
-      globalEvents.emit('player:revived', { remaining: this.runState.revivalsLeft });
-    } else if (lethalStatus === 'dead') {
-      this.audioEngine.playPlayerTerminated();
-      globalEvents.emit('player:died');
-      this.endRun(false);
-      return;
-    }
-
-    // 5. Trigger queued level-ups if playing
-    if (this.runState.mode === 'playing' && this.runState.pendingLevelUps > 0) {
-      this.runState.pendingLevelUps--;
-      this.audioEngine.playLevelUp();
-      const choices = this.runState.generateUpgradeChoices();
-      globalEvents.emit('levelup:triggered', { level: this.runState.level, choices });
-    }
-
-    // Quality Governor
+    this.runController.update(dt);
     this.sceneManager.adjustQuality(this.gameLoop.fps, dt);
   }
 
@@ -476,90 +169,5 @@ export class Game {
       this.sceneManager.updateCamera(this.runState.playerPos.x, this.runState.playerPos.z, dt);
     }
     this.sceneManager.render(dt, this.runState.timeSeconds);
-  }
-
-  private setupDebugAPI(): void {
-    const debugApi: GameDebugAPI = {
-      getState: () => ({
-        mode: this.runState.mode,
-        fps: this.gameLoop.fps,
-        timeSeconds: this.runState.timeSeconds,
-        seed: this.runState.seed,
-        level: this.runState.level,
-        xp: this.runState.xp,
-        xpToNext: this.runState.xpToNext,
-        pendingLevelUps: this.runState.pendingLevelUps,
-        hp: this.runState.hp,
-        maxHp: this.runState.maxHp,
-        kills: this.runState.kills,
-        alloyScrap: this.runState.alloyScrapEarned,
-        activeEnemies: this.enemySystem.activeEnemies.length,
-        playerPos: { ...this.runState.playerPos },
-        isDashing: this.runState.isDashing,
-        dashCooldown: this.runState.dashCooldownTimer,
-        weapons: Array.from(this.runState.weapons.values()).map((w) => ({
-          id: w.id,
-          level: w.level,
-          evolved: w.evolved
-        })),
-        passives: Array.from(this.runState.passives.entries()).map(([id, level]) => ({ id, level }))
-      }),
-      grantXp: (amount: number) => {
-        const levels = this.runState.addXp(amount);
-        if (levels > 0) {
-          this.runState.pendingLevelUps += levels;
-          if (this.runState.mode === 'playing') {
-            this.runState.pendingLevelUps--;
-            this.audioEngine.playLevelUp();
-            const choices = this.runState.generateUpgradeChoices();
-            globalEvents.emit('levelup:triggered', { level: this.runState.level, choices });
-          }
-        }
-      },
-      spawnBoss: (archetype: EnemyArchetypeId) => {
-        this.waveDirector.spawnBoss(archetype);
-      },
-      spawnSwarm: (archetype: EnemyArchetypeId, count: number) => {
-        const px = this.runState.playerPos.x;
-        const pz = this.runState.playerPos.z;
-        for (let i = 0; i < count; i++) {
-          const angle = (i / count) * Math.PI * 2 + (globalRNG.next() - 0.5) * 0.2;
-          const radius = 16 + (i % 6) * 2.5 + globalRNG.next() * 2;
-          const ex = px + Math.cos(angle) * radius;
-          const ez = pz + Math.sin(angle) * radius;
-          this.enemySystem.spawnEnemy(archetype, ex, ez);
-        }
-      },
-      getPerf: (): PerfTelemetry => {
-        const perfMemory =
-          typeof performance !== 'undefined' && (performance as any).memory
-            ? Number((((performance as any).memory.usedJSHeapSize) / (1024 * 1024)).toFixed(1))
-            : undefined;
-        return {
-          fps: this.gameLoop.fps,
-          frameTimeMs: this.gameLoop.frameTimeMs,
-          drawCalls: this.sceneManager.renderer.info.render.calls,
-          geometries: this.sceneManager.renderer.info.memory.geometries,
-          textures: this.sceneManager.renderer.info.memory.textures,
-          heapMB: perfMemory
-        };
-      },
-      triggerVault: () => {
-        this.pickupSystem.spawnBossVault(this.runState.playerPos.x, this.runState.playerPos.z);
-      },
-      fastForward: (seconds: number) => {
-        this.runState.timeSeconds += seconds;
-      },
-      setGodMode: (enabled: boolean) => {
-        this.runState.godMode = enabled;
-      },
-      togglePause: () => this.togglePause(),
-      pauseGame: () => this.pauseGame(),
-      resumeGame: () => this.resumeFromPause()
-    };
-
-    if (typeof window !== 'undefined') {
-      window.__GAME_DEBUG__ = debugApi;
-    }
   }
 }
