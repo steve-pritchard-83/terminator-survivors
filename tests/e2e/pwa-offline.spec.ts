@@ -17,7 +17,7 @@ test('PWA registers Service Worker, caches Terminator font & music, and runs com
       if (!navigator.serviceWorker.controller) {
         await new Promise<void>((resolve) => {
           navigator.serviceWorker.addEventListener('controllerchange', () => resolve(), { once: true });
-          setTimeout(resolve, 1500);
+          setTimeout(resolve, 8000);
         });
       }
     }

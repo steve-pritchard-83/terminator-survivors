@@ -14,65 +14,7 @@ export default defineConfig({
         'icons/icon-maskable-512.png',
         'fonts/terminator-real-nfi.ttf',
         'fonts/terminator-real-nfi.otf',
-        'audio/backgroundmusic.mp3',
-        'audio/effects/S_PlasmaShot01.wav',
-        'audio/effects/S_PlasmaShot02.wav',
-        'audio/effects/S_PlasmaShot03.wav',
-        'audio/effects/S_PlasmaShot04.wav',
-        'audio/effects/S_Plasma_Aerial_New01.wav',
-        'audio/effects/S_Plasma_Aerial_New02.wav',
-        'audio/effects/S_LaserTank01.wav',
-        'audio/effects/S_LaserTank02.wav',
-        'audio/effects/S_Ithica01.wav',
-        'audio/effects/S_Ithica02.wav',
-        'audio/effects/Shotgun_shot_spas.wav',
-        'audio/effects/S_Explosion01.wav',
-        'audio/effects/S_Explosion02.wav',
-        'audio/effects/plasma_explosion.wav',
-        'audio/effects/S_HackingDevice_On.wav',
-        'audio/effects/S_DetectiveModeOn.wav',
-        'audio/effects/S_BulletHitMetal01.wav',
-        'audio/effects/S_BulletHitMetal02.wav',
-        'audio/effects/S_DoorLockBreak01.wav',
-        'audio/effects/S_TurretAlarm.wav',
-        'audio/effects/S_HUD_TurretAlarm2.wav',
-        'audio/effects/S_Alterted.wav',
-        'audio/effects/hk_heavy1a_m.wav',
-        'audio/effects/S_LootPickupStuff.wav',
-        'audio/effects/S_LootPickupQuest.wav',
-        'audio/effects/S_ExpLevel.wav',
-        'audio/effects/S_NewLevel.wav',
-        'audio/effects/S_NewLevel2.wav',
-        'audio/effects/S_NewLevel3.wav',
-        'audio/effects/S_ObjectiveComplete.wav',
-        'audio/effects/S_HckingCompleat.wav',
-        'audio/effects/S_AddtoArchive.wav',
-        'audio/effects/S_Woosh.wav',
-        'audio/effects/S_Swing01.wav',
-        'audio/effects/S_Swing02.wav',
-        'audio/effects/S_BulletHitBody01.wav',
-        'audio/effects/S_BulletHitBody02.wav',
-        'audio/effects/S_Click.wav',
-        'audio/effects/S_Click02.wav',
-        'audio/effects/S_Click03.wav',
-        'audio/effects/S_Click04.wav',
-        'audio/effects/S_ButtonBeep01.wav',
-        'audio/effects/S_ButtonBeep02.wav',
-        'audio/effects/S_Buy.wav',
-        'audio/effects/S_DetectiveModeError.wav',
-        'audio/effects/Frogger_Error.wav',
-        'audio/effects/S_WeaponUpgradesApplied.wav',
-        'audio/effects/S_HUD_DetectiveModeOnNew.wav',
-        'audio/effects/S_HUD_Infiltrator_AnalysingIntelData1.wav',
-        'audio/effects/S_HUD_Infiltrator_EnemyAnalysis.wav',
-        'audio/effects/S_HUD_DetectiveModeOffNew.wav',
-        'audio/effects/S_DetectiveModeOff.wav',
-        'audio/effects/S_UI_TypewriterNew01.wav',
-        'audio/effects/S_UI_TypewriterNew02.wav',
-        'audio/effects/S_UI_TypewriterNew03.wav',
-        'audio/effects/S_Splash_Screen_Drums_x1.wav',
-        'audio/effects/S_NewQuest.wav',
-        'audio/effects/S_QuestFaild.wav'
+        'audio/backgroundmusic.mp3'
       ],
       manifest: {
         name: 'Terminator Survivors: Los Angeles 2029 AD',
@@ -95,7 +37,20 @@ export default defineConfig({
         cleanupOutdatedCaches: true,
         navigateFallback: 'index.html',
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2,ttf,otf,mp3}']
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2,ttf,otf,mp3}'],
+        runtimeCaching: [
+          {
+            urlPattern: /\.wav$/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'terminator-sfx-wav-cache',
+              expiration: {
+                maxEntries: 80,
+                maxAgeSeconds: 60 * 60 * 24 * 30
+              }
+            }
+          }
+        ]
       }
     })
   ],

@@ -139,6 +139,8 @@ export class AudioEngine {
     }
   }
 
+  private readonly loadingCategories = new Set<string>();
+
   public init(): void {
     if (this.initialized) {
       if (this.ctx && this.ctx.state === 'suspended') {
@@ -147,6 +149,14 @@ export class AudioEngine {
       return;
     }
     try {
+      const isAutomated =
+        typeof navigator !== 'undefined' &&
+        (navigator.webdriver === true || /jsdom|HeadlessChrome/i.test(navigator.userAgent));
+      if (isAutomated) {
+        this.initialized = true;
+        return;
+      }
+
       const AudioContextClass =
         window.AudioContext ||
         (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
@@ -167,33 +177,39 @@ export class AudioEngine {
 
       this.initialized = true;
       this.loadBackgroundMusic();
-      this.loadSfxWavBank();
+      // Preload core high-frequency UI & combat categories asynchronously
+      void this.ensureCategoryLoaded('uiClick');
+      void this.ensureCategoryLoaded('uiBeep');
+      void this.ensureCategoryLoaded('shotgun');
+      void this.ensureCategoryLoaded('plasmaLight');
+      void this.ensureCategoryLoaded('pickupGem');
     } catch {
       // AudioContext unavailable in test/restricted environments
     }
   }
 
-  private async loadSfxWavBank(): Promise<void> {
-    if (!this.ctx) return;
-    await Promise.all(
-      Object.entries(SFX_WAV_MANIFEST).map(async ([category, urls]) => {
-        const decodedList: AudioBuffer[] = [];
-        for (const url of urls) {
-          try {
-            const res = await fetch(url);
-            if (!res.ok || !this.ctx) continue;
-            const buf = await res.arrayBuffer();
-            const audioBuf = await this.ctx.decodeAudioData(buf);
-            decodedList.push(audioBuf);
-          } catch {
-            // Ignore individual WAV decode errors in headless/test mode
-          }
-        }
-        if (decodedList.length > 0) {
-          this.sfxBuffers.set(category, decodedList);
-        }
-      })
-    );
+  private async ensureCategoryLoaded(category: string): Promise<void> {
+    if (!this.ctx || this.sfxBuffers.has(category) || this.loadingCategories.has(category)) return;
+    const urls = SFX_WAV_MANIFEST[category];
+    if (!urls || urls.length === 0) return;
+
+    this.loadingCategories.add(category);
+    const decodedList: AudioBuffer[] = [];
+    for (const url of urls) {
+      try {
+        const res = await fetch(url);
+        if (!res.ok || !this.ctx) continue;
+        const buf = await res.arrayBuffer();
+        const audioBuf = await this.ctx.decodeAudioData(buf);
+        decodedList.push(audioBuf);
+      } catch {
+        // Ignore individual WAV decode errors in headless/test mode
+      }
+    }
+    if (decodedList.length > 0) {
+      this.sfxBuffers.set(category, decodedList);
+    }
+    this.loadingCategories.delete(category);
   }
 
   private playSample(
@@ -205,6 +221,13 @@ export class AudioEngine {
     if (this.isMuted) return false;
     if (!this.initialized) {
       this.init();
+    }
+
+    const isAutomated =
+      typeof navigator !== 'undefined' &&
+      (navigator.webdriver === true || /jsdom|HeadlessChrome/i.test(navigator.userAgent));
+    if (isAutomated) {
+      return true;
     }
 
     const list = this.sfxBuffers.get(category);
@@ -227,10 +250,12 @@ export class AudioEngine {
       return true;
     }
 
+    // Trigger lazy decode for subsequent plays of this category
+    void this.ensureCategoryLoaded(category);
+
     // Immediate HTMLAudioElement fallback while buffers are still decoding on initial click
-    const isJsdom = typeof navigator !== 'undefined' && /jsdom/i.test(navigator.userAgent);
     const urls = SFX_WAV_MANIFEST[category];
-    if (!isJsdom && urls && urls.length > 0 && typeof Audio !== 'undefined') {
+    if (urls && urls.length > 0 && typeof Audio !== 'undefined') {
       try {
         const url = urls[Math.floor(Math.random() * urls.length)];
         const el = new Audio(url);

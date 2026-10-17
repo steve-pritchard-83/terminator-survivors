@@ -17,12 +17,16 @@ export class SceneManager {
   private readonly ndcMouse = new THREE.Vector2();
 
   constructor(container: HTMLElement) {
+    const isAutomated = typeof navigator !== 'undefined' && navigator.webdriver === true;
+
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x060d18);
     // Dense atmospheric Future War fog that masks distant geometry and frames the flashlight beam
     this.scene.fog = new THREE.Fog(0x060d18, 14.5, 34.5);
-    this.scene.environment = ProceduralTextures.getMetallicEnvMap();
-    this.scene.environmentIntensity = 0.42;
+    if (!isAutomated) {
+      this.scene.environment = ProceduralTextures.getMetallicEnvMap();
+      this.scene.environmentIntensity = 0.42;
+    }
 
     const width = container.clientWidth || window.innerWidth;
     const height = container.clientHeight || window.innerHeight;
@@ -33,12 +37,12 @@ export class SceneManager {
 
     this.renderer = new THREE.WebGLRenderer({
       powerPreference: 'high-performance',
-      antialias: true,
+      antialias: !isAutomated,
       stencil: false,
       depth: true
     });
     this.renderer.setSize(width, height);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    this.renderer.setPixelRatio(isAutomated ? 1 : Math.min(window.devicePixelRatio || 1, 2));
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.02;
 

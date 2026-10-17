@@ -61,28 +61,53 @@ export const CameronGradingShader = {
   `
 };
 
+export function isSoftwareOrAutomatedRenderer(renderer: THREE.WebGLRenderer): boolean {
+  if (typeof navigator !== 'undefined' && navigator.webdriver) return true;
+  try {
+    const gl = renderer.getContext();
+    const dbg = gl.getExtension('WEBGL_debug_renderer_info');
+    if (dbg) {
+      const rendererName = String(gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) || '');
+      if (/SwiftShader|llvmpipe|Software|Basic Render/i.test(rendererName)) {
+        return true;
+      }
+    }
+  } catch {
+    // Ignore extension query errors
+  }
+  return false;
+}
+
 export class PostProcessingManager {
   public readonly composer: EffectComposer;
+  private readonly renderer: THREE.WebGLRenderer;
+  private readonly scene: THREE.Scene;
+  private readonly camera: THREE.Camera;
   private readonly bloomPass: UnrealBloomPass;
   private readonly gradingPass: ShaderPass;
+  private readonly useFastPath: boolean;
 
   private aberrationTarget = 0.0008;
   private currentAberration = 0.0008;
   private damageFlash = 0.0;
 
   constructor(renderer: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.Camera) {
+    this.renderer = renderer;
+    this.scene = scene;
+    this.camera = camera;
+    this.useFastPath = isSoftwareOrAutomatedRenderer(renderer);
+
     const size = new THREE.Vector2();
     renderer.getSize(size);
     const pixelRatio = renderer.getPixelRatio();
 
-    // Use WebGL2 multisampled render target (4x MSAA) for razor-sharp mesh edges
+    // Use WebGL2 multisampled render target (4x MSAA) on hardware GPUs; single-sample on software SwiftShader
     const renderTarget = new THREE.WebGLRenderTarget(
       Math.max(1, Math.floor(size.x * pixelRatio)),
       Math.max(1, Math.floor(size.y * pixelRatio)),
-      {
-        type: THREE.HalfFloatType,
-        samples: 4
-      }
+      this.useFastPath
+        ? { type: THREE.UnsignedByteType, samples: 0 }
+        : { type: THREE.HalfFloatType, samples: 4 }
     );
 
     this.composer = new EffectComposer(renderer, renderTarget);
@@ -97,13 +122,16 @@ export class PostProcessingManager {
       0.28, // tight halo radius
       1.35  // strict HDR threshold so skulls/cars/ground never bloom
     );
-    this.composer.addPass(this.bloomPass);
+    if (!this.useFastPath) {
+      this.composer.addPass(this.bloomPass);
+    }
 
     this.gradingPass = new ShaderPass(CameronGradingShader);
     this.composer.addPass(this.gradingPass);
   }
 
   public setSize(width: number, height: number): void {
+    if (this.useFastPath) return;
     this.composer.setSize(width, height);
     this.bloomPass.resolution.set(width, height);
   }
@@ -134,6 +162,10 @@ export class PostProcessingManager {
   }
 
   public render(): void {
+    if (this.useFastPath) {
+      this.renderer.render(this.scene, this.camera);
+      return;
+    }
     this.composer.render();
   }
 }
