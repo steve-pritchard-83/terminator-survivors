@@ -462,7 +462,7 @@ export class Game {
     }
 
     // Quality Governor
-    this.sceneManager.adjustQuality(this.gameLoop.fps);
+    this.sceneManager.adjustQuality(this.gameLoop.fps, dt);
   }
 
   private render(alpha: number, dt = GameLoop.FIXED_DT): void {

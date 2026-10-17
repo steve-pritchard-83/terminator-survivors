@@ -18,6 +18,24 @@ export class SceneManager {
   private readonly intersectPt = new THREE.Vector3();
   private readonly ndcMouse = new THREE.Vector2();
 
+  private lowFpsDuration = 0;
+  private highFpsDuration = 0;
+  private qualityCooldownTimer = 0;
+
+  public getQualityGovernorState(): {
+    pixelRatio: number;
+    lowFpsDuration: number;
+    highFpsDuration: number;
+    cooldownTimer: number;
+  } {
+    return {
+      pixelRatio: this.renderer.getPixelRatio(),
+      lowFpsDuration: this.lowFpsDuration,
+      highFpsDuration: this.highFpsDuration,
+      cooldownTimer: this.qualityCooldownTimer
+    };
+  }
+
   public getCameraTarget(out: THREE.Vector3 = new THREE.Vector3()): THREE.Vector3 {
     return out.copy(this.currentCameraTarget);
   }
@@ -143,11 +161,48 @@ export class SceneManager {
     return { x, y };
   }
 
-  public adjustQuality(fps: number): void {
-    if (fps < 42 && this.renderer.getPixelRatio() > 1.0) {
-      this.renderer.setPixelRatio(1.0);
-    } else if (fps >= 58 && this.renderer.getPixelRatio() < 1.5 && window.devicePixelRatio > 1) {
-      this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+  public adjustQuality(fps: number, dt = 1 / 60): void {
+    if (this.qualityCooldownTimer > 0) {
+      this.qualityCooldownTimer = Math.max(0, this.qualityCooldownTimer - dt);
+    }
+
+    if (fps < 42) {
+      this.lowFpsDuration += dt;
+      this.highFpsDuration = 0;
+    } else if (fps >= 58) {
+      this.highFpsDuration += dt;
+      this.lowFpsDuration = 0;
+    } else {
+      this.lowFpsDuration = 0;
+      this.highFpsDuration = 0;
+    }
+
+    const currentRatio = this.renderer.getPixelRatio();
+
+    if (this.qualityCooldownTimer <= 0) {
+      if (this.lowFpsDuration >= 3.0 && currentRatio > 1.0) {
+        this.applyQualityChange(1.0);
+      } else if (this.highFpsDuration >= 3.0) {
+        const deviceRatio = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
+        const targetRatio = Math.min(deviceRatio, 1.5);
+        if (deviceRatio > 1 && currentRatio < targetRatio) {
+          this.applyQualityChange(targetRatio);
+        }
+      }
+    }
+  }
+
+  private applyQualityChange(ratio: number): void {
+    this.renderer.setPixelRatio(ratio);
+    this.postProcessing.setPixelRatio(ratio);
+    const width = window.innerWidth || 1;
+    const height = window.innerHeight || 1;
+    this.postProcessing.setSize(width, height);
+    this.qualityCooldownTimer = 5.0;
+    this.lowFpsDuration = 0;
+    this.highFpsDuration = 0;
+    if (typeof console !== 'undefined' && import.meta.env?.DEV) {
+      console.log(`[SceneManager] Quality adjusted: pixelRatio = ${ratio}`);
     }
   }
 

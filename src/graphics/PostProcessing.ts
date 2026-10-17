@@ -145,6 +145,11 @@ export class PostProcessingManager {
     this.composer.addPass(this.gradingPass);
   }
 
+  public setPixelRatio(pixelRatio: number): void {
+    if (this.useFastPath) return;
+    this.composer.setPixelRatio(pixelRatio);
+  }
+
   public setSize(width: number, height: number): void {
     if (this.useFastPath) return;
     this.composer.setSize(width, height);
