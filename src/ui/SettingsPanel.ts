@@ -1,6 +1,6 @@
 import type { SaveManager } from '../state/SaveManager';
 import type { AudioEngine } from '../audio/AudioEngine';
-import type { ColorBlindMode, DamageNumberSetting, GameSettings, InputAction, InputMappingConfig } from '../core/types';
+import type { ColorBlindMode, DamageNumberSetting, GameSettings, InputAction, InputMappingConfig, QualityPreset } from '../core/types';
 import { globalEvents } from '../core/EventBus';
 import type { GamepadManager } from '../input/GamepadManager';
 import {
@@ -27,6 +27,7 @@ export class SettingsPanel {
   private reducedMotionCheckbox!: HTMLInputElement;
   private damageNumbersSelect!: HTMLSelectElement;
   private crtCheckbox!: HTMLInputElement;
+  private qualityPresetSelect!: HTMLSelectElement;
   private autoAimCheckbox!: HTMLInputElement;
   private showFpsCheckbox!: HTMLInputElement;
   private colorBlindSelect!: HTMLSelectElement;
@@ -183,6 +184,16 @@ export class SettingsPanel {
               <input type="checkbox" id="setting-crt" aria-label="CRT Scanlines and Phosphor Glow" style="width:18px; height:18px;" />
             </div>
 
+            <div class="settings-row" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <label for="setting-quality" style="font-size:13px;">Graphics Quality Preset</label>
+              <select id="setting-quality" aria-label="Graphics Quality Preset" style="background:#0f1926; color:#fff; border:1px solid rgba(77,210,255,0.4); padding:4px 8px; border-radius:3px;">
+                <option value="low">LOW (720p / Min VFX)</option>
+                <option value="medium">MEDIUM (Balanced / Bloom)</option>
+                <option value="high">HIGH (1080p / Lights & Shadows)</option>
+                <option value="ultra">ULTRA (1440p+ / Max Debris & Lights)</option>
+              </select>
+            </div>
+
             <div class="settings-row" style="display:flex; justify-content:space-between; align-items:center;">
               <label for="setting-autoaim" style="font-size:13px;">Auto-Aim Assist (Locks Nearest Threat)</label>
               <input type="checkbox" id="setting-autoaim" aria-label="Auto-Aim Assist" style="width:18px; height:18px;" />
@@ -299,6 +310,7 @@ export class SettingsPanel {
     this.reducedMotionCheckbox = this.container.querySelector('#setting-reduced-motion')!;
     this.damageNumbersSelect = this.container.querySelector('#setting-damage-numbers')!;
     this.crtCheckbox = this.container.querySelector('#setting-crt')!;
+    this.qualityPresetSelect = this.container.querySelector('#setting-quality')!;
     this.autoAimCheckbox = this.container.querySelector('#setting-autoaim')!;
     this.showFpsCheckbox = this.container.querySelector('#setting-fps')!;
     this.colorBlindSelect = this.container.querySelector('#setting-colorblind')!;
@@ -340,6 +352,7 @@ export class SettingsPanel {
       this.flashSlider,
       this.damageNumbersSelect,
       this.crtCheckbox,
+      this.qualityPresetSelect,
       this.autoAimCheckbox,
       this.reducedMotionCheckbox,
       this.colorBlindSelect,
@@ -451,6 +464,7 @@ export class SettingsPanel {
     this.damageNumbersSelect.value = s.damageNumbers;
     this.crtCheckbox.checked = s.crtScanlines;
     this.autoAimCheckbox.checked = s.autoAim;
+    this.qualityPresetSelect.value = s.qualityPreset || 'high';
     this.showFpsCheckbox.checked = s.showFps;
     this.colorBlindSelect.value = s.colorBlindMode;
     this.uiScaleSlider.value = s.uiScale.toString();
@@ -473,6 +487,7 @@ export class SettingsPanel {
     this.reducedMotionCheckbox.checked = isReduced;
     this.damageNumbersSelect.value = 'all';
     this.crtCheckbox.checked = !isReduced;
+    this.qualityPresetSelect.value = 'high';
     this.autoAimCheckbox.checked = true;
     this.showFpsCheckbox.checked = false;
     this.colorBlindSelect.value = 'none';
@@ -489,6 +504,7 @@ export class SettingsPanel {
       reducedMotion: this.reducedMotionCheckbox.checked,
       damageNumbers: this.damageNumbersSelect.value as DamageNumberSetting,
       crtScanlines: this.crtCheckbox.checked,
+      qualityPreset: (this.qualityPresetSelect.value as QualityPreset) || 'high',
       autoAim: this.autoAimCheckbox.checked,
       showFps: this.showFpsCheckbox.checked,
       colorBlindMode: this.colorBlindSelect.value as ColorBlindMode,

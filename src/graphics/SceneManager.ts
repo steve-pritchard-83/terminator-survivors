@@ -4,6 +4,8 @@ import { ProceduralTextures } from './ProceduralTextures';
 import { DynamicLightingManager } from './DynamicLightingManager';
 import { AtmosphereSystem } from './AtmosphereSystem';
 import { globalEvents } from '../core/EventBus';
+import type { QualityPreset } from '../core/types';
+import { getQualityProfile, detectPresetFromFps } from './qualityPresets';
 
 export class SceneManager {
   public readonly scene: THREE.Scene;
@@ -12,6 +14,11 @@ export class SceneManager {
   public readonly postProcessing: PostProcessingManager;
   public readonly dynamicLighting: DynamicLightingManager;
   public readonly atmosphere: AtmosphereSystem;
+
+  private currentPreset: QualityPreset = 'high';
+  private initialFpsSamples: number[] = [];
+  private initialSampleTimer = 0;
+  private hasAutoDetectedQuality = false;
 
   private readonly cameraOffset = new THREE.Vector3(0, 17.5, 12.5);
   private currentCameraTarget = new THREE.Vector3(0, 0, 0);
@@ -59,6 +66,9 @@ export class SceneManager {
 
     globalEvents.on('settings:updated', (s) => {
       this.setScreenShakeScale(s.reducedMotion ? 0 : s.screenShake / 100);
+      if (s.qualityPreset && s.qualityPreset !== this.currentPreset) {
+        this.applyQualityPreset(s.qualityPreset);
+      }
     });
 
     this.scene = new THREE.Scene();
@@ -179,7 +189,54 @@ export class SceneManager {
     return { x, y };
   }
 
+  public getQualityPreset(): QualityPreset {
+    return this.currentPreset;
+  }
+
+  public getAutoDetectionStatus(): { detected: boolean; preset: QualityPreset; timer: number } {
+    return {
+      detected: this.hasAutoDetectedQuality,
+      preset: this.currentPreset,
+      timer: this.initialSampleTimer
+    };
+  }
+
+  public applyQualityPreset(preset: QualityPreset): void {
+    this.currentPreset = preset;
+    const profile = getQualityProfile(preset);
+
+    this.renderer.setPixelRatio(profile.pixelRatio);
+    this.postProcessing.setPixelRatio(profile.pixelRatio);
+    this.postProcessing.setBloomEnabled(profile.bloom);
+    this.renderer.shadowMap.enabled = profile.shadows;
+    this.dynamicLighting.setEnabled(profile.dynamicLights);
+    this.atmosphere.setEnabled(profile.atmosphere);
+
+    const width = window.innerWidth || 1;
+    const height = window.innerHeight || 1;
+    this.postProcessing.setSize(width, height);
+
+    globalEvents.emit('quality:preset_changed', { preset });
+  }
+
   public adjustQuality(fps: number, dt = 1 / 60): void {
+    // 1. Auto-detect default preset from first 5 s FPS
+    if (!this.hasAutoDetectedQuality && fps > 0) {
+      this.initialSampleTimer += dt;
+      this.initialFpsSamples.push(fps);
+      if (this.initialSampleTimer >= 5.0) {
+        this.hasAutoDetectedQuality = true;
+        const avgFps =
+          this.initialFpsSamples.reduce((a, b) => a + b, 0) /
+          this.initialFpsSamples.length;
+        const deviceRatio =
+          typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
+        const detected = detectPresetFromFps(avgFps, deviceRatio);
+        this.applyQualityPreset(detected);
+        globalEvents.emit('quality:autodetected', { preset: detected, avgFps });
+      }
+    }
+
     if (this.qualityCooldownTimer > 0) {
       this.qualityCooldownTimer = Math.max(0, this.qualityCooldownTimer - dt);
     }

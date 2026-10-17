@@ -173,6 +173,16 @@ export class PostProcessingManager {
     this.bloomPass.resolution.set(width, height);
   }
 
+  public setBloomEnabled(enabled: boolean): void {
+    if (this.bloomPass) {
+      this.bloomPass.enabled = enabled;
+    }
+  }
+
+  public isBloomEnabled(): boolean {
+    return this.bloomPass ? this.bloomPass.enabled : false;
+  }
+
   public triggerDamageFlash(): void {
     this.damageFlash = 0.65 * this.flashIntensityScale;
     this.currentAberration = 0.012 * this.flashIntensityScale; // Spike chromatic aberration on hit

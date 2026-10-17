@@ -287,6 +287,7 @@ export interface UpgradeChoice {
 
 export type ColorBlindMode = 'none' | 'deuteranopia' | 'protanopia' | 'tritanopia';
 export type DamageNumberSetting = 'all' | 'crits' | 'off';
+export type QualityPreset = 'low' | 'medium' | 'high' | 'ultra';
 
 export interface GameSettings {
   masterVolume: number;
@@ -301,6 +302,7 @@ export interface GameSettings {
   showFps: boolean;
   colorBlindMode: ColorBlindMode;
   uiScale: number;
+  qualityPreset?: QualityPreset;
 }
 
 export type InputAction = 'moveUp' | 'moveDown' | 'moveLeft' | 'moveRight' | 'dash' | 'ability' | 'pause';

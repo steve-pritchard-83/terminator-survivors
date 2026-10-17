@@ -28,6 +28,8 @@ export type GameEventMap = {
   'vfx:explosion': { x: number; y?: number; z: number; scale?: number };
   'vfx:plasma': { x: number; y?: number; z: number; isHeavy?: boolean };
   'vfx:muzzle': { x: number; y?: number; z: number; color?: number };
+  'quality:autodetected': { preset: import('./types').QualityPreset; avgFps: number };
+  'quality:preset_changed': { preset: import('./types').QualityPreset };
 };
 
 type EventCallback<T> = (data: T) => void;

@@ -68,7 +68,8 @@ export class SaveManager {
         autoAim: true,
         showFps: false,
         colorBlindMode: 'none',
-        uiScale: 100
+        uiScale: 100,
+        qualityPreset: 'high'
       },
       inputBindings: JSON.parse(JSON.stringify(DEFAULT_INPUT_MAPPINGS)),
       endlessHighScores: {
@@ -155,7 +156,8 @@ export class SaveManager {
       autoAim: typeof current.settings?.autoAim === 'boolean' ? current.settings.autoAim : def.settings.autoAim,
       showFps: typeof current.settings?.showFps === 'boolean' ? current.settings.showFps : def.settings.showFps,
       colorBlindMode: validColorBlind.includes(current.settings?.colorBlindMode) ? current.settings.colorBlindMode : def.settings.colorBlindMode,
-      uiScale: typeof current.settings?.uiScale === 'number' ? Math.max(80, Math.min(150, Math.round(current.settings.uiScale))) : def.settings.uiScale
+      uiScale: typeof current.settings?.uiScale === 'number' ? Math.max(80, Math.min(150, Math.round(current.settings.uiScale))) : def.settings.uiScale,
+      qualityPreset: ['low', 'medium', 'high', 'ultra'].includes(current.settings?.qualityPreset) ? current.settings.qualityPreset : 'high'
     };
 
     // 5. Validate endless high scores

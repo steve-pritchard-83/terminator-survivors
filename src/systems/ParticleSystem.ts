@@ -3,6 +3,7 @@ import { ProceduralTextures } from '../graphics/ProceduralTextures';
 import { vfxRNG } from '../core/RNG';
 import { bakePart, mergeParts } from '../graphics/meshes/geometryUtils';
 import { globalEvents } from '../core/EventBus';
+import { getQualityProfile } from '../graphics/qualityPresets';
 
 export type ParticleType = 'fire' | 'smoke' | 'plasma' | 'dash';
 
@@ -48,6 +49,19 @@ export interface DebrisChunk {
 export class ParticleSystem {
   public readonly group = new THREE.Group();
   private readonly particles: Particle[] = [];
+  private readonly unbinds: (() => void)[] = [];
+  private particleCap = 100;
+  private debrisCap = 48;
+
+  public setCaps(particleCap: number, debrisCap: number): void {
+    this.particleCap = Math.max(15, particleCap);
+    this.debrisCap = Math.max(8, debrisCap);
+  }
+
+  public getCaps(): { particleCap: number; debrisCap: number } {
+    return { particleCap: this.particleCap, debrisCap: this.debrisCap };
+  }
+
   private readonly freePool: Record<ParticleType, Particle[]> = {
     fire: [],
     smoke: [],
@@ -201,6 +215,13 @@ export class ParticleSystem {
         this.freeDebrisPool[t].push(this.createDebrisChunk(t));
       }
     }
+
+    this.unbinds.push(
+      globalEvents.on('quality:preset_changed', ({ preset }) => {
+        const profile = getQualityProfile(preset);
+        this.setCaps(profile.particleCap, profile.debrisCap);
+      })
+    );
   }
 
   private prefillPool(
@@ -413,11 +434,10 @@ export class ParticleSystem {
   }
 
   public spawnEnemyDebris(x: number, y: number, z: number, count?: number): void {
-    const MAX_DEBRIS_CAP = 300;
-    const numChunks = Math.min(MAX_DEBRIS_CAP, count ?? (3 + Math.floor(vfxRNG.next() * 4)));
+    const numChunks = Math.min(this.debrisCap, count ?? (3 + Math.floor(vfxRNG.next() * 4)));
 
-    // Cap total debris at 300 by recycling oldest chunks
-    while (this.debris.length + numChunks > MAX_DEBRIS_CAP && this.debris.length > 0) {
+    // Cap total debris at debrisCap by recycling oldest chunks
+    while (this.debris.length + numChunks > this.debrisCap && this.debris.length > 0) {
       const oldest = this.debris.shift()!;
       this.recycleChunk(oldest);
     }
@@ -588,5 +608,10 @@ export class ParticleSystem {
         d.eyeMat?.dispose();
       }
     }
+
+    for (const unbind of this.unbinds) {
+      unbind();
+    }
+    this.unbinds.length = 0;
   }
 }
