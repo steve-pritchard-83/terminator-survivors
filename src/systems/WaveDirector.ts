@@ -37,6 +37,12 @@ export class WaveDirector {
       : Math.min(maxMinutes, Math.floor(totalSec / 60));
     const timeline = STAGES[this.runState.stageId]?.waveTimeline ?? WAVE_TIMELINE;
 
+    // Tech Noir special: Infiltrator stalker spawns at 0:30 (30 seconds)
+    if (this.runState.stageId === 'tech_noir_1984' && this.runState.timeSeconds >= 30 && !this.spawnedBossesThisRun.has('tech_noir_stalker_30s')) {
+      this.spawnedBossesThisRun.add('tech_noir_stalker_30s');
+      this.spawnBoss('infiltrator_csm101', 'WARNING // INFILTRATOR UNIT CSM-101 ENGAGED');
+    }
+
     // Check minute transition
     if (minute !== this.currentMinute) {
       this.currentMinute = minute;

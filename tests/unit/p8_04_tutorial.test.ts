@@ -169,16 +169,22 @@ describe('P8-04: First-Run Boot Camp Tutorial', () => {
     expect(title.tutorialModal.isVisible()).toBe(true);
     expect(runStarted).toBe(false);
 
-    // Skipping completes and launches the run
+    // Skipping completes and opens deploy modal (or launches run)
     title.tutorialModal.skip();
     expect(title.tutorialModal.isVisible()).toBe(false);
     expect(saveManager.isTutorialCompleted()).toBe(true);
+    while ((title as any).deployModal?.isVisible()) {
+      (root.querySelector('#btn-deploy-next') as HTMLButtonElement | null)?.click();
+    }
     expect(runStarted).toBe(true);
 
-    // Subsequent click directly starts run without tutorial
+    // Subsequent click directly opens deploy modal without tutorial
     runStarted = false;
     startBtn.click();
     expect(title.tutorialModal.isVisible()).toBe(false);
+    while ((title as any).deployModal?.isVisible()) {
+      (root.querySelector('#btn-deploy-next') as HTMLButtonElement | null)?.click();
+    }
     expect(runStarted).toBe(true);
 
     // Replay button on TitleScreen opens tutorial explicitly in replay mode

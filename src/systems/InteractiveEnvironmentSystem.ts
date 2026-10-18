@@ -374,6 +374,27 @@ export class InteractiveEnvironmentSystem {
         this.runState.playerPos.z += cVel.vz * dt;
       }
 
+      if (typeof environment.getConveyorVelocity === 'function') {
+        if (this.enemySystem?.activeEnemies) {
+          for (const enemy of this.enemySystem.activeEnemies) {
+            const eVel = environment.getConveyorVelocity(enemy.x, enemy.z);
+            if (eVel) {
+              enemy.x += eVel.vx * dt;
+              enemy.z += eVel.vz * dt;
+            }
+          }
+        }
+        if (this.pickupSystem?.pickups) {
+          for (const pickup of this.pickupSystem.pickups) {
+            const pVel = environment.getConveyorVelocity(pickup.x, pickup.z);
+            if (pVel) {
+              pickup.x += pVel.vx * dt;
+              pickup.z += pVel.vz * dt;
+            }
+          }
+        }
+      }
+
       const hDmg = environment.getHazardDamage?.(px, pz, dt, true) ?? 0;
       if (hDmg > 0 && !this.runState.godMode && this.runState.invulnerabilityTimer <= 0) {
         this.runState.takeDamage(hDmg);

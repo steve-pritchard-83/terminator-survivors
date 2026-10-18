@@ -93,7 +93,8 @@ export class DebugAPI {
         isDaily: this.host.runState.isDailyOperation,
         isEndless: this.host.runState.isEndless,
         revivalsLeft: this.host.runState.revivalsLeft,
-        invulnerabilityTimer: this.host.runState.invulnerabilityTimer
+        invulnerabilityTimer: this.host.runState.invulnerabilityTimer,
+        activeBoss: this.host.runController?.activeBoss ?? null
       }),
       grantXp: (amount: number) => {
         const levels = this.host.runState.addXp(amount);

@@ -390,6 +390,12 @@ export class WeaponSystem {
     if (entity.type !== 'enemy') return false;
 
     const enemy = entity as ActiveEnemy;
+    // Tech Noir Stalker Invulnerability before minute 8 (480s)
+    if (this.runState.stageId === 'tech_noir_1984' && enemy.archetype === 'infiltrator_csm101' && this.runState.timeSeconds < 480) {
+      enemy.hitFlashTimer = 0.1;
+      return false;
+    }
+
     const isCrit = forcedCrit !== undefined ? forcedCrit : globalRNG.chance(this.runState.computedStats.critChance);
     const vulnMult = 1 / Math.max(0.4, enemy.armorStripMultiplier);
     const critMult = this.runState.computedStats.critMultiplier ?? 1.75;

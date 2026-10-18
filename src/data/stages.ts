@@ -1,5 +1,5 @@
 import type { StageId } from '../core/types';
-import { WAVE_TIMELINE, type WaveMinuteEntry } from './waves';
+import { buildWaveTimeline, type WaveMinuteEntry } from './waves';
 
 export type StageUnlockCondition =
   | { type: 'none' }
@@ -35,7 +35,7 @@ export const STAGES: Record<StageId, StageDefinition> = {
     skyHorizon: 0x0f294a,
     ambientLightColor: 0x162d4c,
     directionalLightColor: 0x4a88d9,
-    waveTimeline: WAVE_TIMELINE,
+    waveTimeline: buildWaveTimeline(),
     unlockCondition: { type: 'none' }
   },
   cyberdyne_factory: {
@@ -50,7 +50,20 @@ export const STAGES: Record<StageId, StageDefinition> = {
     skyHorizon: 0x2e1808,
     ambientLightColor: 0x3d2817,
     directionalLightColor: 0xffaa44,
-    waveTimeline: WAVE_TIMELINE,
+    waveTimeline: buildWaveTimeline({
+      bossOrder: {
+        2: { boss: 't1000_prototype', alertBanner: 'TACTICAL ANOMALY // LIQUID METAL PROTOTYPE T-1000 INFILTRATION' },
+        4: { boss: 'infiltrator_csm101', alertBanner: 'WARNING // INFILTRATOR UNIT CSM-101 DETECTED' },
+        6: { boss: 't1_minigun_tracked', alertBanner: 'WARNING // CYBERDYNE SECURITY PROTOCOL ENGAGED' },
+        8: { boss: 't1000_prototype', alertBanner: 'TACTICAL ANOMALY // T-1000 LIQUID SURGE PHASE' },
+        10: { boss: 'hk_tank_goliath', alertBanner: 'HEAVY ARMORED BREACH // HK TANK GOLIATH' }
+      },
+      poolWeights: {
+        t1_minigun_tracked: 6,
+        plasma_turret: 5,
+        t600_minigunner: 5
+      }
+    }),
     unlockCondition: {
       type: 'survive_time',
       stageId: 'la_2029_wasteland',
@@ -70,7 +83,18 @@ export const STAGES: Record<StageId, StageDefinition> = {
     skyHorizon: 0x280e40,
     ambientLightColor: 0x2d174d,
     directionalLightColor: 0xff0088,
-    waveTimeline: WAVE_TIMELINE,
+    waveTimeline: buildWaveTimeline({
+      bossOrder: {
+        3: { boss: 't600_rusted', alertBanner: 'SECURITY ALERT // EARLY T-600 INFILTRATOR IN ALLEYWAY' },
+        5: { boss: 'infiltrator_csm101', alertBanner: 'STALKER DETECTED // CSM-101 GAINING GROUND' },
+        8: { boss: 'infiltrator_csm101', alertBanner: 'SHOWDOWN // CSM-101 VULNERABLE // DESTROY THE INFILTRATOR' },
+        10: { boss: 'infiltrator_csm101', alertBanner: 'FINAL PROTOCOL // CSM-101 ENDOSKELETON STAND' }
+      },
+      poolWeights: {
+        skynet_crab_drone: 8,
+        t600_rusted: 6
+      }
+    }),
     unlockCondition: {
       type: 'survive_time',
       stageId: 'cyberdyne_factory',
@@ -90,7 +114,20 @@ export const STAGES: Record<StageId, StageDefinition> = {
     skyHorizon: 0x063344,
     ambientLightColor: 0x083c50,
     directionalLightColor: 0x00f0ff,
-    waveTimeline: WAVE_TIMELINE,
+    waveTimeline: buildWaveTimeline({
+      bossOrder: {
+        2: { boss: 'hk_aerial_squadron_leader', alertBanner: 'PERIMETER AIRSPACE BREACHED // HK-AERIAL COMMAND' },
+        4: { boss: 'hk_tank_goliath', alertBanner: 'HEAVY GOLIATH ARMOR ENROUTE' },
+        6: { boss: 't1000_prototype', alertBanner: 'T-1000 DEFENSE PROTOCOL ACTIVE' },
+        8: { boss: 'hk_tank_goliath', alertBanner: 'TDE PERIMETER DIVISION' },
+        10: { boss: 'skynet_tde_core', alertBanner: 'FINAL OBJECTIVE // SKYNET TIME DISPLACEMENT CORE BREACHED' }
+      },
+      poolWeights: {
+        t800_endoskeleton: 8,
+        moto_terminator: 6,
+        hk_aerial_patrol: 6
+      }
+    }),
     unlockCondition: {
       type: 'defeat_boss',
       bossArchetype: 'skynet_tde_core',
@@ -109,7 +146,19 @@ export const STAGES: Record<StageId, StageDefinition> = {
     skyHorizon: 0x18262a,
     ambientLightColor: 0x22363a,
     directionalLightColor: 0x88ccdd,
-    waveTimeline: WAVE_TIMELINE,
+    waveTimeline: buildWaveTimeline({
+      bossOrder: {
+        2: { boss: 'hk_tank_goliath', alertBanner: 'BUNKER SIEGE // HK TANK ADVANCING ON ENTRANCE' },
+        5: { boss: 'hk_aerial_squadron_leader', alertBanner: 'AIR STRIKE INCOMING ON BUNKER PERIMETER' },
+        7: { boss: 'hk_tank_goliath', alertBanner: 'HEAVY SIEGE BARRAGE ON BUNKER ENTRANCE' },
+        10: { boss: 'hk_tank_goliath', alertBanner: 'FINAL SIEGE DIVISION ASSAULT' }
+      },
+      poolWeights: {
+        hydrobot_swarm: 6,
+        t600_minigunner: 5,
+        t1_minigun_tracked: 5
+      }
+    }),
     unlockCondition: {
       type: 'reach_level',
       level: 20,

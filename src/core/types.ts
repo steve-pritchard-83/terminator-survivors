@@ -457,6 +457,7 @@ export interface GameDebugAPI {
     isEndless: boolean;
     revivalsLeft: number;
     invulnerabilityTimer: number;
+    activeBoss: { name: string; hp: number; maxHp: number } | null;
   };
   grantXp: (amount: number) => void;
   spawnBoss: (archetype: EnemyArchetypeId) => void;

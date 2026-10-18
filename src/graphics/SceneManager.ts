@@ -69,6 +69,11 @@ export class SceneManager {
     return this.currentPreset;
   }
 
+  private hemiLight: THREE.HemisphereLight;
+  private ambientLight: THREE.AmbientLight;
+  private moonLight: THREE.DirectionalLight;
+  private rimLight: THREE.DirectionalLight;
+
   constructor(container: HTMLElement) {
     const isAutomated = typeof navigator !== 'undefined' && navigator.webdriver === true;
 
@@ -109,20 +114,20 @@ export class SceneManager {
     container.appendChild(this.renderer.domElement);
 
     // Balanced "in-between" nocturnal moonlight: clear battlefield visibility with diffused metallic sheen
-    const hemiLight = new THREE.HemisphereLight(0x7aa8d8, 0x203044, 1.25);
-    this.scene.add(hemiLight);
+    this.hemiLight = new THREE.HemisphereLight(0x7aa8d8, 0x203044, 1.25);
+    this.scene.add(this.hemiLight);
 
-    const ambientLight = new THREE.AmbientLight(0x345070, 1.05);
-    this.scene.add(ambientLight);
+    this.ambientLight = new THREE.AmbientLight(0x345070, 1.05);
+    this.scene.add(this.ambientLight);
 
-    const moonLight = new THREE.DirectionalLight(0x90bce8, 1.45);
-    moonLight.position.set(-16, 30, -14);
-    this.scene.add(moonLight);
+    this.moonLight = new THREE.DirectionalLight(0x90bce8, 1.45);
+    this.moonLight.position.set(-16, 30, -14);
+    this.scene.add(this.moonLight);
 
     // Subtle counter-rim light for silhouettes emerging from the fog
-    const rimLight = new THREE.DirectionalLight(0x5288c4, 0.85);
-    rimLight.position.set(18, 14, 20);
-    this.scene.add(rimLight);
+    this.rimLight = new THREE.DirectionalLight(0x5288c4, 0.85);
+    this.rimLight.position.set(18, 14, 20);
+    this.scene.add(this.rimLight);
 
     this.postProcessing = new PostProcessingManager(this.renderer, this.scene, this.camera);
     this.postProcessing.setSize(width, height);
@@ -226,8 +231,37 @@ export class SceneManager {
     const width = window.innerWidth || 1;
     const height = window.innerHeight || 1;
     this.postProcessing.setSize(width, height);
-
     globalEvents.emit('quality:preset_changed', { preset });
+  }
+
+  public applyStage(stage: {
+    fogColor: number;
+    fogDensity: number;
+    skyZenith: number;
+    skyHorizon: number;
+    ambientLightColor: number;
+    directionalLightColor: number;
+  }): void {
+    const bgColor = new THREE.Color(stage.skyZenith);
+    this.scene.background = bgColor;
+    const fogColor = new THREE.Color(stage.fogColor);
+    if (this.scene.fog instanceof THREE.Fog) {
+      this.scene.fog.color = fogColor;
+      // Convert density (e.g. 0.015 - 0.02) to distance ranges
+      const far = Math.max(35, 1.0 / (stage.fogDensity || 0.016));
+      this.scene.fog.near = far * 0.45;
+      this.scene.fog.far = far;
+    }
+    if (this.ambientLight) {
+      this.ambientLight.color.setHex(stage.ambientLightColor);
+    }
+    if (this.moonLight) {
+      this.moonLight.color.setHex(stage.directionalLightColor);
+    }
+    if (this.hemiLight) {
+      this.hemiLight.color.setHex(stage.skyZenith);
+      this.hemiLight.groundColor.setHex(stage.skyHorizon);
+    }
   }
 
   public adjustQuality(fps: number, dt = 1 / 60): void {

@@ -21,6 +21,7 @@ import { InputRouter, type InputRouterHost } from './InputRouter';
 import { DebugAPI, type DebugAPIHost } from './DebugAPI';
 import { SettingsApplier } from '../ui/SettingsApplier';
 import { globalEvents } from './EventBus';
+import { STAGES } from '../data/stages';
 import type { LoadoutId, RunConfig, StageId } from './types';
 
 export class Game implements RunControllerHost, InputRouterHost, DebugAPIHost {
@@ -124,6 +125,7 @@ export class Game implements RunControllerHost, InputRouterHost, DebugAPIHost {
     this.environment.dispose();
     this.environment = createEnvironment(stageId);
     this.sceneManager.scene.add(this.environment.group);
+    if (STAGES[stageId]) this.sceneManager.applyStage(STAGES[stageId]);
   }
 
   public startRun(configOrLoadout: RunConfig | LoadoutId = 'reese_2029', customSeed?: number, stageId: StageId = 'la_2029_wasteland', isDaily = false, dailyDateKey = ''): void {
@@ -178,20 +180,15 @@ export class Game implements RunControllerHost, InputRouterHost, DebugAPIHost {
       const interp = this.playerSystem.setInterpolatedPosition(alpha, this.prevPlayerPos);
       this.sceneManager.updateCamera(interp.x, interp.z, dt);
       this.uiManager.hudView.updateDamageNumbers(dt);
-    } else if (this.runState.mode === 'title') {
-      this.sceneManager.updateCamera(0, 0, dt);
     } else {
-      this.sceneManager.updateCamera(this.runState.playerPos.x, this.runState.playerPos.z, dt);
+      const p = this.runState.mode === 'title' ? { x: 0, z: 0 } : this.runState.playerPos;
+      this.sceneManager.updateCamera(p.x, p.z, dt);
     }
     this.sceneManager.render(dt, this.runState.timeSeconds);
   }
 
   public dispose(): void {
-    this.gameLoop.stop();
-    this.runController.dispose();
-    this.debugAPI?.dispose();
-    this.pickupSystem.dispose();
-    this.interactiveEnv.dispose();
-    this.environment.dispose();
+    this.gameLoop.stop(); this.runController.dispose(); this.debugAPI?.dispose();
+    this.pickupSystem.dispose(); this.interactiveEnv.dispose(); this.environment.dispose();
   }
 }
