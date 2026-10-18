@@ -9,6 +9,7 @@ import type { LoadoutId, MetaUpgradeId, RunConfig } from '../core/types';
 import type { GamepadManager } from '../input/GamepadManager';
 import { ModalA11y } from './A11yHelper';
 import { DeployModal } from './DeployModal';
+import { getDailyOperation } from '../core/DailyOperation';
 import { APP_VERSION, BUILD_HASH } from '../core/version';
 
 interface BeforeInstallPromptEvent extends Event {
@@ -25,6 +26,7 @@ export class TitleScreen {
   private readonly pwaModal: HTMLElement;
   private readonly installBtn: HTMLElement;
   private readonly startBtn: HTMLElement;
+  private readonly dailyBtn: HTMLElement;
   private readonly bootCampBtn: HTMLElement;
   private readonly bunkerBtn: HTMLElement;
   private readonly achievementsBtn: HTMLElement;
@@ -77,6 +79,9 @@ export class TitleScreen {
         <div class="title-actions-row">
           <button class="btn-primary" data-testid="btn-start-run" id="btn-start-run" aria-label="Deploy to Sector 44">
             DEPLOY TO SECTOR 44
+          </button>
+          <button class="btn-secondary" data-testid="btn-daily-operation" id="btn-daily-operation" aria-label="Daily Operation Directive" style="border-color:var(--color-amber); color:var(--color-amber);">
+            DAILY OPERATION // DIRECTIVE
           </button>
           <button class="btn-secondary" data-testid="btn-boot-camp" id="btn-boot-camp" aria-label="Tech-Com Boot Camp Tutorial">
             TECH-COM BOOT CAMP // TUTORIAL
@@ -182,6 +187,7 @@ export class TitleScreen {
     this.pwaModal = this.container.querySelector('#pwa-install-modal')!;
     this.installBtn = this.container.querySelector('#btn-install-pwa')!;
     this.startBtn = this.container.querySelector('#btn-start-run')!;
+    this.dailyBtn = this.container.querySelector('#btn-daily-operation')!;
     this.bootCampBtn = this.container.querySelector('#btn-boot-camp')!;
     this.bunkerBtn = this.container.querySelector('#btn-bunker-shop')!;
     this.achievementsBtn = this.container.querySelector('#btn-achievements')!;
@@ -269,6 +275,18 @@ export class TitleScreen {
       this.deployModal.show((config) => {
         this.hide();
         this.onStartRun(config);
+      });
+    });
+
+    this.dailyBtn.addEventListener('click', () => {
+      this.tryLockMobileLandscape();
+      const dailyOp = getDailyOperation();
+      this.hide();
+      this.onStartRun({
+        loadoutId: dailyOp.loadoutId,
+        stageId: dailyOp.stageId,
+        seed: dailyOp.seed,
+        daily: { dateKey: dailyOp.dateKey }
       });
     });
 
@@ -473,7 +491,14 @@ export class TitleScreen {
   public show(): void {
     this.container.style.display = 'flex';
     this.selectedBtnIndex = 0;
+    this.updateDailyButtonState();
     this.updateTitleButtonHighlight();
+  }
+
+  private updateDailyButtonState(): void {
+    const dailyOp = getDailyOperation();
+    const attempted = this.saveManager.hasAttemptedDaily(dailyOp.dateKey);
+    this.dailyBtn.textContent = attempted ? 'DAILY OPERATION // [PRACTICE]' : 'DAILY OPERATION // DIRECTIVE';
   }
 
   public hide(): void {
@@ -499,6 +524,7 @@ export class TitleScreen {
   private getActiveTitleButtons(): HTMLElement[] {
     const btns: HTMLElement[] = [
       this.startBtn,
+      this.dailyBtn,
       this.bootCampBtn,
       this.bunkerBtn,
       this.achievementsBtn,

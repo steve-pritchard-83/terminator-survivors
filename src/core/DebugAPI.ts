@@ -153,6 +153,9 @@ export class DebugAPI {
       triggerVault: () => {
         this.host.pickupSystem.spawnBossVault(this.host.runState.playerPos.x, this.host.runState.playerPos.z);
       },
+      spawnCrate: (x?: number, z?: number) => {
+        this.host.pickupSystem.spawnSupplyCrate(x ?? this.host.runState.playerPos.x, z ?? this.host.runState.playerPos.z);
+      },
       fastForward: (seconds: number) => {
         this.host.runState.timeSeconds += seconds;
       },

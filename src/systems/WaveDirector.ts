@@ -64,8 +64,10 @@ export class WaveDirector {
           this.spawnBoss(bossArchetype, `ALERT // ENDLESS WAVE ${minute}: MACHINE SIEGE`);
         }
       } else {
-        const entry = timeline[minute];
-        const isJudgmentBossMinute = this.runState.activeThreats.has('judgment_hour') && minute > 0 && minute % 2 === 0;
+        const isJudgment = this.runState.activeThreats.has('judgment_hour');
+        const timelineMinute = isJudgment ? (minute === 8 ? 10 : Math.floor((minute / 8) * 10)) : minute;
+        const entry = timeline[timelineMinute] ?? timeline[minute];
+        const isJudgmentBossMinute = isJudgment && minute > 0 && minute % 2 === 0 && minute !== 8;
         const bossToSpawn = entry?.boss ?? (isJudgmentBossMinute ? 'hk_aerial_patrol' : undefined);
         const banner = entry?.alertBanner ?? (isJudgmentBossMinute ? `JUDGMENT SIEGE // MINUTE ${minute}` : undefined);
 
@@ -76,7 +78,9 @@ export class WaveDirector {
       }
     }
 
-    const entry = timeline[Math.min(maxMinutes, this.currentMinute)];
+    const isJudgment = this.runState.activeThreats.has('judgment_hour');
+    const timelineMin = isJudgment ? (this.currentMinute === 8 ? 10 : Math.floor((this.currentMinute / 8) * 10)) : Math.min(maxMinutes, this.currentMinute);
+    const entry = timeline[timelineMin] ?? timeline[Math.min(maxMinutes, this.currentMinute)];
     if (!entry) return;
 
     let hpMultiplier = entry.hpMultiplier;

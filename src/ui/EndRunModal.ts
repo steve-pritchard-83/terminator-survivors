@@ -3,6 +3,7 @@ import { ALL_WEAPONS } from '../data/weapons';
 import { ENEMY_CONFIGS } from '../data/enemies';
 import { LOADOUTS } from '../data/upgrades';
 import { STAGES } from '../data/stages';
+import { THREAT_MODIFIERS } from '../data/threatModifiers';
 import type { EnemyArchetypeId, RunHistoryRecord, WeaponId } from '../core/types';
 import type { GamepadManager } from '../input/GamepadManager';
 import { XBOX_BUTTON } from '../input/GamepadManager';
@@ -227,6 +228,7 @@ export class EndRunModal {
       <div>FIELD LEVEL: <span style="color:var(--color-cyan)">LV ${level}</span></div>
       <div>ALLOY SCRAP RECOVERED: <span style="color:#ffd700">+${scrap}</span></div>
       ${seed !== undefined ? `<div>MISSION SEED: <span style="color:var(--color-chrome)">${seed}</span></div>` : ''}
+      ${details?.threats && details.threats.length > 0 ? `<div style="margin-top:4px;">ACTIVE THREATS: <span style="color:var(--color-amber)">${details.threats.map((t) => THREAT_MODIFIERS[t]?.name ?? t).join(', ')}</span></div>` : ''}
     `;
 
     this.renderWeaponTelemetry(details?.weaponDamageBreakdown, timeSeconds);
@@ -339,13 +341,30 @@ export class EndRunModal {
     const listEl = this.container.querySelector('#end-archives-list');
     if (!listEl) return;
 
+    const endless = this.saveManager?.getData().endlessHighScores;
+    const endlessSec = Math.floor(endless?.bestTimeSeconds ?? 0);
+    const em = Math.floor(endlessSec / 60);
+    const es = endlessSec % 60;
+    const endlessTimeFormatted = `${em.toString().padStart(2, '0')}:${es.toString().padStart(2, '0')}`;
+
+    const endlessBannerHtml = `
+      <div id="endless-high-scores-panel" data-testid="endless-high-scores-panel" style="margin-bottom:14px; background:rgba(255,187,0,0.12); border:1px solid var(--color-amber); border-radius:4px; padding:10px 14px; font-family:var(--font-telemetry);">
+        <div style="color:var(--color-amber); font-weight:bold; font-size:12px; margin-bottom:6px; letter-spacing:1px;">★ ENDLESS WAR RECORDS // COMMAND LEADERBOARD</div>
+        <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px; font-size:12px; color:#fff;">
+          <div>LONGEST SURVIVAL: <span style="color:var(--color-amber); font-weight:bold;">${endlessTimeFormatted}</span></div>
+          <div>MAX TERMINATIONS: <span style="color:var(--color-red); font-weight:bold;">${endless?.maxKills ?? 0}</span></div>
+          <div>MAX SCRAP BANKED: <span style="color:var(--color-cyan); font-weight:bold;">+${endless?.maxScrap ?? 0}</span></div>
+        </div>
+      </div>
+    `;
+
     const history = this.saveManager?.getRunHistory() ?? [];
     if (history.length === 0) {
-      listEl.innerHTML = `<div style="color:var(--color-chrome); font-size:13px; text-align:center; padding:20px;">NO PRIOR MISSIONS IN TECH-COM LOGS</div>`;
+      listEl.innerHTML = endlessBannerHtml + `<div style="color:var(--color-chrome); font-size:13px; text-align:center; padding:20px;">NO PRIOR MISSIONS IN TECH-COM LOGS</div>`;
       return;
     }
 
-    listEl.innerHTML = history
+    listEl.innerHTML = endlessBannerHtml + history
       .map((r, i) => {
         const sec = Math.floor(r.durationSeconds);
         const m = Math.floor(sec / 60);

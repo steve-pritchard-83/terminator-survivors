@@ -370,6 +370,7 @@ export interface RunHistoryRecord {
   weaponDamageBreakdown: Record<string, number>;
   killsByType: Record<string, number>;
   levelUpTimeline: Array<{ level: number; timeSeconds: number; choiceTitle: string }>;
+  threats?: ThreatModifierId[];
 }
 
 export interface DailyOperationConfig {
@@ -465,6 +466,7 @@ export interface GameDebugAPI {
   spawnSwarm: (archetype: EnemyArchetypeId, count: number, atBunkerOrX?: boolean | number, customZ?: number) => void;
   getPerf: () => PerfTelemetry;
   triggerVault: () => void;
+  spawnCrate?: (x?: number, z?: number) => void;
   fastForward: (seconds: number) => void;
   setGodMode: (enabled: boolean) => void;
   togglePause?: () => void;

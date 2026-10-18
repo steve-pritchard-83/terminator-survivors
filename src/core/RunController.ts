@@ -231,14 +231,16 @@ export class RunController {
     );
 
     if (this.host.runState.isDailyOperation && this.host.runState.dailyDateKey) {
-      this.host.saveManager.recordDailyAttempt({
-        dateKey: this.host.runState.dailyDateKey,
-        completed: victory,
-        score: Math.floor(this.host.runState.timeSeconds * 10 + this.host.runState.kills * 25 + finalScrap * 2),
-        timeSeconds: this.host.runState.timeSeconds,
-        kills: this.host.runState.kills,
-        alloyScrap: finalScrap
-      });
+      if (!this.host.saveManager.hasAttemptedDaily(this.host.runState.dailyDateKey)) {
+        this.host.saveManager.recordDailyAttempt({
+          dateKey: this.host.runState.dailyDateKey,
+          completed: victory,
+          score: Math.floor(this.host.runState.timeSeconds * 10 + this.host.runState.kills * 25 + finalScrap * 2),
+          timeSeconds: this.host.runState.timeSeconds,
+          kills: this.host.runState.kills,
+          alloyScrap: finalScrap
+        });
+      }
     }
 
     globalEvents.emit('run:completed', {
@@ -289,7 +291,8 @@ export class RunController {
       topWeapon,
       weaponDamageBreakdown: damageByWeapon,
       killsByType: killsByTypeRecord,
-      levelUpTimeline: this.host.runState.levelUpTimeline ? [...this.host.runState.levelUpTimeline] : []
+      levelUpTimeline: this.host.runState.levelUpTimeline ? [...this.host.runState.levelUpTimeline] : [],
+      threats: Array.from(this.host.runState.activeThreats)
     };
 
     if (typeof this.host.saveManager?.recordRunHistory === 'function') {

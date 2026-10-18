@@ -34,6 +34,7 @@ export class HUDView {
   public onPauseClicked: (() => void) | null = null;
   private lastXp = 0;
   private lastLevel = 1;
+  private isJammed = false;
   private xpPulseTimer: number | null = null;
   private bossWarningTimer: number | null = null;
   private comboPopTimer: number | null = null;
@@ -250,6 +251,14 @@ export class HUDView {
     fps?: number,
     bunkerHealth?: { current: number; max: number } | null
   ): void {
+    this.isJammed = Boolean(runState.activeThreats?.has('jammed_frequency'));
+    if (this.isJammed) {
+      this.container.classList.add('hud-jammed');
+      this.bossWarningBanner.style.display = 'none';
+    } else {
+      this.container.classList.remove('hud-jammed');
+    }
+
     if (this.fpsCounterEl.style.display !== 'none' && typeof fps === 'number') {
       const ms = fps > 0 ? (1000 / fps).toFixed(1) : '0.0';
       this.fpsCounterEl.textContent = `FPS: ${fps} // ${ms}ms`;
@@ -369,6 +378,7 @@ export class HUDView {
   }
 
   public triggerBossWarning(bossName: string): void {
+    if (this.isJammed) return;
     this.bossWarningBanner.textContent = `SKYNET PRIORITY THREAT: ${bossName.toUpperCase()}`;
     this.bossWarningBanner.style.display = 'block';
     if (this.bossWarningTimer !== null) {
