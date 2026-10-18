@@ -11,6 +11,7 @@ import { globalEvents } from '../core/EventBus';
 import { globalRNG } from '../core/RNG';
 import { ENEMY_LEASH_DISTANCE, ENEMY_RELOCATE_MAX_DIST, ENEMY_RELOCATE_MIN_DIST } from '../data/waves';
 import { type EnemyBehaviour, type EnemyContext, createEnemyBehaviourRegistry } from './enemies';
+import type { IEnvironment } from '../graphics/environments';
 
 export interface EnemyProjectile extends PoolableUser {
   poolIndex: number; x: number; y: number; z: number; vx: number; vz: number;
@@ -52,10 +53,8 @@ export class EnemySystem {
     this.context = {
       runState: this.runState, audio: this.audio, particles: this.particles,
       spawnEnemyProjectile: (x, y, z, tx, tz, spd, dmg) => this.spawnEnemyProjectile(x, y, z, tx, tz, spd, dmg),
-      spawnEnemy: (arch, x, z) => this.spawnEnemy(arch, x, z),
-      applyPlayerDamage: (dmg) => this.applyPlayerDamage(dmg),
-      emit: (evt, payload) => globalEvents.emit(evt, payload),
-      rng: globalRNG, group: this.group, timeSeconds: 0
+      spawnEnemy: (arch, x, z) => this.spawnEnemy(arch, x, z), applyPlayerDamage: (dmg) => this.applyPlayerDamage(dmg),
+      emit: (evt, payload) => globalEvents.emit(evt, payload), rng: globalRNG, group: this.group, timeSeconds: 0
     };
   }
 
@@ -96,7 +95,7 @@ export class EnemySystem {
     this.audio.playPlasmaShot(false);
   }
 
-  public update(dt: number, timeSeconds: number, obstacles: Array<{ x: number; z: number; radius: number }> = []): void {
+  public update(dt: number, timeSeconds: number, obstacles: Array<{ x: number; z: number; radius: number }> = [], env?: IEnvironment): void {
     const px = this.runState.playerPos.x;
     const pz = this.runState.playerPos.z;
     this.context.timeSeconds = timeSeconds;
@@ -139,6 +138,14 @@ export class EnemySystem {
         const nx = dx / dist; const nz = dz / dist;
         moveX = (nx * effectiveSpeed + sepX) * dt;
         moveZ = (nz * effectiveSpeed + sepZ) * dt;
+      }
+      if (env?.bunkerTarget && env.damageBunker && Math.hypot(enemy.x - env.bunkerTarget.x, enemy.z - env.bunkerTarget.z) <= env.bunkerTarget.radius) {
+        moveX = 0; moveZ = 0;
+        if (enemy.attackCooldown <= 0) {
+          enemy.attackCooldown = 0.55;
+          env.damageBunker(enemy.damage);
+          this.audio.playExplosion(0.2);
+        }
       }
       if (enemy.vx || enemy.vz) {
         const evx = enemy.vx ?? 0;
@@ -183,15 +190,11 @@ export class EnemySystem {
       const p = this.enemyProjectiles[pIdx];
       p.life += dt; p.x += p.vx * dt; p.z += p.vz * dt;
       this.enemyPool.setTransform(p.poolIndex, p.x, p.y, p.z, p.rotY);
-
       if (Math.hypot(px - p.x, pz - p.z) < p.radius + 0.55) {
-        this.applyPlayerDamage(p.damage);
-        this.particles.spawnPlasmaImpact(p.x, p.y, p.z);
-        this.releaseEnemyProjectile(p);
-        this.enemyProjectiles.splice(pIdx, 1);
+        this.applyPlayerDamage(p.damage); this.particles.spawnPlasmaImpact(p.x, p.y, p.z);
+        this.releaseEnemyProjectile(p); this.enemyProjectiles.splice(pIdx, 1);
       } else if (p.life >= p.maxLife) {
-        this.releaseEnemyProjectile(p);
-        this.enemyProjectiles.splice(pIdx, 1);
+        this.releaseEnemyProjectile(p); this.enemyProjectiles.splice(pIdx, 1);
       }
     }
 
@@ -202,10 +205,8 @@ export class EnemySystem {
     const heading = this.runState.isMoving ? this.runState.playerMoveAngle : this.runState.playerFacing;
     const angle = heading + (globalRNG.next() - 0.5) * (Math.PI * 0.4);
     const spawnDist = ENEMY_RELOCATE_MIN_DIST + globalRNG.next() * (ENEMY_RELOCATE_MAX_DIST - ENEMY_RELOCATE_MIN_DIST);
-    enemy.x = px + Math.sin(angle) * spawnDist;
-    enemy.z = pz + Math.cos(angle) * spawnDist;
-    enemy.vx = 0; enemy.vz = 0;
-    this.behaviours[enemy.archetype]?.onRelocate?.(enemy, this.context);
+    enemy.x = px + Math.sin(angle) * spawnDist; enemy.z = pz + Math.cos(angle) * spawnDist;
+    enemy.vx = 0; enemy.vz = 0; this.behaviours[enemy.archetype]?.onRelocate?.(enemy, this.context);
   }
 
   private applyPlayerDamage(rawDamage: number): void {
@@ -222,8 +223,8 @@ export class EnemySystem {
     this.particles.spawnExplosion(enemy.x, 0.5, enemy.z, enemy.isBoss ? 2.0 : 0.8);
     this.particles.spawnEnemyDebris(enemy.x, 0.5, enemy.z, enemy.isBoss ? 8 : undefined);
     if (enemy.isElite) handleEliteDeath(enemy, this.context);
-    const b = this.behaviours[enemy.archetype];
-    b?.onDeath?.(enemy, this.context); b?.dispose?.(enemy, this.context);
+    this.behaviours[enemy.archetype]?.onDeath?.(enemy, this.context);
+    this.behaviours[enemy.archetype]?.dispose?.(enemy, this.context);
     globalEvents.emit('enemy:killed', { enemy, x: enemy.x, z: enemy.z, xp: enemy.xpValue });
   }
 
@@ -234,14 +235,11 @@ export class EnemySystem {
     this.enemyPool.clear();
     for (const b of Object.values(this.behaviours)) b.clear?.();
     this.endoBatch.updateBatch([], 0, 0, 0);
-
     for (let i = this.group.children.length - 1; i >= 0; i--) {
-      const child = this.group.children[i];
-      if (child !== this.enemyPool.mesh) this.group.remove(child);
+      if (this.group.children[i] !== this.enemyPool.mesh) this.group.remove(this.group.children[i]);
     }
-    const nonPoolChildren = this.group.children.filter((c) => c !== this.enemyPool.mesh);
-    if (nonPoolChildren.length !== 0) {
-      throw new Error(`EnemySystem.clear() failed: ${nonPoolChildren.length} non-pool children remain in group`);
+    if (this.group.children.some((c) => c !== this.enemyPool.mesh)) {
+      throw new Error('EnemySystem.clear() failed: non-pool children remain');
     }
   }
 }

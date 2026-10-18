@@ -10,6 +10,7 @@ import type { PickupSystem } from '../systems/PickupSystem';
 import type { ParticleSystem } from '../systems/ParticleSystem';
 import type { WaveDirector } from '../systems/WaveDirector';
 import type { InteractiveEnvironmentSystem } from '../systems/InteractiveEnvironmentSystem';
+import type { IEnvironment } from '../graphics/environments';
 import type { GameLoop } from './GameLoop';
 import type { LoadoutId, RunConfig, StageId, ThreatModifierId, UpgradeChoice, WeaponId, ActiveEnemy, RunHistoryRecord } from './types';
 import { globalEvents } from './EventBus';
@@ -31,6 +32,7 @@ export interface RunControllerHost {
   readonly particles: ParticleSystem;
   readonly waveDirector: WaveDirector;
   readonly interactiveEnv?: InteractiveEnvironmentSystem;
+  readonly environment?: IEnvironment;
   readonly gameLoop: GameLoop;
   onRunStarted?: () => void;
 }
@@ -195,7 +197,7 @@ export class RunController {
     this.host.onRunStarted?.();
   }
 
-  public endRun(victory: boolean): void {
+  public endRun(victory: boolean, defeatReason?: string): void {
     if (this.host.runState.mode === 'gameover' || this.host.runState.mode === 'victory') return;
     this.host.runState.mode = victory ? 'victory' : 'gameover';
     this.host.audioEngine.stopMusic();
@@ -322,7 +324,8 @@ export class RunController {
             this.host.uiManager.hudView.triggerBossWarning('CONTINUE THE WAR // ENDLESS MODE ACTIVATED');
           }
         : undefined,
-      runRecord
+      runRecord,
+      defeatReason
     );
   }
 
@@ -578,7 +581,18 @@ export class RunController {
       }
     }
 
-    this.host.uiManager.hudView.update(this.host.runState, this.activeBoss);
+    this.host.uiManager.hudView.update(this.host.runState, this.activeBoss, this.host.gameLoop.fps, this.host.environment?.getBunkerHealth?.());
+
+    const bunkerHp = this.host.environment?.getBunkerHealth?.();
+    if (bunkerHp && bunkerHp.current <= 0 && this.host.runState.mode === 'playing') {
+      this.endRun(false, 'BUNKER BREACHED');
+      return;
+    }
+
+    if (this.host.runState.stageId === 'century_city_bunker' && this.host.runState.timeSeconds >= 600 && !this.host.runState.isEndless && this.host.runState.mode === 'playing') {
+      this.endRun(true);
+      return;
+    }
 
     if (this.host.runState.mode === 'playing') {
       this.host.audioEngine.updateMusicIntensity(

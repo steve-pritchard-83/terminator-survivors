@@ -94,7 +94,8 @@ export class DebugAPI {
         isEndless: this.host.runState.isEndless,
         revivalsLeft: this.host.runState.revivalsLeft,
         invulnerabilityTimer: this.host.runState.invulnerabilityTimer,
-        activeBoss: this.host.runController?.activeBoss ?? null
+        activeBoss: this.host.runController?.activeBoss ?? null,
+        bunkerHealth: this.host.environment?.getBunkerHealth?.() ?? null
       }),
       grantXp: (amount: number) => {
         const levels = this.host.runState.addXp(amount);
@@ -111,12 +112,25 @@ export class DebugAPI {
       spawnBoss: (archetype: EnemyArchetypeId) => {
         this.host.waveDirector.spawnBoss(archetype);
       },
-      spawnSwarm: (archetype: EnemyArchetypeId, count: number) => {
-        const px = this.host.runState.playerPos.x;
-        const pz = this.host.runState.playerPos.z;
+      spawnSwarm: (archetype: EnemyArchetypeId, count: number, atBunkerOrX?: boolean | number, customZ?: number) => {
+        let px = this.host.runState.playerPos.x;
+        let pz = this.host.runState.playerPos.z;
+        let spawnRadiusBase = 16;
+        if (typeof atBunkerOrX === 'number' && typeof customZ === 'number') {
+          px = atBunkerOrX;
+          pz = customZ;
+          spawnRadiusBase = 2.5;
+        } else if (atBunkerOrX === true) {
+          const bt = this.host.environment?.bunkerTarget;
+          if (bt) {
+            px = bt.x;
+            pz = bt.z;
+            spawnRadiusBase = 2.5;
+          }
+        }
         for (let i = 0; i < count; i++) {
           const angle = (i / count) * Math.PI * 2 + (globalRNG.next() - 0.5) * 0.2;
-          const radius = 16 + (i % 6) * 2.5 + globalRNG.next() * 2;
+          const radius = spawnRadiusBase + (i % 6) * 0.5 + globalRNG.next() * 1;
           const ex = px + Math.cos(angle) * radius;
           const ez = pz + Math.sin(angle) * radius;
           this.host.enemySystem.spawnEnemy(archetype, ex, ez);

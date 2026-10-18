@@ -26,4 +26,5 @@ export interface IEnvironment {
   getHazardDamage?(x: number, z: number, dt: number, isPlayer: boolean): number;
   getBunkerHealth?(): { current: number; max: number } | null;
   damageBunker?(amount: number): void;
+  bunkerTarget?: { x: number; z: number; radius: number } | null;
 }

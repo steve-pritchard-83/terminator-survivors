@@ -193,7 +193,8 @@ export class EndRunModal {
     seed: number | undefined,
     onReturn: () => void,
     onContinueWar?: () => void,
-    details?: RunHistoryRecord
+    details?: RunHistoryRecord,
+    defeatReason?: string
   ): void {
     this.onReturnCallback = onReturn;
     this.onContinueCallback = onContinueWar ?? null;
@@ -215,9 +216,9 @@ export class EndRunModal {
       this.titleEl.style.color = 'var(--color-cyan)';
       this.loreEl.textContent = LORE.victoryText;
     } else {
-      this.titleEl.textContent = 'TERMINATED';
+      this.titleEl.textContent = defeatReason ?? 'TERMINATED';
       this.titleEl.style.color = 'var(--color-red)';
-      this.loreEl.textContent = LORE.defeatText;
+      this.loreEl.textContent = defeatReason ? `CRITICAL FAILURE // ${defeatReason}` : LORE.defeatText;
     }
 
     this.statsEl.innerHTML = `

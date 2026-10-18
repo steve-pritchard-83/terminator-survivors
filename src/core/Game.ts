@@ -158,7 +158,7 @@ export class Game implements RunControllerHost, InputRouterHost, DebugAPIHost {
     for (const pickup of this.pickupSystem.pickups) this.grid.insert(pickup);
 
     this.weaponSystem.update(dt, this.enemySystem.activeEnemies, input.aim);
-    this.enemySystem.update(dt, this.runState.timeSeconds, this.environment.obstacleColliders);
+    this.enemySystem.update(dt, this.runState.timeSeconds, this.environment.obstacleColliders, this.environment);
     this.waveDirector.update(dt);
     this.pickupSystem.update(dt);
     this.particles.update(dt);

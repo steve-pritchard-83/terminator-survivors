@@ -458,10 +458,11 @@ export interface GameDebugAPI {
     revivalsLeft: number;
     invulnerabilityTimer: number;
     activeBoss: { name: string; hp: number; maxHp: number } | null;
+    bunkerHealth?: { current: number; max: number } | null;
   };
   grantXp: (amount: number) => void;
   spawnBoss: (archetype: EnemyArchetypeId) => void;
-  spawnSwarm: (archetype: EnemyArchetypeId, count: number) => void;
+  spawnSwarm: (archetype: EnemyArchetypeId, count: number, atBunkerOrX?: boolean | number, customZ?: number) => void;
   getPerf: () => PerfTelemetry;
   triggerVault: () => void;
   fastForward: (seconds: number) => void;

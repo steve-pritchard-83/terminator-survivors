@@ -20,6 +20,9 @@ export class HUDView {
   private readonly bossBarContainer: HTMLElement;
   private readonly bossTitle: HTMLElement;
   private readonly bossFill: HTMLElement;
+  private readonly bunkerBarContainer: HTMLElement;
+  private readonly bunkerTitle: HTMLElement;
+  private readonly bunkerFill: HTMLElement;
   private readonly mobileDashBtn: HTMLElement;
   private readonly dashStatusEl: HTMLElement;
   private readonly abilityStatusEl: HTMLElement;
@@ -78,6 +81,13 @@ export class HUDView {
         </div>
       </div>
 
+      <div class="boss-bar-container" id="hud-bunker-bar" data-testid="hud-bunker-bar" style="display:none; margin-top:4px;">
+        <div class="boss-title" id="hud-bunker-title" style="color:var(--color-amber);">DEFEND OBJECTIVE // TECH-COM BUNKER</div>
+        <div style="width:100%; height:8px; background:#221100; border-radius:1px; border:1px solid rgba(255,187,0,0.4);">
+          <div class="boss-bar-fill" id="hud-bunker-fill" style="background:var(--color-amber); width:100%;"></div>
+        </div>
+      </div>
+
       <div class="touch-zone-left" data-testid="touch-joystick-zone" id="touch-zone-left"></div>
       <div class="joystick-base" id="joystick-base">
         <div class="joystick-knob" id="joystick-knob"></div>
@@ -102,6 +112,9 @@ export class HUDView {
     this.bossBarContainer = this.container.querySelector('#hud-boss-bar')!;
     this.bossTitle = this.container.querySelector('#hud-boss-title')!;
     this.bossFill = this.container.querySelector('#hud-boss-fill')!;
+    this.bunkerBarContainer = this.container.querySelector('#hud-bunker-bar')!;
+    this.bunkerTitle = this.container.querySelector('#hud-bunker-title')!;
+    this.bunkerFill = this.container.querySelector('#hud-bunker-fill')!;
     this.mobileDashBtn = this.container.querySelector('#btn-mobile-dash')!;
     this.dashStatusEl = this.container.querySelector('#hud-dash-status')!;
     this.abilityStatusEl = this.container.querySelector('#hud-ability-status')!;
@@ -234,7 +247,8 @@ export class HUDView {
   public update(
     runState: RunState,
     activeBoss: { name: string; hp: number; maxHp: number } | null,
-    fps?: number
+    fps?: number,
+    bunkerHealth?: { current: number; max: number } | null
   ): void {
     if (this.fpsCounterEl.style.display !== 'none' && typeof fps === 'number') {
       const ms = fps > 0 ? (1000 / fps).toFixed(1) : '0.0';
@@ -340,6 +354,17 @@ export class HUDView {
       this.bossFill.style.width = `${bossPercent}%`;
     } else {
       this.bossBarContainer.style.display = 'none';
+    }
+
+    // Bunker Bar
+    if (bunkerHealth && bunkerHealth.max > 0) {
+      this.bunkerBarContainer.style.display = 'flex';
+      const bunkerPercent = Math.max(0, Math.min(100, (bunkerHealth.current / bunkerHealth.max) * 100));
+      this.bunkerFill.style.width = `${bunkerPercent}%`;
+      this.bunkerFill.style.background = bunkerPercent < 25 ? 'var(--color-red)' : 'var(--color-amber)';
+      this.bunkerTitle.textContent = `DEFEND OBJECTIVE // BUNKER INTEGRITY ${Math.round(bunkerPercent)}%`;
+    } else {
+      this.bunkerBarContainer.style.display = 'none';
     }
   }
 

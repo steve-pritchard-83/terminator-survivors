@@ -22,6 +22,7 @@ export type GameEventMap = {
   'audio:sfx': { name: string; arg?: number };
   'achievement:unlocked': { achievementId: string; title: string; description: string; rewardDescription: string };
   'ability:triggered': { loadoutId: string; abilityId: string; x: number; z: number };
+  'bunker:breached': void;
   'run:completed': { victory: boolean; timeSeconds: number; kills: number; alloyScrap: number; stageId: string; loadoutId: string; threatCount: number };
   'settings:updated': import('./types').GameSettings;
   'input:rebound': import('./types').InputMappingConfig;

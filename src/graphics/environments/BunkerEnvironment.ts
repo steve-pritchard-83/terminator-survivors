@@ -90,6 +90,10 @@ export class BunkerEnvironment implements IEnvironment {
     return { current: this.bunkerHp, max: this.bunkerMaxHp };
   }
 
+  public get bunkerTarget(): { x: number; z: number; radius: number } {
+    return { x: 0, z: -14, radius: 6.0 };
+  }
+
   public damageBunker(amount: number): void {
     if (this.isBreached) return;
     this.bunkerHp = Math.max(0, this.bunkerHp - amount);
@@ -98,6 +102,7 @@ export class BunkerEnvironment implements IEnvironment {
       // Breach effect: blow open the blast doors
       this.doorMesh.position.y = -10; // collapse/remove
       globalEvents.emit('camera:shake', { trauma: 0.75 });
+      globalEvents.emit('bunker:breached');
     }
   }
 
