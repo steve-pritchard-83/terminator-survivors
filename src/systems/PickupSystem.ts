@@ -278,7 +278,7 @@ export class PickupSystem {
   }
 
   public update(dt: number): void {
-    if (this.runState.mode !== 'playing') return;
+    if (this.runState.mode !== 'playing' || this.runState.hp <= 0 || this.runState.isDead) return;
 
     const px = this.runState.playerPos.x;
     const pz = this.runState.playerPos.z;
@@ -293,7 +293,7 @@ export class PickupSystem {
     }
 
     for (let i = this.pickups.length - 1; i >= 0; i--) {
-      if (this.runState.mode !== 'playing') break;
+      if (this.runState.mode !== 'playing' || this.runState.hp <= 0 || this.runState.isDead) break;
       const p = this.pickups[i];
       p.rotationY += dt * 2.8; // Spin animation
       if (p.mesh) {

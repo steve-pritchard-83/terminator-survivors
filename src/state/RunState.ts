@@ -108,6 +108,7 @@ export class RunState {
   private purchasedMetaUpgrades: Record<string, number> = {};
 
   public godMode = false;
+  public isDead = false;
 
   private getDefaultStats(): PlayerComputedStats {
     return {
@@ -150,6 +151,7 @@ export class RunState {
     this.seed = seed;
     this.stageId = stageId;
     this.isEndless = false;
+    this.isDead = false;
     this.isDailyOperation = false;
     this.dailyDateKey = '';
     this.activeThreats = new Set(activeThreats ?? []);
@@ -266,7 +268,11 @@ export class RunState {
     const prevRevivals = this.computedStats ? this.computedStats.revivals : 0;
     this.computedStats = base;
     this.maxHp = base.maxHp;
-    this.hp = Math.max(1, Math.min(this.maxHp, Math.round(this.maxHp * hpPercent)));
+    if (this.hp > 0 && !this.isDead) {
+      this.hp = Math.max(1, Math.min(this.maxHp, Math.round(this.maxHp * hpPercent)));
+    } else {
+      this.hp = 0;
+    }
     if (this.activeThreats.has('no_second_chances')) {
       this.revivalsLeft = 0;
     } else if (base.revivals > prevRevivals) {
@@ -294,22 +300,31 @@ export class RunState {
   }
 
   public takeDamage(rawDamage: number): number {
-    if (this.hp <= 0 || this.mode !== 'playing') return 0;
+    if (this.isDead || this.hp <= 0 || this.mode !== 'playing') return 0;
     if (this.godMode || this.isDashing || this.invulnerabilityTimer > 0) return 0;
     const mitigated = computeMitigatedDamage(rawDamage, this.computedStats.armor);
     if (mitigated > 0) {
       this.hp = Math.max(0, this.hp - mitigated);
       this.invulnerabilityTimer = this.hp > 0 ? this.invulnerabilityDuration : 0;
+      if (this.hp === 0) {
+        if (
+          this.revivalsLeft <= 0 &&
+          (!this.computedStats.revivalChance || this.computedStats.revivalChance <= 0)
+        ) {
+          this.isDead = true;
+        }
+      }
     }
     return mitigated;
   }
 
   public resolveLethalDamage(): 'revived' | 'dead' | 'alive' {
-    if (this.hp > 0) return 'alive';
+    if (this.hp > 0 && !this.isDead) return 'alive';
     if (this.revivalsLeft > 0) {
       this.revivalsLeft--;
       this.hp = Math.round(this.maxHp * 0.5);
       this.invulnerabilityTimer = 0;
+      this.isDead = false;
       return 'revived';
     }
     if (
@@ -318,13 +333,16 @@ export class RunState {
     ) {
       this.hp = Math.round(this.maxHp * 0.5);
       this.invulnerabilityTimer = 0;
+      this.isDead = false;
       return 'revived';
     }
+    this.isDead = true;
+    this.hp = 0;
     return 'dead';
   }
 
   public heal(amount: number): number {
-    if (this.hp <= 0) return 0;
+    if (this.isDead || this.hp <= 0) return 0;
     const before = this.hp;
     this.hp = Math.min(this.maxHp, this.hp + amount);
     return this.hp - before;
