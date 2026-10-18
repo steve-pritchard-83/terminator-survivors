@@ -1,3 +1,5 @@
+import { globalEvents } from './EventBus';
+
 export class GameLoop {
   public static readonly FIXED_DT = 1 / 60;
   private readonly maxFrameDelta = 0.1;
@@ -27,11 +29,9 @@ export class GameLoop {
     this.onRender = onRender;
 
     // Dynamically toggle hit-stop with reduced motion
-    import('./EventBus').then(({ globalEvents }) => {
-      globalEvents.on('settings:updated', (s) => {
-        this.hitStopEnabled = !s.reducedMotion;
-      });
-    }).catch(() => {});
+    globalEvents.on('settings:updated', (s) => {
+      this.hitStopEnabled = !s.reducedMotion;
+    });
   }
 
   public hitStop(seconds: number): void {

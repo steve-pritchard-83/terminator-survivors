@@ -10,6 +10,7 @@ import {
   formatKeyLabel
 } from '../data/inputDefaults';
 import { ModalA11y } from './A11yHelper';
+import { SettingsApplier } from './SettingsApplier';
 
 export class SettingsPanel {
   public readonly container: HTMLElement;
@@ -517,21 +518,7 @@ export class SettingsPanel {
   }
 
   public applyCurrentSettingsToDom(s: GameSettings): void {
-    this.audioEngine.setMasterVolume(s.masterVolume);
-    this.audioEngine.setMusicVolume(s.musicVolume);
-    this.audioEngine.setSfxVolume(s.sfxVolume);
-
-    // CRT Scanlines
-    const crtEl = document.querySelector('.crt-overlay') as HTMLElement | null;
-    if (crtEl) {
-      crtEl.style.display = s.reducedMotion ? 'none' : s.crtScanlines ? 'block' : 'none';
-    }
-
-    // Colorblind attribute
-    document.body.setAttribute('data-colorblind', s.colorBlindMode);
-
-    // UI Scale
-    document.documentElement.style.setProperty('--ui-scale', String(s.uiScale / 100));
+    SettingsApplier.apply(s, this.audioEngine);
   }
 
   public handleGamepadMenuNavigation(gp: GamepadManager, dt: number): boolean {

@@ -19,6 +19,8 @@ import { UIManager } from '../ui/UIManager';
 import { RunController, type RunControllerHost } from './RunController';
 import { InputRouter, type InputRouterHost } from './InputRouter';
 import { DebugAPI, type DebugAPIHost } from './DebugAPI';
+import { SettingsApplier } from '../ui/SettingsApplier';
+import { globalEvents } from './EventBus';
 import type { LoadoutId, StageId } from './types';
 
 export class Game implements RunControllerHost, InputRouterHost, DebugAPIHost {
@@ -57,9 +59,6 @@ export class Game implements RunControllerHost, InputRouterHost, DebugAPIHost {
     this.grid = new SpatialHashGrid(4.0);
 
     const settings = this.saveManager.getData().settings;
-    this.audioEngine.setMasterVolume(settings.masterVolume);
-    this.audioEngine.setMusicVolume(settings.musicVolume);
-    this.audioEngine.setSfxVolume(settings.sfxVolume);
 
     // 2. 3D Graphics & Scene
     const canvasContainer = document.createElement('div');
@@ -85,7 +84,6 @@ export class Game implements RunControllerHost, InputRouterHost, DebugAPIHost {
     // 4. UI Layer & CRT Overlay
     const crtOverlay = document.createElement('div');
     crtOverlay.className = 'crt-overlay';
-    if (!settings.crtScanlines) crtOverlay.style.display = 'none';
     appContainer.appendChild(crtOverlay);
 
     this.uiManager = new UIManager(
@@ -107,6 +105,8 @@ export class Game implements RunControllerHost, InputRouterHost, DebugAPIHost {
     if (import.meta.env.DEV || import.meta.env.VITE_E2E === '1') {
       this.debugAPI = new DebugAPI(this);
     }
+    SettingsApplier.apply(settings, this.audioEngine);
+    globalEvents.emit('settings:updated', settings);
     this.gameLoop.start();
   }
 
