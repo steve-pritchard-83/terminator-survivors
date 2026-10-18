@@ -188,16 +188,19 @@ export class HKTankBehaviour implements EnemyBehaviour {
 
   public clear(): void {
     for (const tank of this.meshes.values()) {
+      tank.group.removeFromParent();
       tank.dispose();
     }
     this.meshes.clear();
 
     for (const telegraph of this.telegraphs.values()) {
+      telegraph.group.removeFromParent();
       telegraph.dispose();
     }
     this.telegraphs.clear();
 
     for (const st of this.searchlightTelegraphs.values()) {
+      st.group.removeFromParent();
       st.dispose();
     }
     this.searchlightTelegraphs.clear();

@@ -150,7 +150,32 @@ export class DebugAPI {
 
       getSceneCensus: (): SceneCensus => {
         let visibleLights = 0;
+        let totalMeshes = 0;
+        const meshBreakdown: Record<string, number> = {};
         this.host.sceneManager.scene.traverse((obj) => {
+          if ((obj as THREE.Mesh).isMesh) {
+            totalMeshes++;
+            let path = obj.name || obj.type;
+            let curr = obj.parent;
+            while (curr && curr !== this.host.sceneManager.scene) {
+              const label =
+                curr.name ||
+                (curr === this.host.enemySystem.group
+                  ? 'enemySysGroup'
+                  : curr === this.host.weaponSystem?.group
+                    ? 'weaponSysGroup'
+                    : curr === this.host.pickupSystem.group
+                      ? 'pickupSysGroup'
+                      : curr === this.host.interactiveEnv?.group
+                        ? 'interactiveGroup'
+                        : curr === this.host.environment?.group
+                          ? 'envGroup'
+                          : curr.type);
+              path = label + ' > ' + path;
+              curr = curr.parent;
+            }
+            meshBreakdown[path] = (meshBreakdown[path] ?? 0) + 1;
+          }
           if (
             (obj as THREE.PointLight).isPointLight &&
             obj.visible &&
@@ -167,7 +192,9 @@ export class DebugAPI {
           fuelDrums: this.host.interactiveEnv?.fuelDrums.length ?? 0,
           cars: this.host.interactiveEnv?.cars.length ?? 0,
           obstacleColliders: this.host.environment?.obstacleColliders.length ?? 0,
-          visibleLights
+          visibleLights,
+          totalMeshes,
+          meshBreakdown
         };
       },
 

@@ -172,16 +172,19 @@ export class SkynetCoreBehaviour implements EnemyBehaviour {
 
   public clear(): void {
     for (const core of this.meshes.values()) {
+      core.group.removeFromParent();
       core.dispose();
     }
     this.meshes.clear();
 
     for (const t of this.telegraphs.values()) {
+      t.group.removeFromParent();
       t.dispose();
     }
     this.telegraphs.clear();
 
     for (const p of this.pullTelegraphs.values()) {
+      p.group.removeFromParent();
       p.dispose();
     }
     this.pullTelegraphs.clear();

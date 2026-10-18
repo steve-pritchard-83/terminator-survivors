@@ -495,7 +495,9 @@ export class Environment2029 implements IEnvironment {
     for (let i = 0; i < 42; i++) {
       const angle = (i / 42) * Math.PI * 2;
       const dist = 115 + (i % 3) * 8;
-      const height = 14 + (i % 7) * 4.5 + Math.random() * 8;
+      const pseudoRand = (Math.sin(i * 12.9898) * 43758.5453) % 1;
+      const normRand = Math.abs(pseudoRand);
+      const height = 14 + (i % 7) * 4.5 + normRand * 8;
       const width = 4 + (i % 4) * 3;
       const depth = 4 + (i % 3) * 2;
 
@@ -520,7 +522,7 @@ export class Environment2029 implements IEnvironment {
           ruinedSteelMat
         );
         roofSlab.position.set(0, height / 2 + 0.2, 0);
-        roofSlab.rotation.z = (Math.random() - 0.5) * 0.35;
+        roofSlab.rotation.z = (normRand - 0.5) * 0.35;
         towerGroup.add(roofSlab);
       }
 

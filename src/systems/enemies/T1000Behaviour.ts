@@ -169,16 +169,19 @@ export class T1000Behaviour implements EnemyBehaviour {
 
   public clear(): void {
     for (const t1000 of this.meshes.values()) {
+      t1000.group.removeFromParent();
       t1000.dispose();
     }
     this.meshes.clear();
 
     for (const t of this.telegraphs.values()) {
+      t.group.removeFromParent();
       t.dispose();
     }
     this.telegraphs.clear();
 
     for (const s of this.slashTelegraphs.values()) {
+      s.group.removeFromParent();
       s.dispose();
     }
     this.slashTelegraphs.clear();

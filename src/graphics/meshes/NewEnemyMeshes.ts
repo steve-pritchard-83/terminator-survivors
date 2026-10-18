@@ -40,6 +40,7 @@ export class T1MinigunMesh {
   }
 
   public dispose(): void {
+    this.group.removeFromParent();
     disposeObject3D(this.group);
   }
 }
@@ -80,6 +81,7 @@ export class MotoTerminatorMesh {
   }
 
   public dispose(): void {
+    this.group.removeFromParent();
     disposeObject3D(this.group);
   }
 }
@@ -120,6 +122,7 @@ export class HydrobotMesh {
   }
 
   public dispose(): void {
+    this.group.removeFromParent();
     disposeObject3D(this.group);
   }
 }
@@ -157,6 +160,7 @@ export class AerostatMesh {
   }
 
   public dispose(): void {
+    this.group.removeFromParent();
     disposeObject3D(this.group);
   }
 }
@@ -205,6 +209,7 @@ export class PlasmaTurretMesh {
   }
 
   public dispose(): void {
+    this.group.removeFromParent();
     disposeObject3D(this.group);
   }
 }
@@ -248,6 +253,7 @@ export class T600MinigunnerMesh {
   }
 
   public dispose(): void {
+    this.group.removeFromParent();
     disposeObject3D(this.group);
   }
 }

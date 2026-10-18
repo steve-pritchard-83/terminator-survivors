@@ -405,6 +405,8 @@ export interface SceneCensus {
   cars: number;
   obstacleColliders: number;
   visibleLights: number;
+  totalMeshes?: number;
+  meshBreakdown?: Record<string, number>;
 }
 
 export interface RuntimeSettings {

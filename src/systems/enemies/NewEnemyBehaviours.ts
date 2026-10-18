@@ -80,9 +80,15 @@ export class T1MinigunBehaviour implements EnemyBehaviour {
   }
 
   public clear(): void {
-    for (const m of this.meshes.values()) m.dispose();
+    for (const m of this.meshes.values()) {
+      m.group.removeFromParent();
+      m.dispose();
+    }
     this.meshes.clear();
-    for (const t of this.telegraphs.values()) t.dispose();
+    for (const t of this.telegraphs.values()) {
+      t.group.removeFromParent();
+      t.dispose();
+    }
     this.telegraphs.clear();
   }
 }
@@ -170,9 +176,15 @@ export class MotoTerminatorBehaviour implements EnemyBehaviour {
   }
 
   public clear(): void {
-    for (const m of this.meshes.values()) m.dispose();
+    for (const m of this.meshes.values()) {
+      m.group.removeFromParent();
+      m.dispose();
+    }
     this.meshes.clear();
-    for (const t of this.telegraphs.values()) t.dispose();
+    for (const t of this.telegraphs.values()) {
+      t.group.removeFromParent();
+      t.dispose();
+    }
     this.telegraphs.clear();
   }
 }
@@ -212,7 +224,10 @@ export class HydrobotSwarmBehaviour implements EnemyBehaviour {
   }
 
   public clear(): void {
-    for (const m of this.meshes.values()) m.dispose();
+    for (const m of this.meshes.values()) {
+      m.group.removeFromParent();
+      m.dispose();
+    }
     this.meshes.clear();
   }
 }
@@ -263,7 +278,10 @@ export class AerostatScoutBehaviour implements EnemyBehaviour {
   }
 
   public clear(): void {
-    for (const m of this.meshes.values()) m.dispose();
+    for (const m of this.meshes.values()) {
+      m.group.removeFromParent();
+      m.dispose();
+    }
     this.meshes.clear();
   }
 }
@@ -332,9 +350,15 @@ export class PlasmaTurretBehaviour implements EnemyBehaviour {
   }
 
   public clear(): void {
-    for (const m of this.meshes.values()) m.dispose();
+    for (const m of this.meshes.values()) {
+      m.group.removeFromParent();
+      m.dispose();
+    }
     this.meshes.clear();
-    for (const t of this.telegraphs.values()) t.dispose();
+    for (const t of this.telegraphs.values()) {
+      t.group.removeFromParent();
+      t.dispose();
+    }
     this.telegraphs.clear();
   }
 }
@@ -388,7 +412,10 @@ export class T600MinigunnerBehaviour implements EnemyBehaviour {
   }
 
   public clear(): void {
-    for (const m of this.meshes.values()) m.dispose();
+    for (const m of this.meshes.values()) {
+      m.group.removeFromParent();
+      m.dispose();
+    }
     this.meshes.clear();
   }
 }

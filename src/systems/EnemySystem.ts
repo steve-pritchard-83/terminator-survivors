@@ -13,11 +13,8 @@ import { ENEMY_LEASH_DISTANCE, ENEMY_RELOCATE_MAX_DIST, ENEMY_RELOCATE_MIN_DIST 
 import { type EnemyBehaviour, type EnemyContext, createEnemyBehaviourRegistry } from './enemies';
 
 export interface EnemyProjectile extends PoolableUser {
-  poolIndex: number;
-  x: number; y: number; z: number;
-  vx: number; vz: number; rotY: number;
-  damage: number; radius: number;
-  life: number; maxLife: number;
+  poolIndex: number; x: number; y: number; z: number; vx: number; vz: number;
+  rotY: number; damage: number; radius: number; life: number; maxLife: number;
 }
 
 export class EnemySystem {
@@ -65,12 +62,11 @@ export class EnemySystem {
   public spawnEnemy(archetype: EnemyArchetypeId, x: number, z: number, hpMult = 1.0, dmgMult = 1.0, affix?: EliteAffix): ActiveEnemy {
     const cfg = ENEMY_CONFIGS[archetype];
     const enemy: ActiveEnemy = {
-      id: this.nextEnemyId++, type: 'enemy', archetype, x, z,
-      radius: cfg.radius, hp: Math.round(cfg.maxHp * hpMult), maxHp: Math.round(cfg.maxHp * hpMult),
-      speed: cfg.speed, damage: Math.round(cfg.damage * dmgMult), mass: cfg.mass, vx: 0, vz: 0,
-      isBoss: cfg.isBoss, isFlying: cfg.isFlying, xpValue: cfg.xpValue,
-      hitFlashTimer: 0, slowTimer: 0, armorStripMultiplier: 1.0, attackCooldown: 0,
-      chargeTimer: 0, searchlightAngle: 0, searchlightAlertTimer: 0, phaseState: 0, state: {}
+      id: this.nextEnemyId++, type: 'enemy', archetype, x, z, radius: cfg.radius,
+      hp: Math.round(cfg.maxHp * hpMult), maxHp: Math.round(cfg.maxHp * hpMult), speed: cfg.speed,
+      damage: Math.round(cfg.damage * dmgMult), mass: cfg.mass, vx: 0, vz: 0, isBoss: cfg.isBoss,
+      isFlying: cfg.isFlying, xpValue: cfg.xpValue, hitFlashTimer: 0, slowTimer: 0, armorStripMultiplier: 1.0,
+      attackCooldown: 0, chargeTimer: 0, searchlightAngle: 0, searchlightAlertTimer: 0, phaseState: 0, state: {}
     };
     if (affix && !cfg.isBoss) applyEliteAffix(enemy, affix);
 
@@ -110,8 +106,7 @@ export class EnemySystem {
       if (enemy.hp <= 0) { this.killEnemy(enemy, i); continue; }
 
       if (enemy.hitFlashTimer > 0) enemy.hitFlashTimer -= dt;
-      if (enemy.slowTimer > 0) enemy.slowTimer -= dt;
-      if (enemy.attackCooldown > 0) enemy.attackCooldown = Math.max(0, enemy.attackCooldown - dt);
+      if (enemy.slowTimer > 0) enemy.slowTimer -= dt; if (enemy.attackCooldown > 0) enemy.attackCooldown = Math.max(0, enemy.attackCooldown - dt);
 
       const effectiveSpeed = enemy.speed * (enemy.slowTimer > 0 ? 0.6 : 1.0) * (this.runState.activeThreats.has('relentless_pursuit') ? 1.15 : 1.0);
       let dx = px - enemy.x; let dz = pz - enemy.z; let dist = Math.hypot(dx, dz);
@@ -239,5 +234,14 @@ export class EnemySystem {
     this.enemyPool.clear();
     for (const b of Object.values(this.behaviours)) b.clear?.();
     this.endoBatch.updateBatch([], 0, 0, 0);
+
+    for (let i = this.group.children.length - 1; i >= 0; i--) {
+      const child = this.group.children[i];
+      if (child !== this.enemyPool.mesh) this.group.remove(child);
+    }
+    const nonPoolChildren = this.group.children.filter((c) => c !== this.enemyPool.mesh);
+    if (nonPoolChildren.length !== 0) {
+      throw new Error(`EnemySystem.clear() failed: ${nonPoolChildren.length} non-pool children remain in group`);
+    }
   }
 }

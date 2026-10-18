@@ -53,6 +53,7 @@ export class T800Behaviour implements EnemyBehaviour {
 
   public clear(): void {
     for (const t of this.telegraphs.values()) {
+      t.group.removeFromParent();
       t.dispose();
     }
     this.telegraphs.clear();

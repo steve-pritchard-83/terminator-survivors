@@ -164,6 +164,7 @@ export class HKAerialMesh {
   }
 
   public dispose(): void {
+    this.group.removeFromParent();
     disposeObject3D(this.group);
   }
 }

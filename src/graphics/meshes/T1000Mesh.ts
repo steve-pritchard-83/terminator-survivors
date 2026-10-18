@@ -78,6 +78,7 @@ export class T1000Mesh {
   }
 
   public dispose(): void {
+    this.group.removeFromParent();
     disposeObject3D(this.group);
   }
 }

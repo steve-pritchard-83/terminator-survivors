@@ -267,26 +267,33 @@ export class HKAerialBehaviour implements EnemyBehaviour {
 
   public clear(): void {
     for (const hk of this.meshes.values()) {
+      hk.group.removeFromParent();
       hk.dispose();
     }
     this.meshes.clear();
 
     for (const t of this.telegraphs.values()) {
+      t.group.removeFromParent();
       t.dispose();
     }
     this.telegraphs.clear();
 
     for (const st of this.strafeTelegraphs.values()) {
+      st.group.removeFromParent();
       st.dispose();
     }
     this.strafeTelegraphs.clear();
 
     for (const sl of this.salvoTelegraphs.values()) {
-      for (const s of sl) s.dispose();
+      for (const s of sl) {
+        s.group.removeFromParent();
+        s.dispose();
+      }
     }
     this.salvoTelegraphs.clear();
 
     for (const d of this.diveTelegraphs.values()) {
+      d.group.removeFromParent();
       d.dispose();
     }
     this.diveTelegraphs.clear();

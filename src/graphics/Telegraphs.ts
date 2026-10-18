@@ -61,6 +61,7 @@ export class CircleTelegraph {
   }
 
   public dispose(): void {
+    this.group.removeFromParent();
     disposeObject3D(this.group);
   }
 }
@@ -141,6 +142,7 @@ export class LineTelegraph {
   }
 
   public dispose(): void {
+    this.group.removeFromParent();
     disposeObject3D(this.group);
   }
 }
@@ -199,6 +201,7 @@ export class ConeTelegraph {
   }
 
   public dispose(): void {
+    this.group.removeFromParent();
     disposeObject3D(this.group);
   }
 }

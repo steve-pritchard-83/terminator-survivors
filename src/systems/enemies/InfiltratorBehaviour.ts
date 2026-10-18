@@ -196,16 +196,19 @@ export class InfiltratorBehaviour implements EnemyBehaviour {
 
   public clear(): void {
     for (const infiltrator of this.meshes.values()) {
+      infiltrator.group.removeFromParent();
       infiltrator.dispose();
     }
     this.meshes.clear();
 
     for (const t of this.telegraphs.values()) {
+      t.group.removeFromParent();
       t.dispose();
     }
     this.telegraphs.clear();
 
     for (const c of this.coneTelegraphs.values()) {
+      c.group.removeFromParent();
       c.dispose();
     }
     this.coneTelegraphs.clear();

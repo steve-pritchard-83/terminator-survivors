@@ -137,6 +137,7 @@ export class HKTankMesh {
   }
 
   public dispose(): void {
+    this.group.removeFromParent();
     disposeObject3D(this.group);
   }
 }
