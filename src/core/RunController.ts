@@ -16,6 +16,7 @@ import { globalEvents } from './EventBus';
 import { globalRNG } from './RNG';
 import { computeThreatScrapMultiplier } from '../data/threatModifiers';
 import { AchievementTracker } from '../state/AchievementTracker';
+import { HIT_STOP_GLOBAL_COOLDOWN } from '../data/balance';
 
 export interface RunControllerHost {
   readonly runState: RunState;
@@ -38,6 +39,13 @@ export class RunController {
   public activeBoss: { name: string; hp: number; maxHp: number } | null = null;
   public readonly achievementTracker: AchievementTracker;
   private readonly unbinds: Array<() => void> = [];
+  private hitStopCooldownTimer = 0;
+
+  public triggerHitStop(seconds: number, force = false): void {
+    if (!force && this.hitStopCooldownTimer > 0) return;
+    this.hitStopCooldownTimer = HIT_STOP_GLOBAL_COOLDOWN;
+    this.host.gameLoop.hitStop(seconds);
+  }
 
   constructor(private readonly host: RunControllerHost) {
     this.achievementTracker = new AchievementTracker(this.host.saveManager, this.host.runState);
@@ -117,9 +125,7 @@ export class RunController {
           this.host.audioEngine.playCritCrunch();
           const enemy = this.host.enemySystem.activeEnemies.find((e) => e.id === enemyId);
           if (enemy?.isBoss) {
-            this.host.gameLoop.hitStop(0.04);
-          } else {
-            this.host.gameLoop.hitStop(0.02);
+            this.triggerHitStop(0.04);
           }
         }
       }),
@@ -443,15 +449,15 @@ export class RunController {
     if (enemy.isBoss) {
       this.host.runState.bossesKilled++;
       this.host.sceneManager.addScreenShake(0.75);
-      this.host.gameLoop.hitStop(0.10);
+      this.triggerHitStop(0.10, true);
       if (this.activeBoss) {
         this.activeBoss = null;
       }
       if (enemy.archetype === 'skynet_tde_core' && !this.host.runState.isEndless) {
         this.endRun(true);
       }
-    } else if (enemy.state?.isElite) {
-      this.host.gameLoop.hitStop(0.06);
+    } else if (enemy.isElite || enemy.state?.isElite) {
+      this.triggerHitStop(0.06, true);
     }
   }
 
@@ -528,6 +534,10 @@ export class RunController {
   }
 
   public update(dt: number): void {
+    if (this.hitStopCooldownTimer > 0) {
+      this.hitStopCooldownTimer = Math.max(0, this.hitStopCooldownTimer - dt);
+    }
+
     if (this.host.runState.mode !== 'playing') {
       return;
     }

@@ -1,2 +1,3 @@
 export const MAX_REVIVAL_CHANCE = 0.5;
 export const REVIVE_INVULNERABILITY_SECONDS = 2.0;
+export const HIT_STOP_GLOBAL_COOLDOWN = 0.25;
