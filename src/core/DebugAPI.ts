@@ -43,7 +43,7 @@ export interface DebugAPIHost {
   readonly interactiveEnv?: InteractiveEnvironmentSystem;
   readonly environment?: IEnvironment;
   startRun?: (
-    loadoutId: LoadoutId,
+    configOrLoadout?: RunConfig | LoadoutId,
     customSeed?: number,
     stageId?: StageId,
     isDaily?: boolean,
@@ -242,15 +242,7 @@ export class DebugAPI {
       },
 
       startRunWith: (config: RunConfig) => {
-        const stage = config.stageId ?? 'la_2029_wasteland';
-        const loadout = config.loadoutId ?? 'reese_2029';
-        this.host.startRun?.(loadout, config.seed, stage, !!config.daily, config.daily?.dateKey ?? '');
-        if (config.threats) {
-          this.host.runState.activeThreats = new Set(config.threats);
-        }
-        if (config.isEndless) {
-          this.host.runState.isEndless = true;
-        }
+        this.host.startRun?.(config);
       }
     };
 

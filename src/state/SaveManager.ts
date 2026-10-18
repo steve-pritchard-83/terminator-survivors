@@ -1,4 +1,4 @@
-import type { BaseWeaponId, ColorBlindMode, DamageNumberSetting, DailyAttemptRecord, GameSettings, InputMappingConfig, LoadoutId, MetaSaveData, MetaUpgradeId, RunHistoryRecord } from '../core/types';
+import type { BaseWeaponId, ColorBlindMode, DamageNumberSetting, DailyAttemptRecord, GameSettings, InputMappingConfig, LoadoutId, MetaSaveData, MetaUpgradeId, RunHistoryRecord, StageId } from '../core/types';
 import { LOADOUTS, META_UPGRADES } from '../data/upgrades';
 import { ACHIEVEMENTS, DEFAULT_UNLOCKED_WEAPONS } from '../data/achievements';
 import { DEFAULT_INPUT_MAPPINGS } from '../data/inputDefaults';
@@ -117,7 +117,8 @@ export class SaveManager {
       discoveredWeapons: [...DEFAULT_UNLOCKED_WEAPONS],
       discoveredEvolutions: [],
       runHistory: [],
-      tutorialCompleted: false
+      tutorialCompleted: false,
+      stageBestTimes: {}
     };
   }
 
@@ -317,8 +318,26 @@ export class SaveManager {
       discoveredWeapons,
       discoveredEvolutions,
       runHistory: runHistory.slice(0, 20),
-      tutorialCompleted: Boolean(current.tutorialCompleted)
+      tutorialCompleted: Boolean(current.tutorialCompleted),
+      stageBestTimes: current.stageBestTimes && typeof current.stageBestTimes === 'object'
+        ? { ...current.stageBestTimes }
+        : {}
     };
+  }
+
+  public getStageBestTime(stageId: StageId): number {
+    return this.data.stageBestTimes?.[stageId] ?? 0;
+  }
+
+  public recordStageBestTime(stageId: StageId, timeSeconds: number): void {
+    if (!this.data.stageBestTimes) {
+      this.data.stageBestTimes = {};
+    }
+    const cur = this.data.stageBestTimes[stageId] ?? 0;
+    if (timeSeconds > cur) {
+      this.data.stageBestTimes[stageId] = timeSeconds;
+      this.save();
+    }
   }
 
   public load(): MetaSaveData {
@@ -462,12 +481,20 @@ export class SaveManager {
     bossesKilled = 0,
     isEndless = false,
     endlessTotalKills?: number,
-    endlessTotalScrap?: number
+    endlessTotalScrap?: number,
+    stageId?: StageId
   ): void {
     this.data.totalKills += kills;
     this.data.alloyScrap += scrapEarned;
     if (timeSec > this.data.bestTimeSeconds) {
       this.data.bestTimeSeconds = timeSec;
+    }
+    if (stageId) {
+      if (!this.data.stageBestTimes) this.data.stageBestTimes = {};
+      const curStageBest = this.data.stageBestTimes[stageId] ?? 0;
+      if (timeSec > curStageBest) {
+        this.data.stageBestTimes[stageId] = timeSec;
+      }
     }
     if (victory) {
       this.data.victories++;

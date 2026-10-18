@@ -21,7 +21,7 @@ import { InputRouter, type InputRouterHost } from './InputRouter';
 import { DebugAPI, type DebugAPIHost } from './DebugAPI';
 import { SettingsApplier } from '../ui/SettingsApplier';
 import { globalEvents } from './EventBus';
-import type { LoadoutId, StageId } from './types';
+import type { LoadoutId, RunConfig, StageId } from './types';
 
 export class Game implements RunControllerHost, InputRouterHost, DebugAPIHost {
   public readonly sceneManager: SceneManager;
@@ -91,7 +91,7 @@ export class Game implements RunControllerHost, InputRouterHost, DebugAPIHost {
       this.saveManager,
       this.inputManager,
       this.audioEngine,
-      (loadoutId) => this.startRun(loadoutId),
+      (config) => this.startRun(config),
       () => this.runState
     );
 
@@ -126,9 +126,10 @@ export class Game implements RunControllerHost, InputRouterHost, DebugAPIHost {
     this.sceneManager.scene.add(this.environment.group);
   }
 
-  public startRun(loadoutId: LoadoutId, customSeed?: number, stageId: StageId = 'la_2029_wasteland', isDaily = false, dailyDateKey = ''): void {
-    this.setStage(stageId);
-    this.runController.startRun(loadoutId, customSeed, stageId, isDaily, dailyDateKey);
+  public startRun(configOrLoadout: RunConfig | LoadoutId = 'reese_2029', customSeed?: number, stageId: StageId = 'la_2029_wasteland', isDaily = false, dailyDateKey = ''): void {
+    const config: RunConfig = typeof configOrLoadout === 'string' ? { loadoutId: configOrLoadout, seed: customSeed, stageId, daily: (isDaily || dailyDateKey) ? { dateKey: dailyDateKey } : undefined } : configOrLoadout;
+    this.setStage(config.stageId ?? 'la_2029_wasteland');
+    this.runController.startRunWith(config);
   }
 
   public endRun(victory: boolean): void { this.runController.endRun(victory); }

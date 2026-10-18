@@ -353,6 +353,7 @@ export interface MetaSaveData {
   discoveredEvolutions?: string[];
   runHistory?: RunHistoryRecord[];
   tutorialCompleted?: boolean;
+  stageBestTimes?: Partial<Record<StageId, number>>;
 }
 
 export interface RunHistoryRecord {

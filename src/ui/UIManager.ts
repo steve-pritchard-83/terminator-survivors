@@ -9,7 +9,7 @@ import { VaultJackpotModal } from './VaultJackpotModal';
 import { EndRunModal } from './EndRunModal';
 import { PauseModal } from './PauseModal';
 import type { SettingsPanel } from './SettingsPanel';
-import type { LoadoutId } from '../core/types';
+import type { RunConfig } from '../core/types';
 
 export class UIManager {
   public readonly hudView: HUDView;
@@ -28,7 +28,7 @@ export class UIManager {
     saveManager: SaveManager,
     inputManager: InputManager,
     audioEngine: AudioEngine,
-    onStartRun: (loadoutId: LoadoutId) => void,
+    onStartRun: (config: RunConfig) => void,
     getRunState: () => RunState
   ) {
     this.root = root;

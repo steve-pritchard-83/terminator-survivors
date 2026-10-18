@@ -5,9 +5,10 @@ import { LORE } from '../data/lore';
 import { ACHIEVEMENTS, TOTAL_ACHIEVEMENTS } from '../data/achievements';
 import type { CodexModal } from './CodexModal';
 import { TutorialModal } from './TutorialModal';
-import type { LoadoutId, MetaUpgradeId } from '../core/types';
+import type { LoadoutId, MetaUpgradeId, RunConfig } from '../core/types';
 import type { GamepadManager } from '../input/GamepadManager';
 import { ModalA11y } from './A11yHelper';
+import { DeployModal } from './DeployModal';
 import { APP_VERSION, BUILD_HASH } from '../core/version';
 
 interface BeforeInstallPromptEvent extends Event {
@@ -32,9 +33,10 @@ export class TitleScreen {
   private readonly settingsBtn: HTMLElement;
   private readonly saveManager: SaveManager;
   private readonly audioEngine: AudioEngine;
-  private readonly onStartRun: (loadoutId: LoadoutId) => void;
+  private readonly onStartRun: (config: RunConfig) => void;
   private readonly onOpenArchives?: () => void;
   private deferredInstallPrompt: BeforeInstallPromptEvent | null = null;
+  public readonly deployModal: DeployModal;
 
   private selectedBtnIndex = 0;
   private bunkerSelectables: HTMLElement[] = [];
@@ -51,7 +53,7 @@ export class TitleScreen {
     root: HTMLElement,
     saveManager: SaveManager,
     audioEngine: AudioEngine,
-    onStartRun: (loadoutId: LoadoutId) => void,
+    onStartRun: (config: RunConfig) => void,
     onOpenArchives?: () => void,
     onOpenSettings?: () => void
   ) {
@@ -248,6 +250,8 @@ export class TitleScreen {
       }
     });
 
+    this.deployModal = new DeployModal(root, saveManager, audioEngine);
+
     this.setupPwaInstallPrompt();
 
     // Button event listeners
@@ -255,13 +259,17 @@ export class TitleScreen {
       this.tryLockMobileLandscape();
       if (!this.saveManager.isTutorialCompleted()) {
         this.tutorialModal.show(() => {
-          this.hide();
-          this.onStartRun(this.saveManager.getData().selectedLoadout);
+          this.deployModal.show((config) => {
+            this.hide();
+            this.onStartRun(config);
+          });
         });
         return;
       }
-      this.hide();
-      this.onStartRun(this.saveManager.getData().selectedLoadout);
+      this.deployModal.show((config) => {
+        this.hide();
+        this.onStartRun(config);
+      });
     });
 
     this.bootCampBtn.addEventListener('click', () => {

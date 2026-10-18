@@ -11,7 +11,7 @@ import type { ParticleSystem } from '../systems/ParticleSystem';
 import type { WaveDirector } from '../systems/WaveDirector';
 import type { InteractiveEnvironmentSystem } from '../systems/InteractiveEnvironmentSystem';
 import type { GameLoop } from './GameLoop';
-import type { LoadoutId, StageId, ThreatModifierId, UpgradeChoice, WeaponId, ActiveEnemy, RunHistoryRecord } from './types';
+import type { LoadoutId, RunConfig, StageId, ThreatModifierId, UpgradeChoice, WeaponId, ActiveEnemy, RunHistoryRecord } from './types';
 import { globalEvents } from './EventBus';
 import { globalRNG } from './RNG';
 import { computeThreatScrapMultiplier } from '../data/threatModifiers';
@@ -143,6 +143,16 @@ export class RunController {
     };
   }
 
+  public startRunWith(config: RunConfig): void {
+    const loadoutId = config.loadoutId ?? this.host.saveManager.getData().selectedLoadout ?? 'reese_2029';
+    const stageId = config.stageId ?? 'la_2029_wasteland';
+    const seed = config.seed;
+    const isDaily = Boolean(config.daily || (config as any).isDaily);
+    const dailyDateKey = config.daily?.dateKey ?? '';
+    const activeThreats = config.threats;
+    this.startRun(loadoutId, seed, stageId, isDaily, dailyDateKey, activeThreats);
+  }
+
   public startRun(
     loadoutId: LoadoutId,
     customSeed?: number,
@@ -214,7 +224,8 @@ export class RunController {
       this.host.runState.bossesKilled,
       this.host.runState.isEndless,
       this.host.runState.kills,
-      finalScrap
+      finalScrap,
+      this.host.runState.stageId
     );
 
     if (this.host.runState.isDailyOperation && this.host.runState.dailyDateKey) {
