@@ -42,7 +42,8 @@ describe('P1-01 single guarded death', () => {
     expect(runState.hp).toBe(Math.round(runState.maxHp * 0.5));
     expect(runState.revivalsLeft).toBe(0);
 
-    // Take second lethal damage with 0 revivals left
+    // Advance past revive invulnerability before taking second lethal damage
+    runState.invulnerabilityTimer = 0;
     runState.takeDamage(999);
     expect(runState.hp).toBe(0);
     const secondResolution = runState.resolveLethalDamage();

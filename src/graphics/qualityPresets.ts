@@ -3,6 +3,8 @@ import type { QualityPreset } from '../core/types';
 export interface QualityProfile {
   preset: QualityPreset;
   pixelRatio: number;
+  minPixelRatio: number;
+  maxPixelRatio: number;
   bloom: boolean;
   shadows: boolean;
   particleCap: number;
@@ -15,6 +17,8 @@ export const QUALITY_PROFILES: Record<QualityPreset, QualityProfile> = {
   low: {
     preset: 'low',
     pixelRatio: 1.0,
+    minPixelRatio: 0.75,
+    maxPixelRatio: 1.0,
     bloom: false,
     shadows: false,
     particleCap: 30,
@@ -25,6 +29,8 @@ export const QUALITY_PROFILES: Record<QualityPreset, QualityProfile> = {
   medium: {
     preset: 'medium',
     pixelRatio: 1.25,
+    minPixelRatio: 0.8,
+    maxPixelRatio: 1.25,
     bloom: true,
     shadows: false,
     particleCap: 60,
@@ -35,6 +41,8 @@ export const QUALITY_PROFILES: Record<QualityPreset, QualityProfile> = {
   high: {
     preset: 'high',
     pixelRatio: 1.5,
+    minPixelRatio: 1.0,
+    maxPixelRatio: 1.5,
     bloom: true,
     shadows: true,
     particleCap: 100,
@@ -45,10 +53,24 @@ export const QUALITY_PROFILES: Record<QualityPreset, QualityProfile> = {
   ultra: {
     preset: 'ultra',
     pixelRatio: 2.0,
+    minPixelRatio: 1.25,
+    maxPixelRatio: 2.0,
     bloom: true,
     shadows: true,
     particleCap: 160,
     debrisCap: 72,
+    dynamicLights: true,
+    atmosphere: true
+  },
+  auto: {
+    preset: 'auto',
+    pixelRatio: 1.0,
+    minPixelRatio: 1.0,
+    maxPixelRatio: 1.5,
+    bloom: true,
+    shadows: true,
+    particleCap: 100,
+    debrisCap: 48,
     dynamicLights: true,
     atmosphere: true
   }

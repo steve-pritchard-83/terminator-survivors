@@ -249,6 +249,14 @@ export class ParticleSystem {
   }
 
   private acquireParticle(type: ParticleType): Particle {
+    if (this.particles.length >= this.particleCap) {
+      const oldest = this.particles.shift();
+      if (oldest) {
+        oldest.mesh.visible = false;
+        this.freePool[oldest.type].push(oldest);
+      }
+    }
+
     const pool = this.freePool[type];
     if (pool.length > 0) {
       const p = pool.pop()!;

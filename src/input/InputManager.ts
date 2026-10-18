@@ -1,5 +1,5 @@
 import { GamepadManager } from './GamepadManager';
-import type { KeyBindings } from '../core/types';
+import type { InputMappingConfig, KeyBindings } from '../core/types';
 import { DEFAULT_KEY_BINDINGS } from '../data/inputDefaults';
 import { globalEvents } from '../core/EventBus';
 
@@ -33,8 +33,13 @@ export class InputManager {
   private joystickBaseEl: HTMLElement | null = null;
   private joystickKnobEl: HTMLElement | null = null;
 
-  constructor() {
+  constructor(saveManager?: { getInputBindings(): InputMappingConfig }) {
     this.gamepadManager = new GamepadManager();
+    if (saveManager) {
+      const saved = saveManager.getInputBindings();
+      if (saved?.keyboard) this.setKeyBindings(saved.keyboard);
+      if (saved?.gamepad) this.gamepadManager.setGamepadBindings(saved.gamepad);
+    }
     this.gamepadManager.onDashCallback = () => {
       this.dashRequested = true;
       this.onDashCallback?.();
@@ -186,7 +191,7 @@ export class InputManager {
   private onKeyDown = (e: KeyboardEvent): void => {
     this.lastActiveDevice = 'mouse_keyboard';
     this.keys.add(e.code);
-    if (this.keyBindings.dash.includes(e.code) || e.code === 'ShiftRight') {
+    if (this.keyBindings.dash.includes(e.code)) {
       this.dashRequested = true;
       this.onDashCallback?.();
     } else if (this.keyBindings.ability.includes(e.code)) {

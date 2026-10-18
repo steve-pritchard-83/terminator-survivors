@@ -21,7 +21,8 @@ export class DynamicLightingManager {
   constructor(private readonly scene: THREE.Scene) {
     for (let i = 0; i < DynamicLightingManager.POOL_SIZE; i++) {
       const light = new THREE.PointLight(0xffffff, 0, 10, 2);
-      light.visible = false;
+      light.visible = true;
+      light.intensity = 0;
       light.castShadow = false; // PointLight shadows disabled for performance
       this.scene.add(light);
       this.slots.push({
@@ -194,7 +195,6 @@ export class DynamicLightingManager {
       if (slot.elapsed >= slot.duration) {
         slot.active = false;
         slot.priority = 0;
-        slot.light.visible = false;
         slot.light.intensity = 0;
       } else {
         // Quadratic fade out for natural light dissipation
@@ -210,7 +210,6 @@ export class DynamicLightingManager {
       const slot = this.slots[i];
       slot.active = false;
       slot.priority = 0;
-      slot.light.visible = false;
       slot.light.intensity = 0;
     }
   }

@@ -53,7 +53,7 @@ export class Game implements RunControllerHost, InputRouterHost, DebugAPIHost {
     // 1. Core State & Audio
     this.runState = new RunState();
     this.saveManager = new SaveManager();
-    this.inputManager = new InputManager();
+    this.inputManager = new InputManager(this.saveManager);
     this.audioEngine = new AudioEngine();
     this.audioEngine.gamepadManager = this.inputManager.gamepadManager;
     this.grid = new SpatialHashGrid(4.0);

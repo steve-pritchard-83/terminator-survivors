@@ -15,7 +15,7 @@ export class SceneManager {
   public readonly dynamicLighting: DynamicLightingManager;
   public readonly atmosphere: AtmosphereSystem;
 
-  private currentPreset: QualityPreset = 'high';
+  private currentPreset: QualityPreset = 'auto';
   private initialFpsSamples: number[] = [];
   private initialSampleTimer = 0;
   private hasAutoDetectedQuality = false;
@@ -74,7 +74,7 @@ export class SceneManager {
 
     globalEvents.on('settings:updated', (s) => {
       this.setScreenShakeScale(s.reducedMotion ? 0 : s.screenShake / 100);
-      if (s.qualityPreset && s.qualityPreset !== this.currentPreset) {
+      if (s.qualityPreset) {
         this.applyQualityPreset(s.qualityPreset);
       }
     });
@@ -210,8 +210,8 @@ export class SceneManager {
   }
 
   public applyQualityPreset(preset: QualityPreset): void {
-    this.hasAutoDetectedQuality = true;
     this.currentPreset = preset;
+    this.hasAutoDetectedQuality = preset !== 'auto';
     const profile = getQualityProfile(preset);
 
     this.renderer.setPixelRatio(profile.pixelRatio);
@@ -231,8 +231,8 @@ export class SceneManager {
   }
 
   public adjustQuality(fps: number, dt = 1 / 60): void {
-    // 1. Auto-detect default preset from first 5 s FPS
-    if (!this.hasAutoDetectedQuality && fps > 0) {
+    // 1. Auto-detect default preset from first 5 s FPS (only if preset is 'auto')
+    if (this.currentPreset === 'auto' && !this.hasAutoDetectedQuality && fps > 0) {
       this.initialSampleTimer += dt;
       this.initialFpsSamples.push(fps);
       if (this.initialSampleTimer >= 5.0) {
@@ -264,34 +264,31 @@ export class SceneManager {
     }
 
     const currentRatio = this.renderer.getPixelRatio();
+    const profile = getQualityProfile(this.currentPreset);
 
     if (this.qualityCooldownTimer <= 0) {
-      if (this.lowFpsDuration >= 3.0 && currentRatio > 1.0) {
-        this.applyQualityChange(1.0);
-      } else if (this.highFpsDuration >= 3.0) {
-        const deviceRatio = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
-        const targetRatio = Math.min(deviceRatio, 1.5);
-        if (deviceRatio > 1 && currentRatio < targetRatio) {
-          this.applyQualityChange(targetRatio);
-        }
+      if (this.lowFpsDuration >= 3.0 && currentRatio > profile.minPixelRatio) {
+        this.applyQualityChange(profile.minPixelRatio);
+      } else if (this.highFpsDuration >= 3.0 && currentRatio < profile.maxPixelRatio) {
+        this.applyQualityChange(profile.maxPixelRatio);
       }
     }
   }
 
   private applyQualityChange(ratio: number): void {
     this.hasAutoDetectedQuality = true;
-    this.renderer.setPixelRatio(ratio);
-    this.postProcessing.setPixelRatio(ratio);
+    const profile = getQualityProfile(this.currentPreset);
+    const clampedRatio = Math.max(profile.minPixelRatio, Math.min(profile.maxPixelRatio, ratio));
+    this.renderer.setPixelRatio(clampedRatio);
+    this.postProcessing.setPixelRatio(clampedRatio);
     const width = window.innerWidth || 1;
     const height = window.innerHeight || 1;
     this.postProcessing.setSize(width, height);
-    this.dynamicLighting.setEnabled(ratio > 1.0);
-    this.atmosphere.setEnabled(ratio > 1.0);
     this.qualityCooldownTimer = 5.0;
     this.lowFpsDuration = 0;
     this.highFpsDuration = 0;
     if (typeof console !== 'undefined' && import.meta.env?.DEV) {
-      console.log(`[SceneManager] Quality adjusted: pixelRatio = ${ratio}`);
+      console.log(`[SceneManager] Quality adjusted: pixelRatio = ${clampedRatio}`);
     }
   }
 

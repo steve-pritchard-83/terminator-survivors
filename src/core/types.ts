@@ -287,7 +287,7 @@ export interface UpgradeChoice {
 
 export type ColorBlindMode = 'none' | 'deuteranopia' | 'protanopia' | 'tritanopia';
 export type DamageNumberSetting = 'all' | 'crits' | 'off';
-export type QualityPreset = 'low' | 'medium' | 'high' | 'ultra';
+export type QualityPreset = 'low' | 'medium' | 'high' | 'ultra' | 'auto';
 
 export interface GameSettings {
   masterVolume: number;
