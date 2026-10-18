@@ -234,6 +234,7 @@ export class DebugAPI {
         for (const enemy of enemies) {
           api.damageEnemy(enemy.id, 1e9);
         }
+        this.host.enemySystem.update(0, this.host.runState.timeSeconds);
       },
 
       setPlayerHp: (hp: number) => {
