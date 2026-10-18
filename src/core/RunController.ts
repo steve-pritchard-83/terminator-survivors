@@ -466,6 +466,7 @@ export class RunController {
   public handleEnemyKilled(enemy: ActiveEnemy): void {
     this.host.runState.recordKill(enemy.archetype);
     if (enemy.isBoss) {
+      globalEvents.emit('boss:defeated', { archetype: enemy.archetype, x: enemy.x, z: enemy.z });
       this.host.runState.bossesKilled++;
       this.host.sceneManager.addScreenShake(0.75);
       this.triggerHitStop(0.10, true);

@@ -12,7 +12,7 @@ import type {
   UpgradeChoice,
   WeaponId
 } from '../core/types';
-import { BASE_WEAPONS, PASSIVES, canEvolveWeapon } from '../data/weapons';
+import { ALL_WEAPONS, BASE_WEAPONS, PASSIVES, canEvolveWeapon } from '../data/weapons';
 import { LOADOUTS, META_UPGRADES } from '../data/upgrades';
 import { globalRNG } from '../core/RNG';
 import { StateMachine, GAME_MODE_TRANSITIONS } from '../core/StateMachine';
@@ -604,6 +604,8 @@ export class RunState {
             evolved: true,
             cooldownTimer: 0
           });
+          const evoName = ALL_WEAPONS[evoId]?.name ?? evoId;
+          globalEvents.emit('weapon:evolved', { from: wId, to: evoId, name: evoName });
           return evoId;
         }
       }

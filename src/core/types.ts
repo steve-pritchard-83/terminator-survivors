@@ -479,6 +479,8 @@ export interface GameDebugAPI {
   killAllEnemies: () => void;
   setPlayerHp: (hp: number) => void;
   startRunWith: (config: RunConfig) => void;
+  grantWeapon?: (id: WeaponId, level?: number) => void;
+  grantPassive?: (id: PassiveId, level?: number) => void;
 }
 
 declare global {

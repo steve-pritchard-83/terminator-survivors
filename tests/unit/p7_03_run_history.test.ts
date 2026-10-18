@@ -268,7 +268,8 @@ describe('P7-03: Run summary & history', () => {
       expect.objectContaining({
         outcome: 'victory',
         topWeapon: { id: 'ithaca_37', damage: 5000 }
-      })
+      }),
+      undefined
     );
   });
 });

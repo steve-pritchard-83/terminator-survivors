@@ -24,7 +24,9 @@ import type {
   SceneCensus,
   SpatialEntity,
   LoadoutId,
-  StageId
+  StageId,
+  WeaponId,
+  PassiveId
 } from './types';
 
 export interface DebugAPIHost {
@@ -261,6 +263,15 @@ export class DebugAPI {
 
       startRunWith: (config: RunConfig) => {
         this.host.startRun?.(config);
+      },
+
+      grantWeapon: (id: WeaponId, level = 1) => {
+        this.host.runState.weapons.set(id, { id, level, evolved: false, cooldownTimer: 0 });
+      },
+
+      grantPassive: (id: PassiveId, level = 1) => {
+        this.host.runState.passives.set(id, level);
+        this.host.runState.recalculateStats();
       }
     };
 

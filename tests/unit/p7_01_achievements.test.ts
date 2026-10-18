@@ -4,23 +4,58 @@ import { SaveManager } from '../../src/state/SaveManager';
 import { AchievementTracker } from '../../src/state/AchievementTracker';
 import { RunState } from '../../src/state/RunState';
 import { globalEvents } from '../../src/core/EventBus';
+import { RunController } from '../../src/core/RunController';
 import type { ActiveEnemy } from '../../src/core/types';
 
 describe('P7-01: Achievements System', () => {
   let saveManager: SaveManager;
   let runState: RunState;
   let tracker: AchievementTracker;
+  let runController: RunController;
 
   beforeEach(() => {
     localStorage.clear();
     saveManager = new SaveManager();
     runState = new RunState();
     runState.initRun('reese_2029', {}, 1234, 'la_2029_wasteland', [], saveManager.getUnlockedWeapons());
-    tracker = new AchievementTracker(saveManager, runState);
+    const mockHost = {
+      runState,
+      saveManager,
+      audioEngine: {
+        playBossStinger: () => {},
+        playSearchlightAlert: () => {},
+        playCritCrunch: () => {},
+        updateMusicIntensity: () => {},
+        startMusic: () => {},
+        playHudScanOpen: () => {},
+        playSelect: () => {},
+        playRevive: () => {},
+        playPlayerDeath: () => {}
+      },
+      uiManager: {
+        hudView: { triggerBossWarning: () => {}, update: () => {}, show: () => {} },
+        titleScreen: { hide: () => {} },
+        levelUpModal: { show: () => {}, hide: () => {} },
+        endRunModal: { show: () => {} }
+      },
+      sceneManager: {
+        addScreenShake: () => {},
+        postProcessing: { triggerDamageFlash: () => {} }
+      },
+      inputManager: { clearDashRequest: () => {} },
+      weaponSystem: { clear: () => {} },
+      enemySystem: { activeEnemies: [] },
+      pickupSystem: { clear: () => {} },
+      particles: { clear: () => {} },
+      waveDirector: { reset: () => {} },
+      gameLoop: { hitStop: () => {}, fps: 60 }
+    } as any;
+    runController = new RunController(mockHost);
+    tracker = runController.achievementTracker;
   });
 
   afterEach(() => {
-    tracker.destroy();
+    runController.dispose();
     globalEvents.clear();
     localStorage.clear();
   });
@@ -118,11 +153,27 @@ describe('P7-01: Achievements System', () => {
       name: 'HK-Tank Goliath',
       maxHp: 1500
     });
-    globalEvents.emit('boss:defeated', {
+    const mockGoliath: ActiveEnemy = {
+      id: 99,
+      type: 'enemy',
       archetype: 'hk_tank_goliath',
       x: 0,
-      z: 0
-    });
+      z: 0,
+      hp: 0,
+      maxHp: 1500,
+      isBoss: true,
+      xpValue: 500,
+      speed: 1.9,
+      damage: 48,
+      radius: 2.8,
+      mass: 50,
+      isFlying: false,
+      hitFlashTimer: 0,
+      slowTimer: 0,
+      armorStripMultiplier: 1,
+      attackCooldown: 0
+    };
+    globalEvents.emit('enemy:killed', { enemy: mockGoliath, x: 0, z: 0, xp: 500 });
 
     expect(saveManager.isAchievementUnlocked('hk_tank_slayer')).toBe(true);
     expect(saveManager.isAchievementUnlocked('untouchable_boss')).toBe(true);
@@ -136,11 +187,27 @@ describe('P7-01: Achievements System', () => {
       maxHp: 2000
     });
     globalEvents.emit('player:damaged', { currentHp: 50, maxHp: 100, damage: 50 });
-    globalEvents.emit('boss:defeated', {
+    const mockT1000: ActiveEnemy = {
+      id: 100,
+      type: 'enemy',
       archetype: 't1000_prototype',
       x: 0,
-      z: 0
-    });
+      z: 0,
+      hp: 0,
+      maxHp: 2000,
+      isBoss: true,
+      xpValue: 800,
+      speed: 3.5,
+      damage: 40,
+      radius: 1.5,
+      mass: 30,
+      isFlying: false,
+      hitFlashTimer: 0,
+      slowTimer: 0,
+      armorStripMultiplier: 1,
+      attackCooldown: 0
+    };
+    globalEvents.emit('enemy:killed', { enemy: mockT1000, x: 0, z: 0, xp: 800 });
     expect(saveManager.isAchievementUnlocked('t1000_slayer')).toBe(true);
     expect(saveManager.isWeaponUnlocked('molotov')).toBe(true);
   });
@@ -148,18 +215,24 @@ describe('P7-01: Achievements System', () => {
   it('tracks weapon evolutions and unlocks arsenal_complete at 3 evolved weapons', () => {
     expect(saveManager.isAchievementUnlocked('first_evolution')).toBe(false);
 
-    runState.weapons.set('ithaca_37', { id: 'ithaca_37', level: 8, evolved: true, cooldownTimer: 0 });
-    globalEvents.emit('weapon:evolved', { from: 'ithaca_37', to: 'trench_sweeper', name: 'Trench Sweeper' });
+    runState.weapons.set('ithaca_37', { id: 'ithaca_37', level: 8, evolved: false, cooldownTimer: 0 });
+    runState.passives.set('might_shells', 1);
+    const evo1 = runState.checkAndEvolveWeapon();
+    expect(evo1).toBe('trench_sweeper');
 
     expect(saveManager.isAchievementUnlocked('first_evolution')).toBe(true);
     expect(saveManager.isAchievementUnlocked('trench_sweeper_evo')).toBe(true);
     expect(saveManager.isAchievementUnlocked('arsenal_complete')).toBe(false);
 
-    runState.weapons.set('pipe_bomb', { id: 'pipe_bomb', level: 8, evolved: true, cooldownTimer: 0 });
-    globalEvents.emit('weapon:evolved', { from: 'pipe_bomb', to: 'thermite_buster', name: 'Thermite Buster' });
+    runState.weapons.set('pipe_bomb', { id: 'pipe_bomb', level: 8, evolved: false, cooldownTimer: 0 });
+    runState.passives.set('blast_radius', 1);
+    const evo2 = runState.checkAndEvolveWeapon();
+    expect(evo2).toBe('thermite_buster');
 
-    runState.weapons.set('m25_plasma', { id: 'm25_plasma', level: 8, evolved: true, cooldownTimer: 0 });
-    globalEvents.emit('weapon:evolved', { from: 'm25_plasma', to: 'm95a1_plasma', name: 'M95A1 Heavy Plasma' });
+    runState.weapons.set('m25_plasma', { id: 'm25_plasma', level: 8, evolved: false, cooldownTimer: 0 });
+    runState.passives.set('phase_inductor', 1);
+    const evo3 = runState.checkAndEvolveWeapon();
+    expect(evo3).toBe('m95a1_plasma');
 
     expect(saveManager.isAchievementUnlocked('arsenal_complete')).toBe(true);
   });
