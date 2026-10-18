@@ -17,6 +17,7 @@ import { LOADOUTS, META_UPGRADES } from '../data/upgrades';
 import { globalRNG } from '../core/RNG';
 import { StateMachine, GAME_MODE_TRANSITIONS } from '../core/StateMachine';
 import { globalEvents } from '../core/EventBus';
+import { MAX_REVIVAL_CHANCE, REVIVE_INVULNERABILITY_SECONDS } from '../data/balance';
 
 export function getXpForNextLevel(level: number): number {
   if (level <= 2) {
@@ -263,6 +264,7 @@ export class RunState {
 
     // Clamp cooldownMultiplier to a safe floor of 0.35
     base.cooldownMultiplier = Math.max(0.35, base.cooldownMultiplier);
+    base.revivalChance = Math.min(MAX_REVIVAL_CHANCE, Math.max(0, base.revivalChance ?? 0));
 
     const hpPercent = this.maxHp > 0 ? this.hp / this.maxHp : 1;
     const prevRevivals = this.computedStats ? this.computedStats.revivals : 0;
@@ -323,7 +325,7 @@ export class RunState {
     if (this.revivalsLeft > 0) {
       this.revivalsLeft--;
       this.hp = Math.round(this.maxHp * 0.5);
-      this.invulnerabilityTimer = 0;
+      this.invulnerabilityTimer = REVIVE_INVULNERABILITY_SECONDS;
       this.isDead = false;
       return 'revived';
     }
@@ -332,7 +334,7 @@ export class RunState {
       globalRNG.chance(this.computedStats.revivalChance ?? 0)
     ) {
       this.hp = Math.round(this.maxHp * 0.5);
-      this.invulnerabilityTimer = 0;
+      this.invulnerabilityTimer = REVIVE_INVULNERABILITY_SECONDS;
       this.isDead = false;
       return 'revived';
     }

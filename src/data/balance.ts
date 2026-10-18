@@ -1,0 +1,2 @@
+export const MAX_REVIVAL_CHANCE = 0.5;
+export const REVIVE_INVULNERABILITY_SECONDS = 2.0;
