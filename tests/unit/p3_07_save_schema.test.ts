@@ -25,7 +25,7 @@ describe('P3-07 Save schema versioning and migrations', () => {
 
     const sm = new SaveManager();
     const data = sm.getData();
-    expect(data.version).toBe(2);
+    expect(data.version).toBe(3);
     expect(data.alloyScrap).toBe(1250);
     expect(data.totalKills).toBe(450);
     expect(data.bestTimeSeconds).toBe(580);

@@ -88,7 +88,7 @@ describe('SaveManager and Bunker Persistence', () => {
 
       const sm = new SaveManager();
       const data = sm.getData();
-      expect(data.version).toBe(2);
+      expect(data.version).toBe(3);
       expect(data.alloyScrap).toBe(350);
       expect(data.totalKills).toBe(120);
       expect(data.bestTimeSeconds).toBe(420);

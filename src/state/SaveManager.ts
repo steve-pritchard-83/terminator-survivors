@@ -6,7 +6,7 @@ import { DEFAULT_INPUT_MAPPINGS } from '../data/inputDefaults';
 const STORAGE_KEY = 'TERMINATOR_SURVIVORS_SAVE_V1';
 
 export class SaveManager {
-  public static readonly CURRENT_VERSION = 2;
+  public static readonly CURRENT_VERSION = 3;
 
   public static readonly migrations: Record<number, (old: Record<string, any>) => Record<string, any>> = {
     1: (old: Record<string, any>) => {
@@ -14,13 +14,45 @@ export class SaveManager {
         ...old,
         version: 2
       };
+    },
+    2: (old: Record<string, any>) => {
+      const migrated: Record<string, any> = { ...old, version: 3 };
+      if ((old.totalKills ?? 0) > 0) {
+        migrated.tutorialCompleted = true;
+      }
+      if ((old.victories ?? 0) > 0) {
+        const currentUnlocked: string[] = Array.isArray(old.unlockedWeapons)
+          ? [...old.unlockedWeapons]
+          : [...DEFAULT_UNLOCKED_WEAPONS];
+        for (const ach of Object.values(ACHIEVEMENTS)) {
+          if (ach.reward.type === 'weapon' && ach.reward.id && !currentUnlocked.includes(ach.reward.id)) {
+            currentUnlocked.push(ach.reward.id);
+          }
+        }
+        migrated.unlockedWeapons = currentUnlocked;
+      }
+      return migrated;
     }
   };
 
   private data: MetaSaveData;
+  private isDirty = false;
+  private autoFlushTimer: ReturnType<typeof setInterval> | null = null;
+  private visibilityListener?: () => void;
 
   constructor() {
     this.data = this.load();
+    if (typeof setInterval !== 'undefined') {
+      this.autoFlushTimer = setInterval(() => this.flush(), 10000);
+    }
+    if (typeof document !== 'undefined') {
+      this.visibilityListener = () => {
+        if (document.visibilityState === 'hidden') {
+          this.flush();
+        }
+      };
+      document.addEventListener('visibilitychange', this.visibilityListener);
+    }
   }
 
   public getData(): MetaSaveData {
@@ -303,14 +335,36 @@ export class SaveManager {
     }
   }
 
-  public save(): void {
+  public markDirty(): void {
+    this.isDirty = true;
+  }
+
+  public flush(): void {
+    if (!this.isDirty) return;
     try {
       if (typeof window !== 'undefined' && window.localStorage) {
         window.localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
+        this.isDirty = false;
       }
     } catch {
       // Ignored if local storage disabled/quota exceeded
     }
+  }
+
+  public dispose(): void {
+    this.flush();
+    if (this.autoFlushTimer !== null) {
+      clearInterval(this.autoFlushTimer);
+      this.autoFlushTimer = null;
+    }
+    if (typeof document !== 'undefined' && this.visibilityListener) {
+      document.removeEventListener('visibilitychange', this.visibilityListener);
+    }
+  }
+
+  public save(): void {
+    this.markDirty();
+    this.flush();
   }
 
   public exportSave(): string {
@@ -550,7 +604,7 @@ export class SaveManager {
   public recordEnemyKill(archetype: string): void {
     if (!this.data.bestiaryKills) this.data.bestiaryKills = {};
     this.data.bestiaryKills[archetype] = (this.data.bestiaryKills[archetype] ?? 0) + 1;
-    this.save();
+    this.markDirty();
   }
 
   public getBestiaryKills(archetype: string): number {

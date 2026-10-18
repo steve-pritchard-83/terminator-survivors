@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "alloyScrap": 350,
+  "totalKills": 125,
+  "bestTimeSeconds": 620,
+  "victories": 1,
+  "unlockedLoadouts": ["reese_2029"],
+  "selectedLoadout": "reese_2029",
+  "upgrades": {
+    "armor_vest": 2,
+    "combat_stims": 1
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "alloyScrap": 800,
+  "totalKills": 1500,
+  "bestTimeSeconds": 890,
+  "victories": 4,
+  "unlockedLoadouts": ["reese_2029", "reese_1984"],
+  "selectedLoadout": "reese_1984",
+  "upgrades": {
+    "armor_vest": 3,
+    "salvage_magnet": 2
+  },
+  "unlockedWeapons": ["ithaca_37", "plasma_rifle"]
+}

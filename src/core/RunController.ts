@@ -282,6 +282,7 @@ export class RunController {
     if (typeof this.host.saveManager?.recordRunHistory === 'function') {
       this.host.saveManager.recordRunHistory(runRecord);
     }
+    this.host.saveManager?.flush?.();
 
     this.host.uiManager.levelUpModal.hide();
     this.host.uiManager.vaultModal.hide();
@@ -324,6 +325,7 @@ export class RunController {
 
   public pauseGame(): void {
     if (this.host.runState.mode !== 'playing') return;
+    this.host.saveManager?.flush?.();
     this.host.runState.mode = 'paused';
     this.host.audioEngine.playHudScanOpen();
     this.host.uiManager.pauseModal.show(
