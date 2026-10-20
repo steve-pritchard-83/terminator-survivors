@@ -390,6 +390,8 @@ export class WeaponSystem {
     if (entity.type !== 'enemy') return false;
 
     const enemy = entity as ActiveEnemy;
+    // T-1000 in liquid puddle form cannot be targeted
+    if (enemy.state?.isPuddle === 1) return false;
     // Tech Noir Stalker Invulnerability before minute 8 (480s)
     if (this.runState.stageId === 'tech_noir_1984' && enemy.archetype === 'infiltrator_csm101' && this.runState.timeSeconds < 480) {
       enemy.hitFlashTimer = 0.1;
@@ -420,6 +422,11 @@ export class WeaponSystem {
     enemy.hitFlashTimer = isCrit ? 0.2 : 0.12;
 
     const sourceWeaponId = weaponId ?? this.currentFiringWeaponId;
+    // Fire (ground-zone weapons such as napalm) stops T-1000 regeneration
+    if (sourceWeaponId && ALL_WEAPONS[sourceWeaponId]?.pattern === 'GroundZone') {
+      enemy.state = enemy.state ?? {};
+      enemy.state.burnTimer = 1.5;
+    }
     if (sourceWeaponId) {
       this.damageByWeapon.set(
         sourceWeaponId,

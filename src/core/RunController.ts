@@ -182,7 +182,7 @@ export class RunController {
     this.host.enemySystem.clear();
     this.host.pickupSystem.clear();
     this.host.particles.clear();
-    this.host.interactiveEnv?.clear();
+    this.host.interactiveEnv?.reset();
     this.host.waveDirector.reset();
     this.activeBoss = null;
     this.host.inputManager.clearDashRequest();

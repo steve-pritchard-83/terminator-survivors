@@ -183,23 +183,32 @@ export class HKAerialBehaviour implements EnemyBehaviour {
         state.salvoTimer = salvoTimer;
 
         if (salvoTimer <= 1.0 && salvoTimer > 0) {
+          // Lock the impact points once: circle 0 on the player, the rest scattered within 3 m of it.
+          if ((state.salvoArmed ?? 0) !== 1) {
+            state.salvoArmed = 1;
+            for (let m = 0; m < 6; m++) {
+              const a = ctx.rng.next() * Math.PI * 2;
+              const r = m === 0 ? 0 : ctx.rng.next() * 3.0;
+              state[`salvoX${m}`] = px + Math.sin(a) * r;
+              state[`salvoZ${m}`] = pz + Math.cos(a) * r;
+            }
+          }
           const progress = (1.0 - salvoTimer) / 1.0;
           for (let m = 0; m < 6; m++) {
-            const angle = (m * Math.PI * 2) / 6;
-            const mx = px + Math.sin(angle) * 3.8;
-            const mz = pz + Math.cos(angle) * 3.8;
-            salvoList[m].update(mx, mz, progress, 2.2);
+            salvoList[m].update(state[`salvoX${m}`], state[`salvoZ${m}`], progress, 2.2);
           }
         } else if (salvoTimer <= 0) {
           for (const s of salvoList) s.setVisible(false);
           state.salvoTimer = 7.0;
+          state.salvoArmed = 0;
           ctx.audio.playExplosion(1.8);
+          let hit = false;
           for (let m = 0; m < 6; m++) {
-            const angle = (m * Math.PI * 2) / 6;
-            const mx = px + Math.sin(angle) * 3.8;
-            const mz = pz + Math.cos(angle) * 3.8;
+            const mx = state[`salvoX${m}`] ?? px;
+            const mz = state[`salvoZ${m}`] ?? pz;
             ctx.particles.spawnExplosion(mx, 0.2, mz, 1.6);
-            if (Math.hypot(px - mx, pz - mz) < 2.2) {
+            if (!hit && Math.hypot(px - mx, pz - mz) < 2.2) {
+              hit = true;
               ctx.applyPlayerDamage(20);
             }
           }

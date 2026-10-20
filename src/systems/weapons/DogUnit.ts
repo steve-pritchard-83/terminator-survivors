@@ -3,6 +3,7 @@ import type { ActiveEnemy } from '../../core/types';
 import type { WeaponPattern, WeaponFireContext } from './WeaponPattern';
 import { createDogMesh, type DogMeshGroup } from '../../graphics/meshes/AllyMeshes';
 import { ALL_WEAPONS } from '../../data/weapons';
+import { K9_BITE_ARMOR_STRIP } from '../../data/balance';
 import { disposeObject3D } from '../../graphics/dispose';
 
 interface ActiveDog {
@@ -166,7 +167,7 @@ export class DogUnit implements WeaponPattern {
           targetEnemy.archetype === 'infiltrator_csm101' ||
           targetEnemy.archetype === 't1000_prototype'
         ) {
-          targetEnemy.armorStripMultiplier = Math.max(targetEnemy.armorStripMultiplier, 1.4);
+          targetEnemy.armorStripMultiplier = Math.min(targetEnemy.armorStripMultiplier, K9_BITE_ARMOR_STRIP);
         }
       }
     }

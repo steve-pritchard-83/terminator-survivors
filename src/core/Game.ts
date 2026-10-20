@@ -21,6 +21,7 @@ import { InputRouter, type InputRouterHost } from './InputRouter';
 import { DebugAPI, type DebugAPIHost } from './DebugAPI';
 import { SettingsApplier } from '../ui/SettingsApplier';
 import { globalEvents } from './EventBus';
+import { ErrorReporter } from './ErrorReporter';
 import { STAGES } from '../data/stages';
 import type { LoadoutId, RunConfig, StageId } from './types';
 
@@ -49,10 +50,12 @@ export class Game implements RunControllerHost, InputRouterHost, DebugAPIHost {
   public readonly debugAPI?: DebugAPI;
 
   private prevPlayerPos = { x: 0, z: 0 };
+  private readonly colliders: Array<{ x: number; z: number; radius: number }> = [];
 
   constructor(appContainer: HTMLElement) {
     // 1. Core State & Audio
     this.runState = new RunState();
+    ErrorReporter.getInstance()?.setSeedProvider(() => this.runState.seed);
     this.saveManager = new SaveManager();
     this.inputManager = new InputManager(this.saveManager);
     this.audioEngine = new AudioEngine();
@@ -151,20 +154,25 @@ export class Game implements RunControllerHost, InputRouterHost, DebugAPIHost {
     this.prevPlayerPos.x = this.runState.playerPos.x;
     this.prevPlayerPos.z = this.runState.playerPos.z;
 
-    this.playerSystem.update(dt, input.move, input.aim, this.environment.obstacleColliders, input.aimPos);
+    // Static environment colliders plus live car wrecks, rebuilt each tick into a reused array.
+    this.colliders.length = 0;
+    for (const c of this.environment.obstacleColliders) this.colliders.push(c);
+    for (const c of this.interactiveEnv.getCarColliders()) this.colliders.push(c);
+
+    this.playerSystem.update(dt, input.move, input.aim, this.colliders, input.aimPos);
 
     this.grid.clear();
     for (const enemy of this.enemySystem.activeEnemies) this.grid.insert(enemy);
     for (const pickup of this.pickupSystem.pickups) this.grid.insert(pickup);
+    for (const drum of this.interactiveEnv.fuelDrums) this.grid.insert(drum);
 
     this.weaponSystem.update(dt, this.enemySystem.activeEnemies, input.aim);
-    this.enemySystem.update(dt, this.runState.timeSeconds, this.environment.obstacleColliders, this.environment);
+    this.enemySystem.update(dt, this.runState.timeSeconds, this.colliders, this.environment);
     this.waveDirector.update(dt);
     this.pickupSystem.update(dt);
     this.particles.update(dt);
     this.environment.update(this.runState.playerPos.x, this.runState.playerPos.z, dt);
     this.interactiveEnv.update(dt, this.environment);
-    this.environment.obstacleColliders.push(...this.interactiveEnv.getCarColliders());
 
     const isLowHp = this.runState.hp > 0 && (this.runState.hp / this.runState.maxHp) < 0.25;
     this.audioEngine.updateHeartbeat(dt, isLowHp);

@@ -114,7 +114,15 @@ export class HKTankBehaviour implements EnemyBehaviour {
     // ATTACK 3 (Phase 2+): Twin Searchlight Sweep & Barrage
     if (phase >= 2) {
       let searchlightLock = state.searchlightLock ?? 0;
-      const inFront = Math.abs(Math.atan2(px - enemy.x, pz - enemy.z) - targetAngle) < 0.6;
+      // The beam turns toward the player at a limited rate; standing still inside it builds the lock.
+      const playerAngle = Math.atan2(px - enemy.x, pz - enemy.z);
+      let beamAngle = state.beamAngle ?? playerAngle;
+      let beamDiff = Math.atan2(Math.sin(playerAngle - beamAngle), Math.cos(playerAngle - beamAngle));
+      const maxTurn = 0.8 * dt;
+      beamAngle += Math.max(-maxTurn, Math.min(maxTurn, beamDiff));
+      state.beamAngle = beamAngle;
+      beamDiff = Math.atan2(Math.sin(playerAngle - beamAngle), Math.cos(playerAngle - beamAngle));
+      const inFront = Math.abs(beamDiff) < 0.26;
       if (distToPlayer < 16.0 && inFront) {
         searchlightLock += dt;
         searchlightTelegraph.update(px, pz, Math.min(1, searchlightLock / 2.5), 5.5);

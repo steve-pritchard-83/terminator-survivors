@@ -38,7 +38,8 @@ export class T1000Behaviour implements EnemyBehaviour {
 
     // Phase 3: Liquid metal regeneration (2% per second unless slowed/burning/stunned)
     if (phase === 3 && enemy.hp > 0 && enemy.hp < enemy.maxHp) {
-      const isCountered = (enemy.slowTimer ?? 0) > 0;
+      state.burnTimer = Math.max(0, (state.burnTimer ?? 0) - dt);
+      const isCountered = (enemy.slowTimer ?? 0) > 0 || state.burnTimer > 0;
       if (!isCountered) {
         enemy.hp = Math.min(enemy.maxHp, enemy.hp + enemy.maxHp * 0.02 * dt);
       }

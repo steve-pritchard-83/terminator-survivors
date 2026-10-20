@@ -14,6 +14,8 @@ export class StraightShot implements WeaponPattern {
     const might = ctx.runState.computedStats.mightMultiplier;
     const areaMult = ctx.runState.computedStats.areaMultiplier;
     const dmg = Math.round(stats.damage * might);
+    const speedMult = ctx.runState.computedStats.speedMultiplier;
+    const durationMult = ctx.runState.computedStats.durationMultiplier;
     const amount = stats.amount + ctx.runState.computedStats.bonusAmount;
 
     const isHeavy = params.sfx === 'plasma_heavy';
@@ -47,15 +49,15 @@ export class StraightShot implements WeaponPattern {
         x: spawnX,
         y: 0.85,
         z: spawnZ,
-        vx: Math.sin(a) * stats.speed,
+        vx: Math.sin(a) * stats.speed * speedMult,
         vy: 0,
-        vz: Math.cos(a) * stats.speed,
+        vz: Math.cos(a) * stats.speed * speedMult,
         rotY: a,
         damage: dmg,
         radius,
         pierceLeft: stats.pierce,
         life: 0,
-        maxLife: stats.duration,
+        maxLife: stats.duration * durationMult,
         knockback: def.knockback
       });
     }

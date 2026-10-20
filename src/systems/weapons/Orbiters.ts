@@ -72,8 +72,8 @@ export class Orbiters implements WeaponPattern {
     const areaMult = ctx.runState.computedStats.areaMultiplier;
     const damage = Math.round(stats.damage * might);
     const count = Math.min(8, Math.max(1, stats.amount + ctx.runState.computedStats.bonusAmount));
-    const orbitSpeed = stats.speed;
-    const radius = (ringSlot ? 3.8 : 2.8) * areaMult;
+    const orbitSpeed = stats.speed * ctx.runState.computedStats.speedMultiplier;
+    const radius = (ringSlot ? 3.8 : 2.8) * stats.area * areaMult;
     const hitRadius = 0.6 * areaMult;
 
     this.orbitalAngle += dt * orbitSpeed;

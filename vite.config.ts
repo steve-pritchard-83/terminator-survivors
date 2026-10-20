@@ -77,6 +77,7 @@ export default defineConfig({
     })
   ],
   build: {
+    outDir: process.env.BUILD_OUT_DIR ?? 'dist',
     target: 'es2022',
     chunkSizeWarningLimit: 1200,
     rollupOptions: {

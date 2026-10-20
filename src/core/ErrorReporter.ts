@@ -19,7 +19,7 @@ export interface ErrorReporterOptions {
 export class ErrorReporter {
   private static instance: ErrorReporter | null = null;
   private readonly version: string;
-  private readonly getSeed: () => number | null;
+  private getSeed: () => number | null;
   private container: HTMLElement | null = null;
   private overlayEl: HTMLElement | null = null;
   private isInstalled = false;
@@ -27,13 +27,7 @@ export class ErrorReporter {
 
   constructor(options: ErrorReporterOptions = {}) {
     this.version = options.version ?? APP_VERSION;
-    this.getSeed = options.getSeed ?? (() => {
-      const debugApi = (typeof window !== 'undefined' ? (window as any).__GAME_DEBUG__ : null);
-      if (debugApi?.getSeed) {
-        return debugApi.getSeed();
-      }
-      return null;
-    });
+    this.getSeed = options.getSeed ?? (() => null);
     this.container = options.container ?? (typeof document !== 'undefined' ? document.body : null);
   }
 
@@ -43,6 +37,10 @@ export class ErrorReporter {
       ErrorReporter.instance.installGlobalHandlers();
     }
     return ErrorReporter.instance;
+  }
+
+  public setSeedProvider(getSeed: () => number | null): void {
+    this.getSeed = getSeed;
   }
 
   public static getInstance(): ErrorReporter | null {

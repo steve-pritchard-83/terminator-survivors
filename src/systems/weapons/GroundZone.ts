@@ -14,6 +14,7 @@ export class GroundZone implements WeaponPattern {
     const might = ctx.runState.computedStats.mightMultiplier;
     const areaMult = ctx.runState.computedStats.areaMultiplier;
     const dmg = Math.round(stats.damage * might);
+    const durationMult = ctx.runState.computedStats.durationMultiplier;
     const amount = stats.amount + ctx.runState.computedStats.bonusAmount;
 
     const baseRadius = params.baseRadius ?? 2.0;
@@ -27,7 +28,7 @@ export class GroundZone implements WeaponPattern {
           pz + Math.cos(targetAngle) * dist,
           baseRadius * areaMult,
           dmg,
-          stats.duration,
+          stats.duration * durationMult,
           def.knockback,
           def.id
         );
@@ -46,7 +47,7 @@ export class GroundZone implements WeaponPattern {
         pz + Math.sin(angle) * dist,
         baseRadius * areaMult,
         dmg,
-        stats.duration,
+        stats.duration * durationMult,
         def.knockback,
         def.id
       );

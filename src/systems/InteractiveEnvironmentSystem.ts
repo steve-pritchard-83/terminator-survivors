@@ -195,14 +195,7 @@ export class InteractiveEnvironmentSystem {
           enemyId: enemy.id
         });
 
-        if (enemy.hp <= 0) {
-          globalEvents.emit('enemy:killed', {
-            enemy,
-            x: enemy.x,
-            z: enemy.z,
-            xp: enemy.xpValue
-          });
-        }
+        // Enemies at hp <= 0 are killed once by EnemySystem.update; do not emit enemy:killed here.
       }
     }
 
@@ -495,6 +488,13 @@ export class InteractiveEnvironmentSystem {
     this.cars.length = 0;
 
     this.dismissFlare();
+  }
+
+  /** Called at the start of every run: clears, respawns drums and cars, and resets the flare timer. */
+  public reset(): void {
+    this.clear();
+    this.lastFlareDropTime = 0;
+    this.spawnInitialInteractables();
   }
 
   public dispose(): void {
