@@ -110,6 +110,9 @@ export class TitleScreen {
           <div class="title-version-watermark" data-testid="title-version-watermark" id="title-version-watermark">
             v${APP_VERSION} [${BUILD_HASH}] // RESISTANCE PROTOCOL
           </div>
+          <div data-testid="title-disclaimer" style="font-family:var(--font-telemetry); font-size:10px; opacity:0.6; margin-top:6px; text-align:center;">
+            NON-COMMERCIAL FAN PROJECT. NOT ENDORSED BY OR AFFILIATED WITH THE RIGHTS HOLDERS OF THE TERMINATOR FRANCHISE.
+          </div>
         </div>
       </div>
 

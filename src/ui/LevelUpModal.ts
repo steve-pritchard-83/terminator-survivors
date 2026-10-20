@@ -1,6 +1,6 @@
 import type { UpgradeChoice } from '../core/types';
 import { LORE } from '../data/lore';
-import { globalRNG } from '../core/RNG';
+import { vfxRNG } from '../core/RNG';
 import type { GamepadManager } from '../input/GamepadManager';
 import { ModalA11y } from './A11yHelper';
 
@@ -26,6 +26,7 @@ export class LevelUpModal {
   private cards: HTMLElement[] = [];
   private selectables: HTMLElement[] = [];
   private selectedIndex = 0;
+  private lastCardIndex = 0;
   private readonly a11y: ModalA11y;
 
   constructor(root: HTMLElement) {
@@ -85,7 +86,8 @@ export class LevelUpModal {
 
     this.banishBtn.onclick = () => {
       if ((this.currentActions?.banishesLeft ?? 0) > 0) {
-        const choice = this.currentChoices[this.selectedIndex] ?? this.currentChoices[0];
+        // When the Banish button itself is selected, banish the last focused card.
+        const choice = this.currentChoices[this.lastCardIndex] ?? this.currentChoices[0];
         if (choice) {
           this.currentActions?.onBanish?.(choice);
         }
@@ -142,11 +144,12 @@ export class LevelUpModal {
     this.currentChoices = choices;
     this.container.style.display = 'flex';
     this.selectedIndex = 0;
+    this.lastCardIndex = 0;
     this.cards = [];
     this.selectables = [];
 
     // Pick random 6502 assembly line for flavor
-    const tickerLine = globalRNG.pick(LORE.assembly6502);
+    const tickerLine = vfxRNG.pick(LORE.assembly6502);
     this.tickerEl.textContent = `${tickerLine} // LEVEL ${level}`;
 
     // Update Action Button states
@@ -210,6 +213,7 @@ export class LevelUpModal {
   }
 
   public updateCardHighlight(): void {
+    if (this.selectedIndex < this.cards.length) this.lastCardIndex = this.selectedIndex;
     this.selectables.forEach((c, i) => {
       if (i === this.selectedIndex) {
         c.classList.add('controller-selected');

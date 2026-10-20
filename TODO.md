@@ -1,36 +1,37 @@
 # TODO
 
-Result of auditing the old `roadmap.md` against the code (2026-10-21, commit `9107914`).
-Phases 0–10 and Phase 11 tasks P11-00 to P11-13 are done. The rest of Phase 11 (P11-14 to P11-27) has no commits; the code confirms it is still open. Full original specs are in git history (`git show 9107914:roadmap.md`).
+Result of auditing the old `roadmap.md` against the code, then working through it (2026-10-21).
+Full original specs are in git history (`git show 9107914:roadmap.md`, Phase 11 section).
 
-Order is by player impact. Do one at a time; typecheck after each.
+Typecheck, 112 unit tests, a production build and the e2e smoke test pass. `dist/` contains no `__GAME_DEBUG__`; the e2e build goes to `dist-e2e/`.
 
-## Real bugs (fix)
+## Fixed in this pass
 
-1. **Interactables break after the first run** (P11-14). `InteractiveEnvironmentSystem` has no `reset()`: drums and cars spawn only in the constructor, `lastFlareDropTime` never resets (supply drops stop after run 1). `Game.ts:167` pushes car colliders onto `obstacleColliders` every tick (unbounded growth). Drums are not in the spatial grid when weapons run, and a drum kill can emit `enemy:killed` and then kill again (double XP / double `endRun`).
-2. **Boss attacks that do nothing** (P11-17).
-   - HK Aerial salvo circles land 3.8 m from the player with a 2.2 m radius, so they never hit.
-   - HK Tank searchlight "in front" check compares an angle with itself.
-   - T-1000 `isPuddle` is set but never read in `WeaponSystem.applyDamageToTarget`, so it stays targetable.
-   - Napalm does not stop T-1000 regen (no `burnTimer` anywhere).
-   - Attack timers keep counting below 0 out of range, so attacks fire with no telegraph.
-3. **K-9 bite makes enemies tougher** (P11-19). `DogUnit.ts:169` sets `armorStripMultiplier = 1.4`; `WeaponSystem.ts:400` divides by it, so damage taken drops 29%. Use 0.7.
-4. **`durationMultiplier` / `speedMultiplier` are never read** (P11-19). Ammo Belt and similar passives do nothing. Orbiters ignore weapon `area`.
-5. **Enemy features that do nothing** (P11-18). Aerostat mark gives no speed buff; Hydrobots spawn singly (no formation of 12); Plasma Turret is teleported by the leash instead of staying put; T-1 / T-600 Minigunner appear before minute 3.
-6. **Early game too deadly** (P11-25). An idle player died at 0:14; Hydrobot swarms appear from minute 0. Move them to minute 1 and check a stationary player survives 45 s. `DogUnit.ts:125` uses `Date.now()` and `MeleeSweep.ts:35` uses `setInterval` (should use simulated time).
-7. **Production build leaks the debug API** (P11-21). `ErrorReporter.ts:31` reads `window.__GAME_DEBUG__`, and `scripts/start-e2e.mjs` builds into the same `dist/` as production. Pass a `getSeed` callback instead, and build e2e into `dist-e2e/`.
-8. **Modal listener leaks** (P11-26). Reroll/Banish call `show()` again without `a11y.deactivate()`; `EndRunModal` hides without deactivating; `getFocusables` lets hidden elements through; `prevPlayerPos` is not reset in `startRun`.
+- Debug API no longer leaks into production (`ErrorReporter` takes a seed provider; e2e builds into `dist-e2e/`).
+- K-9 bite makes targets take ~43% more damage (was 29% less); value in `src/data/balance.ts`.
+- `durationMultiplier` / `speedMultiplier` now apply to spread, straight, ground-zone and orbiter weapons; orbiters use the weapon's `area`. Lobbed and Nova do not use these stats yet.
+- Interactables respawn every run, car colliders are rebuilt per tick, drums are in the spatial grid, drum blasts no longer double-kill.
+- HK Aerial salvo can hit, HK Tank searchlight is a turning beam, T-1000 puddle is untargetable, fire (ground zones) stops T-1000 regen.
+- Aerostat mark buffs nearby enemies +20% for 4 s, Hydrobots spawn as a formation of 12, Plasma Turret is a fixed emplacement that despawns far behind the player.
+- Hydrobots start at minute 1, T-1 and T-600 Minigunner at minute 3. Tunables are in `src/data/waves.ts`.
+- Melee slash fade and dog patrol use simulated time.
+- Level-up modal: re-activation no longer stacks key listeners, Banish uses the last focused card, hidden elements are not focusable, ticker uses `vfxRNG`.
+- README no longer claims the film score, "60 FPS" or planned interpolation; title screen has the fan-project disclaimer; ASSETS.md guessed sources are marked `UNKNOWN (suspected: …)` and icons are `UNKNOWN`.
+- `tests/e2e/game-desktop.spec.ts` updated for the Deploy modal.
 
-## Honesty fixes (cheap, do together)
+## Still open
 
-9. **README claims** (P11-27). Line 36 says the Brad Fiedel score is included; line 71 claims 60 FPS. The title screen has no fan-project disclaimer footer (the README has one).
-10. **ASSETS.md** guessed sources ("Konami", "Rocksteady / WB", …) should read `UNKNOWN (suspected: …)`. Owner must still choose replacements for REPLACE rows (P0-03) before any public release.
+1. **Balance not measured.** An idle player died at 0:14 before the Hydrobot change. Nobody has checked that a stationary player now survives 45 s. Play it once or simulate it.
+2. **Boss telegraphs and timers** (P11-17 remainder). No telegraph on the Tank twin cannon (18x2), Core spokes (16), T-1000 reappear hit (24) or Self-Destruct elite (28). Attack timers keep counting below 0 while the player is out of range, so attacks can fire with no warning on re-entry. Boss attack damage values are still hard-coded in the behaviour files.
+3. **Elites** (P11-18 remainder): scale and tint only work for instanced enemies. Hydrobot meshes allocate about 6 geometries per spawn (and now spawn 12 at a time, so share them).
+4. **Modal leftovers** (P11-26 remainder): `EndRunModal` and other modals should be checked for listener leaks now that `activate()` is idempotent; `i18n` is still never imported.
+5. **Unverified by play.** The fixes above typecheck and the smoke test passes, but none of the boss, turret, formation or interactable changes have been playtested. Run a boss fight at each of minutes 2, 4, 6, 8 with `__GAME_DEBUG__.spawnBoss`.
 
 ## Owner decisions
 
-- **P0-03:** replace the assets marked REPLACE in `ASSETS.md` (commercial-game SFX names, film score). Blocks public release.
+- **P0-03:** replace the assets marked REPLACE in `ASSETS.md` (commercial-game SFX names, film score, `terminated.wav`). Blocks any public release.
 - **Which features to cut.** The cheapest long-term saving is deleting modes you don't play: Daily operation, endless leaderboard, threat levels, bunker stage, i18n scaffold, gamepad haptics, extra stages.
 
-## Dropped on purpose (cost more than they are worth)
+## Dropped on purpose
 
-Interactive 60 s tutorial (P11-16), audio panning/muzzle-light wiring and true music stems (P11-20), InstancedPool/EventBus/debris micro-fixes (P11-22), bundle-size and perf budgets (P11-23), rewriting hollow tests (P11-24; the hollow tests were deleted instead), `i18n` routing (P11-26 part).
+Interactive 60 s tutorial (P11-16), audio panning/muzzle-light wiring and true music stems (P11-20), InstancedPool/EventBus/debris micro-fixes (P11-22), bundle-size and perf budgets (P11-23), rewriting hollow tests (P11-24; they were deleted), full `i18n` routing.

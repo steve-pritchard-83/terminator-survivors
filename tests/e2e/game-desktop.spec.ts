@@ -3,6 +3,13 @@ import { test, expect } from '@playwright/test';
 test('Desktop gameplay: title, bunker shop, deploy, level up, and combat dive', async ({
   page
 }) => {
+  // Skip the first-run tutorial so Deploy opens the deploy modal directly
+  await page.addInitScript(() => {
+    window.localStorage.setItem(
+      'TERMINATOR_SURVIVORS_SAVE_V1',
+      JSON.stringify({ version: 3, tutorialCompleted: true, totalKills: 1 })
+    );
+  });
   await page.goto('/');
 
   // 1. Title Screen verification
@@ -17,6 +24,9 @@ test('Desktop gameplay: title, bunker shop, deploy, level up, and combat dive', 
 
   // 3. Start Run & Deploy
   await page.getByTestId('btn-start-run').click();
+  await expect(page.locator('#deploy-modal')).toBeVisible();
+  await page.locator('#btn-deploy-next').click(); // stage -> operative
+  await page.locator('#btn-deploy-next').click(); // operative -> deploy (no threats before first victory)
   await expect(page.getByTestId('hud-container')).toBeVisible();
 
   // 4. Verify WebGL state via debug interface

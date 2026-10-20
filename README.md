@@ -33,8 +33,8 @@ Available anywhere on desktop and mobile, with full progressive web app (PWA) of
 - **Cinematic Post-Processing**: Unreal bloom, cobalt-blue color grading, film grain, and an authentic red CRT scanline overlay simulating Skynet terminal telemetries.
 - **Faithful Typography & Audio**:
   - Incorporates the authentic `Terminator Real NFI` font alongside tactical Rajdhani and 6502 assembly telemetry fonts.
-  - Features Brad Fiedel’s iconic looped future war score (`backgroundmusic.mp3`) with a seamless gapless Web Audio loop graph.
-  - Hybrid Audio Engine combining 56 preloaded authentic `.wav` combat SFX (`S_PlasmaShot01.wav`, `S_Ithica01.wav`, `Shotgun_shot_spas.wav`, `S_LaserTank01.wav`, `plasma_explosion.wav`, `hk_heavy1a_m.wav`, and the iconic `terminated.wav` death sting) with procedural Web Audio API synthesis.
+  - Looped background music (`backgroundmusic.mp3`) played through a gapless Web Audio loop graph. The track's provenance is unconfirmed; see `ASSETS.md`.
+  - Hybrid Audio Engine combining 56 preloaded `.wav` combat SFX (provenance unconfirmed; see `ASSETS.md`) (`S_PlasmaShot01.wav`, `S_Ithica01.wav`, `Shotgun_shot_spas.wav`, `S_LaserTank01.wav`, `plasma_explosion.wav`, `hk_heavy1a_m.wav`, and the iconic `terminated.wav` death sting) with procedural Web Audio API synthesis.
 
 ### 2. Deep Survivor Combat & Arsenal (8 Base Weapons, 8 Passives, 8 Evolutions)
 
@@ -68,7 +68,7 @@ Available anywhere on desktop and mobile, with full progressive web app (PWA) of
 
 ### 3. Skynet Threat Matrix
 
-- **T-800 Cyberdyne Systems Model 101 Endoskeletons**: Dual-layer InstancedMesh rendering holding active chrome skeletons with glowing red optical sensors at 60 FPS.
+- **T-800 Cyberdyne Systems Model 101 Endoskeletons**: Dual-layer InstancedMesh rendering holding active chrome skeletons with glowing red optical sensors.
 - **Hunter-Killer Aerial**: Supersonic patrol units strafing the battlefield with crimson plasma beams.
 - **Hunter-Killer Goliath Tank**: Multi-track behemoths equipped with dual swivel turrets, ground artillery telegraphs, and twin sweeping volumetric searchlights.
 - **T-1000 Mimetic Polyalloy Prototype**: Advanced liquid metal boss with chrome polyalloy reflection shaders (puddle repositioning, blade flurries, and nanite regeneration planned in Roadmap Phase 5).
@@ -113,7 +113,7 @@ Available anywhere on desktop and mobile, with full progressive web app (PWA) of
 - **Rendering Engine**: Three.js (WebGL 2.0 / PBR shaders / InstancedMesh)
 - **Audio System**: Web Audio API (procedural synthesis) + HTML5 Audio (gapless music streaming & 56 SFX)
 - **Spatial Partitioning**: Custom 2D Spatial Hash Grid ($O(1)$ collision checks across hundreds of units)
-- **State Management**: Reactive deterministic game loop with fixed-timestep physics (60Hz; render interpolation planned in Roadmap Phase 1)
+- **State Management**: Reactive deterministic game loop with fixed-timestep physics (60Hz) with interpolated player and camera rendering
 - **Input System**: Multi-device manager supporting Keyboard, Mouse, Virtual Touchscreen Joystick, and Standard Gamepad API with Dual-Rumble Haptics
 - **Build System**: Vite 6 + TypeScript 5.7
 - **PWA Tooling**: Vite Plugin PWA + Workbox (precache limit configured for high-fidelity assets)

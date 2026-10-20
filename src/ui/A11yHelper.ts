@@ -19,8 +19,14 @@ export class ModalA11y {
   }
 
   public activate(initialElement?: HTMLElement): void {
-    // Save focused element before modal open
-    this.previousActiveElement = document.activeElement as HTMLElement | null;
+    // Re-activation (reroll, banish, tab switch) must not stack a second keydown listener
+    // or overwrite the element that had focus before the modal opened.
+    if (this.keydownListener) {
+      window.removeEventListener('keydown', this.keydownListener);
+      this.keydownListener = undefined;
+    } else {
+      this.previousActiveElement = document.activeElement as HTMLElement | null;
+    }
 
     this.keydownListener = (e: KeyboardEvent) => {
       if (this.container.style.display === 'none') return;
@@ -114,7 +120,7 @@ export class ModalA11y {
         'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
       )
     ).filter((el) => {
-      return el.offsetParent !== null || el.offsetWidth > 0 || el.offsetHeight > 0 || el.style.display !== 'none';
+      return el.offsetParent !== null || el.offsetWidth > 0 || el.offsetHeight > 0;
     });
   }
 }
