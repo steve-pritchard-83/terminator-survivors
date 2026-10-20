@@ -1,4 +1,5 @@
 import type * as THREE from 'three';
+import { tickCooldown } from './attackTimer';
 import type { ActiveEnemy } from '../../core/types';
 import type { EnemyBehaviour, EnemyContext } from './EnemyBehaviour';
 import { InfiltratorMesh } from '../../graphics/meshes/InfiltratorMesh';
@@ -133,7 +134,7 @@ export class InfiltratorBehaviour implements EnemyBehaviour {
         ctx.audio.playPlasmaShot(true);
       }
     } else if (!isCharging) {
-      burstCooldown -= dt;
+      burstCooldown = tickCooldown(burstCooldown, dt, distToPlayer >= 4.0 && distToPlayer <= 20.0, 0.5);
       if (burstCooldown <= 0.5 && burstCooldown > 0 && distToPlayer >= 4.0 && distToPlayer <= 20.0) {
         const progress = (0.5 - burstCooldown) / 0.5;
         lineTelegraph.update(enemy.x, enemy.z, px, pz, progress, 1.4);
@@ -148,7 +149,7 @@ export class InfiltratorBehaviour implements EnemyBehaviour {
     }
 
     // ATTACK 2: Walk-and-shoot spray (fires 2 plasma bolts while moving)
-    walkShootCooldown -= dt;
+    walkShootCooldown = tickCooldown(walkShootCooldown, dt, distToPlayer > 3.0 && distToPlayer < 18.0, 0);
     if (walkShootCooldown <= 0 && !isFiring && !isCharging && distToPlayer > 3.0 && distToPlayer < 18.0) {
       walkShootCooldown = 2.4;
       isFiring = true;

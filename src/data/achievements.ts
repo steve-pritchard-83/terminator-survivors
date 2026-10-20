@@ -6,7 +6,6 @@ export type AchievementCategory =
   | 'progression'
   | 'combat'
   | 'stages'
-  | 'threat'
   | 'mastery';
 
 export interface AchievementReward {
@@ -116,22 +115,6 @@ export const ACHIEVEMENTS: Record<string, AchievementDefinition> = {
     category: 'survival',
     reward: { type: 'loadout', id: 'john_connor', description: 'Unlocks Operative: John Connor' },
     target: 600
-  },
-  endless_veteran: {
-    id: 'endless_veteran',
-    title: 'The Long War',
-    description: 'Survive 15 minutes in Endless Mode.',
-    category: 'survival',
-    reward: { type: 'scrap', amount: 1500, description: '+1500 Alloy Scrap' },
-    target: 900
-  },
-  endless_master: {
-    id: 'endless_master',
-    title: 'Eternal Resistance',
-    description: 'Survive 20 minutes in Endless Mode.',
-    category: 'survival',
-    reward: { type: 'scrap', amount: 3000, description: '+3000 Alloy Scrap' },
-    target: 1200
   },
 
   // --- BOSSES / COMBAT (14-18) ---
@@ -264,7 +247,7 @@ export const ACHIEVEMENTS: Record<string, AchievementDefinition> = {
     target: 5000
   },
 
-  // --- STAGES (31-35) ---
+  // --- STAGES ---
   clear_wasteland: {
     id: 'clear_wasteland',
     title: 'Wasteland Veteran',
@@ -272,67 +255,7 @@ export const ACHIEVEMENTS: Record<string, AchievementDefinition> = {
     category: 'stages',
     reward: { type: 'scrap', amount: 500, description: '+500 Alloy Scrap' }
   },
-  clear_cyberdyne: {
-    id: 'clear_cyberdyne',
-    title: 'Cyberdyne Saboteur',
-    description: 'Achieve victory in Cyberdyne Systems Assembly Plant.',
-    category: 'stages',
-    reward: { type: 'scrap', amount: 600, description: '+600 Alloy Scrap' }
-  },
-  clear_tech_noir: {
-    id: 'clear_tech_noir',
-    title: 'Flashback 1984',
-    description: 'Achieve victory in Tech Noir Alley 1984.',
-    category: 'stages',
-    reward: { type: 'scrap', amount: 700, description: '+700 Alloy Scrap' }
-  },
-  clear_skynet_central: {
-    id: 'clear_skynet_central',
-    title: 'Core Breaker',
-    description: 'Achieve victory in Skynet Central TDE Facility.',
-    category: 'stages',
-    reward: { type: 'scrap', amount: 800, description: '+800 Alloy Scrap' }
-  },
-  clear_bunker: {
-    id: 'clear_bunker',
-    title: 'Last Bastion Guard',
-    description: 'Achieve victory in Century City Resistance Bunker.',
-    category: 'stages',
-    reward: { type: 'scrap', amount: 900, description: '+900 Alloy Scrap' }
-  },
 
-  // --- THREATS & MODES (36-40) ---
-  threat_initiate: {
-    id: 'threat_initiate',
-    title: 'Hazard Pay',
-    description: 'Achieve victory with at least 1 Threat Modifier active.',
-    category: 'threat',
-    reward: { type: 'scrap', amount: 500, description: '+500 Alloy Scrap' },
-    target: 1
-  },
-  threat_veteran: {
-    id: 'threat_veteran',
-    title: 'Extreme Hostility',
-    description: 'Achieve victory with at least 3 Threat Modifiers active.',
-    category: 'threat',
-    reward: { type: 'scrap', amount: 1000, description: '+1000 Alloy Scrap' },
-    target: 3
-  },
-  threat_nightmare: {
-    id: 'threat_nightmare',
-    title: 'Nightmare Protocol',
-    description: 'Achieve victory with at least 5 Threat Modifiers active.',
-    category: 'threat',
-    reward: { type: 'scrap', amount: 2000, description: '+2000 Alloy Scrap' },
-    target: 5
-  },
-  daily_operative: {
-    id: 'daily_operative',
-    title: 'Field Operative Duty',
-    description: 'Complete a Daily Seeded Operation.',
-    category: 'mastery',
-    reward: { type: 'scrap', amount: 500, description: '+500 Alloy Scrap' }
-  },
   techcom_legend: {
     id: 'techcom_legend',
     title: 'Legend of the Resistance',

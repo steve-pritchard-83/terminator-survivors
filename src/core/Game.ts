@@ -23,7 +23,7 @@ import { SettingsApplier } from '../ui/SettingsApplier';
 import { globalEvents } from './EventBus';
 import { ErrorReporter } from './ErrorReporter';
 import { STAGES } from '../data/stages';
-import type { LoadoutId, RunConfig, StageId } from './types';
+import type { LoadoutId, RunConfig } from './types';
 
 export class Game implements RunControllerHost, InputRouterHost, DebugAPIHost {
   public readonly sceneManager: SceneManager;
@@ -71,7 +71,7 @@ export class Game implements RunControllerHost, InputRouterHost, DebugAPIHost {
 
     this.sceneManager = new SceneManager(canvasContainer);
     this.particles = new ParticleSystem();
-    this.environment = createEnvironment('la_2029_wasteland');
+    this.environment = createEnvironment();
     this.playerMesh = new KyleReeseMesh();
     this.endoBatch = new EndoskeletonBatch(650);
     this.sceneManager.scene.add(this.environment.group, this.playerMesh.group, this.endoBatch.group, this.particles.group);
@@ -123,17 +123,18 @@ export class Game implements RunControllerHost, InputRouterHost, DebugAPIHost {
     return this.runController.activeBoss;
   }
 
-  public setStage(stageId: StageId): void {
+  /** Rebuilds the environment so every run starts on a fresh map. */
+  public resetEnvironment(): void {
     this.sceneManager.scene.remove(this.environment.group);
     this.environment.dispose();
-    this.environment = createEnvironment(stageId);
+    this.environment = createEnvironment();
     this.sceneManager.scene.add(this.environment.group);
-    if (STAGES[stageId]) this.sceneManager.applyStage(STAGES[stageId]);
+    this.sceneManager.applyStage(STAGES.la_2029_wasteland);
   }
 
-  public startRun(configOrLoadout: RunConfig | LoadoutId = 'reese_2029', customSeed?: number, stageId: StageId = 'la_2029_wasteland', isDaily = false, dailyDateKey = ''): void {
-    const config: RunConfig = typeof configOrLoadout === 'string' ? { loadoutId: configOrLoadout, seed: customSeed, stageId, daily: (isDaily || dailyDateKey) ? { dateKey: dailyDateKey } : undefined } : configOrLoadout;
-    this.setStage(config.stageId ?? 'la_2029_wasteland');
+  public startRun(configOrLoadout: RunConfig | LoadoutId = 'reese_2029', customSeed?: number): void {
+    const config: RunConfig = typeof configOrLoadout === 'string' ? { loadoutId: configOrLoadout, seed: customSeed } : configOrLoadout;
+    this.resetEnvironment();
     this.runController.startRunWith(config);
   }
 

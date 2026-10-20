@@ -1,4 +1,5 @@
 import type { EnemyArchetypeId, EliteAffix } from '../core/types';
+import { SELF_DESTRUCT_BLAST } from './balance';
 export type { EliteAffix };
 
 export interface EnemyStatsConfig {
@@ -123,9 +124,9 @@ export const ENEMY_CONFIGS: Record<EnemyArchetypeId, EnemyStatsConfig> = {
   t1000_prototype: {
     archetype: 't1000_prototype',
     name: 'Liquid Metal Prototype T-1000',
-    maxHp: 5600,
-    speed: 4.6,
-    damage: 60,
+    maxHp: 3800,
+    speed: 3.8,
+    damage: 40,
     radius: 1.1,
     isBoss: true,
     isFlying: false,
@@ -288,13 +289,7 @@ export function handleEliteDeath(
   ctx: import('../systems/enemies/EnemyBehaviour').EnemyContext
 ): void {
   if (enemy.affix === 'Self-Destruct') {
-    ctx.particles.spawnExplosion(enemy.x, 0.5, enemy.z, 2.8);
-    ctx.audio.playExplosion(1.8);
-    ctx.emit('camera:shake', { trauma: 0.5 });
-    const px = ctx.runState.playerPos.x;
-    const pz = ctx.runState.playerPos.z;
-    if (Math.hypot(px - enemy.x, pz - enemy.z) < 3.8) {
-      ctx.applyPlayerDamage(28);
-    }
+    // The blast lands after a short telegraphed delay so the player can move out of it
+    ctx.scheduleBlast?.(enemy.x, enemy.z, SELF_DESTRUCT_BLAST.radius, SELF_DESTRUCT_BLAST.damage, SELF_DESTRUCT_BLAST.delaySeconds);
   }
 }

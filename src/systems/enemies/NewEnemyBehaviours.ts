@@ -1,4 +1,5 @@
 import type * as THREE from 'three';
+import { tickCooldown } from './attackTimer';
 import type { ActiveEnemy } from '../../core/types';
 import type { EnemyBehaviour, EnemyContext } from './EnemyBehaviour';
 import {
@@ -318,7 +319,7 @@ export class PlasmaTurretBehaviour implements EnemyBehaviour {
     mesh.barrelGroup.rotation.y = facing;
 
     const state = (enemy.state = enemy.state ?? {});
-    const shotCd = (state.shotCooldown ?? 2.2) - dt;
+    const shotCd = tickCooldown(state.shotCooldown ?? 2.2, dt, distToPlayer < 18.0, 0.4);
     state.shotCooldown = shotCd;
 
     let telegraph = this.telegraphs.get(enemy.id);

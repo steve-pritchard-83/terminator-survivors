@@ -1,4 +1,5 @@
 import type * as THREE from 'three';
+import { tickCooldown } from './attackTimer';
 import type { ActiveEnemy } from '../../core/types';
 import type { EnemyBehaviour, EnemyContext } from './EnemyBehaviour';
 import { LineTelegraph } from '../../graphics/Telegraphs';
@@ -17,7 +18,7 @@ export class T800Behaviour implements EnemyBehaviour {
 
     const state = (enemy.state = enemy.state ?? {});
     let cd = state.phaseCooldown ?? enemy.phaseState ?? 0;
-    cd -= dt;
+    cd = tickCooldown(cd, dt, distToPlayer >= 7.0 && distToPlayer <= 17.0, 0.5);
 
     let telegraph = this.telegraphs.get(enemy.id);
     if (!telegraph) {

@@ -24,6 +24,8 @@ export interface EnemyContext {
   emit: <K extends keyof GameEventMap>(event: K, payload: GameEventMap[K]) => void;
   rng: typeof globalRNG;
   activeEnemies?: ActiveEnemy[];
+  /** Schedules a telegraphed ground blast that damages the player if they are still inside when it lands. */
+  scheduleBlast?: (x: number, z: number, radius: number, damage: number, delaySeconds: number) => void;
   group: THREE.Group;
   timeSeconds: number;
 }

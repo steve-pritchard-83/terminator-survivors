@@ -359,41 +359,6 @@ export class InteractiveEnvironmentSystem {
     const pz = this.runState.playerPos.z;
     const time = this.runState.timeSeconds;
 
-    // Stage hazards and conveyor drift
-    if (environment) {
-      const cVel = environment.getConveyorVelocity?.(px, pz);
-      if (cVel) {
-        this.runState.playerPos.x += cVel.vx * dt;
-        this.runState.playerPos.z += cVel.vz * dt;
-      }
-
-      if (typeof environment.getConveyorVelocity === 'function') {
-        if (this.enemySystem?.activeEnemies) {
-          for (const enemy of this.enemySystem.activeEnemies) {
-            const eVel = environment.getConveyorVelocity(enemy.x, enemy.z);
-            if (eVel) {
-              enemy.x += eVel.vx * dt;
-              enemy.z += eVel.vz * dt;
-            }
-          }
-        }
-        if (this.pickupSystem?.pickups) {
-          for (const pickup of this.pickupSystem.pickups) {
-            const pVel = environment.getConveyorVelocity(pickup.x, pickup.z);
-            if (pVel) {
-              pickup.x += pVel.vx * dt;
-              pickup.z += pVel.vz * dt;
-            }
-          }
-        }
-      }
-
-      const hDmg = environment.getHazardDamage?.(px, pz, dt, true) ?? 0;
-      if (hDmg > 0 && !this.runState.godMode && this.runState.invulnerabilityTimer <= 0) {
-        this.runState.takeDamage(hDmg);
-      }
-    }
-
     // 1. Re-insert active fuel drums into grid so weapon hits detect them
     for (const drum of this.fuelDrums) {
       if (!drum.isDetonating) {

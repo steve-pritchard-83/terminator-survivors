@@ -72,12 +72,7 @@ export type LoadoutId =
   | 'sarah_connor'
   | 'reprogrammed_t800';
 
-export type StageId =
-  | 'la_2029_wasteland'
-  | 'cyberdyne_factory'
-  | 'tech_noir_1984'
-  | 'skynet_central_tde'
-  | 'century_city_bunker';
+export type StageId = 'la_2029_wasteland';
 
 export type MetaUpgradeId =
   | 'armor_vest'
@@ -98,25 +93,6 @@ export type MetaUpgradeId =
   | 'banish_protocol'
   | 'skip_protocol'
   | 'veteran_resilience';
-
-export type ThreatModifierId =
-  | 'terminator_reinforcements'
-  | 'plasma_overcharge'
-  | 'relentless_pursuit'
-  | 'emp_damping'
-  | 'supply_starvation'
-  | 'jammed_frequency'
-  | 'scarcity_protocol'
-  | 'hyperalloy_surge'
-  | 'no_second_chances'
-  | 'judgment_hour';
-
-export interface ThreatModifierDefinition {
-  id: ThreatModifierId;
-  name: string;
-  description: string;
-  scrapBonusPercent: number;
-}
 
 export type GameMode =
   'title' | 'playing' | 'levelup' | 'vault' | 'paused' | 'gameover' | 'victory';
@@ -339,12 +315,6 @@ export interface MetaSaveData {
   upgrades: Record<MetaUpgradeId, number>;
   settings: GameSettings;
   inputBindings?: InputMappingConfig;
-  endlessHighScores?: {
-    bestTimeSeconds: number;
-    maxKills: number;
-    maxScrap: number;
-  };
-  dailyAttempts?: Record<string, DailyAttemptRecord>;
   achievements?: string[];
   unlockedWeapons?: BaseWeaponId[];
   unlockedCosmetics?: string[];
@@ -352,17 +322,14 @@ export interface MetaSaveData {
   discoveredWeapons?: string[];
   discoveredEvolutions?: string[];
   runHistory?: RunHistoryRecord[];
-  tutorialCompleted?: boolean;
-  stageBestTimes?: Partial<Record<StageId, number>>;
 }
 
 export interface RunHistoryRecord {
   id: string;
   date: string;
   durationSeconds: number;
-  stageId: StageId;
   loadoutId: LoadoutId;
-  outcome: 'victory' | 'defeat' | 'endless';
+  outcome: 'victory' | 'defeat';
   levelReached: number;
   kills: number;
   scrapEarned: number;
@@ -370,24 +337,6 @@ export interface RunHistoryRecord {
   weaponDamageBreakdown: Record<string, number>;
   killsByType: Record<string, number>;
   levelUpTimeline: Array<{ level: number; timeSeconds: number; choiceTitle: string }>;
-  threats?: ThreatModifierId[];
-}
-
-export interface DailyOperationConfig {
-  dateKey: string;
-  seed: number;
-  stageId: StageId;
-  loadoutId: LoadoutId;
-  modifiersDescription: string;
-}
-
-export interface DailyAttemptRecord {
-  dateKey: string;
-  completed: boolean;
-  score: number;
-  timeSeconds: number;
-  kills: number;
-  alloyScrap: number;
 }
 
 export interface PerfTelemetry {
@@ -425,11 +374,7 @@ export interface RuntimeSettings {
 
 export interface RunConfig {
   loadoutId?: LoadoutId;
-  stageId?: StageId;
-  threats?: ThreatModifierId[];
   seed?: number;
-  daily?: { dateKey: string };
-  isEndless?: boolean;
 }
 
 export interface GameDebugAPI {
@@ -452,18 +397,13 @@ export interface GameDebugAPI {
     dashCooldown: number;
     weapons: Array<{ id: WeaponId; level: number; evolved: boolean }>;
     passives: Array<{ id: PassiveId; level: number }>;
-    stageId: StageId;
-    threats: ThreatModifierId[];
-    isDaily: boolean;
-    isEndless: boolean;
     revivalsLeft: number;
     invulnerabilityTimer: number;
     activeBoss: { name: string; hp: number; maxHp: number } | null;
-    bunkerHealth?: { current: number; max: number } | null;
   };
   grantXp: (amount: number) => void;
   spawnBoss: (archetype: EnemyArchetypeId) => void;
-  spawnSwarm: (archetype: EnemyArchetypeId, count: number, atBunkerOrX?: boolean | number, customZ?: number) => void;
+  spawnSwarm: (archetype: EnemyArchetypeId, count: number, x?: number, z?: number) => void;
   getPerf: () => PerfTelemetry;
   triggerVault: () => void;
   spawnCrate?: (x?: number, z?: number) => void;

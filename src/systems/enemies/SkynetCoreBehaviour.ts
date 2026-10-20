@@ -2,12 +2,13 @@ import type * as THREE from 'three';
 import type { ActiveEnemy } from '../../core/types';
 import type { EnemyBehaviour, EnemyContext } from './EnemyBehaviour';
 import { SkynetCoreMesh } from '../../graphics/meshes/SkynetCoreMesh';
-import { CircleTelegraph } from '../../graphics/Telegraphs';
+import { CircleTelegraph, LineTelegraph } from '../../graphics/Telegraphs';
 
 export class SkynetCoreBehaviour implements EnemyBehaviour {
   private readonly meshes = new Map<number, SkynetCoreMesh>();
   private readonly telegraphs = new Map<number, CircleTelegraph>();
   private readonly pullTelegraphs = new Map<number, CircleTelegraph>();
+  private readonly spokeTelegraphs = new Map<number, LineTelegraph[]>();
 
   public createVisual(enemy: ActiveEnemy, ctx: EnemyContext): THREE.Object3D | null {
     const core = new SkynetCoreMesh();
@@ -71,6 +72,26 @@ export class SkynetCoreBehaviour implements EnemyBehaviour {
     // ATTACK 1: Rotating plasma spokes (every 1.8s fires a 4-bolt spoke rotating in an X/+)
     const spokeTimer = (state.spokeTimer ?? 1.8) - dt;
     state.spokeTimer = spokeTimer;
+    let spokeLines = this.spokeTelegraphs.get(enemy.id);
+    if (!spokeLines) {
+      spokeLines = [];
+      for (let s = 0; s < 4; s++) {
+        const line = new LineTelegraph(0.35, 0xff2288);
+        ctx.group.add(line.group);
+        spokeLines.push(line);
+      }
+      this.spokeTelegraphs.set(enemy.id, spokeLines);
+    }
+    if (spokeTimer <= 0.5 && spokeTimer > 0) {
+      // The spokes fire along baseAngle = (time at fire) * 0.8, so the warning can predict it
+      const fireAngle = (ctx.timeSeconds + spokeTimer) * 0.8;
+      for (let s = 0; s < 4; s++) {
+        const a = fireAngle + (s * Math.PI) / 2;
+        spokeLines[s].update(enemy.x, enemy.z, enemy.x + Math.sin(a) * 14.0, enemy.z + Math.cos(a) * 14.0, (0.5 - spokeTimer) / 0.5, 1.0);
+      }
+    } else {
+      for (const l of spokeLines) l.setVisible(false);
+    }
     if (spokeTimer <= 0) {
       state.spokeTimer = 1.8;
       const baseAngle = ctx.timeSeconds * 0.8;
@@ -168,6 +189,14 @@ export class SkynetCoreBehaviour implements EnemyBehaviour {
       pullTelegraph.dispose();
       this.pullTelegraphs.delete(enemy.id);
     }
+    const spokeLines = this.spokeTelegraphs.get(enemy.id);
+    if (spokeLines) {
+      for (const l of spokeLines) {
+        ctx.group.remove(l.group);
+        l.dispose();
+      }
+      this.spokeTelegraphs.delete(enemy.id);
+    }
   }
 
   public clear(): void {
@@ -188,5 +217,13 @@ export class SkynetCoreBehaviour implements EnemyBehaviour {
       p.dispose();
     }
     this.pullTelegraphs.clear();
+
+    for (const lines of this.spokeTelegraphs.values()) {
+      for (const l of lines) {
+        l.group.removeFromParent();
+        l.dispose();
+      }
+    }
+    this.spokeTelegraphs.clear();
   }
 }

@@ -401,9 +401,8 @@ export class PickupSystem {
     } else if (p.kind === 'crate') {
       this.audio.playExplosion(0.8);
       // Random crate rewards: Heal, EMP blast, or Alloy Scrap
-      const hasSupplyStarvation = this.runState.activeThreats.has('supply_starvation');
       const roll = globalRNG.next();
-      if (!hasSupplyStarvation && roll < 0.4) {
+      if (roll < 0.4) {
         this.runState.heal(35);
         globalEvents.emit('pickup:reward', {
           x: p.x,
@@ -411,7 +410,7 @@ export class PickupSystem {
           text: '+35 HP',
           color: 'var(--color-green)'
         });
-      } else if (roll < (hasSupplyStarvation ? 0.6 : 0.7)) {
+      } else if (roll < 0.7) {
         const gained = this.runState.addScrap(45);
         globalEvents.emit('pickup:reward', {
           x: p.x,

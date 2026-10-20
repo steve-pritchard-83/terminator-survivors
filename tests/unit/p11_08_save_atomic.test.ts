@@ -18,13 +18,11 @@ describe('P11-08: Save migration to v3 and throttled writes', () => {
     localStorage.clear();
   });
 
-  it('migrates v1 fixture to v3 with grandfathered weapon rewards and tutorial completed', () => {
+  it('migrates v1 fixture to v3 with grandfathered weapon rewards', () => {
     saveManager = new SaveManager();
     const migrated = saveManager.sanitizeAndMigrate(saveV1);
 
     expect(migrated.version).toBe(3);
-    // Since saveV1 had totalKills = 125 > 0:
-    expect(migrated.tutorialCompleted).toBe(true);
     // Since saveV1 had victories = 1 > 0:
     // Achievement rewards include weapons like m79_thumper, napalm_canister, rpg_launcher, etc.
     expect(migrated.unlockedWeapons).toContain('m79_thumper');
@@ -38,7 +36,6 @@ describe('P11-08: Save migration to v3 and throttled writes', () => {
     const migrated = saveManager.sanitizeAndMigrate(saveV2);
 
     expect(migrated.version).toBe(3);
-    expect(migrated.tutorialCompleted).toBe(true);
     expect(migrated.unlockedWeapons).toContain('ithaca_37');
     expect(migrated.unlockedWeapons).toContain('plasma_rifle');
     expect(migrated.unlockedWeapons).toContain('m79_thumper');

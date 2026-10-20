@@ -1,13 +1,15 @@
 import type * as THREE from 'three';
+import { tickCooldown } from './attackTimer';
 import type { ActiveEnemy } from '../../core/types';
 import type { EnemyBehaviour, EnemyContext } from './EnemyBehaviour';
 import { HKTankMesh } from '../../graphics/meshes/HKTankMesh';
-import { CircleTelegraph } from '../../graphics/Telegraphs';
+import { CircleTelegraph, LineTelegraph } from '../../graphics/Telegraphs';
 
 export class HKTankBehaviour implements EnemyBehaviour {
   private readonly meshes = new Map<number, HKTankMesh>();
   private readonly telegraphs = new Map<number, CircleTelegraph>();
   private readonly searchlightTelegraphs = new Map<number, CircleTelegraph>();
+  private readonly cannonTelegraphs = new Map<number, LineTelegraph>();
 
   public createVisual(enemy: ActiveEnemy, ctx: EnemyContext): THREE.Object3D | null {
     const tank = new HKTankMesh();
@@ -97,8 +99,19 @@ export class HKTankBehaviour implements EnemyBehaviour {
 
     // ATTACK 2: Frontal Twin Plasma Cannon Spread
     let cannonCooldown = state.cannonCooldown ?? 2.8;
-    cannonCooldown -= dt;
     const distToPlayer = Math.hypot(px - enemy.x, pz - enemy.z);
+    cannonCooldown = tickCooldown(cannonCooldown, dt, distToPlayer < 24.0, 0.5);
+    let cannonTelegraph = this.cannonTelegraphs.get(enemy.id);
+    if (!cannonTelegraph) {
+      cannonTelegraph = new LineTelegraph(0.5, 0xff8800);
+      ctx.group.add(cannonTelegraph.group);
+      this.cannonTelegraphs.set(enemy.id, cannonTelegraph);
+    }
+    if (cannonCooldown <= 0.5 && cannonCooldown > 0 && distToPlayer < 24.0) {
+      cannonTelegraph.update(enemy.x, enemy.z, px, pz, (0.5 - cannonCooldown) / 0.5, 1.6);
+    } else {
+      cannonTelegraph.setVisible(false);
+    }
     if (cannonCooldown <= 0 && distToPlayer < 24.0) {
       cannonCooldown = 3.2;
       const leftX = enemy.x + Math.sin(targetAngle - 0.25) * 2.2;
@@ -192,6 +205,12 @@ export class HKTankBehaviour implements EnemyBehaviour {
       searchlightTelegraph.dispose();
       this.searchlightTelegraphs.delete(enemy.id);
     }
+    const cannonTelegraph = this.cannonTelegraphs.get(enemy.id);
+    if (cannonTelegraph) {
+      ctx.group.remove(cannonTelegraph.group);
+      cannonTelegraph.dispose();
+      this.cannonTelegraphs.delete(enemy.id);
+    }
   }
 
   public clear(): void {
@@ -212,5 +231,11 @@ export class HKTankBehaviour implements EnemyBehaviour {
       st.dispose();
     }
     this.searchlightTelegraphs.clear();
+
+    for (const ct of this.cannonTelegraphs.values()) {
+      ct.group.removeFromParent();
+      ct.dispose();
+    }
+    this.cannonTelegraphs.clear();
   }
 }

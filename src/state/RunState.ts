@@ -7,8 +7,6 @@ import type {
   LoadoutId,
   PassiveId,
   PlayerComputedStats,
-  StageId,
-  ThreatModifierId,
   UpgradeChoice,
   WeaponId
 } from '../core/types';
@@ -39,12 +37,6 @@ export class RunState {
   }
 
   public set mode(newMode: GameMode) {
-    if (this.stateMachine.getState() === 'victory' && newMode === 'playing' && !this.isEndless) {
-      if (this.stateMachine.throwInDev) {
-        throw new Error("Illegal state transition from 'victory' to 'playing' without isEndless");
-      }
-      return;
-    }
     this.stateMachine.transition(newMode);
   }
   public timeSeconds = 0;
@@ -58,8 +50,6 @@ export class RunState {
   public kills = 0;
   public bossesKilled = 0;
   public alloyScrapEarned = 0;
-  public bankedKills = 0;
-  public bankedScrap = 0;
   public readonly killsByType = new Map<EnemyArchetypeId, number>();
   public levelUpTimeline: Array<{ level: number; timeSeconds: number; choiceTitle: string }> = [];
 
@@ -100,11 +90,6 @@ export class RunState {
   public banishesLeft = 0;
   public readonly banishedIds = new Set<string>();
   public loadoutId: LoadoutId = 'reese_2029';
-  public stageId: StageId = 'la_2029_wasteland';
-  public isEndless = false;
-  public isDailyOperation = false;
-  public dailyDateKey = '';
-  public activeThreats = new Set<ThreatModifierId>();
   public unlockedWeapons: BaseWeaponId[] = [];
   private purchasedMetaUpgrades: Record<string, number> = {};
 
@@ -141,8 +126,6 @@ export class RunState {
     loadoutId: LoadoutId,
     purchasedMetaUpgrades: Record<string, number>,
     seed = 0,
-    stageId: StageId = 'la_2029_wasteland',
-    activeThreats?: ThreatModifierId[],
     unlockedWeapons?: BaseWeaponId[]
   ): void {
     if (this.mode !== 'title') {
@@ -150,12 +133,7 @@ export class RunState {
     }
     this.mode = 'playing';
     this.seed = seed;
-    this.stageId = stageId;
-    this.isEndless = false;
     this.isDead = false;
-    this.isDailyOperation = false;
-    this.dailyDateKey = '';
-    this.activeThreats = new Set(activeThreats ?? []);
     this.unlockedWeapons = unlockedWeapons ? [...unlockedWeapons] : [];
     this.timeSeconds = 0;
     this.level = 1;
@@ -165,8 +143,6 @@ export class RunState {
     this.kills = 0;
     this.bossesKilled = 0;
     this.alloyScrapEarned = 0;
-    this.bankedKills = 0;
-    this.bankedScrap = 0;
     this.killsByType.clear();
     this.levelUpTimeline = [];
     this.playerPos = { x: 0, z: 0 };
@@ -210,14 +186,13 @@ export class RunState {
     const base = this.getDefaultStats();
     const loadout = LOADOUTS[this.loadoutId];
 
-    // 1. Apply Meta Upgrades (halved under scarcity_protocol)
-    const metaScale = this.activeThreats.has('scarcity_protocol') ? 0.5 : 1.0;
+    // 1. Apply Meta Upgrades
     for (const [upId, lv] of Object.entries(this.purchasedMetaUpgrades)) {
       const cfg = META_UPGRADES[upId as keyof typeof META_UPGRADES];
       if (cfg && lv > 0) {
         for (const [stat, val] of Object.entries(cfg.statPerLevel)) {
           const k = stat as keyof PlayerComputedStats;
-          base[k] = (base[k] as number) + (val as number) * lv * metaScale;
+          base[k] = (base[k] as number) + (val as number) * lv;
         }
       }
     }
@@ -239,15 +214,6 @@ export class RunState {
           base[k] = (base[k] as number) + (val as number) * lv;
         }
       }
-    }
-
-    // Threat modifier penalties
-    if (this.activeThreats.has('emp_damping')) {
-      base.cooldownMultiplier *= 1.15;
-    }
-    if (this.activeThreats.has('no_second_chances')) {
-      base.revivals = 0;
-      base.revivalChance = 0;
     }
 
     // 4. Active ability buffs
@@ -275,9 +241,7 @@ export class RunState {
     } else {
       this.hp = 0;
     }
-    if (this.activeThreats.has('no_second_chances')) {
-      this.revivalsLeft = 0;
-    } else if (base.revivals > prevRevivals) {
+    if (base.revivals > prevRevivals) {
       this.revivalsLeft += base.revivals - prevRevivals;
     }
   }

@@ -54,10 +54,6 @@ export class AchievementTracker {
         if (minute >= 5) this.tryUnlock('survivor_5m');
         if (minute >= 8) this.tryUnlock('survivor_8m');
 
-        if (this.runState?.isEndless) {
-          if (minute >= 15) this.tryUnlock('endless_veteran');
-          if (minute >= 20) this.tryUnlock('endless_master');
-        }
       })
     );
 
@@ -133,19 +129,7 @@ export class AchievementTracker {
         if (data.victory) {
           this.tryUnlock('judgment_survivor');
 
-          if (data.stageId === 'la_2029_wasteland') this.tryUnlock('clear_wasteland');
-          else if (data.stageId === 'cyberdyne_factory') this.tryUnlock('clear_cyberdyne');
-          else if (data.stageId === 'tech_noir_1984') this.tryUnlock('clear_tech_noir');
-          else if (data.stageId === 'skynet_central_tde') this.tryUnlock('clear_skynet_central');
-          else if (data.stageId === 'century_city_bunker') this.tryUnlock('clear_bunker');
-
-          if (data.threatCount >= 1) this.tryUnlock('threat_initiate');
-          if (data.threatCount >= 3) this.tryUnlock('threat_veteran');
-          if (data.threatCount >= 5) this.tryUnlock('threat_nightmare');
-
-          if (this.runState?.isDailyOperation) {
-            this.tryUnlock('daily_operative');
-          }
+          this.tryUnlock('clear_wasteland');
         }
 
         const currentData = this.saveManager.getData();

@@ -24,7 +24,6 @@ import type {
   SceneCensus,
   SpatialEntity,
   LoadoutId,
-  StageId,
   WeaponId,
   PassiveId
 } from './types';
@@ -46,10 +45,7 @@ export interface DebugAPIHost {
   readonly environment?: IEnvironment;
   startRun?: (
     configOrLoadout?: RunConfig | LoadoutId,
-    customSeed?: number,
-    stageId?: StageId,
-    isDaily?: boolean,
-    dailyDateKey?: string
+    customSeed?: number
   ) => void;
 }
 
@@ -90,14 +86,9 @@ export class DebugAPI {
           evolved: w.evolved
         })),
         passives: Array.from(this.host.runState.passives.entries()).map(([id, level]) => ({ id, level })),
-        stageId: this.host.runState.stageId,
-        threats: Array.from(this.host.runState.activeThreats),
-        isDaily: this.host.runState.isDailyOperation,
-        isEndless: this.host.runState.isEndless,
         revivalsLeft: this.host.runState.revivalsLeft,
         invulnerabilityTimer: this.host.runState.invulnerabilityTimer,
-        activeBoss: this.host.runController?.activeBoss ?? null,
-        bunkerHealth: this.host.environment?.getBunkerHealth?.() ?? null
+        activeBoss: this.host.runController?.activeBoss ?? null
       }),
       grantXp: (amount: number) => {
         const levels = this.host.runState.addXp(amount);
@@ -114,21 +105,14 @@ export class DebugAPI {
       spawnBoss: (archetype: EnemyArchetypeId) => {
         this.host.waveDirector.spawnBoss(archetype);
       },
-      spawnSwarm: (archetype: EnemyArchetypeId, count: number, atBunkerOrX?: boolean | number, customZ?: number) => {
+      spawnSwarm: (archetype: EnemyArchetypeId, count: number, atX?: number, atZ?: number) => {
         let px = this.host.runState.playerPos.x;
         let pz = this.host.runState.playerPos.z;
         let spawnRadiusBase = 16;
-        if (typeof atBunkerOrX === 'number' && typeof customZ === 'number') {
-          px = atBunkerOrX;
-          pz = customZ;
+        if (typeof atX === 'number' && typeof atZ === 'number') {
+          px = atX;
+          pz = atZ;
           spawnRadiusBase = 2.5;
-        } else if (atBunkerOrX === true) {
-          const bt = this.host.environment?.bunkerTarget;
-          if (bt) {
-            px = bt.x;
-            pz = bt.z;
-            spawnRadiusBase = 2.5;
-          }
         }
         for (let i = 0; i < count; i++) {
           const angle = (i / count) * Math.PI * 2 + (globalRNG.next() - 0.5) * 0.2;

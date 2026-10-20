@@ -33,8 +33,8 @@ Available anywhere on desktop and mobile, with full progressive web app (PWA) of
 - **Cinematic Post-Processing**: Unreal bloom, cobalt-blue color grading, film grain, and an authentic red CRT scanline overlay simulating Skynet terminal telemetries.
 - **Faithful Typography & Audio**:
   - Incorporates the authentic `Terminator Real NFI` font alongside tactical Rajdhani and 6502 assembly telemetry fonts.
-  - Looped background music (`backgroundmusic.mp3`) played through a gapless Web Audio loop graph. The track's provenance is unconfirmed; see `ASSETS.md`.
-  - Hybrid Audio Engine combining 56 preloaded `.wav` combat SFX (provenance unconfirmed; see `ASSETS.md`) (`S_PlasmaShot01.wav`, `S_Ithica01.wav`, `Shotgun_shot_spas.wav`, `S_LaserTank01.wav`, `plasma_explosion.wav`, `hk_heavy1a_m.wav`, and the iconic `terminated.wav` death sting) with procedural Web Audio API synthesis.
+  - Looped background music (`backgroundmusic.mp3`) played through a gapless Web Audio loop graph.
+  - Hybrid Audio Engine combining 56 preloaded `.wav` combat SFX (`S_PlasmaShot01.wav`, `S_Ithica01.wav`, `Shotgun_shot_spas.wav`, `S_LaserTank01.wav`, `plasma_explosion.wav`, `hk_heavy1a_m.wav`, and the iconic `terminated.wav` death sting) with procedural Web Audio API synthesis.
 
 ### 2. Deep Survivor Combat & Arsenal (8 Base Weapons, 8 Passives, 8 Evolutions)
 
@@ -71,7 +71,7 @@ Available anywhere on desktop and mobile, with full progressive web app (PWA) of
 - **T-800 Cyberdyne Systems Model 101 Endoskeletons**: Dual-layer InstancedMesh rendering holding active chrome skeletons with glowing red optical sensors.
 - **Hunter-Killer Aerial**: Supersonic patrol units strafing the battlefield with crimson plasma beams.
 - **Hunter-Killer Goliath Tank**: Multi-track behemoths equipped with dual swivel turrets, ground artillery telegraphs, and twin sweeping volumetric searchlights.
-- **T-1000 Mimetic Polyalloy Prototype**: Advanced liquid metal boss with chrome polyalloy reflection shaders (puddle repositioning, blade flurries, and nanite regeneration planned in Roadmap Phase 5).
+- **T-1000 Mimetic Polyalloy Prototype**: Advanced liquid metal boss with chrome polyalloy reflection shaders (puddle ambush, blade lunge and slash combo, and nanite regeneration that napalm or EMP shuts off).
 
 ### 4. Controller, Mobile Native & PWA First
 
@@ -119,8 +119,8 @@ Available anywhere on desktop and mobile, with full progressive web app (PWA) of
 - **PWA Tooling**: Vite Plugin PWA + Workbox (precache limit configured for high-fidelity assets)
 - **Testing**:
   - Unit Tests: Vitest (combat math, spatial hashing, weapon evolutions, save manager, wave director)
-  - E2E Tests: Playwright (desktop gameplay, mobile touch joystick, offline PWA verification)
-- **CI / CD**: GitHub Actions workflow (`ci-deploy.yml`) with automated typechecking, unit tests, and Playwright execution
+  - E2E Test: one Playwright smoke test (title, bunker shop, deploy, level-up, dash)
+- **CI / CD**: GitHub Actions workflow (`ci-deploy.yml`) with automated typechecking, unit tests and production build
 - **Deployment**: Vercel Edge (`terminator-survivors.vercel.app`) + GitHub Pages backup
 
 ---

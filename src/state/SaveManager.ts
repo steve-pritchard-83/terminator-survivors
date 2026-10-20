@@ -1,4 +1,4 @@
-import type { BaseWeaponId, ColorBlindMode, DamageNumberSetting, DailyAttemptRecord, GameSettings, InputMappingConfig, LoadoutId, MetaSaveData, MetaUpgradeId, RunHistoryRecord, StageId } from '../core/types';
+import type { BaseWeaponId, ColorBlindMode, DamageNumberSetting, GameSettings, InputMappingConfig, LoadoutId, MetaSaveData, MetaUpgradeId, RunHistoryRecord } from '../core/types';
 import { LOADOUTS, META_UPGRADES } from '../data/upgrades';
 import { ACHIEVEMENTS, DEFAULT_UNLOCKED_WEAPONS } from '../data/achievements';
 import { DEFAULT_INPUT_MAPPINGS } from '../data/inputDefaults';
@@ -17,9 +17,6 @@ export class SaveManager {
     },
     2: (old: Record<string, any>) => {
       const migrated: Record<string, any> = { ...old, version: 3 };
-      if ((old.totalKills ?? 0) > 0) {
-        migrated.tutorialCompleted = true;
-      }
       if ((old.victories ?? 0) > 0) {
         const currentUnlocked: string[] = Array.isArray(old.unlockedWeapons)
           ? [...old.unlockedWeapons]
@@ -104,21 +101,13 @@ export class SaveManager {
         qualityPreset: 'high'
       },
       inputBindings: JSON.parse(JSON.stringify(DEFAULT_INPUT_MAPPINGS)),
-      endlessHighScores: {
-        bestTimeSeconds: 0,
-        maxKills: 0,
-        maxScrap: 0
-      },
-      dailyAttempts: {},
       achievements: [],
       unlockedWeapons: [...DEFAULT_UNLOCKED_WEAPONS],
       unlockedCosmetics: [],
       bestiaryKills: {},
       discoveredWeapons: [...DEFAULT_UNLOCKED_WEAPONS],
       discoveredEvolutions: [],
-      runHistory: [],
-      tutorialCompleted: false,
-      stageBestTimes: {}
+      runHistory: []
     };
   }
 
@@ -193,24 +182,7 @@ export class SaveManager {
       qualityPreset: ['low', 'medium', 'high', 'ultra'].includes(current.settings?.qualityPreset) ? current.settings.qualityPreset : 'high'
     };
 
-    // 5. Validate endless high scores
-    const endlessHighScores = {
-      bestTimeSeconds: typeof current.endlessHighScores?.bestTimeSeconds === 'number' && current.endlessHighScores.bestTimeSeconds >= 0 ? current.endlessHighScores.bestTimeSeconds : 0,
-      maxKills: typeof current.endlessHighScores?.maxKills === 'number' && current.endlessHighScores.maxKills >= 0 ? Math.floor(current.endlessHighScores.maxKills) : 0,
-      maxScrap: typeof current.endlessHighScores?.maxScrap === 'number' && current.endlessHighScores.maxScrap >= 0 ? Math.floor(current.endlessHighScores.maxScrap) : 0
-    };
-
-    // 6. Validate daily attempts
-    const dailyAttempts: Record<string, DailyAttemptRecord> = {};
-    if (current.dailyAttempts && typeof current.dailyAttempts === 'object') {
-      for (const [k, v] of Object.entries(current.dailyAttempts)) {
-        if (v && typeof v === 'object') {
-          dailyAttempts[k] = v as DailyAttemptRecord;
-        }
-      }
-    }
-
-    // 7. Validate achievements
+    // 5. Validate achievements
     const achievements: string[] = [];
     if (Array.isArray(current.achievements)) {
       for (const a of current.achievements) {
@@ -309,35 +281,14 @@ export class SaveManager {
       upgrades,
       settings,
       inputBindings,
-      endlessHighScores,
-      dailyAttempts,
       achievements,
       unlockedWeapons,
       unlockedCosmetics,
       bestiaryKills,
       discoveredWeapons,
       discoveredEvolutions,
-      runHistory: runHistory.slice(0, 20),
-      tutorialCompleted: Boolean(current.tutorialCompleted),
-      stageBestTimes: current.stageBestTimes && typeof current.stageBestTimes === 'object'
-        ? { ...current.stageBestTimes }
-        : {}
+      runHistory: runHistory.slice(0, 20)
     };
-  }
-
-  public getStageBestTime(stageId: StageId): number {
-    return this.data.stageBestTimes?.[stageId] ?? 0;
-  }
-
-  public recordStageBestTime(stageId: StageId, timeSeconds: number): void {
-    if (!this.data.stageBestTimes) {
-      this.data.stageBestTimes = {};
-    }
-    const cur = this.data.stageBestTimes[stageId] ?? 0;
-    if (timeSeconds > cur) {
-      this.data.stageBestTimes[stageId] = timeSeconds;
-      this.save();
-    }
   }
 
   public load(): MetaSaveData {
@@ -478,37 +429,15 @@ export class SaveManager {
     timeSec: number,
     scrapEarned: number,
     victory: boolean,
-    bossesKilled = 0,
-    isEndless = false,
-    endlessTotalKills?: number,
-    endlessTotalScrap?: number,
-    stageId?: StageId
+    bossesKilled = 0
   ): void {
     this.data.totalKills += kills;
     this.data.alloyScrap += scrapEarned;
     if (timeSec > this.data.bestTimeSeconds) {
       this.data.bestTimeSeconds = timeSec;
     }
-    if (stageId) {
-      if (!this.data.stageBestTimes) this.data.stageBestTimes = {};
-      const curStageBest = this.data.stageBestTimes[stageId] ?? 0;
-      if (timeSec > curStageBest) {
-        this.data.stageBestTimes[stageId] = timeSec;
-      }
-    }
     if (victory) {
       this.data.victories++;
-    }
-
-    if (isEndless) {
-      if (!this.data.endlessHighScores) {
-        this.data.endlessHighScores = { bestTimeSeconds: 0, maxKills: 0, maxScrap: 0 };
-      }
-      const recordKills = endlessTotalKills ?? kills;
-      const recordScrap = endlessTotalScrap ?? scrapEarned;
-      this.data.endlessHighScores.bestTimeSeconds = Math.max(this.data.endlessHighScores.bestTimeSeconds, timeSec);
-      this.data.endlessHighScores.maxKills = Math.max(this.data.endlessHighScores.maxKills, recordKills);
-      this.data.endlessHighScores.maxScrap = Math.max(this.data.endlessHighScores.maxScrap, recordScrap);
     }
 
     // Milestone Auto-Unlocks
@@ -550,22 +479,6 @@ export class SaveManager {
       }
     };
     this.save();
-  }
-
-  public hasAttemptedDaily(dateKey: string): boolean {
-    return Boolean(this.data.dailyAttempts && this.data.dailyAttempts[dateKey]);
-  }
-
-  public recordDailyAttempt(attempt: DailyAttemptRecord): void {
-    if (!this.data.dailyAttempts) {
-      this.data.dailyAttempts = {};
-    }
-    this.data.dailyAttempts[attempt.dateKey] = attempt;
-    this.save();
-  }
-
-  public getDailyAttempt(dateKey: string): DailyAttemptRecord | null {
-    return this.data.dailyAttempts?.[dateKey] ?? null;
   }
 
   public isAchievementUnlocked(id: string): boolean {
@@ -666,28 +579,15 @@ export class SaveManager {
     if (!this.data.runHistory) {
       this.data.runHistory = [];
     }
-    if (record.outcome === 'endless' && this.data.runHistory.length > 0 && this.data.runHistory[0].outcome === 'victory') {
-      this.data.runHistory[0] = record;
-    } else {
-      this.data.runHistory.unshift(record);
-      if (this.data.runHistory.length > 20) {
-        this.data.runHistory.length = 20;
-      }
+    this.data.runHistory.unshift(record);
+    if (this.data.runHistory.length > 20) {
+      this.data.runHistory.length = 20;
     }
     this.save();
   }
 
   public getRunHistory(): RunHistoryRecord[] {
     return this.data.runHistory ? [...this.data.runHistory] : [];
-  }
-
-  public isTutorialCompleted(): boolean {
-    return Boolean(this.data.tutorialCompleted);
-  }
-
-  public setTutorialCompleted(completed = true): void {
-    this.data.tutorialCompleted = completed;
-    this.save();
   }
 
   public resetProgress(): void {

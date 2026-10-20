@@ -22,7 +22,7 @@ export const EMPLACEMENT_SPAWN_MIN_DIST = 15;
 export const EMPLACEMENT_SPAWN_MAX_DIST = 25;
 
 // Hydrobots arrive as a tight formation instead of one at a time.
-export const HYDROBOT_FORMATION = { count: 12, spread: 3 };
+export const HYDROBOT_FORMATION = { count: 6, spread: 2.5 };
 
 // Aerostat mark: enemies near a marked player move faster for a short time.
 export const AEROSTAT_MARK = { radius: 8, speedMultiplier: 1.2, durationSeconds: 4 };

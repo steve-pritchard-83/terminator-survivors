@@ -5,10 +5,11 @@ import type { SpatialHashGrid } from '../core/SpatialHashGrid';
 import type { AudioEngine } from '../audio/AudioEngine';
 import type { ParticleSystem } from './ParticleSystem';
 import type { EndoskeletonBatch } from '../graphics/meshes/EndoskeletonBatch';
-import { ENEMY_CONFIGS, applyEliteAffix, handleEliteDeath } from '../data/enemies';
+import { ELITE_AFFIXES, ENEMY_CONFIGS, applyEliteAffix, handleEliteDeath } from '../data/enemies';
 import { InstancedPool, type PoolableUser } from '../graphics/InstancedPool';
 import { globalEvents } from '../core/EventBus';
 import { globalRNG } from '../core/RNG';
+import { CircleTelegraph } from '../graphics/Telegraphs';
 import {
   AEROSTAT_MARK,
   EMPLACEMENT_DESPAWN_DISTANCE,
@@ -40,6 +41,9 @@ export class EnemySystem {
   private readonly separationScratch: SpatialEntity[] = [];
   private readonly enemyPool: InstancedPool<EnemyProjectile>;
   private readonly enemyProjectilePool: EnemyProjectile[] = [];
+  private readonly pendingBlasts: Array<{ x: number; z: number; radius: number; damage: number; remaining: number; total: number; telegraph: CircleTelegraph }> = [];
+  private readonly eliteAuraGeo = new THREE.SphereGeometry(0.95, 14, 10);
+  private readonly eliteAuraMats = new Map<number, THREE.MeshBasicMaterial>();
   private readonly enemyPlasmaGeo = new THREE.CylinderGeometry(0.09, 0.09, 0.75, 8);
   private readonly enemyPlasmaMat = new THREE.MeshBasicMaterial({ color: 0xff1144 });
 
@@ -55,13 +59,16 @@ export class EnemySystem {
     this.particles = particles; this.endoBatch = endoBatch; this.behaviours = behaviours;
     this.enemyPlasmaGeo.rotateX(Math.PI / 2);
     this.enemyPlasmaGeo.userData = { shared: true }; this.enemyPlasmaMat.userData = { shared: true };
+    this.eliteAuraGeo.userData = { shared: true };
     this.enemyPool = new InstancedPool<EnemyProjectile>(this.enemyPlasmaGeo, this.enemyPlasmaMat, 256, this.group);
 
     this.context = {
       runState: this.runState, audio: this.audio, particles: this.particles,
       spawnEnemyProjectile: (x, y, z, tx, tz, spd, dmg) => this.spawnEnemyProjectile(x, y, z, tx, tz, spd, dmg),
       spawnEnemy: (arch, x, z) => this.spawnEnemy(arch, x, z), applyPlayerDamage: (dmg) => this.applyPlayerDamage(dmg),
-      emit: (evt, payload) => globalEvents.emit(evt, payload), rng: globalRNG, activeEnemies: this.activeEnemies, group: this.group, timeSeconds: 0
+      emit: (evt, payload) => globalEvents.emit(evt, payload), rng: globalRNG, activeEnemies: this.activeEnemies,
+      scheduleBlast: (x, z, radius, damage, delay) => this.scheduleBlast(x, z, radius, damage, delay),
+      group: this.group, timeSeconds: 0
     };
   }
 
@@ -77,8 +84,53 @@ export class EnemySystem {
     if (affix && !cfg.isBoss) applyEliteAffix(enemy, affix);
 
     this.activeEnemies.push(enemy);
-    this.behaviours[archetype]?.createVisual?.(enemy, this.context);
+    const visual = this.behaviours[archetype]?.createVisual?.(enemy, this.context);
+    if (visual && enemy.isElite) this.decorateEliteVisual(visual, enemy);
     return enemy;
+  }
+
+  /** Elites rendered as standalone meshes (not instanced) get the same scale and a tinted aura. */
+  private decorateEliteVisual(visual: THREE.Object3D, enemy: ActiveEnemy): void {
+    visual.scale.multiplyScalar(enemy.scale ?? 1.4);
+    const tint = ELITE_AFFIXES[enemy.affix as EliteAffix]?.tintColor ?? 0xffab00;
+    let mat = this.eliteAuraMats.get(tint);
+    if (!mat) {
+      mat = new THREE.MeshBasicMaterial({
+        color: tint, transparent: true, opacity: 0.2, blending: THREE.AdditiveBlending, depthWrite: false
+      });
+      mat.userData = { shared: true };
+      this.eliteAuraMats.set(tint, mat);
+    }
+    const aura = new THREE.Mesh(this.eliteAuraGeo, mat);
+    aura.position.y = 0.9;
+    visual.add(aura);
+  }
+
+  private scheduleBlast(x: number, z: number, radius: number, damage: number, delaySeconds: number): void {
+    const telegraph = new CircleTelegraph(radius, 0xff6d00);
+    this.group.add(telegraph.group);
+    telegraph.update(x, z, 0.001, radius);
+    this.pendingBlasts.push({ x, z, radius, damage, remaining: delaySeconds, total: delaySeconds, telegraph });
+  }
+
+  private updatePendingBlasts(dt: number): void {
+    for (let i = this.pendingBlasts.length - 1; i >= 0; i--) {
+      const b = this.pendingBlasts[i];
+      b.remaining -= dt;
+      if (b.remaining > 0) {
+        b.telegraph.update(b.x, b.z, 1 - b.remaining / b.total, b.radius);
+        continue;
+      }
+      this.particles.spawnExplosion(b.x, 0.5, b.z, 2.8);
+      this.audio.playExplosion(1.8);
+      globalEvents.emit('camera:shake', { trauma: 0.5 });
+      if (Math.hypot(this.runState.playerPos.x - b.x, this.runState.playerPos.z - b.z) < b.radius) {
+        this.applyPlayerDamage(b.damage);
+      }
+      this.group.remove(b.telegraph.group);
+      b.telegraph.dispose();
+      this.pendingBlasts.splice(i, 1);
+    }
   }
 
   private releaseEnemyProjectile(p: EnemyProjectile): void {
@@ -106,6 +158,7 @@ export class EnemySystem {
     const px = this.runState.playerPos.x;
     const pz = this.runState.playerPos.z;
     this.context.timeSeconds = timeSeconds;
+    this.updatePendingBlasts(dt);
 
     for (let i = this.activeEnemies.length - 1; i >= 0; i--) {
       const enemy = this.activeEnemies[i];
@@ -119,7 +172,7 @@ export class EnemySystem {
         enemy.state.speedBuffTimer -= dt;
         markBuff = AEROSTAT_MARK.speedMultiplier;
       }
-      const effectiveSpeed = enemy.speed * markBuff * (enemy.slowTimer > 0 ? 0.6 : 1.0) * (this.runState.activeThreats.has('relentless_pursuit') ? 1.15 : 1.0);
+      const effectiveSpeed = enemy.speed * markBuff * (enemy.slowTimer > 0 ? 0.6 : 1.0);
       let dx = px - enemy.x; let dz = pz - enemy.z; let dist = Math.hypot(dx, dz);
 
       if (LEASH_EXEMPT_ARCHETYPES.has(enemy.archetype)) {
@@ -157,14 +210,6 @@ export class EnemySystem {
         const nx = dx / dist; const nz = dz / dist;
         moveX = (nx * effectiveSpeed + sepX) * dt;
         moveZ = (nz * effectiveSpeed + sepZ) * dt;
-      }
-      if (env?.bunkerTarget && env.damageBunker && Math.hypot(enemy.x - env.bunkerTarget.x, enemy.z - env.bunkerTarget.z) <= env.bunkerTarget.radius) {
-        moveX = 0; moveZ = 0;
-        if (enemy.attackCooldown <= 0) {
-          enemy.attackCooldown = 0.55;
-          env.damageBunker(enemy.damage);
-          this.audio.playExplosion(0.2);
-        }
       }
       if (enemy.vx || enemy.vz) {
         const evx = enemy.vx ?? 0;
@@ -249,6 +294,11 @@ export class EnemySystem {
 
   public clear(): void {
     this.activeEnemies.length = 0;
+    for (const b of this.pendingBlasts) {
+      this.group.remove(b.telegraph.group);
+      b.telegraph.dispose();
+    }
+    this.pendingBlasts.length = 0;
     for (const p of this.enemyProjectiles) this.releaseEnemyProjectile(p);
     this.enemyProjectiles.length = 0;
     this.enemyPool.clear();

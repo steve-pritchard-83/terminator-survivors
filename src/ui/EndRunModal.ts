@@ -2,8 +2,6 @@ import { LORE } from '../data/lore';
 import { ALL_WEAPONS } from '../data/weapons';
 import { ENEMY_CONFIGS } from '../data/enemies';
 import { LOADOUTS } from '../data/upgrades';
-import { STAGES } from '../data/stages';
-import { THREAT_MODIFIERS } from '../data/threatModifiers';
 import type { EnemyArchetypeId, RunHistoryRecord, WeaponId } from '../core/types';
 import type { GamepadManager } from '../input/GamepadManager';
 import { XBOX_BUTTON } from '../input/GamepadManager';
@@ -23,7 +21,6 @@ export class EndRunModal {
   private activeTab: EndRunTab = 'debrief';
 
   private onReturnCallback: (() => void) | null = null;
-  private onContinueCallback: (() => void) | null = null;
   private readonly saveManager?: SaveManager;
   private readonly audioEngine?: AudioEngine;
   private readonly a11y: ModalA11y;
@@ -83,9 +80,6 @@ export class EndRunModal {
         </div>
 
         <div style="display:flex; flex-direction:column; gap:10px; align-items:center; margin-top:12px;">
-          <button class="btn-primary" id="btn-continue-war" data-testid="btn-continue-war" aria-label="Continue the War" style="background:var(--color-amber); border-color:#ffbb00; display:none;">
-            CONTINUE THE WAR (+100 ALLOY)
-          </button>
           <button class="btn-primary" id="btn-return-bunker" aria-label="Return to Command">
             RETURN TO COMMAND
           </button>
@@ -150,13 +144,8 @@ export class EndRunModal {
       });
     });
 
-    this.container.querySelector('#btn-continue-war')?.addEventListener('click', () => {
-      this.container.style.display = 'none';
-      this.onContinueCallback?.();
-    });
-
     this.container.querySelector('#btn-return-bunker')?.addEventListener('click', () => {
-      this.container.style.display = 'none';
+      this.hide();
       this.onReturnCallback?.();
     });
   }
@@ -193,19 +182,12 @@ export class EndRunModal {
     scrap: number,
     seed: number | undefined,
     onReturn: () => void,
-    onContinueWar?: () => void,
     details?: RunHistoryRecord,
     defeatReason?: string
   ): void {
     this.onReturnCallback = onReturn;
-    this.onContinueCallback = onContinueWar ?? null;
     this.container.style.display = 'flex';
     this.switchTab('debrief');
-
-    const continueBtn = this.container.querySelector('#btn-continue-war') as HTMLElement | null;
-    if (continueBtn) {
-      continueBtn.style.display = onContinueWar ? 'block' : 'none';
-    }
 
     const sec = Math.floor(timeSeconds);
     const m = Math.floor(sec / 60);
@@ -228,7 +210,6 @@ export class EndRunModal {
       <div>FIELD LEVEL: <span style="color:var(--color-cyan)">LV ${level}</span></div>
       <div>ALLOY SCRAP RECOVERED: <span style="color:#ffd700">+${scrap}</span></div>
       ${seed !== undefined ? `<div>MISSION SEED: <span style="color:var(--color-chrome)">${seed}</span></div>` : ''}
-      ${details?.threats && details.threats.length > 0 ? `<div style="margin-top:4px;">ACTIVE THREATS: <span style="color:var(--color-amber)">${details.threats.map((t) => THREAT_MODIFIERS[t]?.name ?? t).join(', ')}</span></div>` : ''}
     `;
 
     this.renderWeaponTelemetry(details?.weaponDamageBreakdown, timeSeconds);
@@ -239,15 +220,11 @@ export class EndRunModal {
 
   public showArchives(onReturn: () => void): void {
     this.onReturnCallback = onReturn;
-    this.onContinueCallback = null;
     this.container.style.display = 'flex';
 
     this.titleEl.textContent = 'TECH-COM ARCHIVES';
     this.titleEl.style.color = 'var(--color-cyan)';
     this.loreEl.textContent = 'Historical combat mission telemetry retrieved from bunker sub-core.';
-
-    const continueBtn = this.container.querySelector('#btn-continue-war') as HTMLElement | null;
-    if (continueBtn) continueBtn.style.display = 'none';
 
     this.switchTab('archives');
     this.a11y.activate();
@@ -341,36 +318,18 @@ export class EndRunModal {
     const listEl = this.container.querySelector('#end-archives-list');
     if (!listEl) return;
 
-    const endless = this.saveManager?.getData().endlessHighScores;
-    const endlessSec = Math.floor(endless?.bestTimeSeconds ?? 0);
-    const em = Math.floor(endlessSec / 60);
-    const es = endlessSec % 60;
-    const endlessTimeFormatted = `${em.toString().padStart(2, '0')}:${es.toString().padStart(2, '0')}`;
-
-    const endlessBannerHtml = `
-      <div id="endless-high-scores-panel" data-testid="endless-high-scores-panel" style="margin-bottom:14px; background:rgba(255,187,0,0.12); border:1px solid var(--color-amber); border-radius:4px; padding:10px 14px; font-family:var(--font-telemetry);">
-        <div style="color:var(--color-amber); font-weight:bold; font-size:12px; margin-bottom:6px; letter-spacing:1px;">★ ENDLESS WAR RECORDS // COMMAND LEADERBOARD</div>
-        <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px; font-size:12px; color:#fff;">
-          <div>LONGEST SURVIVAL: <span style="color:var(--color-amber); font-weight:bold;">${endlessTimeFormatted}</span></div>
-          <div>MAX TERMINATIONS: <span style="color:var(--color-red); font-weight:bold;">${endless?.maxKills ?? 0}</span></div>
-          <div>MAX SCRAP BANKED: <span style="color:var(--color-cyan); font-weight:bold;">+${endless?.maxScrap ?? 0}</span></div>
-        </div>
-      </div>
-    `;
-
     const history = this.saveManager?.getRunHistory() ?? [];
     if (history.length === 0) {
-      listEl.innerHTML = endlessBannerHtml + `<div style="color:var(--color-chrome); font-size:13px; text-align:center; padding:20px;">NO PRIOR MISSIONS IN TECH-COM LOGS</div>`;
+      listEl.innerHTML = `<div style="color:var(--color-chrome); font-size:13px; text-align:center; padding:20px;">NO PRIOR MISSIONS IN TECH-COM LOGS</div>`;
       return;
     }
 
-    listEl.innerHTML = endlessBannerHtml + history
+    listEl.innerHTML = history
       .map((r, i) => {
         const sec = Math.floor(r.durationSeconds);
         const m = Math.floor(sec / 60);
         const s = sec % 60;
         const timeFormatted = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-        const stageName = STAGES[r.stageId]?.name ?? r.stageId;
         const loadoutName = LOADOUTS[r.loadoutId]?.name ?? r.loadoutId;
         const topWeaponDef = r.topWeapon?.id ? ALL_WEAPONS[r.topWeapon.id] : undefined;
         const topWeaponName = topWeaponDef?.name ?? r.topWeapon?.id ?? 'N/A';
@@ -385,7 +344,7 @@ export class EndRunModal {
               <span style="color:var(--color-amber);">${timeFormatted}</span>
             </div>
             <div style="color:var(--color-chrome); display:flex; justify-content:space-between; flex-wrap:wrap; gap:6px;">
-              <span>${stageName} &bull; ${loadoutName}</span>
+              <span>${loadoutName}</span>
               <span>LV ${r.levelReached} &bull; ${r.kills} KILLS &bull; +${r.scrapEarned} ALLOY</span>
             </div>
             <div style="color:rgba(255,255,255,0.7); margin-top:4px; font-size:11px;">

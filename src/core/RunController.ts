@@ -12,10 +12,9 @@ import type { WaveDirector } from '../systems/WaveDirector';
 import type { InteractiveEnvironmentSystem } from '../systems/InteractiveEnvironmentSystem';
 import type { IEnvironment } from '../graphics/environments';
 import type { GameLoop } from './GameLoop';
-import type { LoadoutId, RunConfig, StageId, ThreatModifierId, UpgradeChoice, WeaponId, ActiveEnemy, RunHistoryRecord } from './types';
+import type { LoadoutId, RunConfig, UpgradeChoice, WeaponId, ActiveEnemy, RunHistoryRecord } from './types';
 import { globalEvents } from './EventBus';
 import { globalRNG } from './RNG';
-import { computeThreatScrapMultiplier } from '../data/threatModifiers';
 import { AchievementTracker } from '../state/AchievementTracker';
 import { HIT_STOP_GLOBAL_COOLDOWN } from '../data/balance';
 
@@ -147,21 +146,13 @@ export class RunController {
 
   public startRunWith(config: RunConfig): void {
     const loadoutId = config.loadoutId ?? this.host.saveManager.getData().selectedLoadout ?? 'reese_2029';
-    const stageId = config.stageId ?? 'la_2029_wasteland';
     const seed = config.seed;
-    const isDaily = Boolean(config.daily || (config as any).isDaily);
-    const dailyDateKey = config.daily?.dateKey ?? '';
-    const activeThreats = config.threats;
-    this.startRun(loadoutId, seed, stageId, isDaily, dailyDateKey, activeThreats);
+    this.startRun(loadoutId, seed);
   }
 
   public startRun(
     loadoutId: LoadoutId,
-    customSeed?: number,
-    stageId: StageId = 'la_2029_wasteland',
-    isDaily = false,
-    dailyDateKey = '',
-    activeThreats?: ThreatModifierId[]
+    customSeed?: number
   ): void {
     const seed = (customSeed !== undefined ? customSeed : Date.now()) >>> 0;
     globalRNG.setSeed(seed);
@@ -169,13 +160,9 @@ export class RunController {
       loadoutId,
       this.host.saveManager.getData().upgrades,
       seed,
-      stageId,
-      activeThreats,
       this.host.saveManager.getUnlockedWeapons()
     );
     this.achievementTracker.setRunState(this.host.runState);
-    this.host.runState.isDailyOperation = isDaily;
-    this.host.runState.dailyDateKey = dailyDateKey;
     this.host.runState.autoAimEnabled = this.host.saveManager.getData().settings.autoAim;
 
     this.host.weaponSystem.clear();
@@ -203,54 +190,22 @@ export class RunController {
     this.host.audioEngine.stopMusic();
     this.host.audioEngine.playRunEnd(victory);
 
-    const threatMult = computeThreatScrapMultiplier(Array.from(this.host.runState.activeThreats));
-    const finalScrap = Math.round(this.host.runState.alloyScrapEarned * threatMult);
-
-    if (victory) {
-      this.host.runState.bankedKills = this.host.runState.kills;
-      this.host.runState.bankedScrap = finalScrap;
-    }
-
-    const deltaKills = this.host.runState.isEndless
-      ? Math.max(0, this.host.runState.kills - this.host.runState.bankedKills)
-      : this.host.runState.kills;
-    const deltaScrap = this.host.runState.isEndless
-      ? Math.max(0, finalScrap - this.host.runState.bankedScrap)
-      : finalScrap;
+    const finalScrap = this.host.runState.alloyScrapEarned;
 
     this.host.saveManager.addRunResults(
-      deltaKills,
-      this.host.runState.timeSeconds,
-      deltaScrap,
-      victory,
-      this.host.runState.bossesKilled,
-      this.host.runState.isEndless,
       this.host.runState.kills,
+      this.host.runState.timeSeconds,
       finalScrap,
-      this.host.runState.stageId
+      victory,
+      this.host.runState.bossesKilled
     );
-
-    if (this.host.runState.isDailyOperation && this.host.runState.dailyDateKey) {
-      if (!this.host.saveManager.hasAttemptedDaily(this.host.runState.dailyDateKey)) {
-        this.host.saveManager.recordDailyAttempt({
-          dateKey: this.host.runState.dailyDateKey,
-          completed: victory,
-          score: Math.floor(this.host.runState.timeSeconds * 10 + this.host.runState.kills * 25 + finalScrap * 2),
-          timeSeconds: this.host.runState.timeSeconds,
-          kills: this.host.runState.kills,
-          alloyScrap: finalScrap
-        });
-      }
-    }
 
     globalEvents.emit('run:completed', {
       victory,
       timeSeconds: this.host.runState.timeSeconds,
       kills: this.host.runState.kills,
       alloyScrap: finalScrap,
-      stageId: this.host.runState.stageId,
-      loadoutId: this.host.runState.loadoutId,
-      threatCount: this.host.runState.activeThreats.size
+      loadoutId: this.host.runState.loadoutId
     });
 
     const damageByWeapon = typeof this.host.weaponSystem?.getDamageByWeapon === 'function'
@@ -272,17 +227,12 @@ export class RunController {
       }
     }
 
-    const outcome: 'victory' | 'defeat' | 'endless' = this.host.runState.isEndless
-      ? 'endless'
-      : victory
-        ? 'victory'
-        : 'defeat';
+    const outcome: 'victory' | 'defeat' = victory ? 'victory' : 'defeat';
 
     const runRecord: RunHistoryRecord = {
       id: `run_${Date.now()}_${globalRNG.next().toString(36).slice(2, 7)}`,
       date: new Date().toISOString(),
       durationSeconds: this.host.runState.timeSeconds,
-      stageId: this.host.runState.stageId,
       loadoutId: this.host.runState.loadoutId,
       outcome,
       levelReached: this.host.runState.level,
@@ -291,8 +241,7 @@ export class RunController {
       topWeapon,
       weaponDamageBreakdown: damageByWeapon,
       killsByType: killsByTypeRecord,
-      levelUpTimeline: this.host.runState.levelUpTimeline ? [...this.host.runState.levelUpTimeline] : [],
-      threats: Array.from(this.host.runState.activeThreats)
+      levelUpTimeline: this.host.runState.levelUpTimeline ? [...this.host.runState.levelUpTimeline] : []
     };
 
     if (typeof this.host.saveManager?.recordRunHistory === 'function') {
@@ -316,17 +265,6 @@ export class RunController {
         this.host.runState.mode = 'title';
         this.host.uiManager.titleScreen.show();
       },
-      victory && !this.host.runState.isEndless
-        ? () => {
-            this.host.uiManager.endRunModal.hide();
-            this.host.runState.isEndless = true;
-            this.host.runState.mode = 'playing';
-            this.host.runState.addScrap(100);
-            this.host.audioEngine.startMusic();
-            this.host.uiManager.hudView.show();
-            this.host.uiManager.hudView.triggerBossWarning('CONTINUE THE WAR // ENDLESS MODE ACTIVATED');
-          }
-        : undefined,
       runRecord,
       defeatReason
     );
@@ -473,7 +411,7 @@ export class RunController {
       if (this.activeBoss) {
         this.activeBoss = null;
       }
-      if (enemy.archetype === 'skynet_tde_core' && !this.host.runState.isEndless) {
+      if (enemy.archetype === 'skynet_tde_core') {
         this.endRun(true);
       }
     } else if (enemy.isElite || enemy.state?.isElite) {
@@ -585,18 +523,7 @@ export class RunController {
       }
     }
 
-    this.host.uiManager.hudView.update(this.host.runState, this.activeBoss, this.host.gameLoop.fps, this.host.environment?.getBunkerHealth?.());
-
-    const bunkerHp = this.host.environment?.getBunkerHealth?.();
-    if (bunkerHp && bunkerHp.current <= 0 && this.host.runState.mode === 'playing') {
-      this.endRun(false, 'BUNKER BREACHED');
-      return;
-    }
-
-    if (this.host.runState.stageId === 'century_city_bunker' && this.host.runState.timeSeconds >= 600 && !this.host.runState.isEndless && this.host.runState.mode === 'playing') {
-      this.endRun(true);
-      return;
-    }
+    this.host.uiManager.hudView.update(this.host.runState, this.activeBoss, this.host.gameLoop.fps);
 
     if (this.host.runState.mode === 'playing') {
       this.host.audioEngine.updateMusicIntensity(

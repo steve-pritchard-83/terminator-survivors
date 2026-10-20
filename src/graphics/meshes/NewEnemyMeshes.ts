@@ -87,38 +87,47 @@ export class MotoTerminatorMesh {
 }
 
 export class HydrobotMesh {
+  // Geometry and material are built once and shared by every Hydrobot (they spawn in groups).
+  private static sharedGeometry: THREE.BufferGeometry | null = null;
+  private static sharedMaterial: THREE.MeshStandardMaterial | null = null;
+
   public readonly group = new THREE.Group();
 
+  private static getShared(): { geom: THREE.BufferGeometry; mat: THREE.MeshStandardMaterial } {
+    if (!HydrobotMesh.sharedGeometry || !HydrobotMesh.sharedMaterial) {
+      const bodySteel = 0x3d4852;
+      const jawChrome = 0x90a0b0;
+      const blueSensor = 0x00e5ff;
+
+      const parts: THREE.BufferGeometry[] = [
+        // Head
+        bakePart(new THREE.ConeGeometry(0.14, 0.45, 8), 0, 0.2, 0.3, Math.PI / 2, 0, 0, bodySteel),
+        // Upper clamp jaw
+        bakePart(new THREE.BoxGeometry(0.04, 0.04, 0.28), -0.06, 0.24, 0.5, 0, 0.2, 0, jawChrome),
+        bakePart(new THREE.BoxGeometry(0.04, 0.04, 0.28), 0.06, 0.24, 0.5, 0, -0.2, 0, jawChrome),
+        // Segment 1
+        bakePart(new THREE.CylinderGeometry(0.12, 0.14, 0.35, 8), 0, 0.2, 0, Math.PI / 2, 0, 0, bodySteel),
+        // Segment 2
+        bakePart(new THREE.CylinderGeometry(0.09, 0.12, 0.35, 8), 0, 0.2, -0.3, Math.PI / 2, 0, 0, bodySteel),
+        // Tail fin
+        bakePart(new THREE.BoxGeometry(0.03, 0.16, 0.25), 0, 0.2, -0.58, 0, 0, 0, jawChrome),
+        // Glowing blue optic
+        bakePart(new THREE.SphereGeometry(0.05, 8, 8), 0, 0.28, 0.32, 0, 0, 0, blueSensor)
+      ];
+
+      const geom = mergeParts(parts);
+      geom.userData = { shared: true };
+      const mat = new THREE.MeshStandardMaterial({ vertexColors: true, metalness: 0.9, roughness: 0.2 });
+      mat.userData = { shared: true };
+      HydrobotMesh.sharedGeometry = geom;
+      HydrobotMesh.sharedMaterial = mat;
+    }
+    return { geom: HydrobotMesh.sharedGeometry, mat: HydrobotMesh.sharedMaterial };
+  }
+
   constructor() {
-    const bodySteel = 0x3d4852;
-    const jawChrome = 0x90a0b0;
-    const blueSensor = 0x00e5ff;
-
-    const parts: THREE.BufferGeometry[] = [
-      // Head
-      bakePart(new THREE.ConeGeometry(0.14, 0.45, 8), 0, 0.2, 0.3, Math.PI / 2, 0, 0, bodySteel),
-      // Upper clamp jaw
-      bakePart(new THREE.BoxGeometry(0.04, 0.04, 0.28), -0.06, 0.24, 0.5, 0, 0.2, 0, jawChrome),
-      bakePart(new THREE.BoxGeometry(0.04, 0.04, 0.28), 0.06, 0.24, 0.5, 0, -0.2, 0, jawChrome),
-      // Segment 1
-      bakePart(new THREE.CylinderGeometry(0.12, 0.14, 0.35, 8), 0, 0.2, 0, Math.PI / 2, 0, 0, bodySteel),
-      // Segment 2
-      bakePart(new THREE.CylinderGeometry(0.09, 0.12, 0.35, 8), 0, 0.2, -0.3, Math.PI / 2, 0, 0, bodySteel),
-      // Tail fin
-      bakePart(new THREE.BoxGeometry(0.03, 0.16, 0.25), 0, 0.2, -0.58, 0, 0, 0, jawChrome),
-      // Glowing blue optic
-      bakePart(new THREE.SphereGeometry(0.05, 8, 8), 0, 0.28, 0.32, 0, 0, 0, blueSensor)
-    ];
-
-    const geom = mergeParts(parts);
-    const mat = new THREE.MeshStandardMaterial({
-      vertexColors: true,
-      metalness: 0.9,
-      roughness: 0.2
-    });
-
-    const mesh = new THREE.Mesh(geom, mat);
-    this.group.add(mesh);
+    const { geom, mat } = HydrobotMesh.getShared();
+    this.group.add(new THREE.Mesh(geom, mat));
   }
 
   public dispose(): void {

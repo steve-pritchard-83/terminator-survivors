@@ -309,34 +309,6 @@ export const STAGE_CODEX: Record<
     hazards: 'Barbed wire barricades, active HK-Tank searchlight sweeps, collapsing concrete rubble piles.',
     lore: 'The blasted nuclear ruins of downtown Los Angeles. Fields of crushed human skulls blanket the concrete beneath the relentless searchlights of Hunter-Killer patrols.'
   },
-  cyberdyne_factory: {
-    name: 'Cyberdyne Assembly Plant',
-    era: '2029 A.D.',
-    sector: 'Automated Sub-Level 3 // Industrial Sector',
-    hazards: 'Motorized conveyor belts altering movement momentum, open molten steel vats dealing lethal thermal burn.',
-    lore: 'A fully automated Skynet manufacturing facility churning out hyperalloy combat chassis around the clock. Automated conveyor lines feed assembly jigs over vats of liquid metal.'
-  },
-  tech_noir_1984: {
-    name: 'Tech Noir Nightclub Alley',
-    era: 'May 12, 1984',
-    sector: 'Pico Boulevard // Downtown Los Angeles',
-    hazards: 'Slick wet asphalt reducing traction, neon billboard glare, blaring LAPD squad cruisers.',
-    lore: 'May 12, 1984, 1:47 AM. The rain-slicked neon alleys of 1984 Los Angeles outside the Tech Noir nightclub where Kyle Reese first engaged the Series 800 to protect Sarah Connor.'
-  },
-  skynet_central_tde: {
-    name: 'Skynet Central TDE Facility',
-    era: '2029 A.D.',
-    sector: 'Cheyenne Mountain Complex // Quantum Temporal Chamber',
-    hazards: 'Oscillating laser grid security beams, temporal singularity gravity wells, pylon lightning discharges.',
-    lore: 'The subterranean quantum sanctum housing Skynet\'s Time Displacement Equipment. The temporal displacement ring hums with immense gravitational energy.'
-  },
-  century_city_bunker: {
-    name: 'Century City Resistance Sanctuary',
-    era: '2029 A.D.',
-    sector: 'Tech-Com Underground Haven // Blast Door Vault',
-    hazards: 'Fortified steel blast door under siege by Skynet infiltrators, sandbag choke points, emergency amber alarms.',
-    lore: 'The last underground bastion harboring human refugees and wounded fighters. If the reinforced blast door falls, humanity loses its final haven.'
-  }
 };
 
 

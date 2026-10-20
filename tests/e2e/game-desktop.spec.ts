@@ -3,13 +3,6 @@ import { test, expect } from '@playwright/test';
 test('Desktop gameplay: title, bunker shop, deploy, level up, and combat dive', async ({
   page
 }) => {
-  // Skip the first-run tutorial so Deploy opens the deploy modal directly
-  await page.addInitScript(() => {
-    window.localStorage.setItem(
-      'TERMINATOR_SURVIVORS_SAVE_V1',
-      JSON.stringify({ version: 3, tutorialCompleted: true, totalKills: 1 })
-    );
-  });
   await page.goto('/');
 
   // 1. Title Screen verification
@@ -24,9 +17,6 @@ test('Desktop gameplay: title, bunker shop, deploy, level up, and combat dive', 
 
   // 3. Start Run & Deploy
   await page.getByTestId('btn-start-run').click();
-  await expect(page.locator('#deploy-modal')).toBeVisible();
-  await page.locator('#btn-deploy-next').click(); // stage -> operative
-  await page.locator('#btn-deploy-next').click(); // operative -> deploy (no threats before first victory)
   await expect(page.getByTestId('hud-container')).toBeVisible();
 
   // 4. Verify WebGL state via debug interface
@@ -50,4 +40,46 @@ test('Desktop gameplay: title, bunker shop, deploy, level up, and combat dive', 
   await page.waitForTimeout(50);
   const dashState = await page.evaluate(() => window.__GAME_DEBUG__?.getState());
   expect(dashState?.isDashing || (dashState?.dashCooldown ?? 0) > 0).toBe(true);
+});
+
+// Playtest substitute: spawns every enemy and boss type, lets the simulation run, and fails on any
+// runtime error. Catches crashes in enemy behaviours, telegraphs, drones and elite visuals.
+test('Every enemy and boss type runs without runtime errors', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
+  page.on('console', (m) => {
+    if (m.type() === 'error') errors.push(`console: ${m.text()}`);
+  });
+
+  await page.goto('/');
+  await page.getByTestId('btn-start-run').click();
+  await expect(page.getByTestId('hud-container')).toBeVisible();
+
+  const archetypes = [
+    'skynet_crab_drone', 't600_rusted', 't700_scout', 't800_endoskeleton', 'hk_aerial_patrol',
+    't1_minigun_tracked', 'moto_terminator', 'hydrobot_swarm', 'aerostat_scout', 'plasma_turret',
+    't600_minigunner'
+  ];
+  const bosses = [
+    'infiltrator_csm101', 'hk_tank_goliath', 'hk_aerial_squadron_leader', 't1000_prototype',
+    'skynet_tde_core'
+  ];
+
+  await page.evaluate(
+    ({ archetypes, bosses }) => {
+      const api = window.__GAME_DEBUG__!;
+      api.setGodMode(true);
+      for (const a of archetypes) api.spawnSwarm(a as never, 3);
+      for (const b of bosses) api.spawnBoss(b as never);
+      api.fastForward(60 * 8); // late-game wave pools, elites and phase thresholds
+    },
+    { archetypes, bosses }
+  );
+
+  await page.waitForTimeout(6000);
+
+  const state = await page.evaluate(() => window.__GAME_DEBUG__?.getState());
+  expect(state?.mode).toBe('playing');
+  expect(state?.activeEnemies).toBeGreaterThan(0);
+  expect(errors).toEqual([]);
 });
