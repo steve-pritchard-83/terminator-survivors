@@ -1,9 +1,8 @@
 import * as THREE from 'three';
 import type { EnemyArchetypeId } from '../core/types';
-import { ENEMY_CODEX, WEAPON_CODEX, STAGE_CODEX } from '../data/lore';
+import { ENEMY_CODEX, WEAPON_CODEX } from '../data/lore';
 import { ENEMY_CONFIGS } from '../data/enemies';
 import { BASE_WEAPONS, EVOLVED_WEAPONS, PASSIVES } from '../data/weapons';
-import { STAGES } from '../data/stages';
 import type { SaveManager } from '../state/SaveManager';
 import type { AudioEngine } from '../audio/AudioEngine';
 import { createEnemyPreviewObject } from '../graphics/meshes/EnemyTurntablePreview';
@@ -16,10 +15,9 @@ export class CodexModal {
   private readonly audioEngine: AudioEngine;
   private readonly a11y: ModalA11y;
 
-  private currentTab: 'bestiary' | 'armory' | 'theater' = 'bestiary';
+  private currentTab: 'bestiary' | 'armory' = 'bestiary';
   private selectedEnemyId: EnemyArchetypeId = 't800_endoskeleton';
   private selectedWeaponId = 'ithaca_37';
-  private selectedStageId = 'la_2029_wasteland';
 
   // Turntable Three.js components
   private canvas: HTMLCanvasElement;
@@ -56,9 +54,6 @@ export class CodexModal {
           </button>
           <button class="btn-secondary codex-tab-btn" id="tab-codex-armory" aria-label="Resistance Armory Tab" style="padding:6px 16px; font-size:12px;">
             [2] RESISTANCE ARMORY
-          </button>
-          <button class="btn-secondary codex-tab-btn" id="tab-codex-theater" aria-label="Theater of War Tab" style="padding:6px 16px; font-size:12px;">
-            [3] THEATER OF WAR
           </button>
         </div>
 
@@ -110,9 +105,6 @@ export class CodexModal {
     this.container.querySelector('#tab-codex-armory')?.addEventListener('click', () => {
       this.switchTab('armory');
     });
-    this.container.querySelector('#tab-codex-theater')?.addEventListener('click', () => {
-      this.switchTab('theater');
-    });
 
     this.container.querySelector('#btn-close-codex')?.addEventListener('click', () => {
       this.hide();
@@ -139,7 +131,7 @@ export class CodexModal {
     return this.container.style.display !== 'none';
   }
 
-  private switchTab(tab: 'bestiary' | 'armory' | 'theater'): void {
+  private switchTab(tab: 'bestiary' | 'armory'): void {
     if (this.currentTab === tab) return;
     this.audioEngine.playUiBuy();
     this.currentTab = tab;
@@ -218,10 +210,8 @@ export class CodexModal {
   private renderCurrentTab(): void {
     if (this.currentTab === 'bestiary') {
       this.renderBestiary();
-    } else if (this.currentTab === 'armory') {
-      this.renderArmory();
     } else {
-      this.renderTheater();
+      this.renderArmory();
     }
   }
 
@@ -410,69 +400,6 @@ export class CodexModal {
         <div style="font-family:var(--font-display); font-size:12px; color:var(--color-cyan); margin-bottom:4px;">ORDNANCE DOSSIER & COMBAT LOG:</div>
         <div style="font-size:12px; color:#ddd; line-height:1.5; background:rgba(10,20,30,0.6); padding:10px; border-radius:3px; border-left:3px solid var(--color-cyan);">
           ${lore?.lore ?? def?.levels[0].description ?? 'Standard Tech-Com combat weapon.'}
-        </div>
-      </div>
-    `;
-  }
-
-  // --- 3. THEATER OF WAR TAB ---
-  private renderTheater(): void {
-    const listEl = this.container.querySelector('#codex-item-list')!;
-    const dossierEl = this.container.querySelector('#codex-dossier')!;
-    listEl.innerHTML = '';
-    dossierEl.innerHTML = '';
-
-    const allStages = Object.keys(STAGES) as Array<keyof typeof STAGES>;
-
-    for (const sId of allStages) {
-      const cfg = STAGES[sId];
-      const lore = STAGE_CODEX[sId];
-      const isSelected = this.selectedStageId === sId;
-
-      const item = document.createElement('button');
-      item.type = 'button';
-      item.className = 'upgrade-card';
-      item.setAttribute('aria-label', `${cfg.name}: Era ${lore?.era ?? '2029 A.D.'}`);
-      item.style.cssText = `
-        padding: 6px 10px;
-        background: ${isSelected ? 'rgba(77,210,255,0.2)' : 'rgba(15,25,35,0.7)'};
-        border: 1px solid ${isSelected ? 'var(--color-cyan)' : 'rgba(77,210,255,0.2)'};
-        border-radius: 3px;
-        cursor: pointer;
-      `;
-      item.innerHTML = `
-        <div style="font-family:var(--font-display); font-size:11px; color:#fff;">${cfg.name}</div>
-        <div style="font-size:10px; color:var(--color-amber); margin-top:2px;">${lore?.era ?? '2029 A.D.'}</div>
-      `;
-
-      item.onclick = () => {
-        this.selectedStageId = sId;
-        this.renderTheater();
-      };
-
-      listEl.appendChild(item);
-    }
-
-    // Render Selected Stage Dossier
-    const cfg = STAGES[this.selectedStageId as keyof typeof STAGES];
-    const lore = STAGE_CODEX[this.selectedStageId as keyof typeof STAGE_CODEX];
-
-    dossierEl.innerHTML = `
-      <div style="margin-bottom:12px;">
-        <div style="font-family:var(--font-display); font-size:18px; color:#fff; font-weight:bold;">${cfg.name}</div>
-        <div style="font-family:var(--font-telemetry); font-size:11px; color:var(--color-cyan); margin-bottom:4px;">${lore?.sector ?? 'SECTOR UNKNOWN'}</div>
-        <div style="display:inline-block; font-size:11px; padding:2px 8px; border-radius:3px; background:rgba(77,210,255,0.2); color:var(--color-cyan); margin-bottom:10px;">
-          ERA: ${lore?.era ?? '2029 A.D.'} // DURATION: 10 MINUTES
-        </div>
-
-        <div style="background:rgba(30,10,10,0.6); border:1px solid var(--color-red); padding:8px 12px; border-radius:4px; margin-bottom:12px;">
-          <div style="font-family:var(--font-display); font-size:11px; color:var(--color-red); margin-bottom:2px;">ENVIRONMENTAL HAZARDS:</div>
-          <div style="font-size:12px; color:#fff;">${lore?.hazards ?? 'Heavy machine concentration and aerial sorties.'}</div>
-        </div>
-
-        <div style="font-family:var(--font-display); font-size:12px; color:var(--color-cyan); margin-bottom:4px;">THEATER OF WAR DOSSIER:</div>
-        <div style="font-size:12px; color:#ddd; line-height:1.5; background:rgba(10,20,30,0.6); padding:10px; border-radius:3px; border-left:3px solid var(--color-cyan);">
-          ${lore?.lore ?? cfg.description}
         </div>
       </div>
     `;

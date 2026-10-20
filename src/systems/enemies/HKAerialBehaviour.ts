@@ -1,4 +1,5 @@
 import type * as THREE from 'three';
+import { ENEMY_ATTACK_DAMAGE } from '../../data/balance';
 import type { ActiveEnemy } from '../../core/types';
 import type { EnemyBehaviour, EnemyContext } from './EnemyBehaviour';
 import { HKAerialMesh } from '../../graphics/meshes/HKAerialMesh';
@@ -78,7 +79,7 @@ export class HKAerialBehaviour implements EnemyBehaviour {
         ctx.particles.spawnExplosion(enemy.x, 0.5, enemy.z, 3.5);
         ctx.emit('camera:shake', { trauma: 0.75 });
         if (Math.hypot(px - enemy.x, pz - enemy.z) < 8.0) {
-          ctx.applyPlayerDamage(45);
+          ctx.applyPlayerDamage(ENEMY_ATTACK_DAMAGE.aerialDive);
         }
       } else {
         diveTelegraph.setVisible(false);
@@ -117,7 +118,7 @@ export class HKAerialBehaviour implements EnemyBehaviour {
       if (alertTimer >= 1.2) {
         ctx.audio.playSearchlightAlert();
         ctx.audio.playPlasmaShot(true);
-        ctx.applyPlayerDamage(isBoss ? 28 : 18);
+        ctx.applyPlayerDamage(isBoss ? ENEMY_ATTACK_DAMAGE.aerialSearchlightBoss : ENEMY_ATTACK_DAMAGE.aerialSearchlight);
         alertTimer = 0;
         searchlightTelegraph.setVisible(false);
       }
@@ -159,7 +160,7 @@ export class HKAerialBehaviour implements EnemyBehaviour {
           const bz = enemy.z + Math.cos(hk.group.rotation.y) * (s * 3.8);
           ctx.particles.spawnExplosion(bx, 0.2, bz, 1.4);
           if (Math.hypot(px - bx, pz - bz) < 2.4) {
-            ctx.applyPlayerDamage(22);
+            ctx.applyPlayerDamage(ENEMY_ATTACK_DAMAGE.aerialStrafe);
           }
         }
       } else {
@@ -209,7 +210,7 @@ export class HKAerialBehaviour implements EnemyBehaviour {
             ctx.particles.spawnExplosion(mx, 0.2, mz, 1.6);
             if (!hit && Math.hypot(px - mx, pz - mz) < 2.2) {
               hit = true;
-              ctx.applyPlayerDamage(20);
+              ctx.applyPlayerDamage(ENEMY_ATTACK_DAMAGE.aerialSalvo);
             }
           }
         } else {

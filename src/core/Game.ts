@@ -22,7 +22,7 @@ import { DebugAPI, type DebugAPIHost } from './DebugAPI';
 import { SettingsApplier } from '../ui/SettingsApplier';
 import { globalEvents } from './EventBus';
 import { ErrorReporter } from './ErrorReporter';
-import { STAGES } from '../data/stages';
+import { WASTELAND_STAGE } from '../data/stages';
 import type { LoadoutId, RunConfig } from './types';
 
 export class Game implements RunControllerHost, InputRouterHost, DebugAPIHost {
@@ -129,7 +129,7 @@ export class Game implements RunControllerHost, InputRouterHost, DebugAPIHost {
     this.environment.dispose();
     this.environment = createEnvironment();
     this.sceneManager.scene.add(this.environment.group);
-    this.sceneManager.applyStage(STAGES.la_2029_wasteland);
+    this.sceneManager.applyStage(WASTELAND_STAGE);
   }
 
   public startRun(configOrLoadout: RunConfig | LoadoutId = 'reese_2029', customSeed?: number): void {

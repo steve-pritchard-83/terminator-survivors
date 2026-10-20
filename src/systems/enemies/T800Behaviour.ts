@@ -1,5 +1,6 @@
 import type * as THREE from 'three';
 import { tickCooldown } from './attackTimer';
+import { ENEMY_ATTACK_DAMAGE } from '../../data/balance';
 import type { ActiveEnemy } from '../../core/types';
 import type { EnemyBehaviour, EnemyContext } from './EnemyBehaviour';
 import { LineTelegraph } from '../../graphics/Telegraphs';
@@ -34,7 +35,7 @@ export class T800Behaviour implements EnemyBehaviour {
     } else if (cd <= 0 && distToPlayer >= 7.0 && distToPlayer <= 17.0) {
       cd = 4.0;
       telegraph.setVisible(false);
-      ctx.spawnEnemyProjectile(enemy.x, 1.0, enemy.z, px, pz, 9.0, 15);
+      ctx.spawnEnemyProjectile(enemy.x, 1.0, enemy.z, px, pz, 9.0, ENEMY_ATTACK_DAMAGE.t800Bolt);
     } else {
       telegraph.setVisible(false);
     }

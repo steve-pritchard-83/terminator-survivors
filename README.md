@@ -186,12 +186,6 @@ npm run test:e2e
 
 ---
 
-## 🗺️ Roadmap & Engineering Plan
-
-Open work is tracked in [`TODO.md`](TODO.md).
-
----
-
 ## 📜 Credits & Disclaimers
 
 - Built with tribute to James Cameron, Gale Anne Hurd, Brad Fiedel, and the creators of _The Terminator_ franchise.

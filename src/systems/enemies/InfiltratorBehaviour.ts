@@ -1,5 +1,6 @@
 import type * as THREE from 'three';
 import { tickCooldown } from './attackTimer';
+import { ENEMY_ATTACK_DAMAGE } from '../../data/balance';
 import type { ActiveEnemy } from '../../core/types';
 import type { EnemyBehaviour, EnemyContext } from './EnemyBehaviour';
 import { InfiltratorMesh } from '../../graphics/meshes/InfiltratorMesh';
@@ -108,7 +109,7 @@ export class InfiltratorBehaviour implements EnemyBehaviour {
 
       // Charge impact damage
       if (distToPlayer < 1.6) {
-        ctx.applyPlayerDamage(28);
+        ctx.applyPlayerDamage(ENEMY_ATTACK_DAMAGE.infiltratorCharge);
         ctx.emit('camera:shake', { trauma: 0.4 });
       }
 
@@ -130,7 +131,7 @@ export class InfiltratorBehaviour implements EnemyBehaviour {
         burstTimer = 0.15;
         const spreadX = (ctx.rng.next() - 0.5) * 1.2;
         const spreadZ = (ctx.rng.next() - 0.5) * 1.2;
-        ctx.spawnEnemyProjectile(enemy.x, 1.25, enemy.z, px + spreadX, pz + spreadZ, 12.0, 15);
+        ctx.spawnEnemyProjectile(enemy.x, 1.25, enemy.z, px + spreadX, pz + spreadZ, 12.0, ENEMY_ATTACK_DAMAGE.infiltratorBurst);
         ctx.audio.playPlasmaShot(true);
       }
     } else if (!isCharging) {
@@ -153,7 +154,7 @@ export class InfiltratorBehaviour implements EnemyBehaviour {
     if (walkShootCooldown <= 0 && !isFiring && !isCharging && distToPlayer > 3.0 && distToPlayer < 18.0) {
       walkShootCooldown = 2.4;
       isFiring = true;
-      ctx.spawnEnemyProjectile(enemy.x, 1.25, enemy.z, px, pz, 10.0, 10);
+      ctx.spawnEnemyProjectile(enemy.x, 1.25, enemy.z, px, pz, 10.0, ENEMY_ATTACK_DAMAGE.infiltratorSpray);
       ctx.audio.playPlasmaShot(false);
     }
 

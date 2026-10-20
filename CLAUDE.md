@@ -24,7 +24,7 @@
 
 Exposed during gameplay on `window.__GAME_DEBUG__` for testing and Playwright specs:
 
-- `getState()`: Returns live run state (`mode`, `hp`, `xp`, `weapons`, `passives`, `playerPos`, `activeEnemies`, `stageId`, `threats`, `isDaily`, `isEndless`, `revivalsLeft`, `invulnerabilityTimer`, etc.)
+- `getState()`: Returns live run state (`mode`, `hp`, `xp`, `weapons`, `passives`, `playerPos`, `activeEnemies`, `revivalsLeft`, `invulnerabilityTimer`, etc.)
 - `grantXp(amount)`: Adds XP directly to test level-up triggers
 - `spawnBoss(archetype)`: Spawns specific boss archetype (`hk_aerial_squadron_leader`, `hk_tank_goliath`, `t1000_prototype`, etc.)
 - `spawnSwarm(archetype, count)`: Spawns swarm of enemies around player
@@ -39,11 +39,11 @@ Exposed during gameplay on `window.__GAME_DEBUG__` for testing and Playwright sp
 - `damageEnemy(target, amount, crit)`: Deals damage to enemy/boss/drum through `WeaponSystem.applyDamageToTarget`
 - `killAllEnemies()`: Eliminates all active enemies via `damageEnemy`
 - `setPlayerHp(hp)`: Sets player current HP
-- `startRunWith(config)`: Launches run with custom `RunConfig` (`loadoutId`, `stageId`, `threats`, `seed`, `daily`, `isEndless`)
+- `startRunWith(config)`: Launches run with custom `RunConfig` (`loadoutId`, `seed`)
 
 ## 4. Working Rules (keep it cheap)
 
-Open work lives in `TODO.md`. Read only that and the files the task touches. Do not explore the repo or run the full test suite to "be safe".
+Read only the files the task touches. Do not explore the repo or run the full test suite to "be safe".
 
 1. **Verify with `npm run typecheck`.** Run `npm run test:unit` only when you changed code covered by a test in `tests/unit/` (state, save, RNG, spatial hash, wave director, combat math). Do not run `test:e2e` or `build` unless asked.
 2. **Tests:** add a unit test only for pure logic (math, state, save migration, determinism). Do not write tests for rendering, UI, audio or Three.js wiring.

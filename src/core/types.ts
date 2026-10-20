@@ -72,8 +72,6 @@ export type LoadoutId =
   | 'sarah_connor'
   | 'reprogrammed_t800';
 
-export type StageId = 'la_2029_wasteland';
-
 export type MetaUpgradeId =
   | 'armor_vest'
   | 'combat_stims'

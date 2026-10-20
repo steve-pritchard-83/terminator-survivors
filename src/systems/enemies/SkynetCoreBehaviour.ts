@@ -1,4 +1,5 @@
 import type * as THREE from 'three';
+import { ENEMY_ATTACK_DAMAGE } from '../../data/balance';
 import type { ActiveEnemy } from '../../core/types';
 import type { EnemyBehaviour, EnemyContext } from './EnemyBehaviour';
 import { SkynetCoreMesh } from '../../graphics/meshes/SkynetCoreMesh';
@@ -99,7 +100,7 @@ export class SkynetCoreBehaviour implements EnemyBehaviour {
         const spokeAngle = baseAngle + (s * Math.PI) / 2;
         const tx = enemy.x + Math.sin(spokeAngle) * 14.0;
         const tz = enemy.z + Math.cos(spokeAngle) * 14.0;
-        ctx.spawnEnemyProjectile(enemy.x, 2.5, enemy.z, tx, tz, 9.0, 16);
+        ctx.spawnEnemyProjectile(enemy.x, 2.5, enemy.z, tx, tz, 9.0, ENEMY_ATTACK_DAMAGE.coreSpoke);
       }
       ctx.audio.playPlasmaShot(false);
     }
@@ -124,7 +125,7 @@ export class SkynetCoreBehaviour implements EnemyBehaviour {
           const angle = baseAngle + (b * Math.PI * 2) / boltCount;
           const targetX = enemy.x + Math.sin(angle) * 12.0;
           const targetZ = enemy.z + Math.cos(angle) * 12.0;
-          ctx.spawnEnemyProjectile(enemy.x, 3.6, enemy.z, targetX, targetZ, 8.5, 18);
+          ctx.spawnEnemyProjectile(enemy.x, 3.6, enemy.z, targetX, targetZ, 8.5, ENEMY_ATTACK_DAMAGE.coreNova);
         }
       } else {
         novaTelegraph.setVisible(false);
@@ -153,7 +154,7 @@ export class SkynetCoreBehaviour implements EnemyBehaviour {
           const pullForce = 4.0;
           ctx.runState.playerPos.x += ((enemy.x - px) / distToCore) * pullForce;
           ctx.runState.playerPos.z += ((enemy.z - pz) / distToCore) * pullForce;
-          ctx.applyPlayerDamage(14);
+          ctx.applyPlayerDamage(ENEMY_ATTACK_DAMAGE.corePull);
         }
       } else {
         pullTelegraph.setVisible(false);

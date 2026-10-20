@@ -1,5 +1,6 @@
 import type * as THREE from 'three';
 import { tickCooldown } from './attackTimer';
+import { ENEMY_ATTACK_DAMAGE } from '../../data/balance';
 import type { ActiveEnemy } from '../../core/types';
 import type { EnemyBehaviour, EnemyContext } from './EnemyBehaviour';
 import { HKTankMesh } from '../../graphics/meshes/HKTankMesh';
@@ -90,7 +91,7 @@ export class HKTankBehaviour implements EnemyBehaviour {
       ctx.particles.spawnExplosion(targetX, 0.2, targetZ, 2.5);
       const blastDist = Math.hypot(px - targetX, pz - targetZ);
       if (blastDist < 4.5) {
-        ctx.applyPlayerDamage(35);
+        ctx.applyPlayerDamage(ENEMY_ATTACK_DAMAGE.tankMortar);
       }
       mortarTelegraph.setVisible(false);
       state.targetX = px;
@@ -118,8 +119,8 @@ export class HKTankBehaviour implements EnemyBehaviour {
       const leftZ = enemy.z + Math.cos(targetAngle - 0.25) * 2.2;
       const rightX = enemy.x + Math.sin(targetAngle + 0.25) * 2.2;
       const rightZ = enemy.z + Math.cos(targetAngle + 0.25) * 2.2;
-      ctx.spawnEnemyProjectile(leftX, 1.8, leftZ, px, pz, 14.0, 18);
-      ctx.spawnEnemyProjectile(rightX, 1.8, rightZ, px, pz, 14.0, 18);
+      ctx.spawnEnemyProjectile(leftX, 1.8, leftZ, px, pz, 14.0, ENEMY_ATTACK_DAMAGE.tankCannon);
+      ctx.spawnEnemyProjectile(rightX, 1.8, rightZ, px, pz, 14.0, ENEMY_ATTACK_DAMAGE.tankCannon);
       ctx.audio.playPlasmaShot(true);
     }
     state.cannonCooldown = cannonCooldown;
@@ -151,7 +152,7 @@ export class HKTankBehaviour implements EnemyBehaviour {
             const bz = pz + (ctx.rng.next() - 0.5) * 4.0;
             ctx.particles.spawnExplosion(bx, 0.2, bz, 2.0);
             if (Math.hypot(px - bx, pz - bz) < 3.2) {
-              ctx.applyPlayerDamage(24);
+              ctx.applyPlayerDamage(ENEMY_ATTACK_DAMAGE.tankSearchlightBarrage);
             }
           }
         }

@@ -1,5 +1,6 @@
 import type * as THREE from 'three';
 import { tickCooldown } from './attackTimer';
+import { ENEMY_ATTACK_DAMAGE } from '../../data/balance';
 import type { ActiveEnemy } from '../../core/types';
 import type { EnemyBehaviour, EnemyContext } from './EnemyBehaviour';
 import {
@@ -59,7 +60,7 @@ export class T1MinigunBehaviour implements EnemyBehaviour {
         const angle = facing + b * 0.12;
         const tx = enemy.x + Math.sin(angle) * 10.0;
         const tz = enemy.z + Math.cos(angle) * 10.0;
-        ctx.spawnEnemyProjectile(enemy.x, 0.72, enemy.z, tx, tz, 11.0, 12);
+        ctx.spawnEnemyProjectile(enemy.x, 0.72, enemy.z, tx, tz, 11.0, ENEMY_ATTACK_DAMAGE.t1ConeBolt);
       }
     } else {
       telegraph.setVisible(false);
@@ -152,7 +153,7 @@ export class MotoTerminatorBehaviour implements EnemyBehaviour {
       enemy.vx = state.dashVx ?? 0;
       enemy.vz = state.dashVz ?? 0;
       if (distToPlayer < 1.4) {
-        ctx.applyPlayerDamage(20);
+        ctx.applyPlayerDamage(ENEMY_ATTACK_DAMAGE.motoDash);
       }
       if (dur <= 0) {
         state.isDashing = 0;
@@ -336,7 +337,7 @@ export class PlasmaTurretBehaviour implements EnemyBehaviour {
       telegraph.setVisible(false);
       state.shotCooldown = 2.4;
       ctx.audio.playPlasmaShot(true);
-      ctx.spawnEnemyProjectile(enemy.x, 0.95, enemy.z, px, pz, 13.0, 22);
+      ctx.spawnEnemyProjectile(enemy.x, 0.95, enemy.z, px, pz, 13.0, ENEMY_ATTACK_DAMAGE.turretBolt);
     } else {
       telegraph.setVisible(false);
     }
@@ -405,7 +406,7 @@ export class T600MinigunnerBehaviour implements EnemyBehaviour {
       for (let i = 0; i < 3; i++) {
         const spreadX = (ctx.rng.next() - 0.5) * 1.5;
         const spreadZ = (ctx.rng.next() - 0.5) * 1.5;
-        ctx.spawnEnemyProjectile(enemy.x, 1.15, enemy.z, px + spreadX, pz + spreadZ, 12.0, 14);
+        ctx.spawnEnemyProjectile(enemy.x, 1.15, enemy.z, px + spreadX, pz + spreadZ, 12.0, ENEMY_ATTACK_DAMAGE.minigunnerBurst);
       }
     }
   }

@@ -298,17 +298,5 @@ export const WEAPON_CODEX: Record<
   }
 };
 
-export const STAGE_CODEX: Record<
-  import('../core/types').StageId,
-  { name: string; era: string; sector: string; hazards: string; lore: string }
-> = {
-  la_2029_wasteland: {
-    name: 'Los Angeles Wasteland',
-    era: '2029 A.D.',
-    sector: 'Sector 44 Ruins // Ground Zero',
-    hazards: 'Barbed wire barricades, active HK-Tank searchlight sweeps, collapsing concrete rubble piles.',
-    lore: 'The blasted nuclear ruins of downtown Los Angeles. Fields of crushed human skulls blanket the concrete beneath the relentless searchlights of Hunter-Killer patrols.'
-  },
-};
 
 
