@@ -188,7 +188,7 @@ npm run test:e2e
 
 ## 🗺️ Roadmap & Engineering Plan
 
-For our comprehensive 10-phase engineering roadmap and correctness audit scorecard, see [`roadmap.md`](roadmap.md).
+Open work is tracked in [`TODO.md`](TODO.md).
 
 ---
 

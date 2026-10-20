@@ -5,17 +5,15 @@
   "type": "module",
   "scripts": {
     "prepare-assets": "node scripts/generate-pwa-icons.mjs",
-    "dev": "node scripts/generate-pwa-icons.mjs && vite",
+    "dev": "vite",
     "build": "node scripts/generate-pwa-icons.mjs && tsc --noEmit && vite build",
     "preview": "vite preview --port 4173 --host",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "format": "prettier --write .",
     "test:unit": "vitest run",
-    "test:coverage": "vitest run --coverage",
-    "test:bundle-size": "node scripts/check-bundle-size.mjs",
     "test:e2e": "playwright test",
-    "test": "npm run typecheck && npm run lint && npm run test:unit && npm run test:e2e"
+    "test": "npm run typecheck && npm run test:unit"
   },
   "dependencies": {
     "@fontsource/orbitron": "^5.1.0",

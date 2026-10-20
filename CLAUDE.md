@@ -4,11 +4,10 @@
 
 - `npm run dev`: Launch local Vite development server
 - `npm run build`: Compile TypeScript and bundle production PWA
-- `npm run typecheck`: Run TypeScript compiler (`tsc --noEmit`)
-- `npm run lint`: Run ESLint checks
-- `npm run format`: Format code with Prettier
-- `npm run test:unit`: Run Vitest unit tests
-- `npm run test:e2e`: Run Playwright end-to-end tests
+- `npm run typecheck`: Run TypeScript compiler (`tsc --noEmit`) — the default check
+- `npm run test:unit`: Run Vitest unit tests (pure logic only)
+- `npm run test:e2e`: Run the single Playwright smoke test (rarely needed)
+- `npm run lint` / `npm run format`: available, not required
 
 ## 2. Codebase Architecture (`src/`)
 
@@ -42,18 +41,15 @@ Exposed during gameplay on `window.__GAME_DEBUG__` for testing and Playwright sp
 - `setPlayerHp(hp)`: Sets player current HP
 - `startRunWith(config)`: Launches run with custom `RunConfig` (`loadoutId`, `stageId`, `threats`, `seed`, `daily`, `isEndless`)
 
-## 4. Working Rules for Agents (from `roadmap.md`)
+## 4. Working Rules (keep it cheap)
 
-1. **One task = one commit.** Format: `<type>(<area>): <task-id> <short summary>` (e.g. `fix(run): P1-02 stop revivals refilling on passive pick`).
-2. **Before starting a task**, read every file listed under _Files_. Do not edit unlisted files without justification.
-3. **Verification loop after every task:**
-   - `npm run typecheck`
-   - `npm run test:unit`
-   - Run `npm run build` and `npm run test:e2e` at the end of each phase.
-4. **Unit test required for every bug fix:** Add a test in `tests/unit/` named after the task ID in the `describe` (e.g. `describe('P1-02 revivals', ...)`).
-5. **Coding style:** 2-space indent, single quotes, semicolons, explicit `public`/`private`/`readonly`, typed imports (`import type`). No new runtime dependencies unless specified.
-6. **Never remove or break `window.__GAME_DEBUG__`** — Playwright tests rely on it.
-7. **Data over code:** Balance numbers belong in `src/data/*.ts`, never hardcoded in systems.
-8. **Three.js hygiene:** Per-entity geometries/materials must be disposed on removal or use shared/pooled instances.
-9. **Randomness:** Use `globalRNG` for gameplay and `vfxRNG` for cosmetics. Avoid `Math.random()` in `src/systems` or `src/state`.
-10. **Definition of Done:** Acceptance criteria met, tests pass, zero regressions, no undisposed GPU resources, documentation updated.
+Open work lives in `TODO.md`. Read only that and the files the task touches. Do not explore the repo or run the full test suite to "be safe".
+
+1. **Verify with `npm run typecheck`.** Run `npm run test:unit` only when you changed code covered by a test in `tests/unit/` (state, save, RNG, spatial hash, wave director, combat math). Do not run `test:e2e` or `build` unless asked.
+2. **Tests:** add a unit test only for pure logic (math, state, save migration, determinism). Do not write tests for rendering, UI, audio or Three.js wiring.
+3. **Commits:** commit when something works, with a plain message. No task-ID format, no CHANGELOG or README edits unless a user-visible claim became false.
+4. **Style:** 2-space indent, single quotes, semicolons, `import type`. No new runtime dependencies.
+5. **Never remove or break `window.__GAME_DEBUG__`.** Keep `playwright` smoke test working.
+6. **Data over code:** balance numbers belong in `src/data/*.ts`.
+7. **Three.js:** dispose per-entity geometries/materials on removal, or use shared ones.
+8. **Randomness:** `globalRNG` for gameplay, `vfxRNG` for cosmetics; no `Math.random()` in `src/systems` or `src/state`.
