@@ -9,7 +9,14 @@ import { ENEMY_CONFIGS, applyEliteAffix, handleEliteDeath } from '../data/enemie
 import { InstancedPool, type PoolableUser } from '../graphics/InstancedPool';
 import { globalEvents } from '../core/EventBus';
 import { globalRNG } from '../core/RNG';
-import { ENEMY_LEASH_DISTANCE, ENEMY_RELOCATE_MAX_DIST, ENEMY_RELOCATE_MIN_DIST } from '../data/waves';
+import {
+  AEROSTAT_MARK,
+  EMPLACEMENT_DESPAWN_DISTANCE,
+  ENEMY_LEASH_DISTANCE,
+  ENEMY_RELOCATE_MAX_DIST,
+  ENEMY_RELOCATE_MIN_DIST,
+  LEASH_EXEMPT_ARCHETYPES
+} from '../data/waves';
 import { type EnemyBehaviour, type EnemyContext, createEnemyBehaviourRegistry } from './enemies';
 import type { IEnvironment } from '../graphics/environments';
 
@@ -54,7 +61,7 @@ export class EnemySystem {
       runState: this.runState, audio: this.audio, particles: this.particles,
       spawnEnemyProjectile: (x, y, z, tx, tz, spd, dmg) => this.spawnEnemyProjectile(x, y, z, tx, tz, spd, dmg),
       spawnEnemy: (arch, x, z) => this.spawnEnemy(arch, x, z), applyPlayerDamage: (dmg) => this.applyPlayerDamage(dmg),
-      emit: (evt, payload) => globalEvents.emit(evt, payload), rng: globalRNG, group: this.group, timeSeconds: 0
+      emit: (evt, payload) => globalEvents.emit(evt, payload), rng: globalRNG, activeEnemies: this.activeEnemies, group: this.group, timeSeconds: 0
     };
   }
 
@@ -107,10 +114,22 @@ export class EnemySystem {
       if (enemy.hitFlashTimer > 0) enemy.hitFlashTimer -= dt;
       if (enemy.slowTimer > 0) enemy.slowTimer -= dt; if (enemy.attackCooldown > 0) enemy.attackCooldown = Math.max(0, enemy.attackCooldown - dt);
 
-      const effectiveSpeed = enemy.speed * (enemy.slowTimer > 0 ? 0.6 : 1.0) * (this.runState.activeThreats.has('relentless_pursuit') ? 1.15 : 1.0);
+      let markBuff = 1.0;
+      if (enemy.state && (enemy.state.speedBuffTimer ?? 0) > 0) {
+        enemy.state.speedBuffTimer -= dt;
+        markBuff = AEROSTAT_MARK.speedMultiplier;
+      }
+      const effectiveSpeed = enemy.speed * markBuff * (enemy.slowTimer > 0 ? 0.6 : 1.0) * (this.runState.activeThreats.has('relentless_pursuit') ? 1.15 : 1.0);
       let dx = px - enemy.x; let dz = pz - enemy.z; let dist = Math.hypot(dx, dz);
 
-      if (!enemy.isBoss && dist > ENEMY_LEASH_DISTANCE) {
+      if (LEASH_EXEMPT_ARCHETYPES.has(enemy.archetype)) {
+        if (dist > EMPLACEMENT_DESPAWN_DISTANCE) {
+          // Silent removal: no kill, XP or event.
+          this.activeEnemies.splice(i, 1);
+          this.behaviours[enemy.archetype]?.dispose?.(enemy, this.context);
+          continue;
+        }
+      } else if (!enemy.isBoss && dist > ENEMY_LEASH_DISTANCE) {
         this.relocateEnemy(enemy, px, pz);
         dx = px - enemy.x; dz = pz - enemy.z; dist = Math.hypot(dx, dz);
       }

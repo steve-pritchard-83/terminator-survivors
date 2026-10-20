@@ -1,6 +1,13 @@
 import type { RunState } from '../state/RunState';
 import type { EnemySystem } from './EnemySystem';
-import { RUN_DURATION_MINUTES, WAVE_TIMELINE } from '../data/waves';
+import {
+  EMPLACEMENT_SPAWN_MAX_DIST,
+  EMPLACEMENT_SPAWN_MIN_DIST,
+  HYDROBOT_FORMATION,
+  LEASH_EXEMPT_ARCHETYPES,
+  RUN_DURATION_MINUTES,
+  WAVE_TIMELINE
+} from '../data/waves';
 import { STAGES } from '../data/stages';
 import { globalEvents } from '../core/EventBus';
 import { globalRNG } from '../core/RNG';
@@ -154,10 +161,28 @@ export class WaveDirector {
     // Spawn on camera perimeter
     const px = this.runState.playerPos.x;
     const pz = this.runState.playerPos.z;
-    const angle = globalRNG.range(0, Math.PI * 2);
-    const dist = globalRNG.range(22, 28);
-    const sx = px + Math.cos(angle) * dist;
-    const sz = pz + Math.sin(angle) * dist;
+    let angle = globalRNG.range(0, Math.PI * 2);
+    let dist = globalRNG.range(22, 28);
+    let sx = px + Math.cos(angle) * dist;
+    let sz = pz + Math.sin(angle) * dist;
+
+    if (LEASH_EXEMPT_ARCHETYPES.has(chosenArchetype)) {
+      // Fixed emplacement placed ahead of the player's movement
+      const heading = this.runState.isMoving ? this.runState.playerMoveAngle : this.runState.playerFacing;
+      angle = heading + globalRNG.range(-0.6, 0.6);
+      dist = globalRNG.range(EMPLACEMENT_SPAWN_MIN_DIST, EMPLACEMENT_SPAWN_MAX_DIST);
+      sx = px + Math.sin(angle) * dist;
+      sz = pz + Math.cos(angle) * dist;
+    }
+
+    if (chosenArchetype === 'hydrobot_swarm') {
+      for (let i = 0; i < HYDROBOT_FORMATION.count; i++) {
+        const ox = (globalRNG.next() - 0.5) * 2 * HYDROBOT_FORMATION.spread;
+        const oz = (globalRNG.next() - 0.5) * 2 * HYDROBOT_FORMATION.spread;
+        this.enemySystem.spawnEnemy(chosenArchetype, sx + ox, sz + oz, hpMult, dmgMult);
+      }
+      return;
+    }
 
     const isElite = eliteChance > 0 && globalRNG.chance(eliteChance);
     const affix = isElite ? (globalRNG.pick(Object.keys(ELITE_AFFIXES) as EliteAffix[])) : undefined;

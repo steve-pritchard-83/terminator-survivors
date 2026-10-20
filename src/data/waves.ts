@@ -14,8 +14,23 @@ export interface WaveMinuteEntry {
 
 export const RUN_DURATION_MINUTES = 10;
 export const ENEMY_LEASH_DISTANCE = 40;
+
+// Stationary emplacements are never relocated by the leash; they despawn silently once left far behind.
+export const LEASH_EXEMPT_ARCHETYPES: ReadonlySet<string> = new Set(['plasma_turret']);
+export const EMPLACEMENT_DESPAWN_DISTANCE = 60;
+export const EMPLACEMENT_SPAWN_MIN_DIST = 15;
+export const EMPLACEMENT_SPAWN_MAX_DIST = 25;
+
+// Hydrobots arrive as a tight formation instead of one at a time.
+export const HYDROBOT_FORMATION = { count: 12, spread: 3 };
+
+// Aerostat mark: enemies near a marked player move faster for a short time.
+export const AEROSTAT_MARK = { radius: 8, speedMultiplier: 1.2, durationSeconds: 4 };
 export const ENEMY_RELOCATE_MIN_DIST = 22;
 export const ENEMY_RELOCATE_MAX_DIST = 28;
+
+const HYDROBOT_FIRST_MINUTE = 1;
+const HEAVY_INFANTRY_FIRST_MINUTE = 3;
 
 export interface BuildWaveTimelineParams {
   bossOrder?: Record<number, { boss: EnemyArchetypeId; alertBanner: string }>;
@@ -81,6 +96,15 @@ export function buildWaveTimeline(params: BuildWaveTimelineParams = {}): WaveMin
         { archetype: 'aerostat_scout', weight: 2 }
       ];
     }
+
+    // Hydrobot swarms start at minute 1; T-1 and T-600 Minigunner start at minute 3.
+    pool = pool.filter((p) => {
+      if (p.archetype === 'hydrobot_swarm') return minute >= HYDROBOT_FIRST_MINUTE;
+      if (p.archetype === 't1_minigun_tracked' || p.archetype === 't600_minigunner') {
+        return minute >= HEAVY_INFANTRY_FIRST_MINUTE;
+      }
+      return true;
+    });
 
     if (params.poolWeights) {
       pool = pool.map((p) => ({

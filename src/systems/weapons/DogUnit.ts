@@ -123,7 +123,7 @@ export class DogUnit implements WeaponPattern {
 
         if (!targetEnemy) {
           // Patrol near player
-          const patrolAngle = (Date.now() * 0.002) + (i * (Math.PI * 2 / this.dogs.length));
+          const patrolAngle = (ctx.runState.timeSeconds * 2) + (i * (Math.PI * 2 / this.dogs.length));
           targetX = px + Math.cos(patrolAngle) * 3.2;
           targetZ = pz + Math.sin(patrolAngle) * 3.2;
         }

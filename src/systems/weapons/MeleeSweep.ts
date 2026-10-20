@@ -1,10 +1,36 @@
 import type * as THREE from 'three';
-import type { WeaponDefinition, WeaponLevelStats } from '../../core/types';
+import type { ActiveEnemy, WeaponDefinition, WeaponLevelStats } from '../../core/types';
 import type { WeaponPattern, WeaponFireContext } from './WeaponPattern';
 import { createSlashArcMesh } from '../../graphics/meshes/AllyMeshes';
 import { disposeObject3D } from '../../graphics/dispose';
 
+const SLASH_FADE_SECONDS = 0.16;
+
 export class MeleeSweep implements WeaponPattern {
+  private readonly slashes: Array<{ mesh: THREE.Mesh; elapsed: number }> = [];
+
+  public update(dt: number, _px: number, _pz: number, _enemies: ActiveEnemy[], ctx: WeaponFireContext): void {
+    for (let i = this.slashes.length - 1; i >= 0; i--) {
+      const s = this.slashes[i];
+      s.elapsed += dt;
+      const progress = Math.min(1, s.elapsed / SLASH_FADE_SECONDS);
+      (s.mesh.material as THREE.MeshBasicMaterial).opacity = (1 - progress) * 0.85;
+      if (progress >= 1) {
+        ctx.group.remove(s.mesh);
+        disposeObject3D(s.mesh);
+        this.slashes.splice(i, 1);
+      }
+    }
+  }
+
+  public clear(group: THREE.Group): void {
+    for (const s of this.slashes) {
+      group.remove(s.mesh);
+      disposeObject3D(s.mesh);
+    }
+    this.slashes.length = 0;
+  }
+
   public fire(
     def: WeaponDefinition,
     stats: WeaponLevelStats,
@@ -29,19 +55,8 @@ export class MeleeSweep implements WeaponPattern {
     slashMesh.rotation.y = targetAngle;
     ctx.group.add(slashMesh);
 
-    // Fade out slash arc over 0.16s
-    let elapsed = 0;
-    const duration = 0.16;
-    const interval = setInterval(() => {
-      elapsed += 0.032;
-      const progress = Math.min(1, elapsed / duration);
-      (slashMesh.material as THREE.MeshBasicMaterial).opacity = (1 - progress) * 0.85;
-      if (progress >= 1) {
-        clearInterval(interval);
-        ctx.group.remove(slashMesh);
-        disposeObject3D(slashMesh);
-      }
-    }, 32);
+    // Fades out over SLASH_FADE_SECONDS in simulated time (see update)
+    this.slashes.push({ mesh: slashMesh, elapsed: 0 });
 
     ctx.audio.playEndoHit();
     ctx.playerMesh.pulseMuzzleFlash(slashColor);

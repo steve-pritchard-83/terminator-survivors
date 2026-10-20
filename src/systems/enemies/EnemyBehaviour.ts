@@ -23,6 +23,7 @@ export interface EnemyContext {
   applyPlayerDamage: (rawDamage: number) => void;
   emit: <K extends keyof GameEventMap>(event: K, payload: GameEventMap[K]) => void;
   rng: typeof globalRNG;
+  activeEnemies?: ActiveEnemy[];
   group: THREE.Group;
   timeSeconds: number;
 }

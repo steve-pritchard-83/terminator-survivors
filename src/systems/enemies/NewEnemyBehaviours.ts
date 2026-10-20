@@ -10,6 +10,7 @@ import {
   T600MinigunnerMesh
 } from '../../graphics/meshes/NewEnemyMeshes';
 import { ConeTelegraph, LineTelegraph } from '../../graphics/Telegraphs';
+import { AEROSTAT_MARK } from '../../data/waves';
 
 export class T1MinigunBehaviour implements EnemyBehaviour {
   private readonly meshes = new Map<number, T1MinigunMesh>();
@@ -263,6 +264,12 @@ export class AerostatScoutBehaviour implements EnemyBehaviour {
     // Marks player when spotted within 12m -> speeds up nearby enemies by +20% for 4s
     if (pingCd <= 0 && distToPlayer < 12.0) {
       state.pingCooldown = 5.0;
+      for (const other of ctx.activeEnemies ?? []) {
+        if (Math.hypot(other.x - px, other.z - pz) <= AEROSTAT_MARK.radius) {
+          other.state = other.state ?? {};
+          other.state.speedBuffTimer = AEROSTAT_MARK.durationSeconds;
+        }
+      }
       ctx.audio.playSearchlightAlert();
       ctx.particles.spawnPlasmaImpact(enemy.x, hoverY, enemy.z);
     }
