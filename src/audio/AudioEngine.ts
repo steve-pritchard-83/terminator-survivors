@@ -1052,6 +1052,36 @@ export class AudioEngine {
     if (signature) this.playSample(signature, 0.7, 1.0, 0.0);
   }
 
+  /**
+   * Synthesised warning cues for telegraphed attacks (the sound library has nothing suitable):
+   * a falling whistle for incoming mortar fire, a rising charge for the Core's nova and pull.
+   */
+  public playTelegraph(kind: 'mortar' | 'charge', seconds: number): void {
+    if (!this.ctx || !this.sfxGain) return;
+    const t = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    if (kind === 'mortar') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(2100, t);
+      osc.frequency.exponentialRampToValueAtTime(420, t + seconds);
+      gain.gain.setValueAtTime(0.0001, t);
+      gain.gain.exponentialRampToValueAtTime(0.09, t + seconds * 0.7);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + seconds);
+    } else {
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(70, t);
+      osc.frequency.exponentialRampToValueAtTime(380, t + seconds);
+      gain.gain.setValueAtTime(0.0001, t);
+      gain.gain.exponentialRampToValueAtTime(0.12, t + seconds * 0.9);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + seconds + 0.05);
+    }
+    osc.connect(gain);
+    gain.connect(this.sfxGain);
+    osc.start(t);
+    osc.stop(t + seconds + 0.1);
+  }
+
   public playSearchlightAlert(): void {
     this.triggerHaptic([35, 50, 35, 50, 55], 250);
     this.playSample('hkAlert', 0.62, 1.0, 0.0);

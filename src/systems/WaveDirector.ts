@@ -7,6 +7,7 @@ import {
   LEASH_EXEMPT_ARCHETYPES,
   PACK_SPAWN,
   RUN_DURATION_MINUTES,
+  threatMultipliers,
   WAVE_TIMELINE
 } from '../data/waves';
 import { globalEvents } from '../core/EventBus';
@@ -56,8 +57,9 @@ export class WaveDirector {
 
     if (!entry) return;
 
-    const hpMultiplier = entry.hpMultiplier;
-    const damageMultiplier = entry.damageMultiplier;
+    const threat = threatMultipliers(this.runState.threat);
+    const hpMultiplier = entry.hpMultiplier * threat.hp;
+    const damageMultiplier = entry.damageMultiplier * threat.damage;
     const eliteChance = entry.eliteChance;
 
     // Normal wave spawns, thinned out while a boss is alive so the fight stays readable
@@ -79,7 +81,8 @@ export class WaveDirector {
     const bx = px + Math.cos(angle) * dist;
     const bz = pz + Math.sin(angle) * dist;
 
-    const boss = this.enemySystem.spawnEnemy(archetype, bx, bz, 1.25, 1.2);
+    const threat = threatMultipliers(this.runState.threat);
+    const boss = this.enemySystem.spawnEnemy(archetype, bx, bz, 1.25 * threat.hp, 1.2 * threat.damage);
     globalEvents.emit('boss:spawned', {
       archetype,
       name: bannerText ?? (ENEMY_CONFIGS[archetype]?.name ?? archetype).toUpperCase(),

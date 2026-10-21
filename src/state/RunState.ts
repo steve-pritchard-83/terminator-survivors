@@ -15,6 +15,7 @@ import { LOADOUTS, META_UPGRADES } from '../data/upgrades';
 import { globalRNG } from '../core/RNG';
 import { StateMachine, GAME_MODE_TRANSITIONS } from '../core/StateMachine';
 import { globalEvents } from '../core/EventBus';
+import { threatMultipliers } from '../data/waves';
 import { MAX_REVIVAL_CHANCE, REVIVE_INVULNERABILITY_SECONDS, UPGRADE_OFFERS } from '../data/balance';
 
 export function getXpForNextLevel(level: number): number {
@@ -45,6 +46,8 @@ export class RunState {
   public xpToNext = getXpForNextLevel(1);
   public pendingLevelUps = 0;
   public seed = 0;
+  /** Threat level of this run (0 = standard) */
+  public threat = 0;
   public hp = 100;
   public maxHp = 100;
   public kills = 0;
@@ -222,7 +225,7 @@ export class RunState {
   }
 
   public addScrap(baseAmount: number): number {
-    const gained = Math.max(1, Math.round(baseAmount * this.computedStats.xpGainMultiplier));
+    const gained = Math.max(1, Math.round(baseAmount * this.computedStats.xpGainMultiplier * threatMultipliers(this.threat).scrap));
     this.alloyScrapEarned += gained;
     return gained;
   }

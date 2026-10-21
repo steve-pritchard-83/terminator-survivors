@@ -153,17 +153,21 @@ export class RunController {
     this.host.uiManager.hudView.onPauseClicked = () => {
       this.togglePause();
     };
+    this.host.uiManager.hudView.onEvolutionReady = () => {
+      this.showTipOnce('evolve', 'WEAPON READY TO EVOLVE. OPEN A DATA VAULT: BOSSES AND SOME ELITES DROP THEM.');
+    };
   }
 
   public startRunWith(config: RunConfig): void {
     const loadoutId = config.loadoutId ?? this.host.saveManager.getData().selectedLoadout ?? 'reese_2029';
     const seed = config.seed;
-    this.startRun(loadoutId, seed);
+    this.startRun(loadoutId, seed, config.threat ?? this.host.saveManager.getData().selectedThreat ?? 0);
   }
 
   public startRun(
     loadoutId: LoadoutId,
-    customSeed?: number
+    customSeed?: number,
+    threat = 0
   ): void {
     const seed = (customSeed !== undefined ? customSeed : Date.now()) >>> 0;
     globalRNG.setSeed(seed);
@@ -173,6 +177,7 @@ export class RunController {
       seed,
       this.host.saveManager.getUnlockedWeapons()
     );
+    this.host.runState.threat = threat;
     this.achievementTracker.setRunState(this.host.runState);
     this.host.runState.autoAimEnabled = this.host.saveManager.getData().settings.autoAim;
 
@@ -190,6 +195,7 @@ export class RunController {
     this.host.audioEngine.init();
     this.host.audioEngine.playRunStart();
     this.host.audioEngine.startMusic();
+    this.showTipOnce('move', 'MOVE TO SURVIVE. KYLE AIMS AND FIRES ON HIS OWN.');
     this.host.audioEngine.startAmbience();
 
     this.host.onRunStarted?.();
@@ -203,6 +209,7 @@ export class RunController {
     // The end-of-run movie has its own audio; the jingle only plays if the movie can't
 
     const finalScrap = this.host.runState.alloyScrapEarned;
+    if (victory) this.host.saveManager.recordThreatVictory(this.host.runState.threat);
 
     this.host.saveManager.addRunResults(
       this.host.runState.kills,
@@ -336,8 +343,17 @@ export class RunController {
     this.host.uiManager.titleScreen.show();
   }
 
+  /** One-time first-run tip, shown on the HUD and remembered in the save. */
+  public showTipOnce(id: string, text: string): void {
+    if (this.host.saveManager.hasSeenTip(id)) return;
+    this.host.saveManager.markTipSeen(id);
+    this.host.uiManager.hudView.showTip(text);
+  }
+
   public showLevelUpModal(level: number, choices: UpgradeChoice[]): void {
     this.host.runState.mode = 'levelup';
+    const firstLevelUp = !this.host.saveManager.hasSeenTip('levelup');
+    if (firstLevelUp) this.host.saveManager.markTipSeen('levelup');
     this.host.audioEngine.playHudScanOpen();
     this.host.uiManager.levelUpModal.show(
       level,
@@ -357,6 +373,9 @@ export class RunController {
       },
       {
         rerollsLeft: this.host.runState.rerollsLeft,
+        tip: firstLevelUp
+          ? 'WEAPONS FIRE ON THEIR OWN AND PASSIVES BOOST THEM. A LEVEL 8 WEAPON PLUS ITS PAIRED PASSIVE EVOLVES AT A DATA VAULT.'
+          : undefined,
         onReroll: () => {
           if (this.host.runState.useReroll()) {
             this.host.audioEngine.playUiClick();

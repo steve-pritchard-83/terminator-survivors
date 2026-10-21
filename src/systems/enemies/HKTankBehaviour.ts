@@ -83,6 +83,10 @@ export class HKTankBehaviour implements EnemyBehaviour {
 
     const chargeProgress = Math.min(1, chargeTimer / 3.0);
     if (chargeTimer >= 3.0 - TANK_MORTAR_WARNING_SECONDS) {
+      if (!state.mortarCued) {
+        state.mortarCued = 1;
+        ctx.audio.playTelegraph('mortar', TANK_MORTAR_WARNING_SECONDS);
+      }
       mortarTelegraph.update(targetX, targetZ, (chargeTimer - (3.0 - TANK_MORTAR_WARNING_SECONDS)) / TANK_MORTAR_WARNING_SECONDS, 4.5);
     } else {
       mortarTelegraph.setVisible(false);
@@ -90,6 +94,7 @@ export class HKTankBehaviour implements EnemyBehaviour {
 
     if (chargeTimer >= 3.0) {
       state.chargeTimer = 0;
+      state.mortarCued = 0;
       enemy.chargeTimer = 0;
       ctx.audio.playExplosion(1.8);
       ctx.particles.spawnExplosion(targetX, 0.2, targetZ, 2.5);

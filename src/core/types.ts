@@ -291,6 +291,11 @@ export interface MetaSaveData {
   discoveredWeapons?: string[];
   discoveredEvolutions?: string[];
   runHistory?: RunHistoryRecord[];
+  /** One-time first-run tips already shown */
+  tipsSeen?: string[];
+  /** Highest threat level unlocked (0 = none yet) and the one chosen for the next run */
+  threatUnlocked?: number;
+  selectedThreat?: number;
 }
 
 export interface RunHistoryRecord {
@@ -344,6 +349,7 @@ export interface RuntimeSettings {
 export interface RunConfig {
   loadoutId?: LoadoutId;
   seed?: number;
+  threat?: number;
 }
 
 export interface GameDebugAPI {

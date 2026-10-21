@@ -111,10 +111,15 @@ export class SkynetCoreBehaviour implements EnemyBehaviour {
       state.novaCooldown = novaCd;
 
       if (novaCd <= 0.6 && novaCd > 0) {
+        if (!state.novaCued) {
+          state.novaCued = 1;
+          ctx.audio.playTelegraph('charge', 0.6);
+        }
         const progress = (0.6 - novaCd) / 0.6;
         novaTelegraph.update(enemy.x, enemy.z, progress, 12.0);
       } else if (novaCd <= 0) {
         state.novaCooldown = 4.8;
+        state.novaCued = 0;
         novaTelegraph.setVisible(false);
         ctx.emit('camera:shake', { trauma: 0.5 });
         ctx.audio.playEnemyShot('heavy');
@@ -140,11 +145,16 @@ export class SkynetCoreBehaviour implements EnemyBehaviour {
       state.pullTimer = pullTimer;
 
       if (pullTimer <= 1.0 && pullTimer > 0) {
+        if (!state.pullCued) {
+          state.pullCued = 1;
+          ctx.audio.playTelegraph('charge', 1.0);
+        }
         const progress = (1.0 - pullTimer) / 1.0;
         pullTelegraph.update(enemy.x, enemy.z, progress, 16.0);
       } else if (pullTimer <= 0) {
         pullTelegraph.setVisible(false);
         state.pullTimer = 3.5;
+        state.pullCued = 0;
         ctx.audio.playEmpBlast();
         ctx.emit('camera:shake', { trauma: 0.7 });
 

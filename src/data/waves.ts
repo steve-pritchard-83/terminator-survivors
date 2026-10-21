@@ -149,3 +149,13 @@ export const PACK_SPAWN = {
   max: 6,
   spread: 2.2
 };
+
+// Threat levels: unlocked one at a time by winning at the highest one reached. Each step makes the
+// machines tougher and pays more scrap.
+export const MAX_THREAT = 5;
+export const THREAT_STEP = { hp: 0.3, damage: 0.15, scrap: 0.25 };
+export const threatMultipliers = (threat: number) => ({
+  hp: 1 + threat * THREAT_STEP.hp,
+  damage: 1 + threat * THREAT_STEP.damage,
+  scrap: 1 + threat * THREAT_STEP.scrap
+});

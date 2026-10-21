@@ -2,7 +2,9 @@ import type { RunState } from '../state/RunState';
 import { LOADOUTS } from '../data/upgrades';
 import { DamageNumbers } from './DamageNumbers';
 import { globalEvents } from '../core/EventBus';
-import { icon } from './icons';
+import { icon, passiveIcon, weaponIcon } from './icons';
+import { BASE_WEAPONS, PASSIVES } from '../data/weapons';
+import type { BaseWeaponId } from '../core/types';
 
 /**
  * Minimal in-run HUD: health, thin XP bar with level, timer, ability cooldown (only when the
@@ -26,6 +28,12 @@ export class HUDView {
   private readonly bossWarningText: HTMLElement;
   private readonly floatingTextLayer: HTMLElement;
   private readonly fpsCounterEl: HTMLElement;
+  private readonly buildEl: HTMLElement;
+  private lastBuildKey = '';
+  private readonly tipEl: HTMLElement;
+  private tipTimer: number | null = null;
+  /** Called the first time any weapon is ready to evolve in a run */
+  public onEvolutionReady: (() => void) | null = null;
   public onPauseClicked: (() => void) | null = null;
   private lastXp = 0;
   private lastLevel = 1;
@@ -49,6 +57,10 @@ export class HUDView {
         <div class="hudm-chip hudm-clock" data-testid="hud-timer"><span id="hud-clock-text">00:00</span></div>
         <button class="hudm-pause" data-testid="btn-hud-pause" id="btn-hud-pause" aria-label="Pause">${icon('pause')}</button>
       </div>
+
+      <div class="hudm-build" id="hud-build" data-testid="hud-build" aria-label="Equipped weapons and passives"></div>
+
+      <div class="hudm-tip" id="hud-tip" data-testid="hud-tip" role="status" aria-live="polite"></div>
 
       <div class="hudm-boss" id="hud-boss-bar" data-testid="hud-boss-bar">
         <div class="hudm-boss-title">${icon('boss')}<span id="hud-boss-title">BOSS</span></div>
@@ -95,6 +107,8 @@ export class HUDView {
     this.bossWarningText = q('#hud-boss-warning-text');
     this.floatingTextLayer = q('#floating-text-layer');
     this.fpsCounterEl = q('#hud-fps-counter');
+    this.buildEl = q('#hud-build');
+    this.tipEl = q('#hud-tip');
     this.damageNumbers = new DamageNumbers(this.floatingTextLayer);
 
     this.unsubs.push(
@@ -140,11 +154,42 @@ export class HUDView {
     window.setTimeout(() => notif.remove(), 3000);
   }
 
+  /** Shows a short tip above the health bar for a few seconds. */
+  public showTip(text: string, seconds = 7): void {
+    this.tipEl.textContent = text;
+    this.tipEl.classList.add('is-visible');
+    if (this.tipTimer !== null) window.clearTimeout(this.tipTimer);
+    this.tipTimer = window.setTimeout(() => this.tipEl.classList.remove('is-visible'), seconds * 1000);
+  }
+
+  /** Equipped weapons and passives with level pips; a weapon ready to evolve glows. Rebuilt only on change. */
+  private updateBuild(runState: RunState): void {
+    const weapons = [...runState.weapons.values()];
+    const passives = [...runState.passives.entries()];
+    const key = weapons.map((w) => `${w.id}${w.level}${w.evolved}`).join() + '|' + passives.join();
+    if (key === this.lastBuildKey) return;
+    this.lastBuildKey = key;
+    const pips = (level: number, max: number) =>
+      `<span class="hudm-pips">${Array.from({ length: max }, (_, i) => `<i class="${i < level ? 'on' : ''}"></i>`).join('')}</span>`;
+    const weaponCells = weapons.map((w) => {
+      const def = BASE_WEAPONS[w.id as BaseWeaponId];
+      const ready = !w.evolved && w.level >= 8 && Boolean(def?.pairedPassive && runState.passives.has(def.pairedPassive));
+      if (ready) this.onEvolutionReady?.();
+      const cls = w.evolved ? ' is-evolved' : ready ? ' is-ready' : '';
+      return `<div class="hudm-slot${cls}">${weaponIcon(w.id, { size: 20 })}${w.evolved ? '' : pips(w.level, 8)}</div>`;
+    });
+    const passiveCells = passives.map(
+      ([id, level]) => `<div class="hudm-slot is-passive">${passiveIcon(id, { size: 16 })}${pips(level, PASSIVES[id]?.maxLevel ?? 5)}</div>`
+    );
+    this.buildEl.innerHTML = `<div class="hudm-build-row">${weaponCells.join('')}</div><div class="hudm-build-row">${passiveCells.join('')}</div>`;
+  }
+
   public update(
     runState: RunState,
     activeBoss: { name: string; hp: number; maxHp: number } | null,
     fps?: number
   ): void {
+    this.updateBuild(runState);
     if (this.fpsCounterEl.style.display !== 'none' && typeof fps === 'number') {
       const ms = fps > 0 ? (1000 / fps).toFixed(1) : '0.0';
       this.fpsCounterEl.textContent = `FPS ${fps} ${ms}MS`;

@@ -5,6 +5,8 @@ import { ModalA11y } from './A11yHelper';
 
 export interface LevelUpActions {
   rerollsLeft: number;
+  /** One-time explanation shown under the cards */
+  tip?: string;
   onReroll?: () => void;
 }
 
@@ -35,6 +37,7 @@ export class LevelUpModal {
         <div class="t800-header">SELECT UPGRADE</div>
         <div class="t800-ticker" id="levelup-ticker">LEVEL 2</div>
         <div class="upgrade-card-list" id="levelup-cards"></div>
+        <div class="t-hint" id="levelup-tip" style="display:none;"></div>
 
         <div class="btn-row levelup-actions-row">
           <button class="btn-secondary btn-sm" id="btn-levelup-reroll" aria-label="Reroll Upgrade Choices">REROLL (0)</button>
@@ -101,6 +104,9 @@ export class LevelUpModal {
     this.selectables = [];
 
     this.tickerEl.textContent = `LEVEL ${level}`;
+    const tipEl = this.container.querySelector('#levelup-tip') as HTMLElement;
+    tipEl.textContent = actions?.tip ?? '';
+    tipEl.style.display = actions?.tip ? 'block' : 'none';
 
     // Update Action Button states (disabled styling comes from CSS)
     const rerolls = actions?.rerollsLeft ?? 0;

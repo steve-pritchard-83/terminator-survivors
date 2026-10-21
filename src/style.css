@@ -1282,3 +1282,100 @@ select.controller-selected {
     animation: none;
   }
 }
+
+/* ===== In-run build strip: weapons (top row) and passives, with level pips ===== */
+.hudm-build {
+  position: absolute;
+  top: 40px;
+  left: max(16px, env(safe-area-inset-left));
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  pointer-events: none;
+}
+
+.hudm-build-row {
+  display: flex;
+  gap: 4px;
+}
+
+.hudm-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 3px 3px 2px;
+  border: 1px solid var(--t-line);
+  background: rgba(8, 2, 2, 0.55);
+  color: var(--t-text);
+}
+
+.hudm-slot.is-passive {
+  color: var(--t-muted);
+  padding: 2px;
+}
+
+.hudm-slot.is-evolved {
+  border-color: var(--t-red);
+  color: var(--t-red);
+}
+
+/* Level 8 with its passive: open a data vault to evolve */
+.hudm-slot.is-ready {
+  border-color: var(--t-red);
+  animation: hudm-ready 0.9s ease-in-out infinite alternate;
+}
+
+@keyframes hudm-ready {
+  from {
+    box-shadow: 0 0 0 rgba(255, 40, 30, 0);
+  }
+  to {
+    box-shadow: 0 0 8px rgba(255, 40, 30, 0.8);
+  }
+}
+
+.hudm-pips {
+  display: flex;
+  gap: 1px;
+}
+
+.hudm-pips i {
+  width: 2px;
+  height: 3px;
+  background: var(--t-line);
+}
+
+.hudm-pips i.on {
+  background: var(--t-red);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hudm-slot.is-ready {
+    animation: none;
+    box-shadow: 0 0 6px rgba(255, 40, 30, 0.7);
+  }
+}
+
+/* One-time first-run tip, above the health bar */
+.hudm-tip {
+  position: absolute;
+  left: 50%;
+  bottom: 96px;
+  transform: translateX(-50%);
+  max-width: min(560px, 86vw);
+  padding: 6px 12px;
+  border: 1px solid var(--t-red-dim);
+  background: rgba(8, 2, 2, 0.78);
+  color: var(--t-text);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-align: center;
+  opacity: 0;
+  transition: opacity 0.4s;
+  pointer-events: none;
+}
+
+.hudm-tip.is-visible {
+  opacity: 1;
+}

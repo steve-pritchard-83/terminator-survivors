@@ -3,6 +3,7 @@ import { LOADOUTS, META_UPGRADES, REMOVED_UPGRADE_COSTS } from '../data/upgrades
 import { ACHIEVEMENTS, DEFAULT_UNLOCKED_WEAPONS } from '../data/achievements';
 import { DEFAULT_INPUT_MAPPINGS } from '../data/inputDefaults';
 import { BASE_WEAPONS } from '../data/weapons';
+import { MAX_THREAT } from '../data/waves';
 
 const STORAGE_KEY = 'TERMINATOR_SURVIVORS_SAVE_V1';
 
@@ -98,7 +99,10 @@ export class SaveManager {
       bestiaryKills: {},
       discoveredWeapons: [...DEFAULT_UNLOCKED_WEAPONS],
       discoveredEvolutions: [],
-      runHistory: []
+      runHistory: [],
+      tipsSeen: [],
+      threatUnlocked: 0,
+      selectedThreat: 0
     };
   }
 
@@ -259,6 +263,8 @@ export class SaveManager {
       }
     };
 
+    const threatUnlocked = Math.max(0, Math.min(MAX_THREAT, Math.floor(Number(current.threatUnlocked) || 0)));
+
     return {
       version: SaveManager.CURRENT_VERSION,
       alloyScrap: typeof current.alloyScrap === 'number' && current.alloyScrap >= 0 ? Math.floor(current.alloyScrap) : 0,
@@ -276,7 +282,10 @@ export class SaveManager {
       bestiaryKills,
       discoveredWeapons,
       discoveredEvolutions,
-      runHistory: runHistory.slice(0, 20)
+      runHistory: runHistory.slice(0, 20),
+      tipsSeen: Array.isArray(current.tipsSeen) ? current.tipsSeen.filter((t: unknown) => typeof t === 'string') : [],
+      threatUnlocked,
+      selectedThreat: Math.max(0, Math.min(threatUnlocked, Math.floor(Number(current.selectedThreat) || 0)))
     };
   }
 
@@ -544,6 +553,30 @@ export class SaveManager {
     if (this.data.runHistory.length > 20) {
       this.data.runHistory.length = 20;
     }
+    this.save();
+  }
+
+  public hasSeenTip(id: string): boolean {
+    return Boolean(this.data.tipsSeen?.includes(id));
+  }
+
+  public markTipSeen(id: string): void {
+    if (this.hasSeenTip(id)) return;
+    this.data.tipsSeen = [...(this.data.tipsSeen ?? []), id];
+    this.save();
+  }
+
+  /** A win at the highest threat reached opens the next one. */
+  public recordThreatVictory(threat: number): void {
+    const unlocked = this.data.threatUnlocked ?? 0;
+    if (threat >= unlocked && unlocked < MAX_THREAT) {
+      this.data.threatUnlocked = unlocked + 1;
+      this.save();
+    }
+  }
+
+  public selectThreat(threat: number): void {
+    this.data.selectedThreat = Math.max(0, Math.min(this.data.threatUnlocked ?? 0, Math.floor(threat)));
     this.save();
   }
 

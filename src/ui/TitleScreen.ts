@@ -9,6 +9,7 @@ import { ModalA11y } from './A11yHelper';
 import { iconLabel } from './icons';
 import { APP_VERSION, BUILD_HASH } from '../core/version';
 import { ModelLibrary } from '../graphics/ModelLibrary';
+import { threatMultipliers } from '../data/waves';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -24,6 +25,7 @@ export class TitleScreen {
   private readonly startBtn: HTMLElement;
   private readonly bunkerBtn: HTMLElement;
   private readonly historyBtn: HTMLElement;
+  private threatBtn!: HTMLElement;
   private readonly settingsBtn: HTMLElement;
   private readonly saveManager: SaveManager;
   private readonly audioEngine: AudioEngine;
@@ -65,6 +67,7 @@ export class TitleScreen {
           <button class="btn-primary" data-testid="btn-start-run" id="btn-start-run" aria-label="Deploy">
             ${iconLabel('play', 'DEPLOY')}
           </button>
+          <button class="btn-secondary" data-testid="btn-threat" id="btn-threat" aria-label="Threat level" style="display:none;"></button>
           <button class="btn-secondary" data-testid="btn-bunker-shop" id="btn-bunker-shop" aria-label="Requisition">
             ${iconLabel('shop', 'REQUISITION')}
           </button>
@@ -183,6 +186,17 @@ export class TitleScreen {
       this.hide();
       this.onStartRun({});
     });
+
+    // Threat level for the next run, cycling through the levels unlocked by winning
+    this.threatBtn = this.container.querySelector('#btn-threat')!;
+    this.threatBtn.addEventListener('click', () => {
+      const data = this.saveManager.getData();
+      const unlocked = data.threatUnlocked ?? 0;
+      this.saveManager.selectThreat(((data.selectedThreat ?? 0) + 1) % (unlocked + 1));
+      this.audioEngine.playUiClick();
+      this.renderThreat();
+    });
+    this.renderThreat();
 
     this.bunkerBtn.addEventListener('click', () => {
       this.openBunkerShop();
@@ -360,7 +374,22 @@ export class TitleScreen {
     }
   }
 
+  /** The threat button only appears once a win has unlocked threat level 1. */
+  private renderThreat(): void {
+    const data = this.saveManager.getData();
+    const unlocked = data.threatUnlocked ?? 0;
+    const threat = data.selectedThreat ?? 0;
+    this.threatBtn.style.display = unlocked > 0 ? '' : 'none';
+    const m = threatMultipliers(threat);
+    this.threatBtn.innerHTML = iconLabel(
+      'boss',
+      threat === 0 ? 'THREAT: STANDARD' : `THREAT ${threat} · +${Math.round((m.hp - 1) * 100)}% HP · +${Math.round((m.scrap - 1) * 100)}% SCRAP`
+    );
+    this.threatBtn.setAttribute('aria-label', `Threat level ${threat} of ${unlocked}. Press to change.`);
+  }
+
   public show(): void {
+    this.renderThreat();
     this.container.style.display = 'flex';
     this.selectedBtnIndex = 0;
     this.updateTitleButtonHighlight();
@@ -383,16 +412,10 @@ export class TitleScreen {
   }
 
   private getActiveTitleButtons(): HTMLElement[] {
-    const btns: HTMLElement[] = [
-      this.startBtn,
-      this.bunkerBtn,
-      this.historyBtn,
-      this.settingsBtn
-    ];
-    if (this.installBtn.style.display !== 'none') {
-      btns.push(this.installBtn);
-    }
-    return btns;
+    // Only buttons on screen (the threat and install buttons appear when relevant)
+    return [this.startBtn, this.threatBtn, this.bunkerBtn, this.historyBtn, this.settingsBtn, this.installBtn].filter(
+      (b) => b && b.style.display !== 'none'
+    );
   }
 
   private updateTitleButtonHighlight(): void {
