@@ -1,122 +1,13 @@
 import * as THREE from 'three';
 import { ModelLibrary } from '../ModelLibrary';
+import { createPlaceholder } from './geometryUtils';
 
-export interface DogMeshGroup extends THREE.Group {
-  userData: {
-    legs: THREE.Mesh[];
-    ears: THREE.Mesh[];
-    tail: THREE.Mesh;
-    trotTime: number;
-  };
-}
-
-export function createDogMesh(isPack = false): DogMeshGroup {
-  const group = new THREE.Group() as DogMeshGroup;
-
-  // Sculpted German Shepherd: one piece, so it gallops by bobbing and pitching (see DogUnit)
-  const model = ModelLibrary.get('k9');
-  if (model) {
-    model.name = 'body';
-    group.add(model);
-    group.userData = { legs: [], ears: [], tail: new THREE.Mesh(), trotTime: 0 };
-    return group;
-  }
-
-  const furColor = isPack ? 0x2d3748 : 0x5c4033;
-  const chestColor = isPack ? 0x1a202c : 0x8b6b4f;
-  const collarColor = isPack ? 0xff0055 : 0x00e5ff;
-
-  const bodyMat = new THREE.MeshStandardMaterial({
-    color: furColor,
-    roughness: 0.85,
-    metalness: 0.1
-  });
-  const chestMat = new THREE.MeshStandardMaterial({
-    color: chestColor,
-    roughness: 0.9,
-    metalness: 0.05
-  });
-  const collarMat = new THREE.MeshStandardMaterial({
-    color: collarColor,
-    emissive: collarColor,
-    emissiveIntensity: 2.0
-  });
-
-  // Body torso
-  const bodyGeo = new THREE.BoxGeometry(0.36, 0.36, 0.72);
-  const body = new THREE.Mesh(bodyGeo, bodyMat);
-  body.position.y = 0.42;
+/** The K-9: the sculpted German Shepherd as one piece named 'body' (DogUnit bounds and pitches it to gallop). */
+export function createDogMesh(): THREE.Group {
+  const group = new THREE.Group();
+  const body = ModelLibrary.get('k9') ?? createPlaceholder(0.3, 0.45, 0.9);
+  body.name = 'body';
   group.add(body);
-
-  // Chest / belly
-  const chestGeo = new THREE.BoxGeometry(0.34, 0.3, 0.4);
-  const chest = new THREE.Mesh(chestGeo, chestMat);
-  chest.position.set(0, 0.4, 0.16);
-  group.add(chest);
-
-  // Head
-  const headGeo = new THREE.BoxGeometry(0.24, 0.24, 0.28);
-  const head = new THREE.Mesh(headGeo, bodyMat);
-  head.position.set(0, 0.62, 0.42);
-  group.add(head);
-
-  // Snout
-  const snoutGeo = new THREE.BoxGeometry(0.14, 0.12, 0.2);
-  const snout = new THREE.Mesh(snoutGeo, chestMat);
-  snout.position.set(0, 0.58, 0.6);
-  group.add(snout);
-
-  // Nose tip
-  const noseGeo = new THREE.BoxGeometry(0.06, 0.05, 0.05);
-  const noseMat = new THREE.MeshBasicMaterial({ color: 0x111111 });
-  const nose = new THREE.Mesh(noseGeo, noseMat);
-  nose.position.set(0, 0.62, 0.7);
-  group.add(nose);
-
-  // Ears
-  const earGeo = new THREE.ConeGeometry(0.06, 0.16, 4);
-  earGeo.rotateX(-0.2);
-  const earMat = new THREE.MeshStandardMaterial({ color: furColor });
-  const leftEar = new THREE.Mesh(earGeo, earMat);
-  leftEar.position.set(-0.09, 0.8, 0.4);
-  const rightEar = new THREE.Mesh(earGeo, earMat);
-  rightEar.position.set(0.09, 0.8, 0.4);
-  group.add(leftEar, rightEar);
-
-  // Collar with glowing tag
-  const collarGeo = new THREE.TorusGeometry(0.14, 0.03, 6, 12);
-  collarGeo.rotateX(Math.PI / 2);
-  const collar = new THREE.Mesh(collarGeo, collarMat);
-  collar.position.set(0, 0.54, 0.32);
-  group.add(collar);
-
-  // Tail
-  const tailGeo = new THREE.CylinderGeometry(0.04, 0.02, 0.32, 6);
-  tailGeo.rotateX(-0.7);
-  const tail = new THREE.Mesh(tailGeo, bodyMat);
-  tail.position.set(0, 0.52, -0.42);
-  group.add(tail);
-
-  // 4 Legs
-  const legGeo = new THREE.BoxGeometry(0.1, 0.34, 0.1);
-  const legFL = new THREE.Mesh(legGeo, chestMat);
-  legFL.position.set(-0.13, 0.17, 0.22);
-  const legFR = new THREE.Mesh(legGeo, chestMat);
-  legFR.position.set(0.13, 0.17, 0.22);
-  const legBL = new THREE.Mesh(legGeo, bodyMat);
-  legBL.position.set(-0.13, 0.17, -0.22);
-  const legBR = new THREE.Mesh(legGeo, bodyMat);
-  legBR.position.set(0.13, 0.17, -0.22);
-
-  group.add(legFL, legFR, legBL, legBR);
-
-  group.userData = {
-    legs: [legFL, legFR, legBL, legBR],
-    ears: [leftEar, rightEar],
-    tail,
-    trotTime: 0
-  };
-
   return group;
 }
 

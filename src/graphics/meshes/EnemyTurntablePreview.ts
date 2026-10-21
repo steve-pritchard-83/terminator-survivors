@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import type { EnemyArchetypeId } from '../../core/types';
-import { bakePart, mergeParts } from './geometryUtils';
+import { createPlaceholder } from './geometryUtils';
 import { HKAerialMesh } from './HKAerialMesh';
 import { HKTankMesh } from './HKTankMesh';
 import { InfiltratorMesh } from './InfiltratorMesh';
@@ -91,84 +91,24 @@ export function createEnemyPreviewObject(archetype: EnemyArchetypeId): THREE.Obj
     }
 
     case 'skynet_crab_drone': {
-      const shellSteel = 0x3a424e;
-      const legMat = 0x242830;
-      const eyeRed = 0xff0033;
-      const parts: THREE.BufferGeometry[] = [
-        bakePart(new THREE.CylinderGeometry(0.45, 0.55, 0.24, 8), 0, 0.35, 0, 0, 0, 0, shellSteel),
-        bakePart(new THREE.BoxGeometry(0.35, 0.16, 0.4), 0, 0.38, 0.3, 0, 0, 0, shellSteel),
-        bakePart(new THREE.SphereGeometry(0.1, 8, 8), 0, 0.38, 0.5, 0, 0, 0, eyeRed),
-        // 4 Legs
-        bakePart(new THREE.BoxGeometry(0.08, 0.4, 0.08), -0.5, 0.2, 0.35, 0.3, 0, -0.4, legMat),
-        bakePart(new THREE.BoxGeometry(0.08, 0.4, 0.08), 0.5, 0.2, 0.35, 0.3, 0, 0.4, legMat),
-        bakePart(new THREE.BoxGeometry(0.08, 0.4, 0.08), -0.5, 0.2, -0.35, -0.3, 0, -0.4, legMat),
-        bakePart(new THREE.BoxGeometry(0.08, 0.4, 0.08), 0.5, 0.2, -0.35, -0.3, 0, 0.4, legMat)
-      ];
-      const geom = mergeParts(parts);
-      const mesh = new THREE.Mesh(geom, new THREE.MeshStandardMaterial({ vertexColors: true, metalness: 0.8, roughness: 0.3 }));
-      root.add(mesh);
+      root.add(ModelLibrary.get('crab_drone') ?? createPlaceholder(0.9, 0.3, 0.8));
       root.position.set(0, -0.3, 0);
-      root.scale.setScalar(1.2);
+      root.scale.setScalar(1.6);
       break;
     }
 
     case 't600_rusted': {
       const t600 = ModelLibrary.getT600();
-      const endo = t600 ?? ModelLibrary.getEndo();
-      if (endo) {
-        root.add(createEndoPreview(endo, t600 ? 0xe0d4c4 : 0xc49a74));
-        root.position.set(0, -0.9, 0);
-        root.scale.setScalar(0.95);
-        break;
-      }
-      const rustSteel = 0x5a483a;
-      const rubberSkin = 0x3d3530;
-      const opticRed = 0xff2200;
-      const parts: THREE.BufferGeometry[] = [
-        bakePart(new THREE.BoxGeometry(0.7, 0.75, 0.42), 0, 1.25, 0, 0, 0, 0, rubberSkin),
-        bakePart(new THREE.BoxGeometry(0.42, 0.45, 0.36), 0, 1.82, 0, 0, 0, 0, rubberSkin),
-        bakePart(new THREE.SphereGeometry(0.05, 6, 6), -0.1, 1.84, 0.19, 0, 0, 0, opticRed),
-        bakePart(new THREE.SphereGeometry(0.05, 6, 6), 0.1, 1.84, 0.19, 0, 0, 0, opticRed),
-        bakePart(new THREE.CylinderGeometry(0.12, 0.1, 0.8, 8), -0.52, 1.15, 0, 0, 0, 0.1, rustSteel),
-        bakePart(new THREE.CylinderGeometry(0.12, 0.1, 0.8, 8), 0.52, 1.15, 0, 0, 0, -0.1, rustSteel),
-        bakePart(new THREE.CylinderGeometry(0.14, 0.12, 0.85, 8), -0.22, 0.45, 0, 0, 0, 0, rustSteel),
-        bakePart(new THREE.CylinderGeometry(0.14, 0.12, 0.85, 8), 0.22, 0.45, 0, 0, 0, 0, rustSteel)
-      ];
-      const geom = mergeParts(parts);
-      const mesh = new THREE.Mesh(geom, new THREE.MeshStandardMaterial({ vertexColors: true, metalness: 0.4, roughness: 0.7 }));
-      root.add(mesh);
+      root.add(t600 ? createEndoPreview(t600, 0xe0d4c4) : createPlaceholder(0.6, 1.9, 0.4));
       root.position.set(0, -0.9, 0);
-      root.scale.setScalar(0.9);
+      root.scale.setScalar(0.95);
       break;
     }
 
     case 't800_endoskeleton':
     default: {
       const endo = ModelLibrary.getEndo();
-      if (endo) {
-        root.add(createEndoPreview(endo));
-        root.position.set(0, -0.9, 0);
-        root.scale.setScalar(0.95);
-        break;
-      }
-      const chromeBright = 0xc5d3e0;
-      const chromeMid = 0x8a99a8;
-      const darkSocket = 0x10141a;
-      const opticRed = 0xff002b;
-      const parts: THREE.BufferGeometry[] = [
-        bakePart(new THREE.SphereGeometry(0.185, 12, 10), 0, 1.75, 0, 0, 0, 0, chromeBright),
-        bakePart(new THREE.BoxGeometry(0.24, 0.07, 0.1), 0, 1.72, 0.14, 0, 0, 0, darkSocket),
-        bakePart(new THREE.SphereGeometry(0.042, 6, 6), -0.07, 1.72, 0.17, 0, 0, 0, opticRed),
-        bakePart(new THREE.SphereGeometry(0.042, 6, 6), 0.07, 1.72, 0.17, 0, 0, 0, opticRed),
-        bakePart(new THREE.BoxGeometry(0.55, 0.65, 0.32), 0, 1.25, 0, 0, 0, 0, chromeBright),
-        bakePart(new THREE.CylinderGeometry(0.09, 0.08, 0.75, 8), -0.42, 1.15, 0, 0, 0, 0.1, chromeMid),
-        bakePart(new THREE.CylinderGeometry(0.09, 0.08, 0.75, 8), 0.42, 1.15, 0, 0, 0, -0.1, chromeMid),
-        bakePart(new THREE.CylinderGeometry(0.12, 0.1, 0.85, 8), -0.18, 0.45, 0, 0, 0, 0, chromeMid),
-        bakePart(new THREE.CylinderGeometry(0.12, 0.1, 0.85, 8), 0.18, 0.45, 0, 0, 0, 0, chromeMid)
-      ];
-      const geom = mergeParts(parts);
-      const mesh = new THREE.Mesh(geom, new THREE.MeshStandardMaterial({ vertexColors: true, metalness: 0.95, roughness: 0.18 }));
-      root.add(mesh);
+      root.add(endo ? createEndoPreview(endo) : createPlaceholder(0.55, 1.85, 0.35));
       root.position.set(0, -0.9, 0);
       root.scale.setScalar(0.95);
       break;

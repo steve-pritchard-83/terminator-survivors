@@ -8,6 +8,7 @@ import type { GamepadManager } from '../input/GamepadManager';
 import { ModalA11y } from './A11yHelper';
 import { iconLabel } from './icons';
 import { APP_VERSION, BUILD_HASH } from '../core/version';
+import { ModelLibrary } from '../graphics/ModelLibrary';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -128,6 +129,14 @@ export class TitleScreen {
     this.pwaModal = this.container.querySelector('#pwa-install-modal')!;
     this.installBtn = this.container.querySelector('#btn-install-pwa')!;
     this.startBtn = this.container.querySelector('#btn-start-run')!;
+    // Deploy waits for the sculpted models, so a run never starts on placeholder shapes
+    const startButton = this.startBtn as HTMLButtonElement;
+    startButton.disabled = true;
+    startButton.innerHTML = iconLabel('play', 'LOADING');
+    void ModelLibrary.preload().then(() => {
+      startButton.disabled = false;
+      startButton.innerHTML = iconLabel('play', 'DEPLOY');
+    });
     this.bunkerBtn = this.container.querySelector('#btn-bunker-shop')!;
     this.historyBtn = this.container.querySelector('#btn-history')!;
     this.settingsBtn = this.container.querySelector('#btn-settings')!;

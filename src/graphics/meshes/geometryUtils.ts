@@ -102,3 +102,16 @@ export function wheelPart(x: number, y: number, z: number, radius: number, width
 export function barrelPart(x: number, y: number, z: number, radius: number, length: number, color: number, segments = 10) {
   return bakePart(new THREE.CylinderGeometry(radius, radius, length, segments), x, y, z, Math.PI / 2, 0, 0, color);
 }
+
+const placeholderMat = new THREE.MeshStandardMaterial({ color: 0x3a4048, metalness: 0.5, roughness: 0.6 });
+placeholderMat.userData.shared = true;
+
+/**
+ * Stand-in drawn only until an entity's sculpted model has loaded (the title screen holds Deploy until
+ * then, so players don't normally see it): a dim box of the entity's rough size, seated on y = 0.
+ */
+export function createPlaceholder(width: number, height: number, depth: number, y = height / 2): THREE.Mesh {
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(width, height, depth), placeholderMat);
+  mesh.position.y = y;
+  return mesh;
+}

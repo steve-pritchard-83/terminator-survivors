@@ -1,7 +1,6 @@
 import * as THREE from 'three';
 import { disposeObject3D } from '../dispose';
 import { bakePart, mergeParts } from './geometryUtils';
-import { buildEndoChassis, buildEndoLeg, buildEndoOptics } from './EndoskeletonGeometry';
 import type { ActiveEnemy } from '../../core/types';
 import { ProceduralTextures } from '../ProceduralTextures';
 import { ELITE_AFFIXES } from '../../data/enemies';
@@ -75,18 +74,11 @@ export class EndoskeletonBatch {
   constructor(maxCount = 650) {
     this.maxCount = maxCount;
 
-    // Neutral polished steel (the endoskeleton is silver chrome, not blue)
-    const chromeBright = 0xd6dadf;
-    const chromeMid = 0xa0a6ad;
-    const darkSocket = 0x07090c;
-    const pistonSteel = 0x6e747b;
-    const gunmetal = 0x2b2f35;
-    const teethIvory = 0xdedcd4;
-
-    // 1. T-800 endoskeleton geometry (skull, torso, arms, M-25 rifle) and the two animated legs
-    const chassisGeo = buildEndoChassis();
-    const leftLegGeo = buildEndoLeg(-0.15);
-    const rightLegGeo = buildEndoLeg(0.15);
+    // Placeholder body until the sculpted T-800 loads (the title screen holds Deploy until then)
+    const steel = 0x8a9098;
+    const chassisGeo = mergeParts([bakePart(new THREE.BoxGeometry(0.5, 0.95, 0.3), 0, 1.3, 0, 0, 0, 0, steel)]);
+    const leftLegGeo = bakePart(new THREE.BoxGeometry(0.14, 0.8, 0.14), -0.15, -0.4, 0, 0, 0, 0, steel);
+    const rightLegGeo = bakePart(new THREE.BoxGeometry(0.14, 0.8, 0.14), 0.15, -0.4, 0, 0, 0, 0, steel);
 
     const chassisMat = (this.chassisMat = new THREE.MeshStandardMaterial({
       color: 0xffffff,
@@ -112,8 +104,11 @@ export class EndoskeletonBatch {
     this.rightLegInstancedMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     this.rightLegInstancedMesh.frustumCulled = false;
 
-    // 3. Glowing red optics and rifle plasma chamber
-    const opticsGeo = buildEndoOptics();
+    // Glowing red optics
+    const opticsGeo = mergeParts([
+      bakePart(new THREE.SphereGeometry(0.035, 6, 6), -0.06, 1.72, 0.16, 0, 0, 0, 0xff2020),
+      bakePart(new THREE.SphereGeometry(0.035, 6, 6), 0.06, 1.72, 0.16, 0, 0, 0, 0xff2020)
+    ]);
 
     const opticsMat = new THREE.MeshStandardMaterial({
       color: 0xffffff,
@@ -128,162 +123,8 @@ export class EndoskeletonBatch {
     this.opticsInstancedMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     this.opticsInstancedMesh.frustumCulled = false;
 
-    // 4. Build Detailed 6-Legged Cyberdyne Recon Crab-Walker (spider-tank scuttler)
-    const crabParts: THREE.BufferGeometry[] = [
-      // Main sloped octagonal armored carapace
-      bakePart(
-        new THREE.CylinderGeometry(0.28, 0.44, 0.2, 8),
-        0,
-        0.34,
-        0,
-        0,
-        Math.PI / 8,
-        0,
-        chromeBright
-      ),
-      // Dorsal reactor cooling dome & spine vents
-      bakePart(
-        new THREE.CylinderGeometry(0.16, 0.22, 0.12, 8),
-        0,
-        0.46,
-        -0.04,
-        0,
-        0,
-        0,
-        pistonSteel
-      ),
-      bakePart(new THREE.BoxGeometry(0.24, 0.08, 0.28), 0, 0.42, -0.1, -0.15, 0, 0, gunmetal),
-      // Dark recessed front optical visor bay
-      bakePart(new THREE.BoxGeometry(0.34, 0.12, 0.2), 0, 0.31, 0.28, 0, 0, 0, darkSocket),
-      // Twin forward plasma pincer barrels
-      bakePart(
-        new THREE.CylinderGeometry(0.028, 0.028, 0.32, 6),
-        -0.14,
-        0.24,
-        0.4,
-        Math.PI / 2,
-        0,
-        -0.12,
-        chromeMid
-      ),
-      bakePart(
-        new THREE.CylinderGeometry(0.028, 0.028, 0.32, 6),
-        0.14,
-        0.24,
-        0.4,
-        Math.PI / 2,
-        0,
-        0.12,
-        chromeMid
-      ),
-      // 6 Multi-jointed Arachnid Scuttle Legs (Upper Femur + Angled Lower Tibia)
-      // Front Pair
-      bakePart(
-        new THREE.BoxGeometry(0.32, 0.055, 0.06),
-        -0.38,
-        0.32,
-        0.22,
-        0,
-        -0.45,
-        0.25,
-        pistonSteel
-      ),
-      bakePart(
-        new THREE.CylinderGeometry(0.03, 0.015, 0.36, 6),
-        -0.54,
-        0.16,
-        0.32,
-        0.2,
-        0,
-        0.35,
-        chromeBright
-      ),
-      bakePart(
-        new THREE.BoxGeometry(0.32, 0.055, 0.06),
-        0.38,
-        0.32,
-        0.22,
-        0,
-        0.45,
-        -0.25,
-        pistonSteel
-      ),
-      bakePart(
-        new THREE.CylinderGeometry(0.03, 0.015, 0.36, 6),
-        0.54,
-        0.16,
-        0.32,
-        0.2,
-        0,
-        -0.35,
-        chromeBright
-      ),
-      // Mid Pair
-      bakePart(new THREE.BoxGeometry(0.36, 0.055, 0.06), -0.44, 0.32, 0.0, 0, 0, 0.25, pistonSteel),
-      bakePart(
-        new THREE.CylinderGeometry(0.03, 0.015, 0.36, 6),
-        -0.62,
-        0.16,
-        0.0,
-        0,
-        0,
-        0.38,
-        chromeBright
-      ),
-      bakePart(new THREE.BoxGeometry(0.36, 0.055, 0.06), 0.44, 0.32, 0.0, 0, 0, -0.25, pistonSteel),
-      bakePart(
-        new THREE.CylinderGeometry(0.03, 0.015, 0.36, 6),
-        0.62,
-        0.16,
-        0.0,
-        0,
-        0,
-        -0.38,
-        chromeBright
-      ),
-      // Rear Pair
-      bakePart(
-        new THREE.BoxGeometry(0.32, 0.055, 0.06),
-        -0.38,
-        0.32,
-        -0.22,
-        0,
-        0.45,
-        0.25,
-        pistonSteel
-      ),
-      bakePart(
-        new THREE.CylinderGeometry(0.03, 0.015, 0.36, 6),
-        -0.54,
-        0.16,
-        -0.32,
-        -0.2,
-        0,
-        0.35,
-        chromeBright
-      ),
-      bakePart(
-        new THREE.BoxGeometry(0.32, 0.055, 0.06),
-        0.38,
-        0.32,
-        -0.22,
-        0,
-        -0.45,
-        -0.25,
-        pistonSteel
-      ),
-      bakePart(
-        new THREE.CylinderGeometry(0.03, 0.015, 0.36, 6),
-        0.54,
-        0.16,
-        -0.32,
-        -0.2,
-        0,
-        -0.35,
-        chromeBright
-      )
-    ];
-    const crabGeo = mergeParts(crabParts);
+    // Crab drone placeholder until the sculpted spider drone loads
+    const crabGeo = mergeParts([bakePart(new THREE.BoxGeometry(0.8, 0.25, 0.7), 0, 0.3, 0, 0, 0, 0, steel)]);
     this.crabChassisInstancedMesh = new THREE.InstancedMesh(crabGeo, chassisMat, maxCount);
     this.crabChassisInstancedMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     this.crabChassisInstancedMesh.frustumCulled = false;

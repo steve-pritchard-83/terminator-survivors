@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { VolumetricSearchlight } from '../VolumetricSearchlight';
 import { disposeObject3D } from '../dispose';
-import { buildTankGlow, buildTankLower, buildTankTurret } from './HKTankGeometry';
+import { createPlaceholder } from './geometryUtils';
 import { ModelLibrary } from '../ModelLibrary';
 
 export class HKTankMesh {
@@ -16,19 +16,8 @@ export class HKTankMesh {
   constructor() {
     const scale = 2.2;
 
-    // Dark gunmetal: strong reflections and a cold highlight read as armour at distance
-    const metalMat = new THREE.MeshStandardMaterial({
-      color: 0xffffff,
-      vertexColors: true,
-      metalness: 0.78,
-      roughness: 0.42,
-      envMapIntensity: 1.4
-    });
-    // Emissive scanner, sensor lenses and plasma coils
-    const glowMat = new THREE.MeshBasicMaterial({ color: 0xffffff, vertexColors: true });
-
-    // 1-2. Hull and tracks, plus the turret that turns to track the player: the sculpted model
-    // when it has loaded, otherwise the procedural stand-in
+    // Hull and tracks, plus the turret that turns to track the player: the sculpted model,
+    // or a placeholder if a run starts before it has loaded
     this.turretGroup = new THREE.Group();
     const hullModel = ModelLibrary.get('hk_tank_hull');
     const turretModel = ModelLibrary.get('hk_tank_turret');
@@ -42,10 +31,9 @@ export class HKTankMesh {
       lightZ = 2.4;
       this.searchlightGround = -lightY;
     } else {
-      this.group.add(new THREE.Mesh(buildTankLower(), metalMat));
+      this.group.add(createPlaceholder(2.6, 1.2, 3.6));
       this.turretGroup.position.set(0, 1.2, 0);
-      this.turretGroup.add(new THREE.Mesh(buildTankTurret(), metalMat));
-      this.turretGroup.add(new THREE.Mesh(buildTankGlow(), glowMat));
+      this.turretGroup.add(createPlaceholder(1.6, 0.6, 2.0));
       this.searchlightGround = -1.4;
     }
 

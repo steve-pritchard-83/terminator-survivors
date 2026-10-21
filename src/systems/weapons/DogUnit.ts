@@ -1,13 +1,13 @@
 import type * as THREE from 'three';
 import type { ActiveEnemy } from '../../core/types';
 import type { WeaponPattern, WeaponFireContext } from './WeaponPattern';
-import { createDogMesh, type DogMeshGroup } from '../../graphics/meshes/AllyMeshes';
+import { createDogMesh } from '../../graphics/meshes/AllyMeshes';
 import { ALL_WEAPONS } from '../../data/weapons';
 import { K9_BITE_ARMOR_STRIP } from '../../data/balance';
 import { disposeObject3D } from '../../graphics/dispose';
 
 interface ActiveDog {
-  mesh: DogMeshGroup;
+  mesh: THREE.Group;
   x: number;
   z: number;
   biteCooldown: number;
@@ -55,7 +55,7 @@ export class DogUnit implements WeaponPattern {
 
     // Sync active dog meshes
     while (this.dogs.length < targetCount) {
-      const mesh = createDogMesh(isPack);
+      const mesh = createDogMesh();
       const angle = (this.dogs.length / targetCount) * Math.PI * 2;
       const x = px + Math.cos(angle) * 2;
       const z = pz + Math.sin(angle) * 2;
@@ -140,22 +140,12 @@ export class DogUnit implements WeaponPattern {
         dog.z += (dz / dist) * step;
         dog.mesh.rotation.y = Math.atan2(dx, dz);
 
-        // Trot leg swing animation
+        // A gallop is a bound and a rocking pitch
         dog.trotPhase += dt * 14.0;
-        const trotAngle = Math.sin(dog.trotPhase) * 0.35;
-        const legs = dog.mesh.userData.legs;
-        if (legs && legs.length >= 4) {
-          legs[0].rotation.x = trotAngle;
-          legs[1].rotation.x = -trotAngle;
-          legs[2].rotation.x = -trotAngle;
-          legs[3].rotation.x = trotAngle;
-        } else {
-          // Sculpted dog: a gallop is a bound and a rocking pitch
-          const body = dog.mesh.getObjectByName('body');
-          if (body) {
-            body.position.y = Math.abs(Math.sin(dog.trotPhase)) * 0.09;
-            body.rotation.x = Math.sin(dog.trotPhase) * 0.1;
-          }
+        const body = dog.mesh.getObjectByName('body');
+        if (body) {
+          body.position.y = Math.abs(Math.sin(dog.trotPhase)) * 0.09;
+          body.rotation.x = Math.sin(dog.trotPhase) * 0.1;
         }
       }
 

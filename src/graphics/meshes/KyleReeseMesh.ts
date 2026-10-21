@@ -88,15 +88,10 @@ export class KyleReeseMesh {
   private readonly handR: THREE.Mesh;
 
   private readonly mats: Record<
-    'trouser' | 'boot' | 'outer' | 'sleeve' | 'top' | 'skin' | 'hair' | 'headgear' | 'armor' | 'scarf',
+    'trouser' | 'boot' | 'outer' | 'sleeve' | 'top' | 'skin' | 'hair' | 'headgear',
     THREE.MeshStandardMaterial
   >;
   private readonly outerPanels: THREE.Object3D[] = [];
-  private readonly hairParts: THREE.Object3D[] = [];
-  private readonly accessories: Record<
-    'ponytail' | 'bandana' | 'helmet' | 'armor' | 'scarf' | 'scar' | 'shades',
-    THREE.Object3D
-  >;
 
   // Animation state
   private time = 0;
@@ -127,8 +122,6 @@ export class KyleReeseMesh {
     const skinMat = std(0xd4a383, 0.6);
     const hairMat = std(0x2a1f18, 0.92);
     const headgearMat = std(0x3a444f, 0.6, 0.4);
-    const armorMat = std(0x4a5663, 0.5, 0.55);
-    const scarfMat = std(0xa83a2c, 0.92);
     const gloveMat = std(0x1c1a17, 0.75, 0.05);
     const webbingMat = std(0x3b3326, 0.85, 0.05);
     const gunMat = std(0x26292e, 0.38, 0.8);
@@ -218,32 +211,7 @@ export class KyleReeseMesh {
     this.headGroup.position.set(0, 0.64, 0.015);
     this.headGroup.scale.setScalar(0.78);
     this.spine.add(this.headGroup);
-    const { ponytail, bandana, helmet, scar, shades } = this.buildHead(skinMat, hairMat, headgearMat);
-
-    // 4. Armour and scarf (torso accessories)
-    const armor = new THREE.Group();
-    const plate = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.24, 0.05), armorMat);
-    plate.position.set(0, 0.33, 0.13);
-    const padL = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.05, 0.18), armorMat);
-    padL.position.set(-0.22, 0.48, 0);
-    padL.rotation.z = 0.35;
-    const padR = padL.clone();
-    padR.position.x = 0.22;
-    padR.rotation.z = -0.35;
-    const pack = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.32, 0.13), armorMat);
-    pack.position.set(0, 0.3, -0.2);
-    const packCell = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.16, 0.02), new THREE.MeshBasicMaterial({ color: new THREE.Color(PALETTE.plasmaResistance).multiplyScalar(1.6) }));
-    packCell.position.set(0, 0.3, -0.27);
-    armor.add(plate, padL, padR, pack, packCell);
-    const scarf = new THREE.Group();
-    const scarfRing = new THREE.Mesh(new THREE.TorusGeometry(0.085, 0.035, 7, 14), scarfMat);
-    scarfRing.position.set(0, 0.5, 0.0);
-    scarfRing.rotation.x = Math.PI / 2;
-    const scarfTail = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.24, 0.02), scarfMat);
-    scarfTail.position.set(-0.05, 0.37, 0.11);
-    scarfTail.rotation.z = 0.12;
-    scarf.add(scarfRing, scarfTail);
-    this.spine.add(armor, scarf);
+    this.buildHead(skinMat, hairMat, headgearMat);
 
     // 5. Rifle and arms
     this.weaponGroup.position.set(0, 0.36, 0.06);
@@ -304,11 +272,8 @@ export class KyleReeseMesh {
       top: topMat,
       skin: skinMat,
       hair: hairMat,
-      headgear: headgearMat,
-      armor: armorMat,
-      scarf: scarfMat
+      headgear: headgearMat
     };
-    this.accessories = { ponytail, bandana, helmet, armor, scarf, scar, shades };
 
     this.applyLoadout('reese_2029');
     this.updateAnimation(0, 0, 0);
@@ -375,12 +340,12 @@ export class KyleReeseMesh {
     return { hip, knee, ankle };
   }
 
-  /** Face, hair and headgear at the original (pre-scale) head size. */
+  /** Face, hair and Kyle's red headband at the original (pre-scale) head size. */
   private buildHead(
     skinMat: THREE.MeshStandardMaterial,
     hairMat: THREE.MeshStandardMaterial,
     headgearMat: THREE.MeshStandardMaterial
-  ): Record<'ponytail' | 'bandana' | 'helmet' | 'scar' | 'shades', THREE.Object3D> {
+  ): void {
     const stubbleMat = new THREE.MeshStandardMaterial({ color: 0x9a7a64, roughness: 0.8 });
     const darkMat = new THREE.MeshStandardMaterial({ color: 0x1a1512, roughness: 0.7 });
     const head = new THREE.Mesh(new THREE.SphereGeometry(0.15, 16, 12), skinMat);
@@ -412,14 +377,7 @@ export class KyleReeseMesh {
     const sideburnR = sideburnL.clone();
     sideburnR.position.x = 0.125;
     this.headGroup.add(head, jaw, brow, nose, eyeL, eyeR, earL, earR, hairTop, hairBack, sideburnL, sideburnR);
-    this.hairParts.push(hairTop, hairBack, sideburnL, sideburnR);
 
-    const ponytail = new THREE.Group();
-    for (const [y, z, r] of [[-0.02, -0.21, 0.06], [-0.09, -0.25, 0.055], [-0.17, -0.27, 0.05], [-0.25, -0.27, 0.04]]) {
-      const b = new THREE.Mesh(new THREE.SphereGeometry(r, 7, 6), hairMat);
-      b.position.set(0, y, z);
-      ponytail.add(b);
-    }
     const bandana = new THREE.Group();
     const band = new THREE.Mesh(new THREE.CylinderGeometry(0.157, 0.157, 0.045, 14), headgearMat);
     band.position.set(0, 0.06, 0);
@@ -429,31 +387,7 @@ export class KyleReeseMesh {
     knotTail.position.set(0.03, -0.01, -0.18);
     knotTail.rotation.z = 0.25;
     bandana.add(band, knot, knotTail);
-    const helmet = new THREE.Group();
-    const shell = new THREE.Mesh(new THREE.SphereGeometry(0.185, 14, 10, 0, Math.PI * 2, 0, Math.PI * 0.62), headgearMat);
-    shell.position.set(0, 0.03, -0.01);
-    const brim = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.03, 0.06), headgearMat);
-    brim.position.set(0, 0.065, 0.15);
-    const visor = new THREE.Mesh(
-      new THREE.BoxGeometry(0.24, 0.05, 0.05),
-      new THREE.MeshStandardMaterial({ color: 0x0c1014, roughness: 0.15, metalness: 0.9, emissive: 0x3a1c08 })
-    );
-    visor.position.set(0, 0.02, 0.15);
-    helmet.add(shell, brim, visor);
-    const scar = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.1, 0.012), new THREE.MeshStandardMaterial({ color: 0x9b3b32, roughness: 0.7 }));
-    scar.position.set(-0.075, -0.025, 0.14);
-    scar.rotation.z = -0.5;
-    const shadesMat = new THREE.MeshStandardMaterial({ color: 0x060607, roughness: 0.15, metalness: 0.8 });
-    const shades = new THREE.Group();
-    const lensL = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.045, 0.03), shadesMat);
-    lensL.position.set(-0.05, 0.005, 0.14);
-    const lensR = lensL.clone();
-    lensR.position.x = 0.05;
-    const bridge = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.01, 0.012), shadesMat);
-    bridge.position.set(0, 0.015, 0.14);
-    shades.add(lensL, lensR, bridge);
-    this.headGroup.add(ponytail, bandana, helmet, scar, shades);
-    return { ponytail, bandana, helmet, scar, shades };
+    this.headGroup.add(bandana);
   }
 
   /** Westinghouse M-25 style plasma rifle, shouldered on the right, pointing along +z. */
@@ -505,7 +439,7 @@ export class KyleReeseMesh {
     this.weaponGroup.add(mesh);
   }
 
-  /** Switches the mesh to a character's look (clothes, hair, headgear, armour, size). */
+  /** Applies the character's look (clothes and colours) from src/data/playerLooks.ts. */
   public applyLoadout(loadoutId: LoadoutId): void {
     const look = PLAYER_LOOKS[loadoutId] ?? PLAYER_LOOKS.reese_2029;
     const m = this.mats;
@@ -517,22 +451,10 @@ export class KyleReeseMesh {
     m.hair.color.setHex(look.hairColor);
     m.sleeve.color.setHex(look.sleeves === 'skin' ? look.skinColor : look.outerColor || look.topColor);
     m.headgear.color.setHex(look.headgearColor || 0x3a444f);
-    m.armor.color.setHex(look.armorColor || 0x4a5663);
-    if (look.scarfColor !== null) m.scarf.color.setHex(look.scarfColor);
 
     const hasOuter = look.outer !== 'none';
     for (const p of this.outerPanels) p.visible = hasOuter;
     for (const t of this.coatTails) t.visible = look.outer === 'trench';
-
-    const helmet = look.headgear === 'helmet';
-    for (const h of this.hairParts) h.visible = !helmet;
-    this.accessories.ponytail.visible = look.hairStyle === 'ponytail' && !helmet;
-    this.accessories.bandana.visible = look.headgear === 'bandana';
-    this.accessories.helmet.visible = helmet;
-    this.accessories.armor.visible = look.armor;
-    this.accessories.scarf.visible = look.scarfColor !== null;
-    this.accessories.scar.visible = look.scar;
-    this.accessories.shades.visible = look.shades;
 
     this.group.scale.setScalar(look.scale);
     this.loadoutId = loadoutId;

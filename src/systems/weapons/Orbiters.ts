@@ -10,8 +10,6 @@ type DroneVariant = 'seeker' | 'ring';
 interface DroneLook {
   glow: number;
   eyeMat: THREE.MeshStandardMaterial;
-  rotorMat: THREE.MeshStandardMaterial;
-  haloMat: THREE.MeshBasicMaterial;
   trailMat: THREE.MeshBasicMaterial;
 }
 
@@ -27,9 +25,6 @@ export class Orbiters implements WeaponPattern {
   // Shared geometry: one set for every drone
   private readonly hullGeo = new THREE.OctahedronGeometry(0.24, 0);
   private readonly eyeGeo = new THREE.SphereGeometry(0.085, 12, 8);
-  private readonly rotorGeo = new THREE.TorusGeometry(0.34, 0.022, 6, 24);
-  private readonly finGeo = new THREE.BoxGeometry(0.34, 0.03, 0.09);
-  private readonly haloGeo = new THREE.SphereGeometry(0.42, 12, 8);
   private readonly trailGeo = new THREE.RingGeometry(0.985, 1.0, 96);
   private readonly hullMat = new THREE.MeshStandardMaterial({
     color: 0x2a3540,
@@ -45,14 +40,6 @@ export class Orbiters implements WeaponPattern {
     return {
       glow: color,
       eyeMat: new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 4 }),
-      rotorMat: new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 2.2 }),
-      haloMat: new THREE.MeshBasicMaterial({
-        color,
-        transparent: true,
-        opacity: 0.18,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false
-      }),
       trailMat: new THREE.MeshBasicMaterial({
         color,
         transparent: true,
@@ -66,13 +53,11 @@ export class Orbiters implements WeaponPattern {
 
   constructor() {
     const shared = [
-      this.hullGeo, this.eyeGeo, this.rotorGeo, this.finGeo, this.haloGeo, this.trailGeo, this.hullMat
+      this.hullGeo, this.eyeGeo, this.trailGeo, this.hullMat
     ];
     for (const o of shared) o.userData = { shared: true };
     for (const look of Object.values(this.looks)) {
       look.eyeMat.userData = { shared: true };
-      look.rotorMat.userData = { shared: true };
-      look.haloMat.userData = { shared: true };
       look.trailMat.userData = { shared: true };
     }
   }
@@ -94,17 +79,7 @@ export class Orbiters implements WeaponPattern {
     hull.scale.set(1, 0.6, 1.25);
     const eye = new THREE.Mesh(this.eyeGeo, look.eyeMat);
     eye.position.set(0, 0, 0.26);
-    const rotor = new THREE.Mesh(this.rotorGeo, look.rotorMat);
-    rotor.rotation.x = Math.PI / 2;
-    rotor.name = 'rotor';
-    const finL = new THREE.Mesh(this.finGeo, this.hullMat);
-    finL.position.set(-0.26, 0, -0.1);
-    finL.rotation.z = 0.35;
-    const finR = new THREE.Mesh(this.finGeo, this.hullMat);
-    finR.position.set(0.26, 0, -0.1);
-    finR.rotation.z = -0.35;
-    const halo = new THREE.Mesh(this.haloGeo, look.haloMat);
-    g.add(hull, eye, rotor, finL, finR, halo);
+    g.add(hull, eye);
     if (variant === 'ring') g.scale.setScalar(1.2);
     return g;
   }
@@ -209,8 +184,6 @@ export class Orbiters implements WeaponPattern {
       const dMesh = this.orbitalDrones[i];
       dMesh.position.set(dx, 0.75 + Math.sin(this.spinTime * 3 + i) * 0.06, dz);
       dMesh.rotation.y = -a; // eye faces the direction of travel
-      const rotor = dMesh.getObjectByName('rotor');
-      if (rotor) rotor.rotation.z = this.spinTime * 14 + i;
 
       const hit = ctx.grid.queryRadius(dx, dz, hitRadius, ctx.scratch.droneHit);
       for (let h = 0; h < hit.length; h++) {
