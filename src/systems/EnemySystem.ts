@@ -151,7 +151,7 @@ export class EnemySystem {
     this.enemyPool.acquire(p);
     this.enemyPool.setTransform(p.poolIndex, x, y, z, angle);
     this.enemyProjectiles.push(p);
-    this.audio.playPlasmaShot(false);
+    this.audio.playEnemyShot('light');
   }
 
   public update(dt: number, timeSeconds: number, obstacles: Array<{ x: number; z: number; radius: number }> = [], env?: IEnvironment): void {

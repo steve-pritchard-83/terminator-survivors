@@ -1,3 +1,7 @@
 node_modules/
 test-results/
 playwright-report/
+
+public/audio/effects/*/
+coverage/
+dist-e2e/

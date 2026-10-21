@@ -399,7 +399,7 @@ export class PickupSystem {
         this.runState.pendingLevelUps += levelsGained;
       }
     } else if (p.kind === 'crate') {
-      this.audio.playExplosion(0.8);
+      this.audio.playCrateBreak();
       // Random crate rewards: Heal, EMP blast, or Alloy Scrap
       const roll = globalRNG.next();
       if (roll < 0.4) {

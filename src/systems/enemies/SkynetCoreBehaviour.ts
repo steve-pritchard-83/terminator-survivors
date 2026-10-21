@@ -102,7 +102,7 @@ export class SkynetCoreBehaviour implements EnemyBehaviour {
         const tz = enemy.z + Math.cos(spokeAngle) * 14.0;
         ctx.spawnEnemyProjectile(enemy.x, 2.5, enemy.z, tx, tz, 9.0, ENEMY_ATTACK_DAMAGE.coreSpoke);
       }
-      ctx.audio.playPlasmaShot(false);
+      ctx.audio.playEnemyShot('light');
     }
 
     // ATTACK 2 (Phase 2+): Temporal Nova radial burst
@@ -117,7 +117,7 @@ export class SkynetCoreBehaviour implements EnemyBehaviour {
         state.novaCooldown = 4.8;
         novaTelegraph.setVisible(false);
         ctx.emit('camera:shake', { trauma: 0.5 });
-        ctx.audio.playPlasmaShot(true);
+        ctx.audio.playEnemyShot('heavy');
 
         const boltCount = 10;
         const baseAngle = ctx.timeSeconds * 1.8;

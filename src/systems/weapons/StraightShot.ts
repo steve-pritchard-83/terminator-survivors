@@ -1,5 +1,13 @@
 import type { WeaponDefinition, WeaponLevelStats } from '../../core/types';
 import type { WeaponPattern, WeaponFireContext } from './WeaponPattern';
+import type { GunSound } from '../../audio/AudioEngine';
+
+const GUN_SOUNDS: Record<string, GunSound> = {
+  plasma_light: 'plasmaLight',
+  plasma_heavy: 'plasmaHeavy',
+  rifle: 'rifle',
+  railgun: 'railgun'
+};
 
 export class StraightShot implements WeaponPattern {
   public fire(
@@ -18,8 +26,7 @@ export class StraightShot implements WeaponPattern {
     const durationMult = ctx.runState.computedStats.durationMultiplier;
     const amount = stats.amount + ctx.runState.computedStats.bonusAmount;
 
-    const isHeavy = params.sfx === 'plasma_heavy';
-    ctx.audio.playPlasmaShot(isHeavy);
+    ctx.audio.playGunShot(GUN_SOUNDS[params.sfx ?? 'plasma_light'] ?? 'plasmaLight');
     ctx.playerMesh.pulseMuzzleFlash(params.flashColor ?? 0xd400ff);
 
     const visual = params.projectileVisual ?? 'plasma';

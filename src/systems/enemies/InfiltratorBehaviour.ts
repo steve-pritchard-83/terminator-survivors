@@ -132,7 +132,7 @@ export class InfiltratorBehaviour implements EnemyBehaviour {
         const spreadX = (ctx.rng.next() - 0.5) * 1.2;
         const spreadZ = (ctx.rng.next() - 0.5) * 1.2;
         ctx.spawnEnemyProjectile(enemy.x, 1.25, enemy.z, px + spreadX, pz + spreadZ, 12.0, ENEMY_ATTACK_DAMAGE.infiltratorBurst);
-        ctx.audio.playPlasmaShot(true);
+        ctx.audio.playEnemyShot('heavy');
       }
     } else if (!isCharging) {
       burstCooldown = tickCooldown(burstCooldown, dt, distToPlayer >= 4.0 && distToPlayer <= 20.0, 0.5);
@@ -155,7 +155,7 @@ export class InfiltratorBehaviour implements EnemyBehaviour {
       walkShootCooldown = 2.4;
       isFiring = true;
       ctx.spawnEnemyProjectile(enemy.x, 1.25, enemy.z, px, pz, 10.0, ENEMY_ATTACK_DAMAGE.infiltratorSpray);
-      ctx.audio.playPlasmaShot(false);
+      ctx.audio.playEnemyShot('light');
     }
 
     state.burstShotsLeft = shotsLeft;

@@ -290,6 +290,7 @@ export function handleEliteDeath(
 ): void {
   if (enemy.affix === 'Self-Destruct') {
     // The blast lands after a short telegraphed delay so the player can move out of it
+    ctx.audio.playBombBeep(enemy.x, enemy.z, ctx.runState.playerPos.x, ctx.runState.playerPos.z);
     ctx.scheduleBlast?.(enemy.x, enemy.z, SELF_DESTRUCT_BLAST.radius, SELF_DESTRUCT_BLAST.damage, SELF_DESTRUCT_BLAST.delaySeconds);
   }
 }

@@ -125,7 +125,7 @@ export class HKTankBehaviour implements EnemyBehaviour {
       const rightZ = enemy.z + Math.cos(targetAngle + 0.25) * 2.2;
       ctx.spawnEnemyProjectile(leftX, 1.8, leftZ, px, pz, 14.0, ENEMY_ATTACK_DAMAGE.tankCannon);
       ctx.spawnEnemyProjectile(rightX, 1.8, rightZ, px, pz, 14.0, ENEMY_ATTACK_DAMAGE.tankCannon);
-      ctx.audio.playPlasmaShot(true);
+      ctx.audio.playEnemyShot('heavy');
     }
     state.cannonCooldown = cannonCooldown;
 

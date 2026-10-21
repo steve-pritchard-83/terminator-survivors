@@ -1,83 +1,88 @@
+const fx = (file: string): string => `./audio/effects/${file}`;
+/** `name_01.wav` .. `name_NN.wav` (converted one-shots, see SOUND_SOURCING.md). */
+const seq = (name: string, count: number): string[] =>
+  Array.from({ length: count }, (_, i) => fx(`${name}_${String(i + 1).padStart(2, '0')}.wav`));
+
 export const SFX_WAV_MANIFEST: Record<string, string[]> = {
-  plasmaLight: [
-    './audio/effects/S_PlasmaShot01.wav',
-    './audio/effects/S_PlasmaShot02.wav',
-    './audio/effects/S_PlasmaShot03.wav',
-    './audio/effects/S_PlasmaShot04.wav'
-  ],
+  // Player guns
+  plasmaLight: seq('plasma_player', 8),
   plasmaHeavy: [
-    './audio/effects/S_Plasma_Aerial_New01.wav',
-    './audio/effects/S_Plasma_Aerial_New02.wav',
-    './audio/effects/S_LaserTank01.wav',
-    './audio/effects/S_LaserTank02.wav'
+    fx('S_Plasma_Aerial_New01.wav'),
+    fx('S_Plasma_Aerial_New02.wav'),
+    fx('S_LaserTank01.wav'),
+    fx('S_LaserTank02.wav')
   ],
-  shotgun: [
-    './audio/effects/S_Ithica01.wav',
-    './audio/effects/S_Ithica02.wav',
-    './audio/effects/Shotgun_shot_spas.wav'
-  ],
-  explosion: [
-    './audio/effects/S_Explosion01.wav',
-    './audio/effects/S_Explosion02.wav',
-    './audio/effects/plasma_explosion.wav'
-  ],
-  empBlast: ['./audio/effects/S_HackingDevice_On.wav', './audio/effects/S_DetectiveModeOn.wav'],
-  endoHit: ['./audio/effects/S_BulletHitMetal01.wav', './audio/effects/S_BulletHitMetal02.wav'],
-  endoDestroy: ['./audio/effects/plasma_explosion.wav', './audio/effects/S_DoorLockBreak01.wav'],
+  rifle: seq('rifle', 8),
+  railgun: seq('railgun', 4),
+  shotgun: [fx('S_Ithica01.wav'), fx('S_Ithica02.wav'), fx('Shotgun_shot_spas.wav'), ...seq('shotgun_extra', 5)],
+  throw: seq('throw', 2),
+  launchGrenade: seq('launch_grenade', 1),
+  launchRocket: seq('launch_rocket', 2),
+  fireWhoosh: seq('fire_whoosh', 5),
+  empBlast: seq('emp', 3),
+  swing: seq('swing', 10),
+  // Enemy guns
+  enemyPlasma: seq('enemy_plasma', 8),
+  enemyHeavy: seq('enemy_heavy', 7),
+  minigun: seq('minigun', 1),
+  // Impacts, deaths and explosions
+  endoHit: seq('hit_metal', 7),
+  endoDestroy: seq('death_endo', 7),
+  deathDrone: seq('death_drone', 5),
+  deathMachine: seq('death_machine', 4),
+  deathBoss: seq('death_boss', 3),
+  explodeSmall: seq('explode_small', 5),
+  explodeMed: [...seq('explode_med', 6), fx('plasma_explosion.wav')],
+  explodeLarge: [...seq('explode_large', 4), fx('S_Explosion01.wav'), fx('S_Explosion02.wav')],
+  explodeDrum: seq('explode_drum', 3),
+  playerHit: seq('player_hit', 6),
+  stepPlayer: seq('step', 8),
+  // Cues
   hkAlert: [
-    './audio/effects/S_TurretAlarm.wav',
-    './audio/effects/S_HUD_TurretAlarm2.wav',
-    './audio/effects/S_Alterted.wav',
-    './audio/effects/hk_heavy1a_m.wav'
+    fx('S_TurretAlarm.wav'),
+    fx('S_HUD_TurretAlarm2.wav'),
+    fx('S_Alterted.wav'),
+    fx('hk_heavy1a_m.wav')
   ],
-  bossStinger: [
-    './audio/effects/S_Splash_Screen_Drums_x1.wav',
-    './audio/effects/hk_heavy1a_m.wav',
-    './audio/effects/S_TurretAlarm.wav'
-  ],
-  pickupGem: ['./audio/effects/S_LootPickupStuff.wav', './audio/effects/S_LootPickupQuest.wav'],
-  levelUp: [
-    './audio/effects/S_ExpLevel.wav',
-    './audio/effects/S_NewLevel.wav',
-    './audio/effects/S_NewLevel2.wav',
-    './audio/effects/S_NewLevel3.wav'
-  ],
-  vaultJackpot: [
-    './audio/effects/S_ObjectiveComplete.wav',
-    './audio/effects/S_HckingCompleat.wav',
-    './audio/effects/S_AddtoArchive.wav'
-  ],
-  playerHit: ['./audio/effects/S_BulletHitBody01.wav', './audio/effects/S_BulletHitBody02.wav'],
-  uiClick: [
-    './audio/effects/S_Click.wav',
-    './audio/effects/S_Click02.wav',
-    './audio/effects/S_Click03.wav',
-    './audio/effects/S_Click04.wav'
-  ],
-  uiBeep: ['./audio/effects/S_ButtonBeep01.wav', './audio/effects/S_ButtonBeep02.wav'],
-  uiBuy: ['./audio/effects/S_Buy.wav'],
-  uiError: ['./audio/effects/S_DetectiveModeError.wav', './audio/effects/Frogger_Error.wav'],
-  uiUpgradeApplied: ['./audio/effects/S_WeaponUpgradesApplied.wav'],
+  aerialRockets: seq('aerial_rockets', 1),
+  bombBeep: seq('bomb_beep', 1),
+  bossStinger: [fx('S_Splash_Screen_Drums_x1.wav'), fx('hk_heavy1a_m.wav'), fx('S_TurretAlarm.wav')],
+  // Pickups and rewards
+  pickupGem: [fx('S_LootPickupStuff.wav'), fx('S_LootPickupQuest.wav')],
+  lootHeal: seq('loot_heal', 2),
+  lootScrap: seq('loot_scrap', 3),
+  crateBreak: seq('crate_break', 4),
+  vaultOpen: seq('vault_open', 2),
+  levelUp: [fx('S_ExpLevel.wav'), fx('S_NewLevel.wav'), fx('S_NewLevel2.wav'), fx('S_NewLevel3.wav')],
+  vaultJackpot: [fx('S_ObjectiveComplete.wav'), fx('S_HckingCompleat.wav'), fx('S_AddtoArchive.wav')],
+  achievement: seq('achievement', 2),
+  // Ambience
+  ambDistant: seq('amb_distant', 7),
+  ambBed: [fx('amb_battle_loop.mp3')],
+  // UI
+  uiClick: [fx('S_Click.wav'), fx('S_Click02.wav'), fx('S_Click03.wav'), fx('S_Click04.wav')],
+  uiBeep: [fx('S_ButtonBeep01.wav'), fx('S_ButtonBeep02.wav')],
+  uiBuy: [fx('S_Buy.wav')],
+  uiError: [fx('S_DetectiveModeError.wav'), fx('Frogger_Error.wav')],
+  uiUpgradeApplied: [fx('S_WeaponUpgradesApplied.wav')],
   uiModalOpen: [
-    './audio/effects/S_HUD_DetectiveModeOnNew.wav',
-    './audio/effects/S_HUD_Infiltrator_AnalysingIntelData1.wav',
-    './audio/effects/S_HUD_Infiltrator_EnemyAnalysis.wav'
+    fx('S_HUD_DetectiveModeOnNew.wav'),
+    fx('S_HUD_Infiltrator_AnalysingIntelData1.wav'),
+    fx('S_HUD_Infiltrator_EnemyAnalysis.wav')
   ],
-  uiModalClose: [
-    './audio/effects/S_HUD_DetectiveModeOffNew.wav',
-    './audio/effects/S_DetectiveModeOff.wav'
-  ],
-  runStart: ['./audio/effects/S_Splash_Screen_Drums_x1.wav', './audio/effects/S_NewQuest.wav'],
-  playerTerminated: ['./audio/effects/terminated.wav'],
-  runDefeat: ['./audio/effects/terminated.wav', './audio/effects/S_QuestFaild.wav'],
-  runVictory: ['./audio/effects/S_ObjectiveComplete.wav'],
-  swing: ['./audio/effects/S_Swing01.wav', './audio/effects/S_Swing02.wav', './audio/effects/S_Woosh.wav'],
-  fireWhoosh: ['./audio/effects/S_Woosh.wav'],
-  launch: ['./audio/effects/S_Explosion01.wav'],
-  achievement: ['./audio/effects/S_AddtoArchive.wav', './audio/effects/S_NewQuest.wav']
+  uiModalClose: [fx('S_HUD_DetectiveModeOffNew.wav'), fx('S_DetectiveModeOff.wav')],
+  runStart: [fx('S_Splash_Screen_Drums_x1.wav'), fx('S_NewQuest.wav')],
+  playerTerminated: [fx('terminated.wav')],
+  runDefeat: [fx('terminated.wav'), fx('S_QuestFaild.wav')],
+  runVictory: [fx('S_ObjectiveComplete.wav')]
 };
 
 import type { GamepadManager } from '../input/GamepadManager';
+import { AMBIENCE } from '../data/balance';
+
+export type GunSound = 'plasmaLight' | 'plasmaHeavy' | 'rifle' | 'railgun';
+export type EnemyShotSound = 'light' | 'heavy' | 'minigun';
+export type LaunchSound = 'throw' | 'grenade' | 'rocket';
 
 export interface VoiceLimitConfig {
   maxVoices: number;
@@ -92,11 +97,26 @@ export const DEFAULT_VOICE_CONFIG: VoiceLimitConfig = {
 export const CATEGORY_VOICE_LIMITS: Record<string, VoiceLimitConfig> = {
   endoHit: { maxVoices: 6, minRetriggerMs: 30 },
   playerHit: { maxVoices: 6, minRetriggerMs: 30 },
-  explosion: { maxVoices: 3, minRetriggerMs: 30 },
   endoDestroy: { maxVoices: 3, minRetriggerMs: 30 },
+  deathDrone: { maxVoices: 3, minRetriggerMs: 40 },
+  deathMachine: { maxVoices: 2, minRetriggerMs: 80 },
+  deathBoss: { maxVoices: 1, minRetriggerMs: 500 },
+  explodeSmall: { maxVoices: 3, minRetriggerMs: 40 },
+  explodeMed: { maxVoices: 3, minRetriggerMs: 40 },
+  explodeLarge: { maxVoices: 2, minRetriggerMs: 80 },
+  explodeDrum: { maxVoices: 2, minRetriggerMs: 80 },
+  enemyPlasma: { maxVoices: 4, minRetriggerMs: 50 },
+  enemyHeavy: { maxVoices: 2, minRetriggerMs: 90 },
+  minigun: { maxVoices: 2, minRetriggerMs: 250 },
+  rifle: { maxVoices: 4, minRetriggerMs: 40 },
   swing: { maxVoices: 4, minRetriggerMs: 60 },
-  launch: { maxVoices: 2, minRetriggerMs: 90 },
-  fireWhoosh: { maxVoices: 2, minRetriggerMs: 150 }
+  throw: { maxVoices: 2, minRetriggerMs: 90 },
+  launchGrenade: { maxVoices: 2, minRetriggerMs: 90 },
+  launchRocket: { maxVoices: 2, minRetriggerMs: 120 },
+  fireWhoosh: { maxVoices: 2, minRetriggerMs: 150 },
+  stepPlayer: { maxVoices: 2, minRetriggerMs: 120 },
+  ambDistant: { maxVoices: 1, minRetriggerMs: 2000 },
+  bombBeep: { maxVoices: 3, minRetriggerMs: 60 }
 };
 
 interface VoiceSlot {
@@ -716,6 +736,32 @@ export class AudioEngine {
     this.playSample(isHeavy ? 'plasmaHeavy' : 'plasmaLight', baseGain * attenuation, 1.0, 0.06, pan);
   }
 
+  /** Player gun shot; the sound is chosen per weapon in src/data/weapons.ts (`patternParams.sfx`). */
+  public playGunShot(sound: GunSound): void {
+    const gain: Record<GunSound, number> = { plasmaLight: 0.5, plasmaHeavy: 0.65, rifle: 0.42, railgun: 0.55 };
+    this.playSample(sound, gain[sound], 1.0, 0.06);
+  }
+
+  /** Hostile fire, kept distinct from the player's guns. */
+  public playEnemyShot(
+    sound: EnemyShotSound = 'light',
+    sourceX?: number,
+    sourceZ?: number,
+    playerX?: number,
+    playerZ?: number
+  ): void {
+    let pan = 0;
+    let attenuation = 1.0;
+    if (sourceX !== undefined && sourceZ !== undefined && playerX !== undefined && playerZ !== undefined) {
+      const spatial = this.calculateSpatialParams(sourceX, sourceZ, playerX, playerZ, 6, 16);
+      pan = spatial.pan;
+      attenuation = spatial.attenuation;
+    }
+    const category = sound === 'heavy' ? 'enemyHeavy' : sound === 'minigun' ? 'minigun' : 'enemyPlasma';
+    const baseGain = sound === 'heavy' ? 0.6 : sound === 'minigun' ? 0.45 : 0.4;
+    this.playSample(category, baseGain * attenuation, 1.0, 0.08, pan);
+  }
+
   public playShotgunBlast(
     sourceX?: number,
     sourceZ?: number,
@@ -753,7 +799,21 @@ export class AudioEngine {
       this.triggerHaptic(scale > 1.3 ? [28, 30, 40] : 22, 90);
     }
     const finalGain = Math.min(0.9, 0.55 * scale * attenuation);
-    this.playSample('explosion', finalGain, scale > 1.3 ? 0.88 : 1.0, 0.06, pan);
+    const category = scale < 1.0 ? 'explodeSmall' : scale < 1.7 ? 'explodeMed' : 'explodeLarge';
+    this.playSample(category, finalGain, 1.0, 0.08, pan);
+  }
+
+  /** Fuel drum fireball. */
+  public playDrumExplosion(sourceX?: number, sourceZ?: number, playerX?: number, playerZ?: number): void {
+    this.playExplosion(1.0, sourceX, sourceZ, playerX, playerZ);
+    let attenuation = 1.0;
+    let pan = 0;
+    if (sourceX !== undefined && sourceZ !== undefined && playerX !== undefined && playerZ !== undefined) {
+      const spatial = this.calculateSpatialParams(sourceX, sourceZ, playerX, playerZ, 8, 18);
+      pan = spatial.pan;
+      attenuation = spatial.attenuation;
+    }
+    this.playSample('explodeDrum', 0.75 * attenuation, 1.0, 0.06, pan);
   }
 
   public playEmpBlast(): void {
@@ -821,7 +881,7 @@ export class AudioEngine {
     if (dist < 20) {
       this.triggerHaptic(10, 65);
     }
-    this.playSample('endoDestroy', 0.52 * attenuation, 1.05, 0.06, pan);
+    this.playSample('endoDestroy', 0.52 * attenuation, 1.0, 0.08, pan);
   }
 
   /** Blade, claw or lunge whoosh. */
@@ -837,15 +897,94 @@ export class AudioEngine {
     this.playSample('swing', 0.55 * attenuation, 1.0, 0.12, pan);
   }
 
-  /** Thump of a grenade, launcher or mortar leaving the barrel (not the impact). */
-  public playLaunch(heavy = false): void {
-    this.triggerHaptic(heavy ? [14, 20] : 12, 30);
-    this.playSample('launch', heavy ? 0.5 : 0.38, heavy ? 1.2 : 1.7, 0.06);
+  /** A thrown bomb, a grenade leaving the launcher or a rocket igniting (not the impact). */
+  public playLaunch(sound: LaunchSound = 'grenade'): void {
+    this.triggerHaptic(sound === 'rocket' ? [14, 20] : 12, 30);
+    if (sound === 'throw') this.playSample('throw', 0.5, 1.0, 0.1);
+    else if (sound === 'rocket') this.playSample('launchRocket', 0.55, 1.0, 0.06);
+    else this.playSample('launchGrenade', 0.5, 1.0, 0.08);
   }
 
   /** Whoosh of flammable liquid igniting on the ground (napalm, molotov, firestorm). */
   public playFireDeploy(): void {
-    this.playSample('fireWhoosh', 0.5, 0.55, 0.05);
+    this.playSample('fireWhoosh', 0.5, 1.0, 0.08);
+  }
+
+  /** HK missile salvo being armed. */
+  public playSalvoWarning(): void {
+    this.playSample('aerialRockets', 0.6, 1.0, 0.0);
+  }
+
+  /** Self-Destruct elite counting down. */
+  public playBombBeep(sourceX?: number, sourceZ?: number, playerX?: number, playerZ?: number): void {
+    let pan = 0;
+    let attenuation = 1.0;
+    if (sourceX !== undefined && sourceZ !== undefined && playerX !== undefined && playerZ !== undefined) {
+      const spatial = this.calculateSpatialParams(sourceX, sourceZ, playerX, playerZ, 6, 14);
+      pan = spatial.pan;
+      attenuation = spatial.attenuation;
+    }
+    this.playSample('bombBeep', 0.55 * attenuation, 1.0, 0.0, pan);
+  }
+
+  public playFootstep(): void {
+    this.playSample('stepPlayer', 0.22, 1.0, 0.12);
+  }
+
+  public playCrateBreak(): void {
+    this.playSample('crateBreak', 0.6, 1.0, 0.08);
+  }
+
+  private ambSource: AudioBufferSourceNode | null = null;
+  private ambGain: GainNode | null = null;
+  private ambActive = false;
+  private distantTimer = 0;
+
+  /** Battle ambience bed and distant explosions for the length of a run. */
+  public startAmbience(): void {
+    this.ambActive = true;
+    this.distantTimer = AMBIENCE.distantMinSeconds;
+    void this.ensureCategoryLoaded('ambBed');
+  }
+
+  public stopAmbience(): void {
+    this.ambActive = false;
+    if (this.ambSource) {
+      try {
+        this.ambSource.stop();
+        this.ambSource.disconnect();
+      } catch {}
+      this.ambSource = null;
+    }
+    this.ambGain?.disconnect();
+    this.ambGain = null;
+  }
+
+  public updateAmbience(dt: number): void {
+    if (!this.ambActive) return;
+    if (!this.ambSource) this.startAmbienceLoop();
+    this.distantTimer -= dt;
+    if (this.distantTimer <= 0) {
+      const { distantMinSeconds: min, distantMaxSeconds: max } = AMBIENCE;
+      this.distantTimer = min + Math.random() * (max - min);
+      this.playSample('ambDistant', AMBIENCE.distantGain, 1.0, 0.1, (Math.random() - 0.5) * 1.6);
+    }
+  }
+
+  private startAmbienceLoop(): void {
+    const buffer = this.sfxBuffers.get('ambBed')?.[0];
+    if (!this.ctx || !this.sfxGain || !buffer) return;
+    const source = this.ctx.createBufferSource();
+    const gain = this.ctx.createGain();
+    source.buffer = buffer;
+    source.loop = true;
+    gain.gain.setValueAtTime(0, this.ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(AMBIENCE.bedGain, this.ctx.currentTime + 2);
+    source.connect(gain);
+    gain.connect(this.sfxGain);
+    source.start(0);
+    this.ambSource = source;
+    this.ambGain = gain;
   }
 
   public playAchievement(): void {
@@ -856,14 +995,10 @@ export class AudioEngine {
   /** Medkit and scrap rewards from crates. */
   public playLoot(kind: 'heal' | 'scrap'): void {
     this.triggerHaptic(12, 30);
-    if (kind === 'heal') this.playSample('uiUpgradeApplied', 0.6, 1.25, 0.02);
-    else this.playSample('pickupGem', 0.55, 0.8, 0.03);
+    this.playSample(kind === 'heal' ? 'lootHeal' : 'lootScrap', 0.6, 1.0, 0.04);
   }
 
-  /**
-   * Death sound by enemy kind: bosses and machines blow up, small drones crunch, humanoids
-   * collapse with the standard endoskeleton destruction sound.
-   */
+  /** Death sound by enemy kind: bosses and machines blow up, drones short out, humanoids spark and collapse. */
   public playEnemyDeath(
     kind: 'boss' | 'machine' | 'small' | 'humanoid',
     sourceX?: number,
@@ -871,16 +1006,23 @@ export class AudioEngine {
     playerX?: number,
     playerZ?: number
   ): void {
+    let pan = 0;
+    let attenuation = 1.0;
+    if (sourceX !== undefined && sourceZ !== undefined && playerX !== undefined && playerZ !== undefined) {
+      const spatial = this.calculateSpatialParams(sourceX, sourceZ, playerX, playerZ, 7, 16);
+      pan = spatial.pan;
+      attenuation = spatial.attenuation;
+    }
     switch (kind) {
       case 'boss':
-        this.playExplosion(2.0, sourceX, sourceZ, playerX, playerZ);
-        this.playEndoDestroy(sourceX, sourceZ, playerX, playerZ);
+        this.triggerHaptic([40, 50, 60], 200);
+        this.playSample('deathBoss', 0.9, 1.0, 0.04, pan);
         break;
       case 'machine':
-        this.playExplosion(1.1, sourceX, sourceZ, playerX, playerZ);
+        this.playSample('deathMachine', 0.6 * attenuation, 1.0, 0.08, pan);
         break;
       case 'small':
-        this.playEndoHit(sourceX, sourceZ, playerX, playerZ);
+        this.playSample('deathDrone', 0.45 * attenuation, 1.0, 0.1, pan);
         break;
       default:
         this.playEndoDestroy(sourceX, sourceZ, playerX, playerZ);
@@ -922,6 +1064,7 @@ export class AudioEngine {
 
   public playVaultJackpot(): void {
     this.triggerHaptic([22, 40, 28, 40, 60], 150);
+    this.playSample('vaultOpen', 0.7, 1.0, 0.0);
     this.playSample('vaultJackpot', 0.85, 1.0, 0.0);
   }
 

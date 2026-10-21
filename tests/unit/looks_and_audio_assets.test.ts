@@ -32,4 +32,10 @@ describe('audio manifest', () => {
     }
     expect(missing).toEqual([]);
   });
+
+  it('only references files directly in audio/effects (subfolders are not shipped)', () => {
+    for (const files of Object.values(SFX_WAV_MANIFEST)) {
+      for (const f of files) expect(f, f).toMatch(/^\.\/audio\/effects\/[^/]+$/);
+    }
+  });
 });

@@ -16,7 +16,7 @@ export class Lobbed implements WeaponPattern {
     const dmg = Math.round(stats.damage * might);
     const amount = stats.amount + ctx.runState.computedStats.bonusAmount;
 
-    ctx.audio.playLaunch((params.areaRadius ?? 2.5) >= 3.5);
+    ctx.audio.playLaunch(params.launchSfx ?? 'grenade');
     const minDist = params.minDist ?? 5;
     const maxDist = params.maxDist ?? 13;
     const vy = params.vy ?? 4.5;

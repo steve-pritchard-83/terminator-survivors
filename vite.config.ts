@@ -1,6 +1,9 @@
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import { execSync } from 'node:child_process';
+import fs from 'node:fs';
+import path from 'node:path';
+import type { Plugin } from 'vite';
 import packageJson from './package.json';
 
 let commitHash = 'f4b929d';
@@ -8,6 +11,36 @@ try {
   commitHash = execSync('git rev-parse --short HEAD').toString().trim();
 } catch {
   // fallback
+}
+
+/**
+ * Copies public/ into the build, skipping library folders inside public/audio/effects.
+ * Those folders are raw sound libraries being sorted; only the flat files directly in
+ * audio/effects (the ones listed in SFX_WAV_MANIFEST) ship with the game.
+ */
+function copyPublicWithoutSoundLibraries(): Plugin {
+  let root = '';
+  let outDir = '';
+  return {
+    name: 'copy-public-without-sound-libraries',
+    apply: 'build',
+    configResolved(config) {
+      root = config.root;
+      outDir = path.resolve(config.root, config.build.outDir);
+    },
+    writeBundle: {
+      order: 'pre',
+      handler() {
+        const publicDir = path.resolve(root, 'public');
+        if (!fs.existsSync(publicDir)) return;
+        const effectsDir = path.join(publicDir, 'audio', 'effects');
+        fs.cpSync(publicDir, outDir, {
+          recursive: true,
+          filter: (src) => !(path.dirname(src) === effectsDir && fs.statSync(src).isDirectory())
+        });
+      }
+    }
+  };
 }
 
 export default defineConfig({
@@ -18,6 +51,7 @@ export default defineConfig({
     __BUILD_HASH__: JSON.stringify(commitHash)
   },
   plugins: [
+    copyPublicWithoutSoundLibraries(),
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: 'auto',
@@ -67,7 +101,7 @@ export default defineConfig({
             options: {
               cacheName: 'terminator-sfx-wav-cache',
               expiration: {
-                maxEntries: 80,
+                maxEntries: 200,
                 maxAgeSeconds: 60 * 60 * 24 * 30
               }
             }
@@ -78,6 +112,7 @@ export default defineConfig({
   ],
   build: {
     outDir: process.env.BUILD_OUT_DIR ?? 'dist',
+    copyPublicDir: false, // see copyPublicWithoutSoundLibraries
     target: 'es2022',
     chunkSizeWarningLimit: 1200,
     rollupOptions: {

@@ -82,6 +82,8 @@ test('Every enemy and boss type runs without runtime errors', async ({ page }) =
 // The victory movie plays over the results. It can be skipped after a short lock; the results
 // (MISSION ACCOMPLISHED) must follow either way.
 test('Defeating the final boss plays the victory movie, which can be skipped to the results', async ({ page }) => {
+  test.setTimeout(90_000); // software rendering is slow; the movie flow involves several waits
+  test.setTimeout(90_000); // software rendering is slow; the movie flow involves several waits
   await page.goto('/');
   await page.getByTestId('btn-start-run').click();
   await expect(page.getByTestId('hud-container')).toBeVisible();
@@ -94,10 +96,28 @@ test('Defeating the final boss plays the victory movie, which can be skipped to 
   await page.waitForTimeout(400);
   await page.evaluate(() => window.__GAME_DEBUG__!.damageEnemy('boss', 1e9));
 
-  await expect(page.getByTestId('victory-video')).toBeVisible({ timeout: 5000 });
+  await expect(page.getByTestId('victory-video')).toBeVisible({ timeout: 15000 });
   // Skipping is locked for the first 1.5 s so button-mashing at the win does not skip it
   await page.waitForTimeout(1800);
   await page.keyboard.press('Enter');
   await expect(page.getByTestId('victory-video')).toBeHidden();
   await expect(page.locator('#end-title')).toContainText('MISSION ACCOMPLISHED', { timeout: 5000 });
+});
+
+// Dying plays the defeat movie after a short lead-in, and it can be skipped to the results.
+test('Dying plays the defeat movie, which can be skipped to the results', async ({ page }) => {
+  test.setTimeout(90_000); // software rendering is slow; the movie flow involves several waits
+  await page.goto('/');
+  await page.getByTestId('btn-start-run').click();
+  await expect(page.getByTestId('hud-container')).toBeVisible();
+
+  await page.waitForTimeout(800); // let the run settle before killing the player
+  await page.evaluate(() => window.__GAME_DEBUG__!.setPlayerHp(0));
+
+  await expect(page.getByTestId('defeat-video')).toBeVisible({ timeout: 15000 });
+  await page.waitForTimeout(1800);
+  await page.keyboard.press('Enter');
+  await expect(page.getByTestId('defeat-video')).toBeHidden();
+  await expect(page.locator('#end-title')).toBeVisible({ timeout: 5000 });
+  await expect(page.getByTestId('victory-video')).toBeHidden();
 });

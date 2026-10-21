@@ -117,7 +117,7 @@ export const BASE_WEAPONS: Record<BaseWeaponId, WeaponDefinition> = {
     evolvesInto: 'thermite_buster',
     iconColor: '#ff4411',
     pattern: 'Lobbed',
-    patternParams: { projectileVisual: 'bomb', arcSpread: 0.5, minDist: 5, maxDist: 13, vy: 4.5, flightTime: 0.8, areaRadius: 2.5 },
+    patternParams: { projectileVisual: 'bomb', arcSpread: 0.5, minDist: 5, maxDist: 13, vy: 4.5, flightTime: 0.8, areaRadius: 2.5, launchSfx: 'throw' },
     knockback: 16,
     levels: buildWeaponLevels(
       { damage: 45, cooldown: 2.4, area: 1.35, speed: 12, amount: 1, duration: 1.2, pierce: 99 },
@@ -185,7 +185,7 @@ export const BASE_WEAPONS: Record<BaseWeaponId, WeaponDefinition> = {
     evolvesInto: 'mm1_barrage',
     iconColor: '#ffbb00',
     pattern: 'Lobbed',
-    patternParams: { projectileVisual: 'bomb', arcSpread: Math.PI * 2, minDist: 6, maxDist: 15, vy: 5.5, flightTime: 0.7, areaRadius: 3.2 },
+    patternParams: { projectileVisual: 'bomb', arcSpread: Math.PI * 2, minDist: 6, maxDist: 15, vy: 5.5, flightTime: 0.7, areaRadius: 3.2, launchSfx: 'grenade' },
     knockback: 15,
     levels: buildWeaponLevels(
       { damage: 52, cooldown: 2.1, area: 1.2, speed: 16, amount: 1, duration: 0.8, pierce: 99 },
@@ -236,7 +236,7 @@ export const BASE_WEAPONS: Record<BaseWeaponId, WeaponDefinition> = {
     evolvesInto: 'phased_plasma_assault',
     iconColor: '#00b4d8',
     pattern: 'StraightShot',
-    patternParams: { projectileVisual: 'plasma', flashColor: 0x00b4d8, parallelOffset: 0, jitterAngle: 0.08, projectileRadius: 0.3, sfx: 'plasma_light' },
+    patternParams: { projectileVisual: 'plasma', flashColor: 0x00b4d8, parallelOffset: 0, jitterAngle: 0.08, projectileRadius: 0.3, sfx: 'rifle' },
     knockback: 7,
     levels: buildWeaponLevels(
       { damage: 22, cooldown: 0.85, area: 1.0, speed: 32, amount: 3, duration: 0.9, pierce: 2 },
@@ -253,7 +253,7 @@ export const BASE_WEAPONS: Record<BaseWeaponId, WeaponDefinition> = {
     evolvesInto: 'tandem_warhead',
     iconColor: '#ff3b00',
     pattern: 'Lobbed',
-    patternParams: { projectileVisual: 'bomb', arcSpread: 0.15, minDist: 8, maxDist: 18, vy: 5.5, flightTime: 0.65, areaRadius: 3.8 },
+    patternParams: { projectileVisual: 'bomb', arcSpread: 0.15, minDist: 8, maxDist: 18, vy: 5.5, flightTime: 0.65, areaRadius: 3.8, launchSfx: 'rocket' },
     knockback: 25,
     levels: buildWeaponLevels(
       { damage: 75, cooldown: 3.2, area: 1.5, speed: 18, amount: 1, duration: 1.0, pierce: 99 },
@@ -365,7 +365,7 @@ export const EVOLVED_WEAPONS: Record<EvolvedWeaponId, WeaponDefinition> = {
     evolvesFrom: 'pipe_bomb',
     iconColor: '#ff3300',
     pattern: 'Lobbed',
-    patternParams: { projectileVisual: 'bomb', arcSpread: 0.5, minDist: 5, maxDist: 13, vy: 4.5, flightTime: 0.8, areaRadius: 4.2 },
+    patternParams: { projectileVisual: 'bomb', arcSpread: 0.5, minDist: 5, maxDist: 13, vy: 4.5, flightTime: 0.8, areaRadius: 4.2, launchSfx: 'throw' },
     knockback: 22,
     levels: [
       {
@@ -390,7 +390,7 @@ export const EVOLVED_WEAPONS: Record<EvolvedWeaponId, WeaponDefinition> = {
     evolvesFrom: 'm25_plasma',
     iconColor: '#e600ff',
     pattern: 'StraightShot',
-    patternParams: { projectileVisual: 'heavy_plasma', flashColor: 0xff00ea, jitterAngle: 0.1, jitterPos: 0.4, projectileRadius: 0.6, sfx: 'plasma_heavy' },
+    patternParams: { projectileVisual: 'heavy_plasma', flashColor: 0xff00ea, jitterAngle: 0.1, jitterPos: 0.4, projectileRadius: 0.6, sfx: 'railgun' },
     knockback: 10,
     levels: [
       {
@@ -465,7 +465,7 @@ export const EVOLVED_WEAPONS: Record<EvolvedWeaponId, WeaponDefinition> = {
     evolvesFrom: 'm79_thumper',
     iconColor: '#ffd700',
     pattern: 'Lobbed',
-    patternParams: { projectileVisual: 'bomb', arcSpread: Math.PI * 2, minDist: 6, maxDist: 15, vy: 5.5, flightTime: 0.7, areaRadius: 3.2 },
+    patternParams: { projectileVisual: 'bomb', arcSpread: Math.PI * 2, minDist: 6, maxDist: 15, vy: 5.5, flightTime: 0.7, areaRadius: 3.2, launchSfx: 'grenade' },
     knockback: 18,
     levels: [
       {
@@ -564,7 +564,7 @@ export const EVOLVED_WEAPONS: Record<EvolvedWeaponId, WeaponDefinition> = {
     evolvesFrom: 'rpg_launcher',
     iconColor: '#ff2200',
     pattern: 'Lobbed',
-    patternParams: { projectileVisual: 'bomb', arcSpread: 0.25, minDist: 8, maxDist: 20, vy: 6.5, flightTime: 0.6, areaRadius: 5.5 },
+    patternParams: { projectileVisual: 'bomb', arcSpread: 0.25, minDist: 8, maxDist: 20, vy: 6.5, flightTime: 0.6, areaRadius: 5.5, launchSfx: 'rocket' },
     knockback: 35,
     levels: [
       {

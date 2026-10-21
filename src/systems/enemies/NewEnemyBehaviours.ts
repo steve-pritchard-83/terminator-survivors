@@ -54,7 +54,7 @@ export class T1MinigunBehaviour implements EnemyBehaviour {
     } else if (cd <= 0) {
       telegraph.setVisible(false);
       state.burstCooldown = 4.2;
-      ctx.audio.playPlasmaShot(false);
+      ctx.audio.playEnemyShot('minigun');
       // Sweeping cone burst: 5 bullets across arc
       for (let b = -2; b <= 2; b++) {
         const angle = facing + b * 0.12;
@@ -337,7 +337,7 @@ export class PlasmaTurretBehaviour implements EnemyBehaviour {
     } else if (shotCd <= 0 && distToPlayer < 18.0) {
       telegraph.setVisible(false);
       state.shotCooldown = 2.4;
-      ctx.audio.playPlasmaShot(true);
+      ctx.audio.playEnemyShot('heavy');
       ctx.spawnEnemyProjectile(enemy.x, 0.95, enemy.z, px, pz, 13.0, ENEMY_ATTACK_DAMAGE.turretBolt);
     } else {
       telegraph.setVisible(false);
@@ -403,7 +403,7 @@ export class T600MinigunnerBehaviour implements EnemyBehaviour {
     // Suppressive fire: when within 12m, fires a 3-bullet burst
     if (burstCd <= 0 && distToPlayer < 12.0) {
       state.burstCooldown = 3.6;
-      ctx.audio.playPlasmaShot(false);
+      ctx.audio.playEnemyShot('minigun');
       for (let i = 0; i < 3; i++) {
         const spreadX = (ctx.rng.next() - 0.5) * 1.5;
         const spreadZ = (ctx.rng.next() - 0.5) * 1.5;

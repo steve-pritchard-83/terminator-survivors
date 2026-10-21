@@ -27,6 +27,11 @@ export const ENEMY_ATTACK_DAMAGE = {
   minigunnerBurst: 14
 };
 
+// In-run ambience: looped battle bed plus a randomly timed distant explosion.
+export const AMBIENCE = { bedGain: 0.2, distantGain: 0.32, distantMinSeconds: 8, distantMaxSeconds: 20 };
+// Seconds between player footstep sounds while moving.
+export const FOOTSTEP_INTERVAL_SECONDS = 0.34;
+
 // Elite "Self-Destruct" affix: the blast is telegraphed for `delaySeconds` after the elite dies.
 export const SELF_DESTRUCT_BLAST = { damage: 28, radius: 3.8, delaySeconds: 0.7 };
 
@@ -46,6 +51,9 @@ export const VIEW_PROFILES = {
 };
 /** Screens at or below this width (CSS px) use the compact profile, as do coarse-pointer devices. */
 export const COMPACT_VIEW_MAX_WIDTH = 960;
+
+// Pause between the player dying and the defeat movie starting, so the death and its sound are seen first.
+export const DEFEAT_MOVIE_LEAD_IN_MS = 1400;
 
 // Seconds a destroyed endoskeleton or crab drone stays on screen collapsing before it is removed.
 export const DEATH_ANIMATION_SECONDS = 0.6;

@@ -16,7 +16,7 @@ import type { LoadoutId, RunConfig, UpgradeChoice, WeaponId, ActiveEnemy, RunHis
 import { globalEvents } from './EventBus';
 import { globalRNG } from './RNG';
 import { AchievementTracker } from '../state/AchievementTracker';
-import { HIT_STOP_GLOBAL_COOLDOWN } from '../data/balance';
+import { DEFEAT_MOVIE_LEAD_IN_MS, FOOTSTEP_INTERVAL_SECONDS, HIT_STOP_GLOBAL_COOLDOWN } from '../data/balance';
 
 export interface RunControllerHost {
   readonly runState: RunState;
@@ -41,6 +41,7 @@ export class RunController {
   public readonly achievementTracker: AchievementTracker;
   private readonly unbinds: Array<() => void> = [];
   private hitStopCooldownTimer = 0;
+  private footstepTimer = 0;
 
   public triggerHitStop(seconds: number, force = false): void {
     if (!force && this.hitStopCooldownTimer > 0) return;
@@ -99,6 +100,11 @@ export class RunController {
       globalEvents.on('wave:minute', ({ minute }) => {
         // Start fetching the victory movie well before it is needed
         if (minute >= 8) this.host.uiManager.victoryVideo.prepare();
+      }),
+      globalEvents.on('player:damaged', () => {
+        // The defeat movie is only fetched once the player is in real trouble
+        const rs = this.host.runState;
+        if (rs.hp > 0 && rs.hp / rs.maxHp < 0.5) this.host.uiManager.defeatVideo.prepare();
       }),
       globalEvents.on('achievement:unlocked', () => {
         this.host.audioEngine.playAchievement();
@@ -179,6 +185,7 @@ export class RunController {
     this.host.audioEngine.init();
     this.host.audioEngine.playRunStart();
     this.host.audioEngine.startMusic();
+    this.host.audioEngine.startAmbience();
 
     this.host.onRunStarted?.();
   }
@@ -187,8 +194,8 @@ export class RunController {
     if (this.host.runState.mode === 'gameover' || this.host.runState.mode === 'victory') return;
     this.host.runState.mode = victory ? 'victory' : 'gameover';
     this.host.audioEngine.stopMusic();
-    // A win plays the victory movie (with its own audio); the jingle only plays if the movie can't
-    if (!victory) this.host.audioEngine.playRunEnd(false);
+    this.host.audioEngine.stopAmbience();
+    // The end-of-run movie has its own audio; the jingle only plays if the movie can't
 
     const finalScrap = this.host.runState.alloyScrapEarned;
 
@@ -271,15 +278,13 @@ export class RunController {
       );
     };
 
-    if (victory) {
-      // Victory movie first; if it cannot play, fall back to the jingle and go straight to the results
-      this.host.uiManager.victoryVideo.play((played) => {
-        if (!played) this.host.audioEngine.playRunEnd(true);
-        showSummary();
-      });
-    } else {
+    // Movie first (victory or defeat); if it cannot play, fall back to the jingle and go straight to the results.
+    // Defeat gets a short lead-in so the death and the terminated sting are seen and heard first.
+    const movie = victory ? this.host.uiManager.victoryVideo : this.host.uiManager.defeatVideo;
+    movie.play((played) => {
+      if (!played) this.host.audioEngine.playRunEnd(victory);
       showSummary();
-    }
+    }, victory ? 0 : DEFEAT_MOVIE_LEAD_IN_MS);
   }
 
   public togglePause(): void {
@@ -311,6 +316,7 @@ export class RunController {
   public abortToTitle(): void {
     this.host.uiManager.pauseModal.hide();
     this.host.audioEngine.stopMusic();
+    this.host.audioEngine.stopAmbience();
     this.host.uiManager.hudView.damageNumbers.clear();
     this.host.uiManager.hudView.hide();
     this.host.enemySystem.clear();
@@ -539,6 +545,12 @@ export class RunController {
         Boolean(this.activeBoss),
         dt
       );
+      this.host.audioEngine.updateAmbience(dt);
+      this.footstepTimer -= dt;
+      if (this.host.runState.isMoving && this.footstepTimer <= 0) {
+        this.host.audioEngine.playFootstep();
+        this.footstepTimer = FOOTSTEP_INTERVAL_SECONDS;
+      }
     }
 
     const lethalStatus = this.host.runState.resolveLethalDamage();

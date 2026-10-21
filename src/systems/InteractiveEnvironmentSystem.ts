@@ -162,7 +162,7 @@ export class InteractiveEnvironmentSystem {
     const blastDamage = 220;
 
     // Visual & Audio effects
-    this.audio.playExplosion(1.6, x, z, this.runState.playerPos.x, this.runState.playerPos.z);
+    this.audio.playDrumExplosion(x, z, this.runState.playerPos.x, this.runState.playerPos.z);
     this.particles.spawnExplosion(x, 0.4, z, 1.6);
     globalEvents.emit('camera:shake', { trauma: 0.38 });
 

@@ -12,3 +12,6 @@ test-results/
 
 .vercel
 .claude/
+
+# Raw sound libraries being sorted live in subfolders of public/audio/effects; only flat files there ship
+public/audio/effects/*/

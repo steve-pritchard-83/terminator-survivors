@@ -1,19 +1,24 @@
 import type { SaveManager } from '../state/SaveManager';
 import type { GamepadManager } from '../input/GamepadManager';
 
-/** Where the victory movie lives (public/video/victory.mp4). */
-const VICTORY_VIDEO_URL = './video/victory.mp4';
 /** Ignore skip input for this long so button-mashing at the moment of victory doesn't skip it. */
 const SKIP_LOCK_MS = 1500;
 /** If playback has not started after this long (slow network, unsupported codec), go to the results. */
 const START_TIMEOUT_MS = 8000;
 
+export interface EndVideoOptions {
+  /** Path of the movie under public/, e.g. './video/victory.mp4' */
+  url: string;
+  testId: string;
+  label: string;
+}
+
 /**
- * Full-screen victory movie shown when the run is won. Plays once, can be skipped after a short
+ * Full-screen end-of-run movie (victory or defeat). Plays once, can be skipped after a short
  * lock (Enter / Space / Escape / tap / click / gamepad A, B or Menu), and always hands control
  * back to the caller, so a missing file, blocked autoplay or offline play never traps the player.
  */
-export class VictoryVideo {
+export class EndVideo {
   private readonly container: HTMLElement;
   private readonly video: HTMLVideoElement;
   private readonly skipHint: HTMLElement;
@@ -27,12 +32,13 @@ export class VictoryVideo {
 
   constructor(
     root: HTMLElement,
-    private readonly saveManager: SaveManager
+    private readonly saveManager: SaveManager,
+    private readonly options: EndVideoOptions
   ) {
     this.container = document.createElement('div');
-    this.container.setAttribute('data-testid', 'victory-video');
+    this.container.setAttribute('data-testid', options.testId);
     this.container.setAttribute('role', 'dialog');
-    this.container.setAttribute('aria-label', 'Victory');
+    this.container.setAttribute('aria-label', options.label);
     this.container.style.cssText =
       'position:fixed; inset:0; z-index:400; display:none; background:#000; align-items:center; justify-content:center;';
 
@@ -63,12 +69,12 @@ export class VictoryVideo {
     window.addEventListener('keydown', this.onKeyDown, true);
   }
 
-  /** Starts downloading the movie so it begins instantly when the run is won. */
+  /** Starts downloading the movie so it begins instantly when the run ends. */
   public prepare(): void {
     if (this.prepared) return;
     this.prepared = true;
     this.video.preload = 'auto';
-    this.video.src = VICTORY_VIDEO_URL;
+    this.video.src = this.options.url;
     this.video.load();
   }
 
@@ -76,8 +82,15 @@ export class VictoryVideo {
     return this.visible;
   }
 
-  /** Shows the movie. `onFinished(played)` fires exactly once when it ends, is skipped or fails. */
-  public play(onFinished: (played: boolean) => void): void {
+  /**
+   * Shows the movie after an optional lead-in (so the moment of death or victory is seen first).
+   * `onFinished(played)` fires exactly once when it ends, is skipped or fails.
+   */
+  public play(onFinished: (played: boolean) => void, leadInMs = 0): void {
+    if (leadInMs > 0) {
+      window.setTimeout(() => this.play(onFinished, 0), leadInMs);
+      return;
+    }
     this.onFinished = onFinished;
     this.visible = true;
     this.playedAny = false;

@@ -117,7 +117,7 @@ export class HKAerialBehaviour implements EnemyBehaviour {
       searchlightTelegraph.update(searchlightTargetX, searchlightTargetZ, alertTimer / 1.2, 3.8);
       if (alertTimer >= 1.2) {
         ctx.audio.playSearchlightAlert();
-        ctx.audio.playPlasmaShot(true);
+        ctx.audio.playEnemyShot('heavy');
         ctx.applyPlayerDamage(isBoss ? ENEMY_ATTACK_DAMAGE.aerialSearchlightBoss : ENEMY_ATTACK_DAMAGE.aerialSearchlight);
         alertTimer = 0;
         searchlightTelegraph.setVisible(false);
@@ -153,7 +153,7 @@ export class HKAerialBehaviour implements EnemyBehaviour {
       } else if (strafeTimer <= 0) {
         strafeTelegraph.setVisible(false);
         state.strafeTimer = 5.2;
-        ctx.audio.playPlasmaShot(true);
+        ctx.audio.playEnemyShot('heavy');
         // Carpet bombing 4 plasma bombs along the line
         for (let s = 1; s <= 4; s++) {
           const bx = enemy.x + Math.sin(hk.group.rotation.y) * (s * 3.8);
@@ -187,6 +187,7 @@ export class HKAerialBehaviour implements EnemyBehaviour {
           // Lock the impact points once: circle 0 on the player, the rest scattered within 3 m of it.
           if ((state.salvoArmed ?? 0) !== 1) {
             state.salvoArmed = 1;
+            ctx.audio.playSalvoWarning();
             for (let m = 0; m < 6; m++) {
               const a = ctx.rng.next() * Math.PI * 2;
               const r = m === 0 ? 0 : ctx.rng.next() * 3.0;
