@@ -4,7 +4,6 @@ import {
   BOSS_FIGHT_SPAWN,
   EMPLACEMENT_SPAWN_MAX_DIST,
   EMPLACEMENT_SPAWN_MIN_DIST,
-  HYDROBOT_FORMATION,
   LEASH_EXEMPT_ARCHETYPES,
   RUN_DURATION_MINUTES,
   WAVE_TIMELINE
@@ -123,15 +122,6 @@ export class WaveDirector {
       dist = globalRNG.range(EMPLACEMENT_SPAWN_MIN_DIST, EMPLACEMENT_SPAWN_MAX_DIST);
       sx = px + Math.sin(angle) * dist;
       sz = pz + Math.cos(angle) * dist;
-    }
-
-    if (chosenArchetype === 'hydrobot_swarm') {
-      for (let i = 0; i < HYDROBOT_FORMATION.count; i++) {
-        const ox = (globalRNG.next() - 0.5) * 2 * HYDROBOT_FORMATION.spread;
-        const oz = (globalRNG.next() - 0.5) * 2 * HYDROBOT_FORMATION.spread;
-        this.enemySystem.spawnEnemy(chosenArchetype, sx + ox, sz + oz, hpMult, dmgMult);
-      }
-      return;
     }
 
     const isElite = eliteChance > 0 && globalRNG.chance(eliteChance);

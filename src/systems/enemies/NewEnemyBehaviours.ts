@@ -6,13 +6,9 @@ import type { EnemyBehaviour, EnemyContext } from './EnemyBehaviour';
 import {
   T1MinigunMesh,
   MotoTerminatorMesh,
-  HydrobotMesh,
-  AerostatMesh,
-  PlasmaTurretMesh,
-  T600MinigunnerMesh
+  PlasmaTurretMesh
 } from '../../graphics/meshes/NewEnemyMeshes';
 import { ConeTelegraph, LineTelegraph } from '../../graphics/Telegraphs';
-import { AEROSTAT_MARK } from '../../data/waves';
 
 export class T1MinigunBehaviour implements EnemyBehaviour {
   private readonly meshes = new Map<number, T1MinigunMesh>();
@@ -193,109 +189,6 @@ export class MotoTerminatorBehaviour implements EnemyBehaviour {
   }
 }
 
-export class HydrobotSwarmBehaviour implements EnemyBehaviour {
-  private readonly meshes = new Map<number, HydrobotMesh>();
-
-  public createVisual(enemy: ActiveEnemy, ctx: EnemyContext): THREE.Object3D | null {
-    const mesh = new HydrobotMesh();
-    mesh.group.position.set(enemy.x, 0, enemy.z);
-    ctx.group.add(mesh.group);
-    this.meshes.set(enemy.id, mesh);
-    return mesh.group;
-  }
-
-  public update(enemy: ActiveEnemy, _dt: number, ctx: EnemyContext): void {
-    const mesh = this.meshes.get(enemy.id);
-    if (!mesh) return;
-
-    const px = ctx.runState.playerPos.x;
-    const pz = ctx.runState.playerPos.z;
-    const facing = Math.atan2(px - enemy.x, pz - enemy.z);
-
-    // Undulating serpentine swimming motion
-    const wiggle = Math.sin(ctx.timeSeconds * 16 + enemy.id) * 0.22;
-    mesh.group.position.set(enemy.x, 0, enemy.z);
-    mesh.group.rotation.y = facing + wiggle;
-  }
-
-  public dispose(enemy: ActiveEnemy, ctx: EnemyContext): void {
-    const mesh = this.meshes.get(enemy.id);
-    if (mesh) {
-      ctx.group.remove(mesh.group);
-      mesh.dispose();
-      this.meshes.delete(enemy.id);
-    }
-  }
-
-  public clear(): void {
-    for (const m of this.meshes.values()) {
-      m.group.removeFromParent();
-      m.dispose();
-    }
-    this.meshes.clear();
-  }
-}
-
-export class AerostatScoutBehaviour implements EnemyBehaviour {
-  private readonly meshes = new Map<number, AerostatMesh>();
-
-  public createVisual(enemy: ActiveEnemy, ctx: EnemyContext): THREE.Object3D | null {
-    const mesh = new AerostatMesh();
-    mesh.group.position.set(enemy.x, 4.2, enemy.z);
-    ctx.group.add(mesh.group);
-    this.meshes.set(enemy.id, mesh);
-    return mesh.group;
-  }
-
-  public update(enemy: ActiveEnemy, dt: number, ctx: EnemyContext): void {
-    const mesh = this.meshes.get(enemy.id);
-    if (!mesh) return;
-
-    const px = ctx.runState.playerPos.x;
-    const pz = ctx.runState.playerPos.z;
-    const distToPlayer = Math.hypot(px - enemy.x, pz - enemy.z);
-    const facing = Math.atan2(px - enemy.x, pz - enemy.z);
-
-    const hoverY = 4.2 + Math.sin(ctx.timeSeconds * 3.5 + enemy.id) * 0.25;
-    mesh.group.position.set(enemy.x, hoverY, enemy.z);
-    mesh.group.rotation.y = facing;
-
-    const state = (enemy.state = enemy.state ?? {});
-    const pingCd = (state.pingCooldown ?? 4.0) - dt;
-    state.pingCooldown = pingCd;
-
-    // Marks player when spotted within 12m -> speeds up nearby enemies by +20% for 4s
-    if (pingCd <= 0 && distToPlayer < 12.0) {
-      state.pingCooldown = 5.0;
-      for (const other of ctx.activeEnemies ?? []) {
-        if (Math.hypot(other.x - px, other.z - pz) <= AEROSTAT_MARK.radius) {
-          other.state = other.state ?? {};
-          other.state.speedBuffTimer = AEROSTAT_MARK.durationSeconds;
-        }
-      }
-      ctx.audio.playSearchlightAlert();
-      ctx.particles.spawnPlasmaImpact(enemy.x, hoverY, enemy.z);
-    }
-  }
-
-  public dispose(enemy: ActiveEnemy, ctx: EnemyContext): void {
-    const mesh = this.meshes.get(enemy.id);
-    if (mesh) {
-      ctx.group.remove(mesh.group);
-      mesh.dispose();
-      this.meshes.delete(enemy.id);
-    }
-  }
-
-  public clear(): void {
-    for (const m of this.meshes.values()) {
-      m.group.removeFromParent();
-      m.dispose();
-    }
-    this.meshes.clear();
-  }
-}
-
 export class PlasmaTurretBehaviour implements EnemyBehaviour {
   private readonly meshes = new Map<number, PlasmaTurretMesh>();
   private readonly telegraphs = new Map<number, LineTelegraph>();
@@ -373,60 +266,3 @@ export class PlasmaTurretBehaviour implements EnemyBehaviour {
   }
 }
 
-export class T600MinigunnerBehaviour implements EnemyBehaviour {
-  private readonly meshes = new Map<number, T600MinigunnerMesh>();
-
-  public createVisual(enemy: ActiveEnemy, ctx: EnemyContext): THREE.Object3D | null {
-    const mesh = new T600MinigunnerMesh();
-    mesh.group.position.set(enemy.x, 0, enemy.z);
-    ctx.group.add(mesh.group);
-    this.meshes.set(enemy.id, mesh);
-    return mesh.group;
-  }
-
-  public update(enemy: ActiveEnemy, dt: number, ctx: EnemyContext): void {
-    const mesh = this.meshes.get(enemy.id);
-    if (!mesh) return;
-
-    const px = ctx.runState.playerPos.x;
-    const pz = ctx.runState.playerPos.z;
-    const distToPlayer = Math.hypot(px - enemy.x, pz - enemy.z);
-    const facing = Math.atan2(px - enemy.x, pz - enemy.z);
-
-    mesh.walk(Math.hypot(enemy.x - mesh.group.position.x, enemy.z - mesh.group.position.z), dt);
-    mesh.group.position.set(enemy.x, 0, enemy.z);
-    mesh.group.rotation.y = facing;
-
-    const state = (enemy.state = enemy.state ?? {});
-    const burstCd = (state.burstCooldown ?? 3.2) - dt;
-    state.burstCooldown = burstCd;
-
-    // Suppressive fire: when within 12m, fires a 3-bullet burst
-    if (burstCd <= 0 && distToPlayer < 12.0) {
-      state.burstCooldown = 3.6;
-      ctx.audio.playEnemyShot('minigun');
-      for (let i = 0; i < 3; i++) {
-        const spreadX = (ctx.rng.next() - 0.5) * 1.5;
-        const spreadZ = (ctx.rng.next() - 0.5) * 1.5;
-        ctx.spawnEnemyProjectile(enemy.x, 1.15, enemy.z, px + spreadX, pz + spreadZ, 12.0, ENEMY_ATTACK_DAMAGE.minigunnerBurst);
-      }
-    }
-  }
-
-  public dispose(enemy: ActiveEnemy, ctx: EnemyContext): void {
-    const mesh = this.meshes.get(enemy.id);
-    if (mesh) {
-      ctx.group.remove(mesh.group);
-      mesh.dispose();
-      this.meshes.delete(enemy.id);
-    }
-  }
-
-  public clear(): void {
-    for (const m of this.meshes.values()) {
-      m.group.removeFromParent();
-      m.dispose();
-    }
-    this.meshes.clear();
-  }
-}

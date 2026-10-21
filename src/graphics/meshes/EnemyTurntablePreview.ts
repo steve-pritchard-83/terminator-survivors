@@ -9,10 +9,7 @@ import { T1000Mesh } from './T1000Mesh';
 import {
   T1MinigunMesh,
   MotoTerminatorMesh,
-  HydrobotMesh,
-  AerostatMesh,
-  PlasmaTurretMesh,
-  T600MinigunnerMesh
+  PlasmaTurretMesh
 } from './NewEnemyMeshes';
 import { ModelLibrary } from '../ModelLibrary';
 import { createEndoPreview } from '../EndoModel';
@@ -85,35 +82,11 @@ export function createEnemyPreviewObject(archetype: EnemyArchetypeId): THREE.Obj
       break;
     }
 
-    case 'hydrobot_swarm': {
-      const hydro = new HydrobotMesh();
-      root.add(hydro.group);
-      root.scale.setScalar(1.2);
-      root.position.set(0, -0.3, 0);
-      break;
-    }
-
-    case 'aerostat_scout': {
-      const aero = new AerostatMesh();
-      root.add(aero.group);
-      root.scale.setScalar(1.4);
-      root.position.set(0, 0.2, 0);
-      break;
-    }
-
     case 'plasma_turret': {
       const turret = new PlasmaTurretMesh();
       root.add(turret.group);
       root.scale.setScalar(0.9);
       root.position.set(0, -0.6, 0);
-      break;
-    }
-
-    case 't600_minigunner': {
-      const t600mg = new T600MinigunnerMesh();
-      root.add(t600mg.group);
-      root.scale.setScalar(0.9);
-      root.position.set(0, -0.9, 0);
       break;
     }
 
@@ -166,35 +139,6 @@ export function createEnemyPreviewObject(archetype: EnemyArchetypeId): THREE.Obj
       root.add(mesh);
       root.position.set(0, -0.9, 0);
       root.scale.setScalar(0.9);
-      break;
-    }
-
-    case 't700_scout': {
-      const endo = ModelLibrary.getEndo();
-      if (endo) {
-        root.add(createEndoPreview(endo, 0x9aa3ad));
-        root.position.set(0, -0.9, 0);
-        root.scale.setScalar(0.9);
-        break;
-      }
-      const gunmetal = 0x36404d;
-      const chromeDark = 0x556270;
-      const opticRed = 0xff0044;
-      const parts: THREE.BufferGeometry[] = [
-        bakePart(new THREE.BoxGeometry(0.56, 0.7, 0.34), 0, 1.25, 0, 0, 0, 0, gunmetal),
-        bakePart(new THREE.SphereGeometry(0.18, 10, 8), 0, 1.76, 0, 0, 0, 0, chromeDark),
-        bakePart(new THREE.SphereGeometry(0.045, 6, 6), -0.08, 1.76, 0.16, 0, 0, 0, opticRed),
-        bakePart(new THREE.SphereGeometry(0.045, 6, 6), 0.08, 1.76, 0.16, 0, 0, 0, opticRed),
-        bakePart(new THREE.CylinderGeometry(0.09, 0.08, 0.75, 8), -0.42, 1.15, 0, 0, 0, 0.15, chromeDark),
-        bakePart(new THREE.CylinderGeometry(0.09, 0.08, 0.75, 8), 0.42, 1.15, 0, 0, 0, -0.15, chromeDark),
-        bakePart(new THREE.CylinderGeometry(0.11, 0.09, 0.85, 8), -0.18, 0.45, 0, 0, 0, 0, chromeDark),
-        bakePart(new THREE.CylinderGeometry(0.11, 0.09, 0.85, 8), 0.18, 0.45, 0, 0, 0, 0, chromeDark)
-      ];
-      const geom = mergeParts(parts);
-      const mesh = new THREE.Mesh(geom, new THREE.MeshStandardMaterial({ vertexColors: true, metalness: 0.85, roughness: 0.25 }));
-      root.add(mesh);
-      root.position.set(0, -0.9, 0);
-      root.scale.setScalar(0.95);
       break;
     }
 

@@ -328,8 +328,7 @@ export class EndoskeletonBatch {
     return (
       archetype === 'skynet_crab_drone' ||
       archetype === 't800_endoskeleton' ||
-      archetype === 't600_rusted' ||
-      archetype === 't700_scout'
+      archetype === 't600_rusted'
     );
   }
 
@@ -338,7 +337,6 @@ export class EndoskeletonBatch {
     if (!this.handles(enemy.archetype) || this.corpses.length >= 48) return;
     let scale = ENDO_VISUAL_SCALE;
     if (enemy.archetype === 't600_rusted') scale *= 1.25;
-    else if (enemy.archetype === 't700_scout') scale *= 0.94;
     if (enemy.isElite) scale *= enemy.scale ?? 1.4;
     this.corpses.push({
       x: enemy.x,
@@ -421,7 +419,6 @@ export class EndoskeletonBatch {
   /** Tint that tells the variants apart (the sculpted T-600 only needs light weathering). */
   private tintFor(archetype: string): number {
     if (archetype === 't600_rusted') return this.t600Set ? 0xe0d4c4 : 0xd2b08c;
-    if (archetype === 't700_scout') return 0xaeb4bb;
     return 0xffffff;
   }
 
@@ -532,8 +529,7 @@ export class EndoskeletonBatch {
       // Only render humanoid endoskeletons in the primary instanced batch
       if (
         enemy.archetype !== 't800_endoskeleton' &&
-        enemy.archetype !== 't600_rusted' &&
-        enemy.archetype !== 't700_scout'
+        enemy.archetype !== 't600_rusted'
       ) {
         continue;
       }
@@ -543,7 +539,6 @@ export class EndoskeletonBatch {
       // Scale variation for T-600 heavy vs T-700 runner
       let scale = ENDO_VISUAL_SCALE;
       if (enemy.archetype === 't600_rusted') scale *= 1.25;
-      else if (enemy.archetype === 't700_scout') scale *= 0.94;
       if (enemy.isElite) scale *= (enemy.scale ?? 1.4);
 
       // Heavy, deliberate stride: one step per ~0.8 m of ground covered, settling still when stopped

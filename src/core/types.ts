@@ -41,7 +41,6 @@ export type PassiveId =
 export type EnemyArchetypeId =
   | 'skynet_crab_drone'
   | 't600_rusted'
-  | 't700_scout'
   | 't800_endoskeleton'
   | 'hk_aerial_patrol'
   | 'infiltrator_csm101'
@@ -51,10 +50,7 @@ export type EnemyArchetypeId =
   | 'skynet_tde_core'
   | 't1_minigun_tracked'
   | 'moto_terminator'
-  | 'hydrobot_swarm'
-  | 'aerostat_scout'
-  | 'plasma_turret'
-  | 't600_minigunner';
+  | 'plasma_turret';
 
 export type LoadoutId =
   | 'reese_2029'
@@ -232,7 +228,7 @@ export interface ActiveEnemy extends SpatialEntity {
   scale?: number;
 }
 
-export type EliteAffix = 'Armored' | 'Overclocked' | 'Shielded' | 'Self-Destruct' | 'Regenerating';
+export type EliteAffix = 'Armored' | 'Overclocked' | 'Self-Destruct';
 
 export interface ActiveWeaponSlot {
   id: WeaponId;

@@ -11,7 +11,6 @@ import { globalEvents } from '../core/EventBus';
 import { globalRNG } from '../core/RNG';
 import { CircleTelegraph } from '../graphics/Telegraphs';
 import {
-  AEROSTAT_MARK,
   EMPLACEMENT_DESPAWN_DISTANCE,
   ENEMY_LEASH_DISTANCE,
   ENEMY_RELOCATE_MAX_DIST,
@@ -190,12 +189,7 @@ export class EnemySystem {
       if (enemy.hitFlashTimer > 0) enemy.hitFlashTimer -= dt;
       if (enemy.slowTimer > 0) enemy.slowTimer -= dt; if (enemy.attackCooldown > 0) enemy.attackCooldown = Math.max(0, enemy.attackCooldown - dt);
 
-      let markBuff = 1.0;
-      if (enemy.state && (enemy.state.speedBuffTimer ?? 0) > 0) {
-        enemy.state.speedBuffTimer -= dt;
-        markBuff = AEROSTAT_MARK.speedMultiplier;
-      }
-      const effectiveSpeed = enemy.speed * markBuff * (enemy.slowTimer > 0 ? 0.6 : 1.0);
+      const effectiveSpeed = enemy.speed * (enemy.slowTimer > 0 ? 0.6 : 1.0);
       let dx = px - enemy.x; let dz = pz - enemy.z; let dist = Math.hypot(dx, dz);
 
       if (LEASH_EXEMPT_ARCHETYPES.has(enemy.archetype)) {
@@ -266,9 +260,6 @@ export class EnemySystem {
       if (dist < enemy.radius + 0.55 && enemy.attackCooldown <= 0) {
         enemy.attackCooldown = 0.55;
         this.applyPlayerDamage(enemy.damage);
-      }
-      if (enemy.affix === 'Regenerating' && enemy.hp < enemy.maxHp && enemy.hp > 0) {
-        enemy.hp = Math.min(enemy.maxHp, enemy.hp + enemy.maxHp * 0.03 * dt);
       }
       this.behaviours[enemy.archetype]?.update(enemy, dt, this.context);
     }

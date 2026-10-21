@@ -9,10 +9,7 @@ import { SkynetCoreBehaviour } from './SkynetCoreBehaviour';
 import {
   T1MinigunBehaviour,
   MotoTerminatorBehaviour,
-  HydrobotSwarmBehaviour,
-  AerostatScoutBehaviour,
-  PlasmaTurretBehaviour,
-  T600MinigunnerBehaviour
+  PlasmaTurretBehaviour
 } from './NewEnemyBehaviours';
 
 export * from './EnemyBehaviour';
@@ -36,9 +33,6 @@ export function createEnemyBehaviourRegistry(): Record<string, EnemyBehaviour> {
     skynet_tde_core: new SkynetCoreBehaviour(),
     t1_minigun_tracked: new T1MinigunBehaviour(),
     moto_terminator: new MotoTerminatorBehaviour(),
-    hydrobot_swarm: new HydrobotSwarmBehaviour(),
-    aerostat_scout: new AerostatScoutBehaviour(),
-    plasma_turret: new PlasmaTurretBehaviour(),
-    t600_minigunner: new T600MinigunnerBehaviour()
+    plasma_turret: new PlasmaTurretBehaviour()
   };
 }

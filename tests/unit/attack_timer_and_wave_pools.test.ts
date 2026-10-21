@@ -31,17 +31,15 @@ describe('wave pool start minutes', () => {
   const timeline = buildWaveTimeline();
   const archetypesAt = (minute: number) => timeline[minute].pool.map((p) => p.archetype);
 
-  it('has no Hydrobots in minute 0', () => {
-    expect(archetypesAt(0)).not.toContain('hydrobot_swarm');
-    expect(archetypesAt(1)).toContain('hydrobot_swarm');
-  });
-
-  it('holds T-1 and T-600 Minigunner back until minute 3', () => {
+  it('holds the T-1 back until minute 3', () => {
     for (const minute of [0, 1, 2]) {
       expect(archetypesAt(minute)).not.toContain('t1_minigun_tracked');
-      expect(archetypesAt(minute)).not.toContain('t600_minigunner');
     }
     expect(archetypesAt(3)).toContain('t1_minigun_tracked');
-    expect(archetypesAt(3)).toContain('t600_minigunner');
+  });
+
+  it('replaces the minute-9 boss with an elite surge', () => {
+    expect(timeline[9].boss).toBeUndefined();
+    expect(timeline[9].eliteChance).toBeGreaterThan(timeline[8].eliteChance);
   });
 });

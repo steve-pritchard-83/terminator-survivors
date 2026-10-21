@@ -24,15 +24,11 @@ export const EMPLACEMENT_DESPAWN_DISTANCE = 60;
 export const EMPLACEMENT_SPAWN_MIN_DIST = 15;
 export const EMPLACEMENT_SPAWN_MAX_DIST = 25;
 
-// Hydrobots arrive as a tight formation instead of one at a time.
-export const HYDROBOT_FORMATION = { count: 6, spread: 2.5 };
-
-// Aerostat mark: enemies near a marked player move faster for a short time.
-export const AEROSTAT_MARK = { radius: 8, speedMultiplier: 1.2, durationSeconds: 4 };
+// Minute 9 has no boss: a surge of elites before the final objective instead.
+export const FINAL_SURGE = { minute: 9, eliteChance: 0.5 };
 export const ENEMY_RELOCATE_MIN_DIST = 22;
 export const ENEMY_RELOCATE_MAX_DIST = 28;
 
-const HYDROBOT_FIRST_MINUTE = 1;
 const HEAVY_INFANTRY_FIRST_MINUTE = 3;
 
 export interface BuildWaveTimelineParams {
@@ -46,68 +42,57 @@ export function buildWaveTimeline(params: BuildWaveTimelineParams = {}): WaveMin
     const minEnemies = Math.min(320, Math.floor(24 + minute * 28));
     const hpMultiplier = Number((1 + minute * 0.32 + Math.pow(minute, 1.35) * 0.08).toFixed(2));
     const damageMultiplier = Number((1 + minute * 0.14).toFixed(2));
-    const eliteChance = Math.min(0.35, Number((0.02 + minute * 0.03).toFixed(3)));
+    const eliteChance =
+      minute === FINAL_SURGE.minute ? FINAL_SURGE.eliteChance : Math.min(0.35, Number((0.02 + minute * 0.03).toFixed(3)));
 
     let pool: Array<{ archetype: EnemyArchetypeId; weight: number }> = [];
 
     if (minute < 2) {
       pool = [
         { archetype: 'skynet_crab_drone', weight: 6 },
-        { archetype: 't600_rusted', weight: 3 },
-        { archetype: 'hydrobot_swarm', weight: 2 }
+        { archetype: 't600_rusted', weight: 3 }
       ];
     } else if (minute < 4) {
       pool = [
-        { archetype: 'skynet_crab_drone', weight: 3 },
-        { archetype: 't600_rusted', weight: 3 },
-        { archetype: 't700_scout', weight: 3 },
-        { archetype: 'hydrobot_swarm', weight: 3 },
+        { archetype: 'skynet_crab_drone', weight: 5 },
+        { archetype: 't600_rusted', weight: 4 },
+        { archetype: 't800_endoskeleton', weight: 2 },
         { archetype: 'plasma_turret', weight: 2 },
-        { archetype: 't1_minigun_tracked', weight: 2 },
-        { archetype: 'aerostat_scout', weight: 2 },
-        { archetype: 't600_minigunner', weight: 2 }
+        { archetype: 't1_minigun_tracked', weight: 2 }
       ];
     } else if (minute < 6) {
       pool = [
-        { archetype: 't700_scout', weight: 3 },
+        { archetype: 'skynet_crab_drone', weight: 3 },
         { archetype: 't800_endoskeleton', weight: 4 },
         { archetype: 't1_minigun_tracked', weight: 3 },
         { archetype: 'moto_terminator', weight: 3 },
-        { archetype: 't600_minigunner', weight: 2 },
+        { archetype: 't600_rusted', weight: 2 },
         { archetype: 'hk_aerial_patrol', weight: 2 },
-        { archetype: 'plasma_turret', weight: 2 },
-        { archetype: 'aerostat_scout', weight: 2 }
+        { archetype: 'plasma_turret', weight: 2 }
       ];
     } else if (minute < 8) {
       pool = [
         { archetype: 't800_endoskeleton', weight: 5 },
         { archetype: 'moto_terminator', weight: 4 },
         { archetype: 't1_minigun_tracked', weight: 3 },
-        { archetype: 't600_minigunner', weight: 3 },
+        { archetype: 't600_rusted', weight: 3 },
         { archetype: 'hk_aerial_patrol', weight: 3 },
         { archetype: 'plasma_turret', weight: 2 },
-        { archetype: 'hydrobot_swarm', weight: 2 }
+        { archetype: 'skynet_crab_drone', weight: 2 }
       ];
     } else {
       pool = [
         { archetype: 't800_endoskeleton', weight: 6 },
         { archetype: 'moto_terminator', weight: 4 },
         { archetype: 't1_minigun_tracked', weight: 4 },
-        { archetype: 't600_minigunner', weight: 3 },
+        { archetype: 't600_rusted', weight: 3 },
         { archetype: 'hk_aerial_patrol', weight: 4 },
-        { archetype: 'plasma_turret', weight: 2 },
-        { archetype: 'aerostat_scout', weight: 2 }
+        { archetype: 'plasma_turret', weight: 2 }
       ];
     }
 
-    // Hydrobot swarms start at minute 1; T-1 and T-600 Minigunner start at minute 3.
-    pool = pool.filter((p) => {
-      if (p.archetype === 'hydrobot_swarm') return minute >= HYDROBOT_FIRST_MINUTE;
-      if (p.archetype === 't1_minigun_tracked' || p.archetype === 't600_minigunner') {
-        return minute >= HEAVY_INFANTRY_FIRST_MINUTE;
-      }
-      return true;
-    });
+    // The T-1 starts at minute 3.
+    pool = pool.filter((p) => p.archetype !== 't1_minigun_tracked' || minute >= HEAVY_INFANTRY_FIRST_MINUTE);
 
     if (params.poolWeights) {
       pool = pool.map((p) => ({
@@ -135,9 +120,6 @@ export function buildWaveTimeline(params: BuildWaveTimelineParams = {}): WaveMin
       } else if (minute === 8) {
         boss = 't1000_prototype';
         alertBanner = 'TACTICAL ANOMALY // LIQUID METAL PROTOTYPE T-1000 RELEASED';
-      } else if (minute === 9) {
-        boss = 'hk_tank_goliath';
-        alertBanner = 'RED ALERT // TDE PERIMETER ARMORED DIVISION';
       } else if (minute === 10) {
         boss = 'skynet_tde_core';
         alertBanner = 'FINAL OBJECTIVE // SKYNET TIME DISPLACEMENT CORE BREACHED';

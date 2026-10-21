@@ -20,7 +20,7 @@ import { ModelLibrary } from '../graphics/ModelLibrary';
 
 await ModelLibrary.preload();
 
-const BATCH_ARCHETYPES = ['t800_endoskeleton', 't600_rusted', 't700_scout', 'skynet_crab_drone'];
+const BATCH_ARCHETYPES = ['t800_endoskeleton', 't600_rusted', 'skynet_crab_drone'];
 
 const params = new URLSearchParams(location.search);
 const which = params.get('m') ?? 'kyle';

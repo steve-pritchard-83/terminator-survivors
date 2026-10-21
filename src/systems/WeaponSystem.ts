@@ -417,17 +417,6 @@ export class WeaponSystem {
       finalDamage = Math.max(1, Math.round(finalDamage * 0.5));
     }
 
-    if (enemy.affix === 'Shielded' && (enemy.shieldHp ?? 0) > 0) {
-      const shield = enemy.shieldHp ?? 0;
-      if (finalDamage <= shield) {
-        enemy.shieldHp = shield - finalDamage;
-        finalDamage = 0;
-      } else {
-        finalDamage -= shield;
-        enemy.shieldHp = 0;
-      }
-    }
-
     enemy.hp -= finalDamage;
     enemy.hitFlashTimer = isCrit ? 0.2 : 0.12;
 

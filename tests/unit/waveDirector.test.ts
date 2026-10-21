@@ -28,11 +28,11 @@ describe('Wave Timeline and Boss Director', () => {
     expect(WAVE_TIMELINE[4].boss).toBe('hk_tank_goliath');
     expect(WAVE_TIMELINE[6].boss).toBe('hk_aerial_squadron_leader');
     expect(WAVE_TIMELINE[8].boss).toBe('t1000_prototype');
-    expect(WAVE_TIMELINE[9].boss).toBe('hk_tank_goliath');
     expect(WAVE_TIMELINE[10].boss).toBe('skynet_tde_core');
   });
 
-  it('batches both skynet_crab_drone and t800_endoskeleton into InstancedMeshes facing the player', async () => {
+  // Imports the renderer and model loader on first use, which is slow while the whole suite runs in parallel
+  it('batches both skynet_crab_drone and t800_endoskeleton into InstancedMeshes facing the player', { timeout: 20000 }, async () => {
     const { EndoskeletonBatch } = await import('../../src/graphics/meshes/EndoskeletonBatch');
     const batch = new EndoskeletonBatch(32);
     batch.updateBatch(

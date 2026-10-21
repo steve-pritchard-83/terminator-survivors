@@ -38,12 +38,6 @@ export const ENEMY_CODEX: Record<
     codex: 'Early battlefield infiltrators clad in crude synthetic rubber skins. Easily distinguished by their rigid lumbering gait and pungent smell. Heavy titanium core.',
     threat: 'MEDIUM'
   },
-  t700_scout: {
-    name: 'Series 700 Runner',
-    designation: 'Cyberdyne Systems Series 700 Endoskeleton',
-    codex: 'Bridge design between Series 600 and 800. Sleeker hydraulic musculature and reinforced leg servos designed for high-speed pursuit.',
-    threat: 'MEDIUM'
-  },
   t800_endoskeleton: {
     name: 'Series 800 Hyperalloy Endoskeleton',
     designation: 'Cyberdyne Systems Series 800 Model 101',
@@ -98,30 +92,12 @@ export const ENEMY_CODEX: Record<
     codex: 'Skynet reconnaissance cycles designed for high-speed road and desert pursuit. Uses gyroscopic stabilizers to execute lightning-fast straight-line dashes through resistance flanking lines.',
     threat: 'HIGH'
   },
-  hydrobot_swarm: {
-    name: 'Skynet Hydrobot Serpent',
-    designation: 'Aquatic and Subterranean Autonomous Hunter',
-    codex: 'Segmented serpentine terminators operating in swarms of 12. Highly agile swimmers and burrowers that leap out of storm drains and drainage ditches with razor-sharp hydraulic clamp jaws.',
-    threat: 'LOW'
-  },
-  aerostat_scout: {
-    name: 'Skynet Aerostat Aerial Scout',
-    designation: 'Micro-UAV Sensor Drone',
-    codex: 'Compact hovering scout craft equipped with infrared sensors and laser telemetry markers. When painting resistance targets, it transmits overclock telemetry boosting nearby ground units by +20% speed.',
-    threat: 'MEDIUM'
-  },
   plasma_turret: {
     name: 'Skynet Perimeter Defense Turret',
     designation: 'Static Reinforced Heavy Emplacement',
     codex: 'Stationary armored concrete pillbox mounting dual phased plasma cannons. Locked to regional defensive perimeters with automated motion tracking and precision line telegraph targeting.',
     threat: 'HIGH'
   },
-  t600_minigunner: {
-    name: 'Series 600 Minigun Enforcer',
-    designation: 'Cyberdyne Series 600 Heavy Weapons Specialist',
-    codex: 'A fortified variant of the Series 600 wielding a man-portable rotary machine gun fed by a rear hyperalloy ammunition drum. Designed to pin down resistance combat squads with suppressive fire.',
-    threat: 'HIGH'
-  }
 };
 
 export const WEAPON_CODEX: Record<

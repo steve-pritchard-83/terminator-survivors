@@ -43,19 +43,6 @@ export const ENEMY_CONFIGS: Record<EnemyArchetypeId, EnemyStatsConfig> = {
     color: 0x4a4642,
     mass: 4.5
   },
-  t700_scout: {
-    archetype: 't700_scout',
-    name: 'Series 700 Endoskeleton Runner',
-    maxHp: 40,
-    speed: 4.1,
-    damage: 14,
-    radius: 0.65,
-    isBoss: false,
-    isFlying: false,
-    xpValue: 5,
-    color: 0x7a8694,
-    mass: 2.5
-  },
   t800_endoskeleton: {
     archetype: 't800_endoskeleton',
     name: 'Cyberdyne Series 800 Model 101',
@@ -173,32 +160,6 @@ export const ENEMY_CONFIGS: Record<EnemyArchetypeId, EnemyStatsConfig> = {
     color: 0x2b2b30,
     mass: 8.0
   },
-  hydrobot_swarm: {
-    archetype: 'hydrobot_swarm',
-    name: 'Skynet Hydrobot Serpent',
-    maxHp: 12,
-    speed: 5.6,
-    damage: 8,
-    radius: 0.35,
-    isBoss: false,
-    isFlying: false,
-    xpValue: 2,
-    color: 0x3d5a73,
-    mass: 0.8
-  },
-  aerostat_scout: {
-    archetype: 'aerostat_scout',
-    name: 'Skynet Aerostat Aerial Scout',
-    maxHp: 55,
-    speed: 4.2,
-    damage: 10,
-    radius: 0.7,
-    isBoss: false,
-    isFlying: true,
-    xpValue: 8,
-    color: 0x4fc3f7,
-    mass: 3.0
-  },
   plasma_turret: {
     archetype: 'plasma_turret',
     name: 'Skynet Perimeter Defense Turret',
@@ -212,19 +173,6 @@ export const ENEMY_CONFIGS: Record<EnemyArchetypeId, EnemyStatsConfig> = {
     color: 0x37474f,
     mass: 50.0
   },
-  t600_minigunner: {
-    archetype: 't600_minigunner',
-    name: 'Series 600 Minigun Enforcer',
-    maxHp: 130,
-    speed: 2.1,
-    damage: 24,
-    radius: 0.85,
-    isBoss: false,
-    isFlying: false,
-    xpValue: 16,
-    color: 0x4a4642,
-    mass: 5.0
-  }
 };
 
 
@@ -248,24 +196,12 @@ export const ELITE_AFFIXES: Record<EliteAffix, EliteAffixConfig> = {
     tintColor: 0xffab00,
     description: '+60% movement speed'
   },
-  Shielded: {
-    id: 'Shielded',
-    name: 'Shielded',
-    tintColor: 0x00e5ff,
-    description: 'Energy barrier absorbs first 30% of max HP'
-  },
   'Self-Destruct': {
     id: 'Self-Destruct',
     name: 'Self-Destruct',
     tintColor: 0xff1744,
     description: 'Detonates upon termination in a telegraphed blast'
   },
-  Regenerating: {
-    id: 'Regenerating',
-    name: 'Regenerating',
-    tintColor: 0x00e676,
-    description: 'Repairs 3% max HP per second'
-  }
 };
 
 export function applyEliteAffix(enemy: import('../core/types').ActiveEnemy, affix: EliteAffix): void {
@@ -278,9 +214,6 @@ export function applyEliteAffix(enemy: import('../core/types').ActiveEnemy, affi
 
   if (affix === 'Overclocked') {
     enemy.speed = Number((enemy.speed * 1.6).toFixed(2));
-  } else if (affix === 'Shielded') {
-    enemy.shieldHp = Math.round(enemy.maxHp * 0.30);
-    enemy.maxShieldHp = enemy.shieldHp;
   }
 }
 
