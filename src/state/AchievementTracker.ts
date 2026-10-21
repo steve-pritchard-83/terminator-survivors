@@ -39,21 +39,14 @@ export class AchievementTracker {
         const lifetimeKills = this.saveManager.getData().totalKills + this.runKills;
 
         this.tryUnlock('first_blood');
-        if (lifetimeKills >= 100) this.tryUnlock('skynet_threat');
         if (lifetimeKills >= 500) this.tryUnlock('terminator_hunter');
         if (this.runKills >= 1000) this.tryUnlock('mass_dismantler');
-        if (lifetimeKills >= 5000) this.tryUnlock('salvage_czar');
-        if (lifetimeKills >= 10000) this.tryUnlock('genocide_protocol');
       })
     );
 
     this.unsubs.push(
       globalEvents.on('wave:minute', ({ minute }) => {
-        if (minute >= 1) this.tryUnlock('survivor_1m');
-        if (minute >= 3) this.tryUnlock('survivor_3m');
         if (minute >= 5) this.tryUnlock('survivor_5m');
-        if (minute >= 8) this.tryUnlock('survivor_8m');
-
       })
     );
 
@@ -90,29 +83,12 @@ export class AchievementTracker {
       globalEvents.on('weapon:evolved', ({ to }) => {
         this.saveManager.recordEvolutionDiscovered(to);
         this.tryUnlock('first_evolution');
-        if (to === 'trench_sweeper') this.tryUnlock('trench_sweeper_evo');
-        else if (to === 'thermite_buster') this.tryUnlock('thermite_buster_evo');
-        else if (to === 'm95a1_plasma') this.tryUnlock('m95a1_plasma_evo');
-        else if (to === 'emp_supernova') this.tryUnlock('emp_supernova_evo');
-        else if (to === 'perimeter_ring') this.tryUnlock('perimeter_ring_evo');
-
-        if (this.runState) {
-          let evolvedCount = 0;
-          for (const slot of this.runState.weapons.values()) {
-            if (slot.evolved) evolvedCount++;
-          }
-          if (evolvedCount >= 3) {
-            this.tryUnlock('arsenal_complete');
-          }
-        }
       })
     );
 
     this.unsubs.push(
       globalEvents.on('levelup:triggered', ({ level }) => {
-        if (level >= 10) this.tryUnlock('level_10');
         if (level >= 20) this.tryUnlock('level_20');
-        if (level >= 30) this.tryUnlock('level_30');
       })
     );
 
@@ -122,19 +98,8 @@ export class AchievementTracker {
           this.tryUnlock('scrap_collector_1k');
         }
 
-        if (this.saveManager.getData().alloyScrap >= 5000) {
-          this.tryUnlock('scrap_bank_5k');
-        }
-
         if (data.victory) {
           this.tryUnlock('judgment_survivor');
-
-          this.tryUnlock('clear_wasteland');
-        }
-
-        const currentData = this.saveManager.getData();
-        if (currentData.unlockedLoadouts.length >= 3 && currentData.victories >= 5) {
-          this.tryUnlock('techcom_legend');
         }
       })
     );

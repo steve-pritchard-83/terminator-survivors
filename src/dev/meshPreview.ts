@@ -76,7 +76,7 @@ if (which === 'glb') {
   env.update(0, 0);
 } else if (which === 'kyle') {
   const kyle = new KyleReeseMesh();
-  kyle.applyLoadout((params.get('loadout') ?? 'reese_1984') as LoadoutId);
+  kyle.applyLoadout((params.get('loadout') ?? 'reese_2029') as LoadoutId);
   const rifle = ModelLibrary.getMeshData('plasma_rifle');
   if (rifle) kyle.applyRifleModel(rifle);
   const player = ModelLibrary.getPlayer();

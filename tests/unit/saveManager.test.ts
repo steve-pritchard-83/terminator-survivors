@@ -50,23 +50,24 @@ describe('SaveManager and Bunker Persistence', () => {
     expect(sm.getData().selectedLoadout).toBe('reese_2029');
   });
 
-  it('auto-unlocks loadouts upon reaching milestones in addRunResults', () => {
+  it('keeps Kyle 2029 as the only operative whatever the run results', () => {
     const sm = new SaveManager();
-    expect(sm.getData().unlockedLoadouts).toEqual(['reese_2029']);
-
-    // Run 1: survived 250s (> 4 minutes) -> unlocks reese_1984
     sm.addRunResults(50, 250, 100, false, 0);
-    expect(sm.getData().unlockedLoadouts).toContain('reese_1984');
-    expect(sm.getData().unlockedLoadouts).not.toContain('techcom_sapper');
-    expect(sm.getData().unlockedLoadouts).not.toContain('john_connor');
-
-    // Run 2: destroyed 1 boss -> unlocks techcom_sapper
-    sm.addRunResults(100, 150, 200, false, 1);
-    expect(sm.getData().unlockedLoadouts).toContain('techcom_sapper');
-
-    // Run 3: victory -> unlocks john_connor
     sm.addRunResults(300, 600, 500, true, 2);
-    expect(sm.getData().unlockedLoadouts).toContain('john_connor');
+    expect(sm.getData().unlockedLoadouts).toEqual(['reese_2029']);
+  });
+
+  it('refunds the scrap spent on permanent upgrades that were cut (v3 to v4)', () => {
+    const sm = new SaveManager();
+    const migrated = sm.sanitizeAndMigrate({
+      version: 3,
+      alloyScrap: 100,
+      upgrades: { armor_vest: 2, salvage_magnet: 2, skip_protocol: 1 }
+    });
+    // salvage_magnet: 75 + round(75 * 1.45) = 184; skip_protocol: 250
+    expect(migrated.alloyScrap).toBe(100 + 184 + 250);
+    expect(migrated.upgrades.armor_vest).toBe(2);
+    expect('salvage_magnet' in migrated.upgrades).toBe(false);
   });
 
   describe('P3-07 Schema versioning, migrations and import/export', () => {
@@ -88,11 +89,11 @@ describe('SaveManager and Bunker Persistence', () => {
 
       const sm = new SaveManager();
       const data = sm.getData();
-      expect(data.version).toBe(3);
+      expect(data.version).toBe(4);
       expect(data.alloyScrap).toBe(350);
       expect(data.totalKills).toBe(120);
       expect(data.bestTimeSeconds).toBe(420);
-      expect(data.selectedLoadout).toBe('reese_1984');
+      expect(data.selectedLoadout).toBe('reese_2029');
       expect(data.upgrades.armor_vest).toBe(2);
       expect(data.upgrades.combat_stims).toBe(1);
     });
@@ -130,7 +131,6 @@ describe('SaveManager and Bunker Persistence', () => {
       const sm1 = new SaveManager();
       sm1.addRunResults(75, 300, 850, true, 1);
       sm1.purchaseUpgrade('armor_vest');
-      sm1.selectLoadout('reese_1984');
 
       const exportedString = sm1.exportSave();
       expect(typeof exportedString).toBe('string');
@@ -148,7 +148,7 @@ describe('SaveManager and Bunker Persistence', () => {
       const data2 = sm2.getData();
       expect(data2).toEqual(data1);
       expect(data2.alloyScrap).toBe(data1.alloyScrap);
-      expect(data2.selectedLoadout).toBe('reese_1984');
+      expect(data2.selectedLoadout).toBe('reese_2029');
     });
 
     it('rejects malformed or invalid strings during importSave', () => {

@@ -25,13 +25,14 @@ describe('P3-07 Save schema versioning and migrations', () => {
 
     const sm = new SaveManager();
     const data = sm.getData();
-    expect(data.version).toBe(3);
+    expect(data.version).toBe(4);
     expect(data.alloyScrap).toBe(1250);
     expect(data.totalKills).toBe(450);
     expect(data.bestTimeSeconds).toBe(580);
     expect(data.victories).toBe(2);
-    expect(data.unlockedLoadouts).toContain('techcom_sapper');
-    expect(data.selectedLoadout).toBe('techcom_sapper');
+    // Characters other than Kyle 2029 were cut; old saves fall back to him
+    expect(data.unlockedLoadouts).toEqual(['reese_2029']);
+    expect(data.selectedLoadout).toBe('reese_2029');
     expect(data.upgrades.armor_vest).toBe(3);
     expect(data.upgrades.plasma_overclock).toBe(2);
   });
@@ -62,7 +63,6 @@ describe('P3-07 Save schema versioning and migrations', () => {
     const source = new SaveManager();
     source.addRunResults(150, 480, 2000, true, 2);
     source.purchaseUpgrade('armor_vest');
-    source.selectLoadout('techcom_sapper');
 
     const serialized = source.exportSave();
     expect(typeof serialized).toBe('string');

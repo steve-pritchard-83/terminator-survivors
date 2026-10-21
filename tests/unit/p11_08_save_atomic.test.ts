@@ -22,7 +22,7 @@ describe('P11-08: Save migration to v3 and throttled writes', () => {
     saveManager = new SaveManager();
     const migrated = saveManager.sanitizeAndMigrate(saveV1);
 
-    expect(migrated.version).toBe(3);
+    expect(migrated.version).toBe(4);
     // Since saveV1 had victories = 1 > 0:
     // Achievement reward weapons are granted; weapons since cut from the game are dropped
     expect(migrated.unlockedWeapons).not.toContain('m79_thumper');
@@ -34,12 +34,13 @@ describe('P11-08: Save migration to v3 and throttled writes', () => {
     saveManager = new SaveManager();
     const migrated = saveManager.sanitizeAndMigrate(saveV2);
 
-    expect(migrated.version).toBe(3);
+    expect(migrated.version).toBe(4);
     expect(migrated.unlockedWeapons).toContain('ithaca_37');
     expect(migrated.unlockedWeapons).not.toContain('plasma_rifle');
     expect(migrated.unlockedWeapons).not.toContain('m79_thumper');
     expect(migrated.unlockedWeapons).toContain('rpg_launcher');
-    expect(migrated.alloyScrap).toBe(800);
+    // 800 saved plus 184 refunded for two levels of the cut salvage magnet
+    expect(migrated.alloyScrap).toBe(984);
   });
 
   it('throttles recordEnemyKill writes to localStorage until flushed', () => {

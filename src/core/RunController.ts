@@ -357,31 +357,9 @@ export class RunController {
       },
       {
         rerollsLeft: this.host.runState.rerollsLeft,
-        skipsLeft: this.host.runState.skipsLeft,
-        banishesLeft: this.host.runState.banishesLeft,
         onReroll: () => {
           if (this.host.runState.useReroll()) {
             this.host.audioEngine.playUiClick();
-            const newChoices = this.host.runState.generateUpgradeChoices();
-            this.showLevelUpModal(level, newChoices);
-          }
-        },
-        onSkip: () => {
-          if (this.host.runState.useSkip()) {
-            this.host.audioEngine.playUiBuy();
-            if (this.host.runState.pendingLevelUps > 0) {
-              this.host.runState.pendingLevelUps--;
-              this.host.audioEngine.playLevelUp();
-              const nextChoices = this.host.runState.generateUpgradeChoices();
-              this.showLevelUpModal(this.host.runState.level, nextChoices);
-            } else {
-              this.host.runState.mode = 'playing';
-            }
-          }
-        },
-        onBanish: (choice) => {
-          if (this.host.runState.banishUpgrade(choice.id)) {
-            this.host.audioEngine.playUiError();
             const newChoices = this.host.runState.generateUpgradeChoices();
             this.showLevelUpModal(level, newChoices);
           }
@@ -438,75 +416,32 @@ export class RunController {
     }
   }
 
-  public handleAbilityTriggered(loadoutId: string, _abilityId: string, px: number, pz: number): void {
-    if (loadoutId === 'reese_2029') {
-      const angles = [0, Math.PI * 0.5, Math.PI, Math.PI * 1.5];
-      for (const ang of angles) {
-        this.host.weaponSystem.spawnProjectile({
-          weaponId: 'pipe_bomb',
-          meshCategory: 'bomb',
-          x: px,
-          y: 0.5,
-          z: pz,
-          vx: Math.sin(ang) * 9,
-          vy: 4.2,
-          vz: Math.cos(ang) * 9,
-          rotY: ang,
-          damage: 160 * this.host.runState.computedStats.mightMultiplier,
-          radius: 0.4,
-          pierceLeft: 1,
-          life: 0,
-          maxLife: 1.2,
-          isAreaOnExpire: true,
-          areaRadius: 4.5,
-          knockback: 18
-        });
-      }
-      this.host.audioEngine.playLaunch('throw');
-      this.host.sceneManager.addScreenShake(0.35);
-    } else if (loadoutId === 'techcom_sapper') {
-      for (const slot of this.host.runState.weapons.values()) {
-        slot.cooldownTimer = 0;
-      }
-      this.host.weaponSystem.spawnEmpShockwave(px, pz, 14, true);
-      this.host.audioEngine.playExplosion(1.4);
-      this.host.sceneManager.addScreenShake(0.45);
-      const nearby = this.host.enemySystem.activeEnemies.filter(
-        (e) => Math.hypot(e.x - px, e.z - pz) <= 14
-      );
-      for (const e of nearby) {
-        this.host.weaponSystem.applyDamageToTarget(
-          e,
-          250 * this.host.runState.computedStats.mightMultiplier,
-          20,
-          { x: e.x - px, z: e.z - pz },
-          'm25_plasma'
-        );
-      }
-    } else if (loadoutId === 'sarah_connor') {
-      for (let i = 0; i < 6; i++) {
-        const ang = (i / 6) * Math.PI * 2;
-        const gx = px + Math.sin(ang) * 4.5;
-        const gz = pz + Math.cos(ang) * 4.5;
-        this.host.weaponSystem.spawnGroundZone(
-          gx,
-          gz,
-          2.6,
-          85 * this.host.runState.computedStats.mightMultiplier,
-          6.0,
-          6,
-          'ithaca_37'
-        );
-      }
-      this.host.audioEngine.playGlassBreak();
-      this.host.audioEngine.playFireDeploy();
-    } else if (loadoutId === 'reprogrammed_t800') {
-      this.host.runState.invulnerabilityTimer = 5.0;
-      this.host.audioEngine.playServo();
-    } else if (loadoutId === 'reese_1984' || loadoutId === 'john_connor') {
-      if (loadoutId === 'john_connor') this.host.audioEngine.playRadioClick();
-      else this.host.audioEngine.playMagOut();
+  /** Kyle's ability: four heavy pipe bombs thrown out in a cross. */
+  public handleAbilityTriggered(_loadoutId: string, _abilityId: string, px: number, pz: number): void {
+    const angles = [0, Math.PI * 0.5, Math.PI, Math.PI * 1.5];
+    for (const ang of angles) {
+      this.host.weaponSystem.spawnProjectile({
+        weaponId: 'pipe_bomb',
+        meshCategory: 'bomb',
+        x: px,
+        y: 0.5,
+        z: pz,
+        vx: Math.sin(ang) * 9,
+        vy: 4.2,
+        vz: Math.cos(ang) * 9,
+        rotY: ang,
+        damage: 160 * this.host.runState.computedStats.mightMultiplier,
+        radius: 0.4,
+        pierceLeft: 1,
+        life: 0,
+        maxLife: 1.2,
+        isAreaOnExpire: true,
+        areaRadius: 4.5,
+        knockback: 18
+      });
     }
+    this.host.audioEngine.playLaunch('throw');
+    this.host.sceneManager.addScreenShake(0.35);
   }
 
   public update(dt: number): void {
@@ -518,21 +453,6 @@ export class RunController {
       return;
     }
 
-    if (this.host.runState.loadoutId === 'reprogrammed_t800' && this.host.runState.isAbilityActive) {
-      const px = this.host.runState.playerPos.x;
-      const pz = this.host.runState.playerPos.z;
-      for (const e of this.host.enemySystem.activeEnemies) {
-        if (Math.hypot(e.x - px, e.z - pz) < 1.6) {
-          this.host.weaponSystem.applyDamageToTarget(
-            e,
-            200 * dt * this.host.runState.computedStats.mightMultiplier,
-            15,
-            { x: e.x - px, z: e.z - pz },
-            'm25_plasma'
-          );
-        }
-      }
-    }
 
     if (this.activeBoss) {
       const boss = this.host.enemySystem.activeEnemies.find((e) => e.isBoss);

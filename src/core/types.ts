@@ -52,33 +52,19 @@ export type EnemyArchetypeId =
   | 'moto_terminator'
   | 'plasma_turret';
 
-export type LoadoutId =
-  | 'reese_2029'
-  | 'reese_1984'
-  | 'techcom_sapper'
-  | 'john_connor'
-  | 'sarah_connor'
-  | 'reprogrammed_t800';
+export type LoadoutId = 'reese_2029';
 
 export type MetaUpgradeId =
   | 'armor_vest'
   | 'combat_stims'
   | 'plasma_overclock'
   | 'servo_greaves'
-  | 'salvage_magnet'
   | 'phase_capacitor'
   | 'scavenger_protocol'
   | 'defibrillator'
   | 'crit_core'
   | 'high_caliber'
-  | 'blast_dampeners'
-  | 'extended_capacitors'
-  | 'plasma_accelerator'
-  | 'tactical_relay'
-  | 'reroll_protocol'
-  | 'banish_protocol'
-  | 'skip_protocol'
-  | 'veteran_resilience';
+  | 'reroll_protocol';
 
 export type GameMode =
   'title' | 'playing' | 'levelup' | 'vault' | 'paused' | 'gameover' | 'victory';
@@ -184,8 +170,6 @@ export interface PlayerComputedStats {
   revivals: number;
   revivalChance?: number;
   rerolls?: number;
-  skips?: number;
-  banishes?: number;
   lowHpDamageReduction?: number;
 }
 

@@ -83,9 +83,6 @@ export class RunState {
   public computedStats: PlayerComputedStats = this.getDefaultStats();
   public revivalsLeft = 0;
   public rerollsLeft = 0;
-  public skipsLeft = 0;
-  public banishesLeft = 0;
-  public readonly banishedIds = new Set<string>();
   public loadoutId: LoadoutId = 'reese_2029';
   public unlockedWeapons: BaseWeaponId[] = [];
   private purchasedMetaUpgrades: Record<string, number> = {};
@@ -113,8 +110,6 @@ export class RunState {
       revivals: 0,
       revivalChance: 0,
       rerolls: 0,
-      skips: 0,
-      banishes: 0,
       lowHpDamageReduction: 0
     };
   }
@@ -171,10 +166,7 @@ export class RunState {
     this.computedStats = this.getDefaultStats();
     this.recalculateStats();
     this.hp = this.maxHp;
-    this.banishedIds.clear();
     this.rerollsLeft = Math.max(0, this.computedStats.rerolls ?? 0);
-    this.skipsLeft = Math.max(0, this.computedStats.skips ?? 0);
-    this.banishesLeft = Math.max(0, this.computedStats.banishes ?? 0);
   }
 
   public recalculateStats(): void {
@@ -208,18 +200,6 @@ export class RunState {
           const k = stat as keyof PlayerComputedStats;
           base[k] = (base[k] as number) + (val as number) * lv;
         }
-      }
-    }
-
-    // 4. Active ability buffs
-    if (this.isAbilityActive) {
-      if (this.loadoutId === 'reese_1984') {
-        base.cooldownMultiplier *= 0.5;
-        base.bonusAmount += 2;
-      } else if (this.loadoutId === 'john_connor') {
-        base.mightMultiplier += 0.35;
-      } else if (this.loadoutId === 'reprogrammed_t800') {
-        base.moveSpeed *= 1.6;
       }
     }
 
@@ -445,7 +425,7 @@ export class RunState {
     }
 
     // Filter out banished items
-    const filteredChoices = choices.filter((c) => !this.banishedIds.has(c.id));
+    const filteredChoices = choices;
 
     // Shuffle and pick 3 (or 4 if luck high)
     const count = this.computedStats.luckMultiplier >= 1.3 ? 4 : 3;
@@ -487,23 +467,9 @@ export class RunState {
     return shuffled;
   }
 
-  public banishUpgrade(id: string): boolean {
-    if (this.banishesLeft <= 0) return false;
-    this.banishedIds.add(id);
-    this.banishesLeft--;
-    return true;
-  }
-
   public useReroll(): boolean {
     if (this.rerollsLeft <= 0) return false;
     this.rerollsLeft--;
-    return true;
-  }
-
-  public useSkip(): boolean {
-    if (this.skipsLeft <= 0) return false;
-    this.skipsLeft--;
-    this.addScrap(25);
     return true;
   }
 

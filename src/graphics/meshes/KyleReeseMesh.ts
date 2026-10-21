@@ -71,7 +71,7 @@ export class KyleReeseMesh {
     muzzleZ: number;
     hips: THREE.Object3D;
   } | null = null;
-  private loadoutId: LoadoutId = 'reese_1984';
+  private loadoutId: LoadoutId = 'reese_2029';
   private readonly holdR = new THREE.Vector3();
   private readonly holdL = new THREE.Vector3();
   // Procedural rifle pieces, replaced by the sculpted rifle once it has loaded
@@ -310,7 +310,7 @@ export class KyleReeseMesh {
     };
     this.accessories = { ponytail, bandana, helmet, armor, scarf, scar, shades };
 
-    this.applyLoadout('reese_1984');
+    this.applyLoadout('reese_2029');
     this.updateAnimation(0, 0, 0);
   }
 
@@ -507,7 +507,7 @@ export class KyleReeseMesh {
 
   /** Switches the mesh to a character's look (clothes, hair, headgear, armour, size). */
   public applyLoadout(loadoutId: LoadoutId): void {
-    const look = PLAYER_LOOKS[loadoutId] ?? PLAYER_LOOKS.reese_1984;
+    const look = PLAYER_LOOKS[loadoutId] ?? PLAYER_LOOKS.reese_2029;
     const m = this.mats;
     m.trouser.color.setHex(look.trouserColor);
     m.boot.color.setHex(look.bootColor);

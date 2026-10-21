@@ -5,11 +5,7 @@ import { ModalA11y } from './A11yHelper';
 
 export interface LevelUpActions {
   rerollsLeft: number;
-  skipsLeft: number;
-  banishesLeft: number;
   onReroll?: () => void;
-  onSkip?: () => void;
-  onBanish?: (choice: UpgradeChoice) => void;
 }
 
 export class LevelUpModal {
@@ -17,15 +13,11 @@ export class LevelUpModal {
   private readonly cardContainer: HTMLElement;
   private readonly tickerEl: HTMLElement;
   private readonly rerollBtn: HTMLButtonElement;
-  private readonly skipBtn: HTMLButtonElement;
-  private readonly banishBtn: HTMLButtonElement;
   private onSelectCallback: ((choice: UpgradeChoice) => void) | null = null;
   private currentActions: LevelUpActions | null = null;
-  private currentChoices: UpgradeChoice[] = [];
   private cards: HTMLElement[] = [];
   private selectables: HTMLElement[] = [];
   private selectedIndex = 0;
-  private lastCardIndex = 0;
   private readonly a11y: ModalA11y;
 
   constructor(root: HTMLElement) {
@@ -46,12 +38,10 @@ export class LevelUpModal {
 
         <div class="btn-row levelup-actions-row">
           <button class="btn-secondary btn-sm" id="btn-levelup-reroll" aria-label="Reroll Upgrade Choices">REROLL (0)</button>
-          <button class="btn-secondary btn-sm" id="btn-levelup-skip" aria-label="Skip Upgrade and Gain Scrap">SKIP +25 SCRAP (0)</button>
-          <button class="btn-secondary btn-sm" id="btn-levelup-banish" aria-label="Banish Selected Upgrade">BANISH (0)</button>
         </div>
 
         <div class="t-hint" id="levelup-controller-hint" style="display:none;">
-          [D-PAD / ARROWS] SELECT &nbsp; [A / ENTER] CONFIRM &nbsp; [R] REROLL &nbsp; [S] SKIP &nbsp; [B] BANISH
+          [D-PAD / ARROWS] SELECT &nbsp; [A / ENTER] CONFIRM &nbsp; [R] REROLL
         </div>
       </div>
     `;
@@ -61,29 +51,10 @@ export class LevelUpModal {
     this.cardContainer = this.container.querySelector('#levelup-cards')!;
     this.tickerEl = this.container.querySelector('#levelup-ticker')!;
     this.rerollBtn = this.container.querySelector('#btn-levelup-reroll') as HTMLButtonElement;
-    this.skipBtn = this.container.querySelector('#btn-levelup-skip') as HTMLButtonElement;
-    this.banishBtn = this.container.querySelector('#btn-levelup-banish') as HTMLButtonElement;
 
     this.rerollBtn.onclick = () => {
       if ((this.currentActions?.rerollsLeft ?? 0) > 0) {
         this.currentActions?.onReroll?.();
-      }
-    };
-
-    this.skipBtn.onclick = () => {
-      if ((this.currentActions?.skipsLeft ?? 0) > 0) {
-        this.hide();
-        this.currentActions?.onSkip?.();
-      }
-    };
-
-    this.banishBtn.onclick = () => {
-      if ((this.currentActions?.banishesLeft ?? 0) > 0) {
-        // When the Banish button itself is selected, banish the last focused card.
-        const choice = this.currentChoices[this.lastCardIndex] ?? this.currentChoices[0];
-        if (choice) {
-          this.currentActions?.onBanish?.(choice);
-        }
       }
     };
 
@@ -104,23 +75,13 @@ export class LevelUpModal {
       }
     });
 
-    // Keyboard shortcuts for Reroll (R), Skip (S), Banish (B)
+    // Keyboard shortcut for Reroll (R)
     this.container.addEventListener('keydown', (e: KeyboardEvent) => {
       if (this.container.style.display === 'none') return;
       if (e.key === 'r' || e.key === 'R') {
         if (!this.rerollBtn.disabled) {
           e.preventDefault();
           this.rerollBtn.click();
-        }
-      } else if (e.key === 's' || e.key === 'S') {
-        if (!this.skipBtn.disabled) {
-          e.preventDefault();
-          this.skipBtn.click();
-        }
-      } else if (e.key === 'b' || e.key === 'B') {
-        if (!this.banishBtn.disabled) {
-          e.preventDefault();
-          this.banishBtn.click();
         }
       }
     });
@@ -134,10 +95,8 @@ export class LevelUpModal {
   ): void {
     this.onSelectCallback = onSelect;
     this.currentActions = actions ?? null;
-    this.currentChoices = choices;
     this.container.style.display = 'flex';
     this.selectedIndex = 0;
-    this.lastCardIndex = 0;
     this.cards = [];
     this.selectables = [];
 
@@ -145,17 +104,10 @@ export class LevelUpModal {
 
     // Update Action Button states (disabled styling comes from CSS)
     const rerolls = actions?.rerollsLeft ?? 0;
-    const skips = actions?.skipsLeft ?? 0;
-    const banishes = actions?.banishesLeft ?? 0;
 
     this.rerollBtn.innerHTML = iconLabel('reroll', `REROLL (${rerolls})`);
     this.rerollBtn.disabled = rerolls <= 0;
 
-    this.skipBtn.innerHTML = iconLabel('skip', `SKIP +25 SCRAP (${skips})`);
-    this.skipBtn.disabled = skips <= 0;
-
-    this.banishBtn.innerHTML = iconLabel('banish', `BANISH (${banishes})`);
-    this.banishBtn.disabled = banishes <= 0;
 
     this.cardContainer.innerHTML = '';
     choices.forEach((choice, idx) => {
@@ -193,8 +145,6 @@ export class LevelUpModal {
 
     this.selectables = [...this.cards];
     if (rerolls > 0) this.selectables.push(this.rerollBtn);
-    if (skips > 0) this.selectables.push(this.skipBtn);
-    if (banishes > 0) this.selectables.push(this.banishBtn);
 
     this.updateCardHighlight();
     this.a11y.activate(this.cards[0]);
@@ -215,7 +165,6 @@ export class LevelUpModal {
   }
 
   public updateCardHighlight(): void {
-    if (this.selectedIndex < this.cards.length) this.lastCardIndex = this.selectedIndex;
     this.selectables.forEach((c, i) => {
       if (i === this.selectedIndex) {
         c.classList.add('controller-selected');

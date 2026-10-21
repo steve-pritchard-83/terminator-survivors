@@ -1,5 +1,5 @@
 import type { BaseWeaponId, ColorBlindMode, DamageNumberSetting, GameSettings, InputMappingConfig, LoadoutId, MetaSaveData, MetaUpgradeId, RunHistoryRecord } from '../core/types';
-import { LOADOUTS, META_UPGRADES } from '../data/upgrades';
+import { LOADOUTS, META_UPGRADES, REMOVED_UPGRADE_COSTS } from '../data/upgrades';
 import { ACHIEVEMENTS, DEFAULT_UNLOCKED_WEAPONS } from '../data/achievements';
 import { DEFAULT_INPUT_MAPPINGS } from '../data/inputDefaults';
 import { BASE_WEAPONS } from '../data/weapons';
@@ -7,7 +7,7 @@ import { BASE_WEAPONS } from '../data/weapons';
 const STORAGE_KEY = 'TERMINATOR_SURVIVORS_SAVE_V1';
 
 export class SaveManager {
-  public static readonly CURRENT_VERSION = 3;
+  public static readonly CURRENT_VERSION = 4;
 
   public static readonly migrations: Record<number, (old: Record<string, any>) => Record<string, any>> = {
     1: (old: Record<string, any>) => {
@@ -30,6 +30,15 @@ export class SaveManager {
         migrated.unlockedWeapons = currentUnlocked;
       }
       return migrated;
+    },
+    // Permanent upgrades cut in the declutter: their scrap is paid back
+    3: (old: Record<string, any>) => {
+      let refund = 0;
+      for (const [id, cost] of Object.entries(REMOVED_UPGRADE_COSTS)) {
+        const level = Math.max(0, Math.floor(Number(old.upgrades?.[id]) || 0));
+        for (let i = 0; i < level; i++) refund += Math.round(cost.baseCost * Math.pow(cost.costMultiplier, i));
+      }
+      return { ...old, version: 4, alloyScrap: (Number(old.alloyScrap) || 0) + refund };
     }
   };
 
@@ -66,26 +75,7 @@ export class SaveManager {
       victories: 0,
       unlockedLoadouts: ['reese_2029'],
       selectedLoadout: 'reese_2029',
-      upgrades: {
-        armor_vest: 0,
-        combat_stims: 0,
-        plasma_overclock: 0,
-        servo_greaves: 0,
-        salvage_magnet: 0,
-        phase_capacitor: 0,
-        scavenger_protocol: 0,
-        defibrillator: 0,
-        crit_core: 0,
-        high_caliber: 0,
-        blast_dampeners: 0,
-        extended_capacitors: 0,
-        plasma_accelerator: 0,
-        tactical_relay: 0,
-        reroll_protocol: 0,
-        banish_protocol: 0,
-        skip_protocol: 0,
-        veteran_resilience: 0
-      },
+      upgrades: Object.fromEntries(Object.keys(META_UPGRADES).map((id) => [id, 0])) as Record<MetaUpgradeId, number>,
       settings: {
         masterVolume: 0.8,
         musicVolume: 0.7,
@@ -404,31 +394,12 @@ export class SaveManager {
     return totalRefunded;
   }
 
-  public unlockLoadout(id: LoadoutId): boolean {
-    if (this.data.unlockedLoadouts.includes(id)) return true;
-    const cfg = LOADOUTS[id];
-    if (!cfg) return false;
-    if (this.data.alloyScrap < cfg.cost) return false;
-
-    this.data.alloyScrap -= cfg.cost;
-    this.data.unlockedLoadouts.push(id);
-    this.save();
-    return true;
-  }
-
-  public selectLoadout(id: LoadoutId): boolean {
-    if (!this.data.unlockedLoadouts.includes(id)) return false;
-    this.data.selectedLoadout = id;
-    this.save();
-    return true;
-  }
-
   public addRunResults(
     kills: number,
     timeSec: number,
     scrapEarned: number,
     victory: boolean,
-    bossesKilled = 0
+    _bossesKilled = 0
   ): void {
     this.data.totalKills += kills;
     this.data.alloyScrap += scrapEarned;
@@ -440,15 +411,6 @@ export class SaveManager {
     }
 
     // Milestone Auto-Unlocks
-    if (timeSec >= 240 && !this.data.unlockedLoadouts.includes('reese_1984')) {
-      this.data.unlockedLoadouts.push('reese_1984');
-    }
-    if (bossesKilled >= 1 && !this.data.unlockedLoadouts.includes('techcom_sapper')) {
-      this.data.unlockedLoadouts.push('techcom_sapper');
-    }
-    if (victory && !this.data.unlockedLoadouts.includes('john_connor')) {
-      this.data.unlockedLoadouts.push('john_connor');
-    }
 
     this.save();
   }

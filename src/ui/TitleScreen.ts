@@ -1,10 +1,10 @@
 import type { SaveManager } from '../state/SaveManager';
 import type { AudioEngine } from '../audio/AudioEngine';
-import { LOADOUTS, META_UPGRADES } from '../data/upgrades';
+import { META_UPGRADES } from '../data/upgrades';
 import { LORE } from '../data/lore';
 import { ACHIEVEMENTS, TOTAL_ACHIEVEMENTS } from '../data/achievements';
 import type { CodexModal } from './CodexModal';
-import type { LoadoutId, MetaUpgradeId, RunConfig } from '../core/types';
+import type { MetaUpgradeId, RunConfig } from '../core/types';
 import type { GamepadManager } from '../input/GamepadManager';
 import { ModalA11y } from './A11yHelper';
 import { iconLabel } from './icons';
@@ -123,10 +123,7 @@ export class TitleScreen {
           <div class="t800-header">REQUISITION</div>
           <div class="t800-ticker" id="bunker-scrap-header">SCRAP 0</div>
 
-          <div class="t-section-label" style="margin-top:0;">OPERATIVE</div>
-          <div id="loadout-selection-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:8px;"></div>
-
-          <div class="t-section-label">PERMANENT UPGRADES</div>
+          <div class="t-section-label" style="margin-top:0;">PERMANENT UPGRADES</div>
           <div id="bunker-upgrades-list" class="upgrade-card-list"></div>
 
           <div class="btn-row">
@@ -660,51 +657,6 @@ export class TitleScreen {
     scrapHeader.textContent = `SCRAP ${data.alloyScrap} · KILLS ${data.totalKills}`;
 
     this.bunkerSelectables = [];
-
-    // Render Loadouts
-    const loadoutGrid = this.bunkerModal.querySelector('#loadout-selection-grid')!;
-    loadoutGrid.innerHTML = '';
-    for (const [lId, cfg] of Object.entries(LOADOUTS)) {
-      const isUnlocked = data.unlockedLoadouts.includes(lId as LoadoutId);
-      const isSelected = data.selectedLoadout === lId;
-
-      const card = document.createElement('button');
-      card.type = 'button';
-      card.setAttribute('data-loadout-card', lId);
-      card.setAttribute(
-        'aria-label',
-        `${cfg.name}, ${cfg.callsign}. Special: ${cfg.ability.name}. ${isSelected ? 'Active' : isUnlocked ? 'Select' : `Unlock: ${cfg.cost} scrap`}`
-      );
-      card.classList.toggle('is-selected', isSelected);
-      card.innerHTML = `
-        <div class="card-name">${cfg.name}</div>
-        <div class="t-muted">${cfg.callsign}</div>
-        <div class="t-muted">SPEC: ${cfg.ability.name}</div>
-        <div style="margin-top:4px;">${
-          isSelected
-            ? '<span class="t-tag t-tag-on">ACTIVE</span>'
-            : isUnlocked
-              ? '<span class="t-tag">SELECT</span>'
-              : `<span class="t-muted">UNLOCK ${cfg.cost} SCRAP</span>`
-        }</div>
-      `;
-
-      card.onclick = () => {
-        if (isUnlocked) {
-          this.audioEngine.playUpgradeApplied();
-          this.saveManager.selectLoadout(lId as LoadoutId);
-          this.renderBunkerContents();
-        } else if (data.alloyScrap >= cfg.cost) {
-          this.audioEngine.playUiBuy();
-          this.saveManager.unlockLoadout(lId as LoadoutId);
-          this.renderBunkerContents();
-        } else {
-          this.audioEngine.playUiError();
-        }
-      };
-      loadoutGrid.appendChild(card);
-      this.bunkerSelectables.push(card);
-    }
 
     // Render Upgrades
     const upgradeList = this.bunkerModal.querySelector('#bunker-upgrades-list')!;

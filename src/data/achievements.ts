@@ -25,7 +25,7 @@ export interface AchievementDefinition {
 }
 
 export const ACHIEVEMENTS: Record<string, AchievementDefinition> = {
-  // --- KILLS (1-6) ---
+  // --- KILLS ---
   first_blood: {
     id: 'first_blood',
     title: 'First Machine Down',
@@ -34,20 +34,12 @@ export const ACHIEVEMENTS: Record<string, AchievementDefinition> = {
     reward: { type: 'scrap', amount: 50, description: '+50 Alloy Scrap' },
     target: 1
   },
-  skynet_threat: {
-    id: 'skynet_threat',
-    title: 'Scrap Collector',
-    description: 'Destroy 100 total machines.',
-    category: 'kills',
-    reward: { type: 'scrap', amount: 100, description: '+100 Alloy Scrap' },
-    target: 100
-  },
   terminator_hunter: {
     id: 'terminator_hunter',
     title: 'Machine Hunter',
     description: 'Destroy 500 total machines.',
     category: 'kills',
-    reward: { type: 'weapon', id: 'm79_thumper', description: 'Unlocks Weapon: M79 Thumper Grenade' },
+    reward: { type: 'scrap', amount: 300, description: '+300 Alloy Scrap' },
     target: 500
   },
   mass_dismantler: {
@@ -55,69 +47,29 @@ export const ACHIEVEMENTS: Record<string, AchievementDefinition> = {
     title: 'One-Man Army',
     description: 'Destroy 1,000 machines in a single run.',
     category: 'kills',
-    reward: { type: 'weapon', id: 'napalm_canister', description: 'Unlocks Weapon: Napalm Canister' },
+    reward: { type: 'scrap', amount: 500, description: '+500 Alloy Scrap' },
     target: 1000
   },
-  salvage_czar: {
-    id: 'salvage_czar',
-    title: 'Scrap Titan',
-    description: 'Destroy 5,000 total lifetime machines.',
-    category: 'kills',
-    reward: { type: 'scrap', amount: 1500, description: '+1500 Alloy Scrap' },
-    target: 5000
-  },
-  genocide_protocol: {
-    id: 'genocide_protocol',
-    title: 'Terminator Terminator',
-    description: 'Destroy 10,000 total lifetime machines.',
-    category: 'kills',
-    reward: { type: 'scrap', amount: 3000, description: '+3000 Alloy Scrap' },
-    target: 10000
-  },
 
-  // --- SURVIVAL (7-13) ---
-  survivor_1m: {
-    id: 'survivor_1m',
-    title: 'Stay Low',
-    description: 'Survive for 1 minute in any stage.',
-    category: 'survival',
-    reward: { type: 'scrap', amount: 50, description: '+50 Alloy Scrap' },
-    target: 60
-  },
-  survivor_3m: {
-    id: 'survivor_3m',
-    title: 'Guerrilla Warfare',
-    description: 'Survive for 3 minutes in any stage.',
-    category: 'survival',
-    reward: { type: 'scrap', amount: 100, description: '+100 Alloy Scrap' },
-    target: 180
-  },
+  // --- SURVIVAL ---
   survivor_5m: {
     id: 'survivor_5m',
     title: 'Hold The Line',
-    description: 'Survive for 5 minutes in any stage.',
+    description: 'Survive for 5 minutes.',
     category: 'survival',
-    reward: { type: 'weapon', id: 'm16_carbine', description: 'Unlocks Weapon: M16 Carbine' },
+    reward: { type: 'scrap', amount: 200, description: '+200 Alloy Scrap' },
     target: 300
-  },
-  survivor_8m: {
-    id: 'survivor_8m',
-    title: 'Against All Odds',
-    description: 'Survive for 8 minutes in any stage.',
-    category: 'survival',
-    reward: { type: 'scrap', amount: 400, description: '+400 Alloy Scrap' },
-    target: 480
   },
   judgment_survivor: {
     id: 'judgment_survivor',
     title: 'Judgment Day Prevented',
-    description: 'Survive a full 10-minute deployment (Standard Victory).',
+    description: 'Survive a full 10-minute deployment.',
     category: 'survival',
-    reward: { type: 'loadout', id: 'john_connor', description: 'Unlocks Operative: John Connor' },
+    reward: { type: 'scrap', amount: 1000, description: '+1000 Alloy Scrap' },
     target: 600
   },
 
-  // --- BOSSES / COMBAT (14-18) ---
+  // --- BOSSES ---
   hk_aerial_slayer: {
     id: 'hk_aerial_slayer',
     title: 'Anti-Air Ace',
@@ -149,119 +101,34 @@ export const ACHIEVEMENTS: Record<string, AchievementDefinition> = {
   untouchable_boss: {
     id: 'untouchable_boss',
     title: 'Ghost of the Resistance',
-    description: 'Defeat any boss encounter without taking damage during its presence.',
+    description: 'Defeat any boss without taking damage while it is on the field.',
     category: 'combat',
-    reward: { type: 'cosmetic', id: 'title_ghost', description: 'Cosmetic Title: Ghost' }
+    reward: { type: 'scrap', amount: 500, description: '+500 Alloy Scrap' }
   },
 
-  // --- WEAPON EVOLUTIONS (19-25) ---
+  // --- PROGRESSION ---
   first_evolution: {
     id: 'first_evolution',
     title: 'Future Tech',
-    description: 'Evolve any weapon at a Tech-Com Bunker Vault.',
-    category: 'progression',
+    description: 'Evolve any weapon.',
+    category: 'mastery',
     reward: { type: 'scrap', amount: 250, description: '+250 Alloy Scrap' }
-  },
-  trench_sweeper_evo: {
-    id: 'trench_sweeper_evo',
-    title: 'Room Cleaner',
-    description: 'Evolve Ithaca 37 into Trench Sweeper.',
-    category: 'progression',
-    reward: { type: 'scrap', amount: 300, description: '+300 Alloy Scrap' }
-  },
-  thermite_buster_evo: {
-    id: 'thermite_buster_evo',
-    title: 'Demolition Expert',
-    description: 'Evolve Thermite Pipe Bomb into Thermite Buster.',
-    category: 'progression',
-    reward: { type: 'scrap', amount: 300, description: '+300 Alloy Scrap' }
-  },
-  m95a1_plasma_evo: {
-    id: 'm95a1_plasma_evo',
-    title: 'Heavy Plasma Dominance',
-    description: 'Evolve M25 Plasma Rifle into M95A1 Heavy Plasma.',
-    category: 'progression',
-    reward: { type: 'scrap', amount: 300, description: '+300 Alloy Scrap' }
-  },
-  emp_supernova_evo: {
-    id: 'emp_supernova_evo',
-    title: 'Tachyon Surge',
-    description: 'Evolve EMP Emitter into EMP Supernova.',
-    category: 'progression',
-    reward: { type: 'scrap', amount: 300, description: '+300 Alloy Scrap' }
-  },
-  perimeter_ring_evo: {
-    id: 'perimeter_ring_evo',
-    title: 'Orbital Defense',
-    description: 'Evolve Seeker Drone into Perimeter Ring.',
-    category: 'progression',
-    reward: { type: 'scrap', amount: 300, description: '+300 Alloy Scrap' }
-  },
-  arsenal_complete: {
-    id: 'arsenal_complete',
-    title: 'Walking Armory',
-    description: 'Possess 3 evolved weapons simultaneously in a single deployment.',
-    category: 'progression',
-    reward: { type: 'scrap', amount: 1000, description: '+1000 Alloy Scrap' }
-  },
-
-  // --- LEVEL & SCRAP (26-30) ---
-  level_10: {
-    id: 'level_10',
-    title: 'Rookie Rebel',
-    description: 'Reach Level 10 in a single deployment.',
-    category: 'progression',
-    reward: { type: 'scrap', amount: 100, description: '+100 Alloy Scrap' },
-    target: 10
   },
   level_20: {
     id: 'level_20',
     title: 'Seasoned Combatant',
-    description: 'Reach Level 20 in a single deployment.',
+    description: 'Reach level 20 in a single run.',
     category: 'progression',
     reward: { type: 'weapon', id: 'resistance_k9', description: 'Unlocks Weapon: Resistance K-9' },
     target: 20
   },
-  level_30: {
-    id: 'level_30',
-    title: 'Apex Survivor',
-    description: 'Reach Level 30 in a single deployment.',
-    category: 'progression',
-    reward: { type: 'scrap', amount: 500, description: '+500 Alloy Scrap' },
-    target: 30
-  },
   scrap_collector_1k: {
     id: 'scrap_collector_1k',
     title: 'Mother Lode',
-    description: 'Extract 1,000 alloy scrap in a single run.',
+    description: 'Earn 1,000 Alloy Scrap in a single run.',
     category: 'progression',
     reward: { type: 'scrap', amount: 500, description: '+500 Alloy Scrap' },
     target: 1000
-  },
-  scrap_bank_5k: {
-    id: 'scrap_bank_5k',
-    title: 'Tech-Com War Chest',
-    description: 'Accumulate 5,000 total lifetime alloy scrap.',
-    category: 'progression',
-    reward: { type: 'scrap', amount: 1000, description: '+1000 Alloy Scrap' },
-    target: 5000
-  },
-
-  // --- STAGES ---
-  clear_wasteland: {
-    id: 'clear_wasteland',
-    title: 'Wasteland Veteran',
-    description: 'Achieve victory in Los Angeles 2029 Wasteland.',
-    category: 'stages',
-    reward: { type: 'scrap', amount: 500, description: '+500 Alloy Scrap' }
-  },
-
-  techcom_legend: {
-    id: 'techcom_legend',
-    title: 'Legend of the Resistance',
-    description: 'Unlock 3 loadouts and survive at least 5 deployments.',
-    category: 'mastery',
-    reward: { type: 'scrap', amount: 5000, description: '+5000 Alloy Scrap' }
   }
 };
 

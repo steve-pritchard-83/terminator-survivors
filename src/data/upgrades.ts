@@ -39,94 +39,6 @@ export const LOADOUTS: Record<LoadoutId, LoadoutConfig> = {
       cooldown: 22
     }
   },
-  reese_1984: {
-    id: 'reese_1984',
-    name: 'Kyle Reese — 1984 Protector',
-    callsign: 'ALLEYWAY SURVIVOR',
-    startingWeapon: 'pipe_bomb',
-    description:
-      'Wearing the stolen trenchcoat. Increased explosive area and salvage magnet range.',
-    bonusStats: { areaMultiplier: 0.25, magnetRadius: 1.5 },
-    unlockRequirement: 'Survive 4 minutes in Sector 44 or 500 Alloy Scrap.',
-    cost: 500,
-    ability: {
-      id: 'sawed_off_dual_wield',
-      name: 'Sawed-off Dual Wield',
-      description: 'Doubles firing rate and adds +2 projectiles for 6 seconds.',
-      cooldown: 28,
-      duration: 6
-    }
-  },
-  techcom_sapper: {
-    id: 'techcom_sapper',
-    name: 'Tech-Com Heavy Sapper',
-    callsign: 'PLASMA CORPS',
-    startingWeapon: 'm25_plasma',
-    description:
-      'Heavy weapons specialist armed with a captured Westinghouse 40W phased plasma rifle.',
-    bonusStats: { mightMultiplier: 0.15, cooldownMultiplier: -0.12 },
-    unlockRequirement: 'Destroy 1 HK-Tank or 1,200 Alloy Scrap.',
-    cost: 1200,
-    ability: {
-      id: 'plasma_overcharge',
-      name: 'Plasma Overcharge',
-      description: 'Immediately resets all weapon cooldowns and emits an EMP shockwave.',
-      cooldown: 30
-    }
-  },
-  john_connor: {
-    id: 'john_connor',
-    name: 'John Connor — Resistance General',
-    callsign: 'TECH-COM COMMANDER',
-    startingWeapon: 'seeker_drone',
-    description:
-      'The military mastermind of the Resistance. Starts with Seeker Drones, +1 Projectile, and +1 Revival.',
-    bonusStats: { bonusAmount: 1, xpGainMultiplier: 0.25, revivals: 1 },
-    unlockRequirement: 'Defeat the Skynet Time Displacement Core or 3,000 Alloy Scrap.',
-    cost: 3000,
-    ability: {
-      id: 'tactical_rally',
-      name: 'Tactical Rally',
-      description: 'Rallies Resistance forces, granting +35% Might and tactical firepower for 10s.',
-      cooldown: 35,
-      duration: 10
-    }
-  },
-  sarah_connor: {
-    id: 'sarah_connor',
-    name: 'Sarah Connor — Legend of the Resistance',
-    callsign: 'MOTHER OF THE FUTURE',
-    startingWeapon: 'ithaca_37',
-    description:
-      'Trained for the coming war. High maneuverability, superior fire rate, and area denial.',
-    bonusStats: { moveSpeed: 1.2, cooldownMultiplier: -0.15 },
-    unlockRequirement: 'Survive 10 minutes in Cyberdyne Factory or 2,000 Alloy Scrap.',
-    cost: 2000,
-    ability: {
-      id: 'molotov_perimeter',
-      name: 'Molotov Perimeter',
-      description: 'Ignites a defensive ring of 6 lingering flame zones around the player.',
-      cooldown: 24
-    }
-  },
-  reprogrammed_t800: {
-    id: 'reprogrammed_t800',
-    name: 'Reprogrammed T-800 — Cybernetic Guardian',
-    callsign: 'MODEL 101',
-    startingWeapon: 'm25_plasma',
-    description:
-      'Living tissue over metal endoskeleton. Massive armor and survivability at the cost of agility.',
-    bonusStats: { maxHp: 150, armor: 3, mightMultiplier: 0.25, moveSpeed: -1.0 },
-    unlockRequirement: 'Defeat Skynet TDE Core or 4,500 Alloy Scrap.',
-    cost: 4500,
-    ability: {
-      id: 'endo_overdrive',
-      name: 'Endo Overdrive',
-      description: 'Overclocks servo-hydraulics: invulnerability and +60% move speed for 5s.',
-      cooldown: 40,
-      duration: 5
-    }
-  }
 };
 
 export interface MetaUpgradeConfig {
@@ -176,15 +88,6 @@ export const META_UPGRADES: Record<MetaUpgradeId, MetaUpgradeConfig> = {
     costMultiplier: 1.5,
     statPerLevel: { moveSpeed: 0.35 }
   },
-  salvage_magnet: {
-    id: 'salvage_magnet',
-    name: 'Salvage Tractor Magnet',
-    description: '+20% attraction radius for Skynet data cores.',
-    maxLevel: 5,
-    baseCost: 75,
-    costMultiplier: 1.45,
-    statPerLevel: { magnetRadius: 1.4 }
-  },
   phase_capacitor: {
     id: 'phase_capacitor',
     name: 'Phase Capacitor Bank',
@@ -230,42 +133,6 @@ export const META_UPGRADES: Record<MetaUpgradeId, MetaUpgradeConfig> = {
     costMultiplier: 1.55,
     statPerLevel: { areaMultiplier: 0.1, speedMultiplier: 0.1 }
   },
-  blast_dampeners: {
-    id: 'blast_dampeners',
-    name: 'Kinetic Blast Dampeners',
-    description: '+1 armor and +10 max HP per level.',
-    maxLevel: 5,
-    baseCost: 130,
-    costMultiplier: 1.5,
-    statPerLevel: { armor: 1, maxHp: 10 }
-  },
-  extended_capacitors: {
-    id: 'extended_capacitors',
-    name: 'Extended Capacitors',
-    description: '+15% weapon effect and zone duration per level.',
-    maxLevel: 5,
-    baseCost: 110,
-    costMultiplier: 1.5,
-    statPerLevel: { durationMultiplier: 0.15 }
-  },
-  plasma_accelerator: {
-    id: 'plasma_accelerator',
-    name: 'Hyper-Coil Accelerator',
-    description: '+12% projectile flight speed per level.',
-    maxLevel: 5,
-    baseCost: 100,
-    costMultiplier: 1.45,
-    statPerLevel: { speedMultiplier: 0.12 }
-  },
-  tactical_relay: {
-    id: 'tactical_relay',
-    name: 'Tactical Field Relay',
-    description: '+15% Luck per level (improves loot drop and upgrade rolls).',
-    maxLevel: 5,
-    baseCost: 120,
-    costMultiplier: 1.5,
-    statPerLevel: { luckMultiplier: 0.15 }
-  },
   reroll_protocol: {
     id: 'reroll_protocol',
     name: 'Requisition Protocol',
@@ -275,31 +142,16 @@ export const META_UPGRADES: Record<MetaUpgradeId, MetaUpgradeConfig> = {
     costMultiplier: 2.0,
     statPerLevel: { rerolls: 1 }
   },
-  banish_protocol: {
-    id: 'banish_protocol',
-    name: 'Banish Frequency Override',
-    description: '+1 upgrade banish option per level (permanently excludes an item from the run pool).',
-    maxLevel: 3,
-    baseCost: 350,
-    costMultiplier: 2.0,
-    statPerLevel: { banishes: 1 }
-  },
-  skip_protocol: {
-    id: 'skip_protocol',
-    name: 'Scavenge Skip Protocol',
-    description: '+1 level-up skip option per level (skips upgrade and yields +25 Alloy Scrap).',
-    maxLevel: 3,
-    baseCost: 250,
-    costMultiplier: 1.8,
-    statPerLevel: { skips: 1 }
-  },
-  veteran_resilience: {
-    id: 'veteran_resilience',
-    name: 'Veteran Survival Grit',
-    description: '+15% revival chance and 5% low-HP damage reduction per level.',
-    maxLevel: 3,
-    baseCost: 400,
-    costMultiplier: 2.2,
-    statPerLevel: { revivalChance: 0.15, lowHpDamageReduction: 0.05 }
-  }
+};
+
+/** Costs of the permanent upgrades cut from the game, so old saves get that scrap back (see SaveManager v4). */
+export const REMOVED_UPGRADE_COSTS: Record<string, { baseCost: number; costMultiplier: number }> = {
+  salvage_magnet: { baseCost: 75, costMultiplier: 1.45 },
+  blast_dampeners: { baseCost: 130, costMultiplier: 1.5 },
+  extended_capacitors: { baseCost: 110, costMultiplier: 1.5 },
+  plasma_accelerator: { baseCost: 100, costMultiplier: 1.45 },
+  tactical_relay: { baseCost: 120, costMultiplier: 1.5 },
+  banish_protocol: { baseCost: 350, costMultiplier: 2.0 },
+  skip_protocol: { baseCost: 250, costMultiplier: 1.8 },
+  veteran_resilience: { baseCost: 400, costMultiplier: 2.2 }
 };
