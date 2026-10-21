@@ -202,13 +202,11 @@ await processModel('crab_drone.glb', 'crab_drone.glb', { tris: 4000, error: 0.05
 await processModel('burnt_car.glb', 'burnt_car.glb', { ground: 0.2, tris: 12000, error: 0.02, mobileTris: 6000 });
 await processModel('plasma_rifle.glb', 'plasma_rifle.glb');
 
-// T-600: the T-pose body and its weapon are separate pieces (a third, stray piece is dropped)
+// T-600: only the T-pose body is kept (it carries the shared plasma rifle)
 await processModel('t-600.glb', 't600.glb', { keep: (name) => name === 'Object_1' });
-await processModel('t-600.glb', 't600_gun.glb', { keep: (name) => name === 'Object_0' });
 
 // Second batch of enemies, allies and pickups
 await processModel('moto.glb', 'moto.glb', { tris: 9000, mobileTris: 4500 });
-await processModel('aerostat.glb', 'aerostat.glb', { tris: 7000, mobileTris: 3500 });
 await processModel('turret.glb', 'turret.glb');
 await processModel('k9.glb', 'k9.glb', { tris: 4000, mobileTris: 2000 });
 await processModel('seeker.glb', 'seeker.glb', { tris: 2500, mobileTris: 1200 });

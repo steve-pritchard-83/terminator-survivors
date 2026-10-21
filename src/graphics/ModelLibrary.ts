@@ -28,7 +28,6 @@ export type ModelName =
   | 'player'
   | 't600'
   | 'moto'
-  | 'aerostat'
   | 'turret_base'
   | 'turret_gun'
   | 'k9'
@@ -83,7 +82,6 @@ const SPECS: Record<string, ModelSpec> = {
   t600: { url: './models/t600.glb', fit: { axis: 'y', size: 1.85 }, grounded: true, metal: { metalness: 0.7, roughness: 0.5 } },
   // Faces -x in the source
   moto: { url: './models/moto.glb', fit: { axis: 'z', size: 2.1 }, grounded: true, rotateY: Math.PI / 2 },
-  aerostat: { url: './models/aerostat.glb', fit: { axis: 'x', size: 1.7 }, grounded: false },
   // The gun turns on its tripod
   turret: {
     url: './models/turret.glb',

@@ -36,42 +36,30 @@ Available anywhere on desktop and mobile, with full progressive web app (PWA) of
   - Looped background music (`backgroundmusic.mp3`) played through a gapless Web Audio loop graph.
   - Hybrid Audio Engine combining 56 preloaded `.wav` combat SFX (`S_PlasmaShot01.wav`, `S_Ithica01.wav`, `Shotgun_shot_spas.wav`, `S_LaserTank01.wav`, `plasma_explosion.wav`, `hk_heavy1a_m.wav`, and the iconic `terminated.wav` death sting) with procedural Web Audio API synthesis.
 
-### 2. Deep Survivor Combat & Arsenal (8 Base Weapons, 8 Passives, 8 Evolutions)
+### 2. Survivor Combat & Arsenal (11 Weapons, 10 Passives, 11 Evolutions)
 
-- **8 Base Weapons**:
-  - **Sawed-Off Ithaca 37**: 12-gauge close-quarters buckshot spread.
-  - **Westinghouse M-25 Plasma Rifle**: Rapid purple phased plasma bolts in the 40-watt range.
-  - **Tech-Com Pipe Bomb**: Improvised cylindrical charges with timed area detonation.
-  - **Tactical EMP Emitter**: Periodic electromagnetic shockwave that slows and strips Skynet armor.
-  - **Reprogrammed Seeker Drone**: Orbiting Tech-Com micro-drones slicing through nearby hostiles.
-  - **M79 Thumper Grenade Launcher**: High-angle lobbed 40mm fragmentation shells.
-  - **Scorched Earth Napalm Canister**: Incendiary canisters igniting lingering ground fire zones.
-  - **Bunker Laser Designator**: Calls down pinpoint orbital plasma strikes from captured satellites.
-- **8 Tactical Passives**:
-  - Bandolier Harness (+Projectile Speed & Range)
-  - Overcharged Plasma Cell (+Cooldown Reduction)
-  - Blast Compound (+Area Radius)
-  - Sarah’s Polaroid (+Max HP & Armor)
-  - Gyro-Stabilizer (+Extra Projectiles)
-  - Salvaged Endo-Servos (+Move Speed & Magnet Radius)
-  - Skynet CPU Uplink (+Critical Chance & XP Gain)
-  - Coltan Alloy Plating (+HP Regeneration & Might)
-- **8 Synergy Superweapons**: Max out a Level 8 weapon with its paired passive and open a Boss Data Vault to unlock:
-  - _DN38416 Trench Sweeper_ (360-degree incendiary flechette nova)
-  - _Westinghouse M-95A1 Heavy Pulse_ (Continuous piercing magenta plasma stream)
-  - _Coltan Thermite Core Buster_ (Cluster pipe bombs with white-hot thermite shockwaves)
-  - _Zero-Point EMP Supernova_ (Massive EMP vortex that strips armor and leeches HP)
-  - _Resistance Perimeter Defense Ring_ (6 hyper-velocity plasma-tethered orbitals)
-  - _MM-1 Multi-Grenade Barrage_ (360-degree carpet bombardment)
-  - _Judgment Day Firestorm Wall_ (Expanding ring of 3000K plasma fire)
-  - _Skynet Orbital Ion Cannon_ (Triple cascading orbital ion beams)
+- **Weapons** (each evolves into a superweapon once it reaches level 8 alongside its paired passive and a boss data vault is opened):
+  - **Westinghouse M-25 Plasma Rifle** (starting weapon) → M95A1 Heavy
+  - **Ithaca 37 Shotgun** → Trench Sweeper Auto-12
+  - **Thermite Pipe Bomb** → Thermite Bunker Buster
+  - **RPG-7 Heavy Launcher** → Tandem Warhead RPG
+  - **Incendiary Molotov** → Firestorm Incendiary Lane
+  - **Captured Seeker Drone** → Perimeter Defense Ring
+  - **EMP Pulse Emitter** → Tech-Com EMP Supernova
+  - **Bunker Laser Targeter** → Captured HK-Orbital Ion
+  - **Resistance K-9 Scout** → K-9 Wolfpack
+  - **Reprogrammed T-800 Ally** → Guardian Protocol T-800
+  - **Coltan Combat Knife** → Hyperalloy Combat Blade
+- Five weapons are unlocked by achievements: destroying the HK-Aerial, HK-Tank, T-1000 and Skynet Core bosses, and reaching level 20.
+- **Requisition**: ten permanent upgrades bought with Alloy Scrap between runs.
+- **Ability** (`E`): Kyle throws four heavy pipe bombs outward in a cross.
 
 ### 3. Skynet Threat Matrix
 
 - **T-800 Cyberdyne Systems Model 101 Endoskeletons**: Dual-layer InstancedMesh rendering holding active chrome skeletons with glowing red optical sensors.
 - **Hunter-Killer Aerial**: Supersonic patrol units strafing the battlefield with crimson plasma beams.
 - **Hunter-Killer Goliath Tank**: Multi-track behemoths equipped with dual swivel turrets, ground artillery telegraphs, and twin sweeping volumetric searchlights.
-- **T-1000 Mimetic Polyalloy Prototype**: Advanced liquid metal boss with chrome polyalloy reflection shaders (puddle ambush, blade lunge and slash combo, and nanite regeneration that napalm or EMP shuts off).
+- **T-1000 Mimetic Polyalloy Prototype**: Advanced liquid metal boss with chrome polyalloy reflection shaders (puddle ambush, blade lunge and slash combo, and nanite regeneration that fire or EMP shuts off).
 
 ### 4. Controller, Mobile Native & PWA First
 
@@ -96,7 +84,7 @@ Available anywhere on desktop and mobile, with full progressive web app (PWA) of
 | :--------------------------- | :--------------- | :------------------------------------------------ |
 | **Desktop Keyboard / Mouse** | Movement         | `W`, `A`, `S`, `D` or Arrow Keys                  |
 | **Desktop Keyboard / Mouse** | Aiming           | Mouse cursor position                             |
-| **Desktop Keyboard / Mouse** | Ability          | `E` (loadouts with an ability)                    |
+| **Desktop Keyboard / Mouse** | Ability          | `E`                                               |
 | **Desktop Keyboard / Mouse** | Pause / Menu     | `Escape` or `P`                                   |
 | **Xbox / Standard Gamepad**  | Movement         | Left Thumbstick or D-Pad                          |
 | **Xbox / Standard Gamepad**  | 360° Aiming      | Right Thumbstick (retains angle on release)       |

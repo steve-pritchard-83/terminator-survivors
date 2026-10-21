@@ -5,7 +5,6 @@ import type { GunSound } from '../../audio/AudioEngine';
 const GUN_SOUNDS: Record<string, GunSound> = {
   plasma_light: 'plasmaLight',
   plasma_heavy: 'plasmaHeavy',
-  rifle: 'rifle',
   railgun: 'railgun'
 };
 

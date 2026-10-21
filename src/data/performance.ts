@@ -18,8 +18,8 @@ export const RENDER_BUDGET = IS_MOBILE
       fireLights: 2,
       /** The belt lamp's soft fill light back onto Kyle (its beam always stays) */
       lampSpill: false,
-      /** Share of the skull-and-bone carpet that is placed */
-      groundClutter: 0.5,
+      /** Share of the skull-and-bone carpet that is placed (halved on every device so machines read against the ground) */
+      groundClutter: 0.3,
       /** Bloom renders at this fraction of the screen resolution */
       bloomScale: 0.5,
       /** Highest preset the automatic quality detection may pick */
@@ -37,7 +37,7 @@ export const RENDER_BUDGET = IS_MOBILE
       flashLights: 8,
       fireLights: 4,
       lampSpill: true,
-      groundClutter: 1,
+      groundClutter: 0.5,
       bloomScale: 1,
       maxAutoPreset: 'ultra' as const,
       lowFpsSeconds: 3,

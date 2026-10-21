@@ -5,49 +5,46 @@ const seq = (name: string, count: number): string[] =>
 
 export const SFX_WAV_MANIFEST: Record<string, string[]> = {
   // Player guns
-  plasmaLight: seq('plasma_player', 8),
+  plasmaLight: seq('plasma_player', 4),
   plasmaHeavy: [
     fx('S_Plasma_Aerial_New01.wav'),
     fx('S_Plasma_Aerial_New02.wav'),
     fx('S_LaserTank01.wav'),
     fx('S_LaserTank02.wav')
   ],
-  rifle: seq('rifle', 8),
   railgun: seq('railgun', 4),
-  shotgun: [fx('S_Ithica01.wav'), fx('S_Ithica02.wav'), fx('Shotgun_shot_spas.wav'), ...seq('shotgun_extra', 5)],
-  shotgunAuto: seq('shotgun_auto', 10),
-  pumpRack: seq('pump_rack', 5),
+  shotgun: [fx('S_Ithica01.wav'), fx('S_Ithica02.wav'), fx('Shotgun_shot_spas.wav'), ...seq('shotgun_extra', 1)],
+  shotgunAuto: seq('shotgun_auto', 4),
+  pumpRack: seq('pump_rack', 3),
   strikeLock: seq('strike_lock', 1),
   strikeBeam: seq('strike_beam', 4),
-  droneZap: seq('drone_zap', 6),
+  droneZap: seq('drone_zap', 4),
   servo: seq('servo', 3),
-  magOut: seq('mag_out', 2),
-  radioClick: seq('radio_click', 1),
   throw: seq('throw', 2),
   launchGrenade: seq('launch_grenade', 1),
   launchRocket: seq('launch_rocket', 2),
-  fireWhoosh: seq('fire_whoosh', 5),
+  fireWhoosh: seq('fire_whoosh', 3),
   glassBreak: seq('glass_break', 3),
   empBlast: seq('emp', 3),
-  swing: seq('swing', 10),
+  swing: seq('swing', 4),
   // Enemy guns
-  enemyPlasma: seq('enemy_plasma', 8),
-  enemyHeavy: seq('enemy_heavy', 7),
+  enemyPlasma: seq('enemy_plasma', 4),
+  enemyHeavy: seq('enemy_heavy', 4),
   minigun: seq('minigun', 1),
   // Impacts, deaths and explosions
-  endoHit: seq('hit_metal', 7),
-  endoDestroy: seq('death_endo', 7),
-  deathDrone: seq('death_drone', 5),
+  endoHit: seq('hit_metal', 4),
+  endoDestroy: seq('death_endo', 4),
+  deathDrone: seq('death_drone', 3),
   deathMachine: seq('death_machine', 4),
   deathBoss: seq('death_boss', 3),
-  explodeSmall: seq('explode_small', 5),
-  explodeMed: [...seq('explode_med', 6), fx('plasma_explosion.wav')],
-  explodeLarge: [...seq('explode_large', 4), fx('S_Explosion01.wav'), fx('S_Explosion02.wav')],
+  explodeSmall: seq('explode_small', 3),
+  explodeMed: [...seq('explode_med', 3), fx('plasma_explosion.wav')],
+  explodeLarge: [...seq('explode_large', 3), fx('S_Explosion01.wav')],
   explodeDrum: seq('explode_drum', 3),
   hitLiquid: seq('hit_liquid', 3),
-  playerHit: seq('player_hit', 6),
-  stepPlayer: seq('step', 8),
-  stepEndo: seq('step_endo', 8),
+  playerHit: seq('player_hit', 3),
+  stepPlayer: seq('step', 4),
+  stepEndo: seq('step_endo', 4),
   revive: seq('revive', 1),
   // Cues
   hkAlert: [
@@ -68,17 +65,17 @@ export const SFX_WAV_MANIFEST: Record<string, string[]> = {
   pickupGem: seq('pickup_cell', 3),
   lootHeal: seq('loot_heal', 2),
   lootScrap: seq('loot_scrap', 3),
-  crateBreak: seq('crate_break', 4),
+  crateBreak: seq('crate_break', 3),
   vaultOpen: seq('vault_open', 2),
   levelUp: [fx('S_ExpLevel.wav'), fx('S_NewLevel.wav'), fx('S_NewLevel2.wav'), fx('S_NewLevel3.wav')],
   vaultJackpot: [fx('S_ObjectiveComplete.wav'), fx('S_HckingCompleat.wav'), fx('S_AddtoArchive.wav')],
   achievement: seq('achievement', 2),
   evolution: seq('evolution', 2),
   // Ambience
-  ambDistant: seq('amb_distant', 7),
+  ambDistant: seq('amb_distant', 4),
   ambBed: [fx('amb_battle_loop.mp3')],
   // UI
-  uiClick: [fx('S_Click.wav'), fx('S_Click02.wav'), fx('S_Click03.wav'), fx('S_Click04.wav')],
+  uiClick: [fx('S_Click.wav'), fx('S_Click02.wav')],
   uiBeep: [fx('S_ButtonBeep01.wav'), fx('S_ButtonBeep02.wav')],
   uiBuy: [fx('S_Buy.wav')],
   uiError: [fx('S_DetectiveModeError.wav'), ...seq('ui_no_ammo', 1)],
@@ -98,7 +95,7 @@ export const SFX_WAV_MANIFEST: Record<string, string[]> = {
 import type { GamepadManager } from '../input/GamepadManager';
 import { AMBIENCE } from '../data/balance';
 
-export type GunSound = 'plasmaLight' | 'plasmaHeavy' | 'rifle' | 'railgun';
+export type GunSound = 'plasmaLight' | 'plasmaHeavy' | 'railgun';
 export type EnemyShotSound = 'light' | 'heavy' | 'minigun';
 export type LaunchSound = 'throw' | 'grenade' | 'rocket';
 
@@ -710,7 +707,7 @@ export class AudioEngine {
 
   /** Player gun shot; the sound is chosen per weapon in src/data/weapons.ts (`patternParams.sfx`). */
   public playGunShot(sound: GunSound): void {
-    const gain: Record<GunSound, number> = { plasmaLight: 0.5, plasmaHeavy: 0.65, rifle: 0.42, railgun: 0.55 };
+    const gain: Record<GunSound, number> = { plasmaLight: 0.5, plasmaHeavy: 0.65, railgun: 0.55 };
     this.playSample(sound, gain[sound], 1.0, 0.06);
   }
 
@@ -764,14 +761,6 @@ export class AudioEngine {
   /** T-800 servos: ally reboot and the T-800 overdrive ability. */
   public playServo(): void {
     this.playSample('servo', 0.55, 1.0, 0.06);
-  }
-
-  public playMagOut(): void {
-    this.playSample('magOut', 0.6, 1.0, 0.05);
-  }
-
-  public playRadioClick(): void {
-    this.playSample('radioClick', 0.6, 1.0, 0.0);
   }
 
   public playRevive(): void {
