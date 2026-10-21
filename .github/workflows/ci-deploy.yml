@@ -1,4 +1,4 @@
-name: CI & GitHub Pages Deploy
+name: CI
 
 on:
   push:
@@ -7,13 +7,7 @@ on:
     branches: [main]
 
 permissions:
-  contents: write
-  pages: write
-  id-token: write
-
-concurrency:
-  group: 'pages'
-  cancel-in-progress: false
+  contents: read
 
 jobs:
   test-and-build:
@@ -39,21 +33,3 @@ jobs:
 
       - name: Build Production PWA
         run: npm run build
-
-      - name: Upload GitHub Pages Artifact
-        if: github.ref == 'refs/heads/main'
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: './dist'
-
-  deploy:
-    needs: test-and-build
-    if: github.ref == 'refs/heads/main'
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4

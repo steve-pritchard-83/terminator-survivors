@@ -121,7 +121,7 @@ Available anywhere on desktop and mobile, with full progressive web app (PWA) of
   - Unit Tests: Vitest (combat math, spatial hashing, weapon evolutions, save manager, wave director)
   - E2E Test: one Playwright smoke test (title, bunker shop, deploy, level-up)
 - **CI / CD**: GitHub Actions workflow (`ci-deploy.yml`) with automated typechecking, unit tests and production build
-- **Deployment**: Vercel Edge (`terminator-survivors.vercel.app`) + GitHub Pages backup
+- **Deployment**: Vercel (`terminator-survivors.vercel.app`), deployed with `vercel --prod`
 
 ---
 
