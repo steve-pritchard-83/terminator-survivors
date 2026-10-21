@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { SHAKE_EVENT_CAP, SHAKE_TRAUMA_CAP } from '../data/balance';
 import { PostProcessingManager } from './PostProcessing';
 import { ProceduralTextures } from './ProceduralTextures';
 import { DynamicLightingManager } from './DynamicLightingManager';
@@ -54,7 +55,8 @@ export class SceneManager {
   }
 
   public addScreenShake(trauma: number): void {
-    this.shakeTrauma = Math.min(1.0, this.shakeTrauma + trauma);
+    // Per-event and total caps keep stacked boss effects from throwing the camera around.
+    this.shakeTrauma = Math.min(SHAKE_TRAUMA_CAP, this.shakeTrauma + Math.min(trauma, SHAKE_EVENT_CAP));
   }
 
   public setScreenShakeScale(scale: number): void {

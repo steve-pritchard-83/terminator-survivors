@@ -52,8 +52,8 @@ export class CircleTelegraph {
     const fillScale = clampedProgress * rMult;
     this.innerFill.scale.set(fillScale, 1, fillScale);
 
-    this.ringMat.opacity = 0.4 + 0.5 * clampedProgress;
-    this.fillMat.opacity = 0.15 + 0.55 * clampedProgress;
+    this.ringMat.opacity = 0.35 + 0.4 * clampedProgress;
+    this.fillMat.opacity = 0.06 + 0.2 * clampedProgress;
   }
 
   public setVisible(visible: boolean): void {

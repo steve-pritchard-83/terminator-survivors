@@ -1,6 +1,6 @@
 import type * as THREE from 'three';
 import { tickCooldown } from './attackTimer';
-import { ENEMY_ATTACK_DAMAGE } from '../../data/balance';
+import { ENEMY_ATTACK_DAMAGE, TANK_MORTAR_WARNING_SECONDS } from '../../data/balance';
 import type { ActiveEnemy } from '../../core/types';
 import type { EnemyBehaviour, EnemyContext } from './EnemyBehaviour';
 import { HKTankMesh } from '../../graphics/meshes/HKTankMesh';
@@ -82,7 +82,11 @@ export class HKTankBehaviour implements EnemyBehaviour {
     const targetZ = state.targetZ;
 
     const chargeProgress = Math.min(1, chargeTimer / 3.0);
-    mortarTelegraph.update(targetX, targetZ, chargeProgress, 4.5);
+    if (chargeTimer >= 3.0 - TANK_MORTAR_WARNING_SECONDS) {
+      mortarTelegraph.update(targetX, targetZ, (chargeTimer - (3.0 - TANK_MORTAR_WARNING_SECONDS)) / TANK_MORTAR_WARNING_SECONDS, 4.5);
+    } else {
+      mortarTelegraph.setVisible(false);
+    }
 
     if (chargeTimer >= 3.0) {
       state.chargeTimer = 0;

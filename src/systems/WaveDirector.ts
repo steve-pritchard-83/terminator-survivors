@@ -1,6 +1,7 @@
 import type { RunState } from '../state/RunState';
 import type { EnemySystem } from './EnemySystem';
 import {
+  BOSS_FIGHT_SPAWN,
   EMPLACEMENT_SPAWN_MAX_DIST,
   EMPLACEMENT_SPAWN_MIN_DIST,
   HYDROBOT_FORMATION,
@@ -59,12 +60,12 @@ export class WaveDirector {
     const damageMultiplier = entry.damageMultiplier;
     const eliteChance = entry.eliteChance;
 
-    // Normal wave spawns
+    // Normal wave spawns, thinned out while a boss is alive so the fight stays readable
+    const bossAlive = this.enemySystem.activeEnemies.some((e) => e.isBoss);
+    const spawnInterval = entry.spawnInterval * (bossAlive ? BOSS_FIGHT_SPAWN.intervalMultiplier : 1);
+    const enemyCap = Math.floor(entry.minEnemies * (bossAlive ? BOSS_FIGHT_SPAWN.enemyCapMultiplier : 1));
     this.spawnTimer += dt;
-    if (
-      this.spawnTimer >= entry.spawnInterval &&
-      this.enemySystem.activeEnemies.length < entry.minEnemies
-    ) {
+    if (this.spawnTimer >= spawnInterval && this.enemySystem.activeEnemies.length < enemyCap) {
       this.spawnTimer = 0;
       this.spawnPerimeterEnemy(entry.pool, hpMultiplier, damageMultiplier, eliteChance);
     }

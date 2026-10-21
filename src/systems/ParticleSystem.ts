@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { EXPLOSION_SMOKE_END, EXPLOSION_VISUAL_SCALE_CAP } from '../data/balance';
 import { ProceduralTextures } from '../graphics/ProceduralTextures';
 import { vfxRNG } from '../core/RNG';
 import { bakePart, mergeParts } from '../graphics/meshes/geometryUtils';
@@ -295,6 +296,9 @@ export class ParticleSystem {
   }
 
   public spawnExplosion(x: number, y: number, z: number, scale = 1.0): void {
+    // Visual size is capped so large boss blasts stay readable; `scale` is still reported to listeners.
+    const eventScale = scale;
+    scale = Math.min(scale, EXPLOSION_VISUAL_SCALE_CAP);
     for (let i = 0; i < 6; i++) {
       const p = this.acquireParticle('fire');
       p.mesh.position.set(
@@ -321,12 +325,12 @@ export class ParticleSystem {
       p.vz = (vfxRNG.next() - 0.5) * 0.8;
       p.life = 0;
       p.maxLife = 0.8 + vfxRNG.next() * 0.4;
-      p.scaleStart = 2.8 * scale;
-      p.scaleEnd = 9.8 * scale;
+      p.scaleStart = 2.0 * scale;
+      p.scaleEnd = EXPLOSION_SMOKE_END * scale;
       this.particles.push(p);
     }
 
-    globalEvents.emit('vfx:explosion', { x, y, z, scale });
+    globalEvents.emit('vfx:explosion', { x, y, z, scale: eventScale });
   }
 
   public spawnPlasmaImpact(x: number, y: number, z: number): void {

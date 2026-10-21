@@ -30,6 +30,14 @@ export const ENEMY_ATTACK_DAMAGE = {
 // Elite "Self-Destruct" affix: the blast is telegraphed for `delaySeconds` after the elite dies.
 export const SELF_DESTRUCT_BLAST = { damage: 28, radius: 3.8, delaySeconds: 0.7 };
 
+// Readability limits (too many overlapping effects made boss fights unplayable)
+export const SHAKE_TRAUMA_CAP = 0.5;
+export const SHAKE_EVENT_CAP = 0.3;
+export const EXPLOSION_VISUAL_SCALE_CAP = 1.4;
+export const EXPLOSION_SMOKE_END = 6.0;
+/** Seconds the Tank mortar impact circle is shown before it lands (the charge itself lasts 3 s). */
+export const TANK_MORTAR_WARNING_SECONDS = 1.5;
+
 // T-1000 boss tuning (softened after playtest: it was too hard)
 export const T1000_TUNING = {
   slashDamage: 12,
