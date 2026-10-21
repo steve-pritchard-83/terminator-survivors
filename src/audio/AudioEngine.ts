@@ -70,7 +70,11 @@ export const SFX_WAV_MANIFEST: Record<string, string[]> = {
   runStart: ['./audio/effects/S_Splash_Screen_Drums_x1.wav', './audio/effects/S_NewQuest.wav'],
   playerTerminated: ['./audio/effects/terminated.wav'],
   runDefeat: ['./audio/effects/terminated.wav', './audio/effects/S_QuestFaild.wav'],
-  runVictory: ['./audio/effects/S_ObjectiveComplete.wav']
+  runVictory: ['./audio/effects/S_ObjectiveComplete.wav'],
+  swing: ['./audio/effects/S_Swing01.wav', './audio/effects/S_Swing02.wav', './audio/effects/S_Woosh.wav'],
+  fireWhoosh: ['./audio/effects/S_Woosh.wav'],
+  launch: ['./audio/effects/S_Explosion01.wav'],
+  achievement: ['./audio/effects/S_AddtoArchive.wav', './audio/effects/S_NewQuest.wav']
 };
 
 import type { GamepadManager } from '../input/GamepadManager';
@@ -89,7 +93,10 @@ export const CATEGORY_VOICE_LIMITS: Record<string, VoiceLimitConfig> = {
   endoHit: { maxVoices: 6, minRetriggerMs: 30 },
   playerHit: { maxVoices: 6, minRetriggerMs: 30 },
   explosion: { maxVoices: 3, minRetriggerMs: 30 },
-  endoDestroy: { maxVoices: 3, minRetriggerMs: 30 }
+  endoDestroy: { maxVoices: 3, minRetriggerMs: 30 },
+  swing: { maxVoices: 4, minRetriggerMs: 60 },
+  launch: { maxVoices: 2, minRetriggerMs: 90 },
+  fireWhoosh: { maxVoices: 2, minRetriggerMs: 150 }
 };
 
 interface VoiceSlot {
@@ -815,6 +822,69 @@ export class AudioEngine {
       this.triggerHaptic(10, 65);
     }
     this.playSample('endoDestroy', 0.52 * attenuation, 1.05, 0.06, pan);
+  }
+
+  /** Blade, claw or lunge whoosh. */
+  public playSwing(sourceX?: number, sourceZ?: number, playerX?: number, playerZ?: number): void {
+    let pan = 0;
+    let attenuation = 1.0;
+    if (sourceX !== undefined && sourceZ !== undefined && playerX !== undefined && playerZ !== undefined) {
+      const spatial = this.calculateSpatialParams(sourceX, sourceZ, playerX, playerZ, 6, 14);
+      pan = spatial.pan;
+      attenuation = spatial.attenuation;
+    }
+    this.triggerHaptic(10, 30);
+    this.playSample('swing', 0.55 * attenuation, 1.0, 0.12, pan);
+  }
+
+  /** Thump of a grenade, launcher or mortar leaving the barrel (not the impact). */
+  public playLaunch(heavy = false): void {
+    this.triggerHaptic(heavy ? [14, 20] : 12, 30);
+    this.playSample('launch', heavy ? 0.5 : 0.38, heavy ? 1.2 : 1.7, 0.06);
+  }
+
+  /** Whoosh of flammable liquid igniting on the ground (napalm, molotov, firestorm). */
+  public playFireDeploy(): void {
+    this.playSample('fireWhoosh', 0.5, 0.55, 0.05);
+  }
+
+  public playAchievement(): void {
+    this.triggerHaptic([16, 30, 22], 120);
+    this.playSample('achievement', 0.7, 1.0, 0.0);
+  }
+
+  /** Medkit and scrap rewards from crates. */
+  public playLoot(kind: 'heal' | 'scrap'): void {
+    this.triggerHaptic(12, 30);
+    if (kind === 'heal') this.playSample('uiUpgradeApplied', 0.6, 1.25, 0.02);
+    else this.playSample('pickupGem', 0.55, 0.8, 0.03);
+  }
+
+  /**
+   * Death sound by enemy kind: bosses and machines blow up, small drones crunch, humanoids
+   * collapse with the standard endoskeleton destruction sound.
+   */
+  public playEnemyDeath(
+    kind: 'boss' | 'machine' | 'small' | 'humanoid',
+    sourceX?: number,
+    sourceZ?: number,
+    playerX?: number,
+    playerZ?: number
+  ): void {
+    switch (kind) {
+      case 'boss':
+        this.playExplosion(2.0, sourceX, sourceZ, playerX, playerZ);
+        this.playEndoDestroy(sourceX, sourceZ, playerX, playerZ);
+        break;
+      case 'machine':
+        this.playExplosion(1.1, sourceX, sourceZ, playerX, playerZ);
+        break;
+      case 'small':
+        this.playEndoHit(sourceX, sourceZ, playerX, playerZ);
+        break;
+      default:
+        this.playEndoDestroy(sourceX, sourceZ, playerX, playerZ);
+    }
   }
 
   public playBossStinger(): void {

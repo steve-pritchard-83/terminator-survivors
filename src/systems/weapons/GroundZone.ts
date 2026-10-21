@@ -18,6 +18,7 @@ export class GroundZone implements WeaponPattern {
     const amount = stats.amount + ctx.runState.computedStats.bonusAmount;
 
     const baseRadius = params.baseRadius ?? 2.0;
+    ctx.audio.playFireDeploy();
 
     if (params.isLine) {
       const step = (params.lineSpacing ?? 2.4) * areaMult;

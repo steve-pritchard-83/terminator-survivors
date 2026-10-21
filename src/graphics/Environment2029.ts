@@ -8,6 +8,10 @@ import { buildBoneGeometry, buildFlameGeometry, buildGlowGeometry, buildSkullGeo
 const SKULL_CAPACITY = 6000;
 const BONE_CAPACITY = 2600;
 const FIRE_CAPACITY = 40;
+const FIRE_LIGHT_COUNT = 3;
+const FIRE_LIGHT_DISTANCE = 14;
+const FIRE_LIGHT_RANGE = 30; // fires farther than this from the player get no light
+const FIRE_LIGHT_INTENSITY = 7;
 
 interface Chunk {
   x: number;
@@ -46,6 +50,10 @@ export class Environment2029 implements IEnvironment {
   }> = [];
   private fogTime = 0;
   private readonly fireDummy = new THREE.Object3D();
+  private readonly fireLights: THREE.PointLight[] = [];
+  private fireLightsEnabled = true;
+  private lastPlayerX = 0;
+  private lastPlayerZ = 0;
 
   constructor() {
     this.groundGeo = new THREE.PlaneGeometry(this.chunkSize, this.chunkSize, 24, 24);
@@ -441,6 +449,14 @@ export class Environment2029 implements IEnvironment {
     this.fireGlowInstancedMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     this.fireGlowInstancedMesh.frustumCulled = false;
 
+    // Real light for the few fires nearest the player: lights up the skulls, wrecks and enemies around them
+    for (let i = 0; i < FIRE_LIGHT_COUNT; i++) {
+      const light = new THREE.PointLight(0xff7a2a, 0, FIRE_LIGHT_DISTANCE, 2);
+      light.castShadow = false;
+      this.group.add(light);
+      this.fireLights.push(light);
+    }
+
     const totalRebar = 90;
     this.rebarInstancedMesh = new THREE.InstancedMesh(rebarGeo, concreteMat, totalRebar);
     this.rebarInstancedMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
@@ -742,7 +758,13 @@ export class Environment2029 implements IEnvironment {
     this.craterInstancedMesh.instanceMatrix.needsUpdate = true;
   }
 
+  public setFireLightsEnabled(enabled: boolean): void {
+    this.fireLightsEnabled = enabled;
+  }
+
   public update(playerX: number, playerZ: number): void {
+    this.lastPlayerX = playerX;
+    this.lastPlayerZ = playerZ;
     this.fogTime += 0.016;
     this.updateFires();
     const curChunkX = Math.round(playerX / this.chunkSize);
@@ -791,23 +813,58 @@ export class Environment2029 implements IEnvironment {
       const f = this.fires[i];
       const t = this.fogTime;
       const flick = 0.85 + 0.2 * Math.sin(t * 9 + f.phase) + 0.1 * Math.sin(t * 17 + f.phase * 1.7);
-      dummy.position.set(f.x, 0.25, f.z);
+      dummy.position.set(f.x, 0.1, f.z);
       dummy.rotation.set(0, f.phase + t * 0.4, 0);
       dummy.scale.set(f.scale * (0.9 + 0.12 * Math.sin(t * 7 + f.phase)), f.scale * flick, f.scale);
       dummy.updateMatrix();
       this.flameInstancedMesh.setMatrixAt(i, dummy.matrix);
 
-      dummy.position.set(f.x, 0.06, f.z);
+      // Above the crater lip (0.14) so the glow is not buried inside the crater mesh
+      dummy.position.set(f.x, 0.22, f.z);
       dummy.rotation.set(0, 0, 0);
       const g = f.scale * (0.9 + 0.1 * flick);
       dummy.scale.set(g, 1, g);
       dummy.updateMatrix();
       this.fireGlowInstancedMesh.setMatrixAt(i, dummy.matrix);
     }
+    this.updateFireLights(n);
     this.flameInstancedMesh.count = n;
     this.fireGlowInstancedMesh.count = n;
     this.flameInstancedMesh.instanceMatrix.needsUpdate = true;
     this.fireGlowInstancedMesh.instanceMatrix.needsUpdate = true;
+  }
+
+  /** Assigns the pooled orange lights to the fires nearest the player and flickers them. */
+  private updateFireLights(fireCount: number): void {
+    const px = this.lastPlayerX;
+    const pz = this.lastPlayerZ;
+    const t = this.fogTime;
+    const used = new Set<number>();
+    for (let l = 0; l < this.fireLights.length; l++) {
+      const light = this.fireLights[l];
+      let best = -1;
+      let bestD = Infinity;
+      if (this.fireLightsEnabled) {
+        for (let i = 0; i < fireCount; i++) {
+          if (used.has(i)) continue;
+          const f = this.fires[i];
+          const d = (f.x - px) * (f.x - px) + (f.z - pz) * (f.z - pz);
+          if (d < bestD) {
+            bestD = d;
+            best = i;
+          }
+        }
+      }
+      if (best < 0 || bestD > FIRE_LIGHT_RANGE * FIRE_LIGHT_RANGE) {
+        light.intensity = 0;
+        continue;
+      }
+      used.add(best);
+      const f = this.fires[best];
+      const flick = 0.82 + 0.18 * Math.sin(t * 11 + f.phase) + 0.1 * Math.sin(t * 23 + f.phase * 2.1);
+      light.position.set(f.x, 1.3, f.z);
+      light.intensity = FIRE_LIGHT_INTENSITY * f.scale * flick;
+    }
   }
 
   public dispose(): void {

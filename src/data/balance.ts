@@ -38,6 +38,9 @@ export const EXPLOSION_SMOKE_END = 6.0;
 /** Seconds the Tank mortar impact circle is shown before it lands (the charge itself lasts 3 s). */
 export const TANK_MORTAR_WARNING_SECONDS = 1.5;
 
+// Seconds a destroyed endoskeleton or crab drone stays on screen collapsing before it is removed.
+export const DEATH_ANIMATION_SECONDS = 0.6;
+
 // T-1000 boss tuning (softened after playtest: it was too hard)
 export const T1000_TUNING = {
   slashDamage: 12,

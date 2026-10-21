@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 import { disposeObject3D } from '../dispose';
+import type { LoadoutId } from '../../core/types';
+import { PLAYER_LOOKS } from '../../data/playerLooks';
 
 export class KyleReeseMesh {
   public readonly group = new THREE.Group();
@@ -9,6 +11,18 @@ export class KyleReeseMesh {
   public readonly torsoGroup: THREE.Group;
   public readonly weaponGroup: THREE.Group;
   public readonly muzzleLight: THREE.PointLight;
+
+  // Pieces the loadout look switches on and off or recolours (see applyLoadout)
+  private readonly mats: Record<
+    'trouser' | 'boot' | 'outer' | 'sleeve' | 'top' | 'skin' | 'hair' | 'headgear' | 'armor' | 'scarf',
+    THREE.MeshStandardMaterial
+  >;
+  private readonly outerPanels: THREE.Object3D[] = [];
+  private readonly hairParts: THREE.Object3D[] = [];
+  private readonly accessories: Record<
+    'ponytail' | 'bandana' | 'helmet' | 'armor' | 'scarf' | 'scar' | 'shades',
+    THREE.Object3D
+  >;
 
   private animTimer = 0;
   private recoilOffset = 0;
@@ -72,6 +86,11 @@ export class KyleReeseMesh {
       metalness: 0.85,
       roughness: 0.32
     });
+
+    const sleeveMat = coatMat.clone();
+    const headgearMat = new THREE.MeshStandardMaterial({ color: 0x3a444f, roughness: 0.55, metalness: 0.5 });
+    const armorMat = new THREE.MeshStandardMaterial({ color: 0x4a5663, roughness: 0.5, metalness: 0.6 });
+    const scarfMat = new THREE.MeshStandardMaterial({ color: 0xa83a2c, roughness: 0.9, metalness: 0 });
 
     const playerLight = new THREE.PointLight(0x70a8e8, 1.15, 14, 1.4);
     playerLight.position.set(0, 3.6, 0);
@@ -208,18 +227,101 @@ export class KyleReeseMesh {
     headGroup.add(neckMesh, headMesh, jawMesh, browMesh, noseMesh, eyeL, eyeR, earL, earR, hairTop, hairBack, sideburnL, sideburnR);
     this.torsoGroup.add(headGroup);
 
+    // Optional pieces, hidden until a loadout look switches them on
+    this.hairParts.push(hairTop, hairBack, sideburnL, sideburnR);
+    this.outerPanels.push(coatBack, coatSideL, coatSideR, collarMesh);
+
+    const ponytail = new THREE.Group();
+    [[0, -0.02, -0.21, 0.06], [0, -0.09, -0.25, 0.055], [0, -0.17, -0.27, 0.05], [0, -0.25, -0.27, 0.04]].forEach(([x, y, z, r]) => {
+      const b = new THREE.Mesh(new THREE.SphereGeometry(r, 7, 6), hairMat);
+      b.position.set(x, y, z);
+      ponytail.add(b);
+    });
+    const bandana = new THREE.Group();
+    const bandBand = new THREE.Mesh(new THREE.CylinderGeometry(0.157, 0.157, 0.045, 14), headgearMat);
+    bandBand.position.set(0, 0.06, 0);
+    const bandKnot = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.05, 0.04), headgearMat);
+    bandKnot.position.set(0, 0.06, -0.16);
+    const bandTail = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.12, 0.012), headgearMat);
+    bandTail.position.set(0.03, -0.01, -0.18);
+    bandTail.rotation.z = 0.25;
+    bandana.add(bandBand, bandKnot, bandTail);
+    const helmet = new THREE.Group();
+    const helmetShell = new THREE.Mesh(new THREE.SphereGeometry(0.185, 14, 10, 0, Math.PI * 2, 0, Math.PI * 0.62), headgearMat);
+    helmetShell.position.set(0, 0.03, -0.01);
+    const helmetBrim = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.03, 0.06), headgearMat);
+    helmetBrim.position.set(0, 0.065, 0.15);
+    const visor = new THREE.Mesh(
+      new THREE.BoxGeometry(0.24, 0.05, 0.05),
+      new THREE.MeshBasicMaterial({ color: 0x40e8ff })
+    );
+    visor.position.set(0, 0.02, 0.15);
+    helmet.add(helmetShell, helmetBrim, visor);
+    const scar = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.1, 0.012), new THREE.MeshStandardMaterial({ color: 0x9b3b32, roughness: 0.7 }));
+    scar.position.set(-0.075, -0.025, 0.14);
+    scar.rotation.z = -0.5;
+    const shadesMat = new THREE.MeshStandardMaterial({ color: 0x060607, roughness: 0.15, metalness: 0.8 });
+    const shades = new THREE.Group();
+    const lensL = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.045, 0.03), shadesMat);
+    lensL.position.set(-0.05, 0.005, 0.14);
+    const lensR = lensL.clone();
+    lensR.position.x = 0.05;
+    const bridge = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.01, 0.012), shadesMat);
+    bridge.position.set(0, 0.015, 0.14);
+    shades.add(lensL, lensR, bridge);
+    headGroup.add(ponytail, bandana, helmet, scar, shades);
+
+    // Torso pieces: chest plate, shoulder pads and glowing backpack; scarf
+    const armor = new THREE.Group();
+    const plate = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.3, 0.07), armorMat);
+    plate.position.set(0, 0.34, 0.16);
+    const padL = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.08, 0.3), armorMat);
+    padL.position.set(-0.29, 0.53, 0);
+    padL.rotation.z = 0.2;
+    const padR = padL.clone();
+    padR.position.x = 0.29;
+    padR.rotation.z = -0.2;
+    const pack = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.38, 0.16), armorMat);
+    pack.position.set(0, 0.3, -0.27);
+    const packCore = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.18, 0.02), new THREE.MeshBasicMaterial({ color: 0x40e8ff }));
+    packCore.position.set(0, 0.3, -0.36);
+    armor.add(plate, padL, padR, pack, packCore);
+    const scarf = new THREE.Group();
+    const scarfRing = new THREE.Mesh(new THREE.TorusGeometry(0.115, 0.045, 7, 14), scarfMat);
+    scarfRing.position.set(0, 0.58, 0.0);
+    scarfRing.rotation.x = Math.PI / 2;
+    const scarfTail = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.3, 0.025), scarfMat);
+    scarfTail.position.set(-0.06, 0.42, 0.13);
+    scarfTail.rotation.z = 0.12;
+    scarf.add(scarfRing, scarfTail);
+    this.torsoGroup.add(armor, scarf);
+
+    this.mats = {
+      trouser: trouserMat,
+      boot: bootMat,
+      outer: coatMat,
+      sleeve: sleeveMat,
+      top: vestMat,
+      skin: skinMat,
+      hair: hairMat,
+      headgear: headgearMat,
+      armor: armorMat,
+      scarf: scarfMat
+    };
+    this.accessories = { ponytail, bandana, helmet, armor, scarf, scar, shades };
+
     // 4. Two-Handed Arms & Detailed Tech-Com Weapon Assembly
     this.weaponGroup = new THREE.Group();
     this.weaponGroup.position.set(0, 0.34, 0.1);
 
     // Right trigger arm (shoulder + forearm)
-    const rightArm = new THREE.Mesh(new THREE.CylinderGeometry(0.058, 0.048, 0.4, 8), coatMat);
+    const rightArm = new THREE.Mesh(new THREE.CylinderGeometry(0.058, 0.048, 0.4, 8), sleeveMat);
     rightArm.rotation.x = Math.PI / 2.4;
     rightArm.rotation.z = -0.15;
     rightArm.position.set(0.22, 0.02, 0.12);
 
     // Left support arm reaching forward to pump/handguard
-    const leftArm = new THREE.Mesh(new THREE.CylinderGeometry(0.058, 0.048, 0.44, 8), coatMat);
+    const leftArm = new THREE.Mesh(new THREE.CylinderGeometry(0.058, 0.048, 0.44, 8), sleeveMat);
     leftArm.rotation.x = Math.PI / 2.2;
     leftArm.rotation.z = 0.42;
     leftArm.position.set(-0.08, 0.01, 0.22);
@@ -315,6 +417,40 @@ export class KyleReeseMesh {
     this.torsoGroup.add(this.weaponGroup);
 
     this.group.add(this.torsoGroup);
+
+    this.applyLoadout('reese_1984');
+  }
+
+  /** Switches the mesh to a character's look (clothes, hair, headgear, armour, size). */
+  public applyLoadout(loadoutId: LoadoutId): void {
+    const look = PLAYER_LOOKS[loadoutId] ?? PLAYER_LOOKS.reese_1984;
+    const m = this.mats;
+    m.trouser.color.setHex(look.trouserColor);
+    m.boot.color.setHex(look.bootColor);
+    m.outer.color.setHex(look.outerColor || 0x4d4e44);
+    m.top.color.setHex(look.topColor);
+    m.skin.color.setHex(look.skinColor);
+    m.hair.color.setHex(look.hairColor);
+    m.sleeve.color.setHex(look.sleeves === 'skin' ? look.skinColor : look.outerColor || look.topColor);
+    m.headgear.color.setHex(look.headgearColor || 0x3a444f);
+    m.armor.color.setHex(look.armorColor || 0x4a5663);
+    if (look.scarfColor !== null) m.scarf.color.setHex(look.scarfColor);
+
+    const hasOuter = look.outer !== 'none';
+    for (const p of this.outerPanels) p.visible = hasOuter;
+    this.coatTails.visible = look.outer === 'trench';
+
+    const helmet = look.headgear === 'helmet';
+    for (const h of this.hairParts) h.visible = !helmet;
+    this.accessories.ponytail.visible = look.hairStyle === 'ponytail' && !helmet;
+    this.accessories.bandana.visible = look.headgear === 'bandana';
+    this.accessories.helmet.visible = helmet;
+    this.accessories.armor.visible = look.armor;
+    this.accessories.scarf.visible = look.scarfColor !== null;
+    this.accessories.scar.visible = look.scar;
+    this.accessories.shades.visible = look.shades;
+
+    this.group.scale.setScalar(look.scale);
   }
 
   public triggerRecoil(intensity = 1.0): void {

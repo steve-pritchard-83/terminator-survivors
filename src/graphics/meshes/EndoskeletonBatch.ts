@@ -5,6 +5,7 @@ import { buildEndoChassis, buildEndoLeg, buildEndoOptics } from './EndoskeletonG
 import type { ActiveEnemy } from '../../core/types';
 import { ProceduralTextures } from '../ProceduralTextures';
 import { ELITE_AFFIXES } from '../../data/enemies';
+import { DEATH_ANIMATION_SECONDS } from '../../data/balance';
 
 export class EndoskeletonBatch {
   public readonly group = new THREE.Group();
@@ -19,6 +20,23 @@ export class EndoskeletonBatch {
   private readonly dummy = new THREE.Object3D();
   private readonly legDummy = new THREE.Object3D();
   private readonly dummyColor = new THREE.Color();
+  private readonly legQuat = new THREE.Quaternion();
+  private readonly swingQuat = new THREE.Quaternion();
+  private readonly hipOffset = new THREE.Vector3();
+  private readonly zeroMatrix = new THREE.Matrix4().makeScale(0, 0, 0);
+  private lastTime = 0;
+  private readonly deadColor = new THREE.Color(0x3a3d42);
+  private readonly xAxis = new THREE.Vector3(1, 0, 0);
+  private readonly corpses: Array<{
+    x: number;
+    z: number;
+    facing: number;
+    id: number;
+    crab: boolean;
+    scale: number;
+    archetype: string;
+    age: number;
+  }> = [];
 
   constructor(maxCount = 650) {
     this.maxCount = maxCount;
@@ -255,6 +273,116 @@ export class EndoskeletonBatch {
     );
   }
 
+  /** True for the archetypes this batch draws (and so can animate dying). */
+  public handles(archetype: string): boolean {
+    return (
+      archetype === 'skynet_crab_drone' ||
+      archetype === 't800_endoskeleton' ||
+      archetype === 't600_rusted' ||
+      archetype === 't700_scout'
+    );
+  }
+
+  /** Keeps a destroyed enemy on screen for a short collapse animation instead of removing it instantly. */
+  public addCorpse(enemy: ActiveEnemy, playerX: number, playerZ: number): void {
+    if (!this.handles(enemy.archetype) || this.corpses.length >= 48) return;
+    let scale = 1.0;
+    if (enemy.archetype === 't600_rusted') scale = 1.25;
+    else if (enemy.archetype === 't700_scout') scale = 0.94;
+    if (enemy.isElite) scale *= enemy.scale ?? 1.4;
+    this.corpses.push({
+      x: enemy.x,
+      z: enemy.z,
+      facing: Math.atan2(playerX - enemy.x, playerZ - enemy.z),
+      id: enemy.id,
+      crab: enemy.archetype === 'skynet_crab_drone',
+      scale,
+      archetype: enemy.archetype,
+      age: 0
+    });
+  }
+
+  public clearCorpses(): void {
+    this.corpses.length = 0;
+  }
+
+  /** Draws the collapsing corpses after the live enemies (shares the instance buffers). */
+  private renderCorpses(timeSeconds: number, startActive: number, startCrab: number): { active: number; crab: number } {
+    const dt = Math.max(0, Math.min(0.1, timeSeconds - this.lastTime));
+    this.lastTime = timeSeconds;
+    let activeIndex = startActive;
+    let crabIndex = startCrab;
+
+    for (let c = this.corpses.length - 1; c >= 0; c--) {
+      const corpse = this.corpses[c];
+      corpse.age += dt;
+      if (corpse.age >= DEATH_ANIMATION_SECONDS) {
+        this.corpses.splice(c, 1);
+        continue;
+      }
+      const p = corpse.age / DEATH_ANIMATION_SECONDS;
+      const ease = 1 - (1 - p) * (1 - p);
+
+      if (corpse.crab) {
+        if (crabIndex >= this.maxCount) continue;
+        // Hops, flips onto its back and its optics die
+        const hop = Math.sin(p * Math.PI) * 0.3;
+        this.dummy.rotation.order = 'XYZ';
+        this.dummy.position.set(corpse.x, hop, corpse.z);
+        this.dummy.rotation.set(0, corpse.facing, Math.PI * ease);
+        this.dummy.scale.setScalar(corpse.scale);
+        this.dummy.updateMatrix();
+        this.crabChassisInstancedMesh.setMatrixAt(crabIndex, this.dummy.matrix);
+        this.crabOpticsInstancedMesh.setMatrixAt(crabIndex, p < 0.15 ? this.dummy.matrix : this.zeroMatrix);
+        this.dummyColor.setHex(0x9fb2c4).lerp(this.deadColor, p);
+        this.crabChassisInstancedMesh.setColorAt(crabIndex, this.dummyColor);
+        crabIndex++;
+        continue;
+      }
+
+      if (activeIndex >= this.maxCount) continue;
+      // Falls backward about its feet, knees buckling; eyes flicker then go dark
+      const phase = corpse.age * 7.5;
+      this.dummy.rotation.order = 'YXZ';
+      this.dummy.position.set(corpse.x, -0.06 * ease, corpse.z);
+      this.dummy.rotation.set(-1.45 * ease, corpse.facing, 0.15 * Math.sin(phase) * (1 - ease));
+      this.dummy.scale.setScalar(corpse.scale);
+      this.dummy.updateMatrix();
+      this.chassisInstancedMesh.setMatrixAt(activeIndex, this.dummy.matrix);
+      const eyesOn = p < 0.3 && Math.sin(corpse.age * 70) > 0;
+      this.opticsInstancedMesh.setMatrixAt(activeIndex, eyesOn ? this.dummy.matrix : this.zeroMatrix);
+
+      // Legs hang off the hips, which move as the body tips over
+      this.hipOffset.set(0, 0.68 * corpse.scale, 0).applyQuaternion(this.dummy.quaternion);
+      this.legDummy.position.set(
+        corpse.x + this.hipOffset.x,
+        this.dummy.position.y + this.hipOffset.y,
+        corpse.z + this.hipOffset.z
+      );
+      this.legDummy.scale.setScalar(corpse.scale);
+      this.swingQuat.setFromAxisAngle(this.xAxis, 0.7 * ease);
+      this.legQuat.copy(this.dummy.quaternion).multiply(this.swingQuat);
+      this.legDummy.quaternion.copy(this.legQuat);
+      this.legDummy.updateMatrix();
+      this.leftLegInstancedMesh.setMatrixAt(activeIndex, this.legDummy.matrix);
+      this.swingQuat.setFromAxisAngle(this.xAxis, -0.35 * ease);
+      this.legQuat.copy(this.dummy.quaternion).multiply(this.swingQuat);
+      this.legDummy.quaternion.copy(this.legQuat);
+      this.legDummy.updateMatrix();
+      this.rightLegInstancedMesh.setMatrixAt(activeIndex, this.legDummy.matrix);
+
+      // Fades from chrome to scorched grey
+      this.dummyColor.setHex(corpse.archetype === 't600_rusted' ? 0xd2b08c : 0xffffff).lerp(this.deadColor, p);
+      this.chassisInstancedMesh.setColorAt(activeIndex, this.dummyColor);
+      this.leftLegInstancedMesh.setColorAt(activeIndex, this.dummyColor);
+      this.rightLegInstancedMesh.setColorAt(activeIndex, this.dummyColor);
+      activeIndex++;
+    }
+
+    this.dummy.rotation.order = 'XYZ';
+    return { active: activeIndex, crab: crabIndex };
+  }
+
   public updateBatch(enemies: ActiveEnemy[], timeSeconds: number, playerX = 0, playerZ = 0): void {
     let activeIndex = 0;
     let crabIndex = 0;
@@ -377,6 +505,10 @@ export class EndoskeletonBatch {
 
       activeIndex++;
     }
+
+    const afterCorpses = this.renderCorpses(timeSeconds, activeIndex, crabIndex);
+    activeIndex = afterCorpses.active;
+    crabIndex = afterCorpses.crab;
 
     this.chassisInstancedMesh.count = activeIndex;
     this.leftLegInstancedMesh.count = activeIndex;

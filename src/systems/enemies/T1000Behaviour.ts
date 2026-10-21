@@ -153,6 +153,7 @@ export class T1000Behaviour implements EnemyBehaviour {
       state.lungeCooldown = T1000_TUNING.lungeCooldown;
       lineTelegraph.setVisible(false);
       if (distToPlayer > 0.1) {
+        ctx.audio.playSwing(enemy.x, enemy.z, px, pz);
         enemy.vx = ((px - enemy.x) / distToPlayer) * T1000_TUNING.lungeSpeed;
         enemy.vz = ((pz - enemy.z) / distToPlayer) * T1000_TUNING.lungeSpeed;
       }

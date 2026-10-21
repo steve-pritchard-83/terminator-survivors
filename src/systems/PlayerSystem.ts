@@ -10,9 +10,6 @@ export class PlayerSystem {
   private readonly playerMesh: KyleReeseMesh;
   private readonly particles?: ParticleSystem;
 
-  // Player locator: stays visible through telegraphs, smoke and enemies
-  private readonly locator = new THREE.Group();
-
   // Ground aim reticle
   public readonly reticleGroup = new THREE.Group();
   public readonly reticleMat: THREE.MeshBasicMaterial;
@@ -21,28 +18,6 @@ export class PlayerSystem {
     this.runState = runState;
     this.playerMesh = playerMesh;
     this.particles = particles;
-
-    // Player locator ring (white core ring + cyan halo), drawn last and ignoring depth
-    const locatorMat = (color: number, opacity: number): THREE.MeshBasicMaterial =>
-      new THREE.MeshBasicMaterial({
-        color,
-        transparent: true,
-        opacity,
-        side: THREE.DoubleSide,
-        depthTest: false,
-        depthWrite: false
-      });
-    const coreGeo = new THREE.RingGeometry(0.58, 0.7, 40);
-    coreGeo.rotateX(-Math.PI / 2);
-    const haloGeo = new THREE.RingGeometry(0.76, 0.84, 40);
-    haloGeo.rotateX(-Math.PI / 2);
-    const core = new THREE.Mesh(coreGeo, locatorMat(0xffffff, 0.9));
-    const halo = new THREE.Mesh(haloGeo, locatorMat(0x00e5ff, 0.55));
-    core.renderOrder = 1000;
-    halo.renderOrder = 1000;
-    this.locator.add(core, halo);
-    this.locator.position.y = 0.08;
-    this.group.add(this.locator);
 
     // Ground aim reticle
     this.reticleMat = new THREE.MeshBasicMaterial({
@@ -90,7 +65,6 @@ export class PlayerSystem {
     const interpX = prevPos.x + (this.runState.playerPos.x - prevPos.x) * clampedAlpha;
     const interpZ = prevPos.z + (this.runState.playerPos.z - prevPos.z) * clampedAlpha;
     this.playerMesh.group.position.set(interpX, 0, interpZ);
-    this.locator.position.set(interpX, 0.08, interpZ);
     return { x: interpX, z: interpZ };
   }
 
@@ -154,7 +128,6 @@ export class PlayerSystem {
 
     // Update 3D mesh
     this.playerMesh.group.position.set(nextX, 0, nextZ);
-    this.locator.position.set(nextX, 0.08, nextZ);
     this.playerMesh.updateAnimation(
       dt,
       inputLen > 0.05 ? speed : 0,

@@ -281,10 +281,25 @@ export class EnemySystem {
     }
   }
 
+  /** Which death sound an enemy gets: bosses and machines explode, small drones crunch, humanoids collapse. */
+  private deathKind(enemy: ActiveEnemy): 'boss' | 'machine' | 'small' | 'humanoid' {
+    if (enemy.isBoss) return 'boss';
+    if (enemy.isFlying || (enemy.mass ?? 0) >= 8) return 'machine';
+    if (enemy.radius < 0.5) return 'small';
+    return 'humanoid';
+  }
+
   private killEnemy(enemy: ActiveEnemy, index: number): void {
     this.activeEnemies.splice(index, 1);
-    this.runState.kills++; this.audio.playEndoDestroy(enemy.x, enemy.z, this.runState.playerPos.x, this.runState.playerPos.z);
+    this.runState.kills++;
+    this.audio.playEnemyDeath(this.deathKind(enemy), enemy.x, enemy.z, this.runState.playerPos.x, this.runState.playerPos.z);
     this.particles.spawnExplosion(enemy.x, 0.5, enemy.z, enemy.isBoss ? 2.0 : 0.8);
+    if (this.endoBatch.handles(enemy.archetype)) {
+      // Instanced enemies collapse on screen for a moment instead of vanishing
+      this.endoBatch.addCorpse(enemy, this.runState.playerPos.x, this.runState.playerPos.z);
+    } else {
+      this.particles.spawnDeathBurst(enemy.x, 0.4, enemy.z, enemy.isBoss ? 2.4 : Math.max(0.8, enemy.radius));
+    }
     this.particles.spawnEnemyDebris(enemy.x, 0.5, enemy.z, enemy.isBoss ? 8 : undefined);
     if (enemy.isElite) handleEliteDeath(enemy, this.context);
     this.behaviours[enemy.archetype]?.onDeath?.(enemy, this.context);
@@ -303,6 +318,7 @@ export class EnemySystem {
     this.enemyProjectiles.length = 0;
     this.enemyPool.clear();
     for (const b of Object.values(this.behaviours)) b.clear?.();
+    this.endoBatch.clearCorpses();
     this.endoBatch.updateBatch([], 0, 0, 0);
     for (let i = this.group.children.length - 1; i >= 0; i--) {
       if (this.group.children[i] !== this.enemyPool.mesh) this.group.remove(this.group.children[i]);

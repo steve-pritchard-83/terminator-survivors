@@ -333,6 +333,16 @@ export class ParticleSystem {
     globalEvents.emit('vfx:explosion', { x, y, z, scale: eventScale });
   }
 
+  /** Showers of sparks and a flash for machines that are destroyed (drones, tanks, turrets). */
+  public spawnDeathBurst(x: number, y: number, z: number, size = 1.0): void {
+    const sparks = size > 1.5 ? 8 : 5;
+    for (let i = 0; i < sparks; i++) {
+      const a = (i / sparks) * Math.PI * 2 + vfxRNG.next();
+      const r = (0.3 + vfxRNG.next() * 0.9) * size;
+      this.spawnPlasmaImpact(x + Math.cos(a) * r, y + vfxRNG.next() * 0.8, z + Math.sin(a) * r);
+    }
+  }
+
   public spawnPlasmaImpact(x: number, y: number, z: number): void {
     const p = this.acquireParticle('plasma');
     p.mesh.position.set(x, y + 0.15, z);

@@ -404,6 +404,7 @@ export class PickupSystem {
       const roll = globalRNG.next();
       if (roll < 0.4) {
         this.runState.heal(35);
+        this.audio.playLoot('heal');
         globalEvents.emit('pickup:reward', {
           x: p.x,
           z: p.z,
@@ -412,6 +413,7 @@ export class PickupSystem {
         });
       } else if (roll < 0.7) {
         const gained = this.runState.addScrap(45);
+        this.audio.playLoot('scrap');
         globalEvents.emit('pickup:reward', {
           x: p.x,
           z: p.z,

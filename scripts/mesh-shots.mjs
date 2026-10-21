@@ -1,5 +1,5 @@
 // Dev tool: screenshots meshes from /mesh-preview.html for visual review.
-//   node scripts/mesh-shots.mjs <outDir> <name>[:<az>[:<el>[:<dist>]]] ...   (name = kyle | env | archetype id)
+//   node scripts/mesh-shots.mjs <outDir> <name>[:<az>[:<el>[:<dist>[:<loadoutId>]]]] ...   (name = kyle | env | archetype id)
 // Needs `npx vite --port 5199` running. Add `game` as a name suffix (e.g. kyle:game) for the in-game camera.
 import { chromium } from '@playwright/test';
 import fs from 'node:fs';
@@ -19,8 +19,9 @@ const page = await browser.newPage({ viewport: { width: 900, height: 700 } });
 page.on('pageerror', (e) => console.error('pageerror:', e.message));
 
 for (const spec of specs) {
-  const [name, az, el, dist] = spec.split(':');
+  const [name, az, el, dist, loadout] = spec.split(':');
   const q = new URLSearchParams({ m: name });
+  if (loadout) q.set('loadout', loadout);
   if (az === 'game') q.set('game', '1');
   else {
     if (az) q.set('az', az);

@@ -103,6 +103,9 @@ export class RunController {
       globalEvents.on('camera:shake', ({ trauma }) => {
         this.host.sceneManager.addScreenShake(trauma);
       }),
+      globalEvents.on('achievement:unlocked', () => {
+        this.host.audioEngine.playAchievement();
+      }),
       globalEvents.on('ability:triggered', ({ loadoutId, abilityId, x, z }) => {
         this.handleAbilityTriggered(loadoutId, abilityId, x, z);
       }),

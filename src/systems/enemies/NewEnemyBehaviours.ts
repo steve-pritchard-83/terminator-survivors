@@ -139,6 +139,7 @@ export class MotoTerminatorBehaviour implements EnemyBehaviour {
       telegraph.setVisible(false);
       state.isDashing = 1;
       state.dashDuration = 0.35;
+      ctx.audio.playSwing(enemy.x, enemy.z, px, pz);
       state.dashVx = Math.sin(facing) * 14.0;
       state.dashVz = Math.cos(facing) * 14.0;
       state.dashCooldown = 3.6;

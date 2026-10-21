@@ -36,6 +36,7 @@ export class T800Behaviour implements EnemyBehaviour {
       cd = 4.0;
       telegraph.setVisible(false);
       ctx.spawnEnemyProjectile(enemy.x, 1.0, enemy.z, px, pz, 9.0, ENEMY_ATTACK_DAMAGE.t800Bolt);
+      ctx.audio.playPlasmaShot(false, enemy.x, enemy.z, px, pz);
     } else {
       telegraph.setVisible(false);
     }

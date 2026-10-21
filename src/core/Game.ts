@@ -115,6 +115,7 @@ export class Game implements RunControllerHost, InputRouterHost, DebugAPIHost {
   }
 
   public onRunStarted(): void {
+    this.playerMesh.applyLoadout(this.runState.loadoutId);
     this.prevPlayerPos.x = this.runState.playerPos.x;
     this.prevPlayerPos.z = this.runState.playerPos.z;
   }
@@ -172,6 +173,7 @@ export class Game implements RunControllerHost, InputRouterHost, DebugAPIHost {
     this.waveDirector.update(dt);
     this.pickupSystem.update(dt);
     this.particles.update(dt);
+    this.environment.setFireLightsEnabled?.(this.sceneManager.dynamicLighting.isEnabled());
     this.environment.update(this.runState.playerPos.x, this.runState.playerPos.z, dt);
     this.interactiveEnv.update(dt, this.environment);
 

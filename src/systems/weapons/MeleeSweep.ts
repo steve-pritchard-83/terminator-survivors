@@ -58,7 +58,7 @@ export class MeleeSweep implements WeaponPattern {
     // Fades out over SLASH_FADE_SECONDS in simulated time (see update)
     this.slashes.push({ mesh: slashMesh, elapsed: 0 });
 
-    ctx.audio.playEndoHit();
+    ctx.audio.playSwing();
     ctx.playerMesh.pulseMuzzleFlash(slashColor);
 
     // Hit detection
@@ -82,6 +82,7 @@ export class MeleeSweep implements WeaponPattern {
       const hit = ctx.applyDamageToTarget(target, dmg, def.knockback, hitDir);
       if (hit) {
         ctx.particles.spawnPlasmaImpact(target.x, 0.6, target.z);
+        ctx.audio.playEndoHit();
       }
     }
   }

@@ -40,10 +40,12 @@ export class InputRouter {
 
     this.host.inputManager.gamepadManager.onConnectCallback = (status) => {
       this.host.uiManager.hudView.showControllerNotification(status.name, true);
+      this.host.audioEngine.playUiBeep();
     };
 
     this.host.inputManager.gamepadManager.onDisconnectCallback = (status) => {
       this.host.uiManager.hudView.showControllerNotification(status.name, false);
+      this.host.audioEngine.playUiError();
     };
   }
 

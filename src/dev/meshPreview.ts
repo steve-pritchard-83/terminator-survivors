@@ -10,7 +10,7 @@ import { Environment2029 } from '../graphics/Environment2029';
 import { createEnemyPreviewObject } from '../graphics/meshes/EnemyTurntablePreview';
 import { EndoskeletonBatch } from '../graphics/meshes/EndoskeletonBatch';
 import { ProceduralTextures } from '../graphics/ProceduralTextures';
-import type { ActiveEnemy, EnemyArchetypeId } from '../core/types';
+import type { ActiveEnemy, EnemyArchetypeId, LoadoutId } from '../core/types';
 
 const BATCH_ARCHETYPES = ['t800_endoskeleton', 't600_rusted', 't700_scout', 'skynet_crab_drone'];
 
@@ -57,6 +57,7 @@ if (which === 'env') {
   env.update(0, 0);
 } else if (which === 'kyle') {
   const kyle = new KyleReeseMesh();
+  kyle.applyLoadout((params.get('loadout') ?? 'reese_1984') as LoadoutId);
   scene.add(kyle.group);
   kyle.updateAnimation(0.016, 0, 0);
   const ground = new THREE.Mesh(
