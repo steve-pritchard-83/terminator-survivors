@@ -3,6 +3,7 @@ import type { ActiveEnemy } from '../../core/types';
 import type { WeaponPattern, WeaponFireContext } from './WeaponPattern';
 import { ALL_WEAPONS } from '../../data/weapons';
 import { disposeObject3D } from '../../graphics/dispose';
+import { ModelLibrary } from '../../graphics/ModelLibrary';
 
 type DroneVariant = 'seeker' | 'ring';
 
@@ -79,6 +80,16 @@ export class Orbiters implements WeaponPattern {
   private createDrone(variant: DroneVariant): THREE.Group {
     const look = this.looks[variant];
     const g = new THREE.Group();
+    // Sculpted tri-rotor drone with its coloured eye; no glow halo
+    const model = ModelLibrary.get('seeker');
+    if (model) {
+      const eye = new THREE.Mesh(this.eyeGeo, look.eyeMat);
+      eye.scale.setScalar(0.45);
+      eye.position.set(0, 0, 0.2);
+      g.add(model, eye);
+      if (variant === 'ring') g.scale.setScalar(1.2);
+      return g;
+    }
     const hull = new THREE.Mesh(this.hullGeo, this.hullMat);
     hull.scale.set(1, 0.6, 1.25);
     const eye = new THREE.Mesh(this.eyeGeo, look.eyeMat);

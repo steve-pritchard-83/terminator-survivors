@@ -32,6 +32,14 @@ export class PickupSystem {
   private readonly particles?: ParticleSystem;
 
   private readonly crystalPools: Record<GemTier, InstancedPool<ActivePickup>>;
+
+  /** XP drops become the sculpted power cell once it has loaded (tiers still differ by size). */
+  public applyCellModel(cell: { geometry: THREE.BufferGeometry; material: THREE.Material }): void {
+    for (const pool of Object.values(this.crystalPools)) {
+      pool.mesh.geometry = cell.geometry;
+      pool.mesh.material = cell.material;
+    }
+  }
   private readonly beamPools: Record<GemTier, InstancedPool>;
   private coreCount = 0;
 

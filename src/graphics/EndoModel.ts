@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { bakePart, mergeParts } from './meshes/geometryUtils';
-import { aimBone } from './HumanoidAnimator';
+import { aimBone, findBones, type HumanoidRig } from './HumanoidAnimator';
+import type { AutoRigged } from './AutoRig';
 
 /**
  * Turns the rigged T-800 model (public/models/t800.glb, an A-pose) into the pieces the instanced
@@ -25,8 +26,6 @@ export interface EndoModel {
 }
 
 const ENDO_HEIGHT = 1.85;
-const LEFT_LEG = ['LeftUpLeg', 'LeftLeg', 'LeftFoot', 'LeftToeBase'];
-const RIGHT_LEG = ['RightUpLeg', 'RightLeg', 'RightFoot', 'RightToeBase'];
 
 const v1 = new THREE.Vector3();
 
@@ -53,32 +52,56 @@ function buildRifle(): THREE.BufferGeometry {
   ]);
 }
 
-export function bakeEndoModel(scene: THREE.Object3D): EndoModel | null {
+function findSkinned(scene: THREE.Object3D): THREE.SkinnedMesh | null {
   let found: THREE.SkinnedMesh | null = null;
   scene.traverse((o) => {
     if (!found && (o as THREE.SkinnedMesh).isSkinnedMesh) found = o as THREE.SkinnedMesh;
   });
-  const mesh = found as THREE.SkinnedMesh | null;
-  if (!mesh) return null;
+  return found;
+}
 
-  // Bone names carry a numeric suffix (e.g. RightArm_023)
-  const bones = new Map<string, THREE.Bone>();
-  for (const b of mesh.skeleton.bones) bones.set(b.name.replace(/_\d+$/, ''), b);
-  const need = (name: string): THREE.Bone => {
-    const b = bones.get(name);
-    if (!b) throw new Error(`T-800 rig is missing bone ${name}`);
-    return b;
-  };
+/** The rigged T-800 (Mixamo-style bone names). */
+export function bakeEndoModel(scene: THREE.Object3D): EndoModel | null {
+  const mesh = findSkinned(scene);
+  const rig = mesh
+    ? findBones(scene, {
+        hips: 'Hips',
+        upperArmL: 'LeftArm',
+        foreArmL: 'LeftForeArm',
+        handL: 'LeftHand',
+        upperArmR: 'RightArm',
+        foreArmR: 'RightForeArm',
+        handR: 'RightHand',
+        thighL: 'LeftUpLeg',
+        shinL: 'LeftLeg',
+        footL: 'LeftFoot',
+        toeL: 'LeftToeBase',
+        thighR: 'RightUpLeg',
+        shinR: 'RightLeg',
+        footR: 'RightFoot',
+        toeR: 'RightToeBase'
+      })
+    : null;
+  return mesh && rig ? bakeWalker(scene, mesh, rig) : null;
+}
+
+/** Any humanoid rigged by AutoRig (e.g. the T-600). */
+export function bakeAutoRigged(rigged: AutoRigged): EndoModel | null {
+  const mesh = findSkinned(rigged.root);
+  return mesh ? bakeWalker(rigged.root, mesh, rigged.rig) : null;
+}
+
+function bakeWalker(scene: THREE.Object3D, mesh: THREE.SkinnedMesh, rig: HumanoidRig): EndoModel {
   scene.updateMatrixWorld(true);
 
   // 1. Pose: rifle carried low in both hands, muzzle forward (+z). Sides come from the rig itself.
-  const hipsX = need('Hips').getWorldPosition(new THREE.Vector3()).x;
-  const sR = Math.sign(need('RightArm').getWorldPosition(v1).x - hipsX) || -1;
+  const hipsX = rig.hips.getWorldPosition(new THREE.Vector3()).x;
+  const sR = Math.sign(rig.upperArmR.getWorldPosition(v1).x - hipsX) || -1;
   const sL = -sR;
-  aimBone(need('RightArm'), need('RightForeArm'), new THREE.Vector3(sR * 0.3, -0.85, 0.42));
-  aimBone(need('RightForeArm'), need('RightHand'), new THREE.Vector3(-sR * 0.2, -0.12, 0.97));
-  aimBone(need('LeftArm'), need('LeftForeArm'), new THREE.Vector3(sL * 0.12, -0.72, 0.68));
-  aimBone(need('LeftForeArm'), need('LeftHand'), new THREE.Vector3(-sL * 0.55, -0.02, 0.84));
+  aimBone(rig.upperArmR, rig.foreArmR, new THREE.Vector3(sR * 0.3, -0.85, 0.42));
+  aimBone(rig.foreArmR, rig.handR, new THREE.Vector3(-sR * 0.2, -0.12, 0.97));
+  aimBone(rig.upperArmL, rig.foreArmL, new THREE.Vector3(sL * 0.12, -0.72, 0.68));
+  aimBone(rig.foreArmL, rig.handL, new THREE.Vector3(-sL * 0.55, -0.02, 0.84));
   scene.updateMatrixWorld(true);
   mesh.skeleton.update();
 
@@ -96,8 +119,10 @@ export function bakeEndoModel(scene: THREE.Object3D): EndoModel | null {
   const outTan = tan ? new Float32Array(count * 4) : null;
   const legL = new Float32Array(count);
   const legR = new Float32Array(count);
-  const leftIds = new Set(LEFT_LEG.map((n) => mesh.skeleton.bones.indexOf(need(n))));
-  const rightIds = new Set(RIGHT_LEG.map((n) => mesh.skeleton.bones.indexOf(need(n))));
+  const boneIds = (list: Array<THREE.Object3D | undefined>) =>
+    new Set(list.map((b) => (b ? mesh.skeleton.bones.indexOf(b as THREE.Bone) : -1)).filter((i) => i >= 0));
+  const leftIds = boneIds([rig.thighL, rig.shinL, rig.footL, rig.toeL]);
+  const rightIds = boneIds([rig.thighR, rig.shinR, rig.footR, rig.toeR]);
 
   const blend = new THREE.Matrix4();
   const boneM = new THREE.Matrix4();
@@ -136,14 +161,14 @@ export function bakeEndoModel(scene: THREE.Object3D): EndoModel | null {
     maxY = Math.max(maxY, outPos[i * 3 + 1]);
   }
   const scale = ENDO_HEIGHT / (maxY - minY);
-  const hip = need('LeftUpLeg').getWorldPosition(new THREE.Vector3()).add(need('RightUpLeg').getWorldPosition(v1)).multiplyScalar(0.5);
+  const hip = rig.thighL.getWorldPosition(new THREE.Vector3()).add(rig.thighR.getWorldPosition(v1)).multiplyScalar(0.5);
   for (let i = 0; i < count; i++) {
     outPos[i * 3] = (outPos[i * 3] - hip.x) * scale;
     outPos[i * 3 + 1] = (outPos[i * 3 + 1] - minY) * scale;
     outPos[i * 3 + 2] = (outPos[i * 3 + 2] - hip.z) * scale;
   }
   const hipHeight = (hip.y - minY) * scale;
-  const rightHand = need('RightHand').getWorldPosition(new THREE.Vector3());
+  const rightHand = rig.handR.getWorldPosition(new THREE.Vector3());
   rightHand.set((rightHand.x - hip.x) * scale, (rightHand.y - minY) * scale, (rightHand.z - hip.z) * scale);
 
   // 4. Split triangles into body and legs by skin weight
@@ -207,7 +232,11 @@ export function bakeEndoModel(scene: THREE.Object3D): EndoModel | null {
  * A standalone endoskeleton (codex previews): the baked pieces assembled as ordinary meshes.
  * `tint` recolours the chassis for the T-600 / T-700 variants; the geometry stays shared.
  */
-export function createEndoPreview(model: EndoModel, tint = 0xffffff): THREE.Group {
+export function createEndoPreview(
+  model: EndoModel,
+  tint = 0xffffff,
+  weapon: { geometry: THREE.BufferGeometry; material: THREE.Material; grip: THREE.Vector3 } | null = null
+): THREE.Group {
   const group = new THREE.Group();
   const mat = (model.material as THREE.MeshStandardMaterial).clone();
   mat.color.setHex(tint);
@@ -218,13 +247,15 @@ export function createEndoPreview(model: EndoModel, tint = 0xffffff): THREE.Grou
   const eyeMat = new THREE.MeshBasicMaterial({ vertexColors: true });
   eyeMat.color.setScalar(4);
   const rifleMat = new THREE.MeshStandardMaterial({ vertexColors: true, metalness: 0.8, roughness: 0.4 });
-  group.add(
-    new THREE.Mesh(model.chassis, mat),
-    leftLeg,
-    rightLeg,
-    new THREE.Mesh(model.eyes, eyeMat),
-    new THREE.Mesh(model.rifle, rifleMat)
-  );
+  group.add(new THREE.Mesh(model.chassis, mat), leftLeg, rightLeg, new THREE.Mesh(model.eyes, eyeMat));
+  if (weapon) {
+    const gun = new THREE.Mesh(weapon.geometry, weapon.material);
+    gun.position.copy(model.rifleGrip).sub(weapon.grip);
+    group.add(gun);
+    rifleMat.dispose();
+  } else {
+    group.add(new THREE.Mesh(model.rifle, rifleMat));
+  }
   return group;
 }
 

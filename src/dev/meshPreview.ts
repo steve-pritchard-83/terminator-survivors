@@ -99,6 +99,8 @@ if (which === 'glb') {
   if (endo) batch.applySculptedModel(endo, ModelLibrary.getMeshData('plasma_rifle'));
   const crab = ModelLibrary.getMeshData('crab_drone');
   if (crab) batch.applyCrabModel(crab);
+  const t600 = ModelLibrary.getT600();
+  if (t600) batch.applyT600Model(t600, ModelLibrary.getMeshData('plasma_rifle'));
   scene.add(batch.group);
   const fake = {
     id: 1, type: 'enemy', archetype: which, x: 0, z: 0, radius: 0.5, hp: 10, maxHp: 10, speed: 1, damage: 1,

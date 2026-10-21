@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { bakePart, mergeParts } from './geometryUtils';
 import { disposeObject3D } from '../dispose';
 import { ModelLibrary } from '../ModelLibrary';
+import { createEndoPreview } from '../EndoModel';
 
 export class T1MinigunMesh {
   public readonly group = new THREE.Group();
@@ -55,6 +56,11 @@ export class MotoTerminatorMesh {
   public readonly group = new THREE.Group();
 
   constructor() {
+    const model = ModelLibrary.get('moto');
+    if (model) {
+      this.group.add(model);
+      return;
+    }
     const tireMat = 0x141618;
     const frameRed = 0xb71c1c;
     const chrome = 0xa0acb8;
@@ -146,6 +152,11 @@ export class AerostatMesh {
   public readonly group = new THREE.Group();
 
   constructor() {
+    const model = ModelLibrary.get('aerostat');
+    if (model) {
+      this.group.add(model);
+      return;
+    }
     const droneWhite = 0x94a8b8;
     const thrusterDark = 0x1e242c;
     const sensorCyan = 0x00e5ff;
@@ -185,6 +196,14 @@ export class PlasmaTurretMesh {
   public readonly barrelGroup = new THREE.Group();
 
   constructor() {
+    // Sculpted sentry: the tripod stays put, the gun turns to track
+    const base = ModelLibrary.get('turret_base');
+    const gun = ModelLibrary.get('turret_gun');
+    if (base && gun) {
+      this.group.add(base, this.barrelGroup);
+      this.barrelGroup.add(gun);
+      return;
+    }
     const bunkerConcrete = 0x3e444c;
     const turretSteel = 0x22262d;
     const plasmaCoil = 0x00e5ff;
@@ -233,6 +252,15 @@ export class T600MinigunnerMesh {
   public readonly group = new THREE.Group();
 
   constructor() {
+    const t600 = ModelLibrary.getT600();
+    const rifle = ModelLibrary.getMeshData('plasma_rifle');
+    if (t600) {
+      const weapon = rifle ? { ...rifle, grip: ModelLibrary.gripPoint(rifle.geometry) } : null;
+      const body = createEndoPreview(t600, 0xe0d4c4, weapon);
+      body.scale.setScalar(1.15);
+      this.group.add(body);
+      return;
+    }
     const rustedIron = 0x4e463e;
     const darkSteel = 0x1a1e22;
     const redOptic = 0xff0022;

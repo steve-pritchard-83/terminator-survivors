@@ -81,6 +81,10 @@ export class Game implements RunControllerHost, InputRouterHost, DebugAPIHost {
       const crab = ModelLibrary.getMeshData('crab_drone');
       if (crab) this.endoBatch.applyCrabModel(crab);
       if (rifle) this.playerMesh.applyRifleModel(rifle);
+      const t600 = ModelLibrary.getT600();
+      if (t600) this.endoBatch.applyT600Model(t600, rifle);
+      const cell = ModelLibrary.getMeshData('xp');
+      if (cell) this.pickupSystem.applyCellModel(cell);
       const player = ModelLibrary.getPlayer();
       if (player && rifle) this.playerMesh.applyPlayerModel(player, rifle);
     });

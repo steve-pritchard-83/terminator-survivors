@@ -40,6 +40,7 @@ test('Desktop gameplay: title, bunker shop, deploy and level up', async ({
 // Playtest substitute: spawns every enemy and boss type, lets the simulation run, and fails on any
 // runtime error. Catches crashes in enemy behaviours, telegraphs, drones and elite visuals.
 test('Every enemy and boss type runs without runtime errors', async ({ page }) => {
+  test.setTimeout(90_000); // spawns every enemy and boss under software rendering
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
   page.on('console', (m) => {
@@ -82,7 +83,6 @@ test('Every enemy and boss type runs without runtime errors', async ({ page }) =
 // The victory movie plays over the results. It can be skipped after a short lock; the results
 // (MISSION ACCOMPLISHED) must follow either way.
 test('Defeating the final boss plays the victory movie, which can be skipped to the results', async ({ page }) => {
-  test.setTimeout(90_000); // software rendering is slow; the movie flow involves several waits
   test.setTimeout(90_000); // software rendering is slow; the movie flow involves several waits
   await page.goto('/');
   await page.getByTestId('btn-start-run').click();

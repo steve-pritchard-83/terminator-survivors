@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { ModelLibrary } from '../ModelLibrary';
 
 export interface DogMeshGroup extends THREE.Group {
   userData: {
@@ -11,6 +12,15 @@ export interface DogMeshGroup extends THREE.Group {
 
 export function createDogMesh(isPack = false): DogMeshGroup {
   const group = new THREE.Group() as DogMeshGroup;
+
+  // Sculpted German Shepherd: one piece, so it gallops by bobbing and pitching (see DogUnit)
+  const model = ModelLibrary.get('k9');
+  if (model) {
+    model.name = 'body';
+    group.add(model);
+    group.userData = { legs: [], ears: [], tail: new THREE.Mesh(), trotTime: 0 };
+    return group;
+  }
 
   const furColor = isPack ? 0x2d3748 : 0x5c4033;
   const chestColor = isPack ? 0x1a202c : 0x8b6b4f;

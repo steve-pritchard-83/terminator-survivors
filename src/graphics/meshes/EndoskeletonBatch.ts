@@ -10,6 +10,18 @@ import { ENDO_VISUAL_SCALE, PALETTE } from '../../data/artDirection';
 import type { EndoModel } from '../EndoModel';
 import { ModelLibrary } from '../ModelLibrary';
 
+/** One walking body drawn with instancing: chassis, two swinging legs, glowing eyes, held weapon. */
+interface WalkerSet {
+  chassis: THREE.InstancedMesh;
+  leftLeg: THREE.InstancedMesh;
+  rightLeg: THREE.InstancedMesh;
+  optics: THREE.InstancedMesh;
+  weapon: THREE.InstancedMesh | null;
+  hipHeight: number;
+  /** Instances written this frame */
+  index: number;
+}
+
 export class EndoskeletonBatch {
   public readonly group = new THREE.Group();
   public readonly chassisInstancedMesh: THREE.InstancedMesh;
@@ -26,11 +38,12 @@ export class EndoskeletonBatch {
   private readonly legQuat = new THREE.Quaternion();
   private readonly swingQuat = new THREE.Quaternion();
   private readonly hipOffset = new THREE.Vector3();
-  // Hip joint height of the current body (procedural stand-in, or the sculpted model once applied)
-  private hipHeight = 0.68;
   private readonly chassisMat: THREE.MeshStandardMaterial;
   // Rifle carried by the sculpted model (the procedural chassis has its rifle built in)
   private rifleInstancedMesh: THREE.InstancedMesh | null = null;
+  // The T-800 / T-700 body (and the T-600 until it has its own), plus the sculpted T-600 once loaded
+  private readonly mainSet: WalkerSet;
+  private t600Set: WalkerSet | null = null;
   private readonly zeroMatrix = new THREE.Matrix4().makeScale(0, 0, 0);
   private lastTime = 0;
   private readonly deadColor = new THREE.Color(0x3a3d42);
@@ -271,6 +284,16 @@ export class EndoskeletonBatch {
     this.crabOpticsInstancedMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     this.crabOpticsInstancedMesh.frustumCulled = false;
 
+    this.mainSet = {
+      chassis: this.chassisInstancedMesh,
+      leftLeg: this.leftLegInstancedMesh,
+      rightLeg: this.rightLegInstancedMesh,
+      optics: this.opticsInstancedMesh,
+      weapon: null,
+      hipHeight: 0.68, // procedural stand-in; the sculpted model sets its own
+      index: 0
+    };
+
     this.group.add(
       this.chassisInstancedMesh,
       this.leftLegInstancedMesh,
@@ -315,10 +338,9 @@ export class EndoskeletonBatch {
   }
 
   /** Draws the collapsing corpses after the live enemies (shares the instance buffers). */
-  private renderCorpses(timeSeconds: number, startActive: number, startCrab: number): { active: number; crab: number } {
+  private renderCorpses(timeSeconds: number, startCrab: number): number {
     const dt = Math.max(0, Math.min(0.1, timeSeconds - this.lastTime));
     this.lastTime = timeSeconds;
-    let activeIndex = startActive;
     let crabIndex = startCrab;
 
     for (let c = this.corpses.length - 1; c >= 0; c--) {
@@ -348,7 +370,8 @@ export class EndoskeletonBatch {
         continue;
       }
 
-      if (activeIndex >= this.maxCount) continue;
+      const set = this.setFor(corpse.archetype);
+      if (set.index >= this.maxCount) continue;
       // Falls backward about its feet, knees buckling; eyes flicker then go dark
       const phase = corpse.age * 7.5;
       this.dummy.rotation.order = 'YXZ';
@@ -356,13 +379,13 @@ export class EndoskeletonBatch {
       this.dummy.rotation.set(-1.45 * ease, corpse.facing, 0.15 * Math.sin(phase) * (1 - ease));
       this.dummy.scale.setScalar(corpse.scale);
       this.dummy.updateMatrix();
-      this.chassisInstancedMesh.setMatrixAt(activeIndex, this.dummy.matrix);
-      this.rifleInstancedMesh?.setMatrixAt(activeIndex, this.dummy.matrix);
+      set.chassis.setMatrixAt(set.index, this.dummy.matrix);
+      set.weapon?.setMatrixAt(set.index, this.dummy.matrix);
       const eyesOn = p < 0.3 && Math.sin(corpse.age * 70) > 0;
-      this.opticsInstancedMesh.setMatrixAt(activeIndex, eyesOn ? this.dummy.matrix : this.zeroMatrix);
+      set.optics.setMatrixAt(set.index, eyesOn ? this.dummy.matrix : this.zeroMatrix);
 
       // Legs hang off the hips, which move as the body tips over
-      this.hipOffset.set(0, this.hipHeight * corpse.scale, 0).applyQuaternion(this.dummy.quaternion);
+      this.hipOffset.set(0, set.hipHeight * corpse.scale, 0).applyQuaternion(this.dummy.quaternion);
       this.legDummy.position.set(
         corpse.x + this.hipOffset.x,
         this.dummy.position.y + this.hipOffset.y,
@@ -373,28 +396,41 @@ export class EndoskeletonBatch {
       this.legQuat.copy(this.dummy.quaternion).multiply(this.swingQuat);
       this.legDummy.quaternion.copy(this.legQuat);
       this.legDummy.updateMatrix();
-      this.leftLegInstancedMesh.setMatrixAt(activeIndex, this.legDummy.matrix);
+      set.leftLeg.setMatrixAt(set.index, this.legDummy.matrix);
       this.swingQuat.setFromAxisAngle(this.xAxis, -0.35 * ease);
       this.legQuat.copy(this.dummy.quaternion).multiply(this.swingQuat);
       this.legDummy.quaternion.copy(this.legQuat);
       this.legDummy.updateMatrix();
-      this.rightLegInstancedMesh.setMatrixAt(activeIndex, this.legDummy.matrix);
+      set.rightLeg.setMatrixAt(set.index, this.legDummy.matrix);
 
       // Fades from chrome to scorched grey
-      this.dummyColor.setHex(corpse.archetype === 't600_rusted' ? 0xd2b08c : 0xffffff).lerp(this.deadColor, p);
-      this.chassisInstancedMesh.setColorAt(activeIndex, this.dummyColor);
-      this.leftLegInstancedMesh.setColorAt(activeIndex, this.dummyColor);
-      this.rightLegInstancedMesh.setColorAt(activeIndex, this.dummyColor);
-      activeIndex++;
+      this.dummyColor.setHex(this.tintFor(corpse.archetype)).lerp(this.deadColor, p);
+      set.chassis.setColorAt(set.index, this.dummyColor);
+      set.leftLeg.setColorAt(set.index, this.dummyColor);
+      set.rightLeg.setColorAt(set.index, this.dummyColor);
+      set.index++;
     }
 
     this.dummy.rotation.order = 'XYZ';
-    return { active: activeIndex, crab: crabIndex };
+    return crabIndex;
+  }
+
+  /** The T-600s get their own body once the sculpted T-600 has loaded. */
+  private setFor(archetype: string): WalkerSet {
+    return archetype === 't600_rusted' && this.t600Set ? this.t600Set : this.mainSet;
+  }
+
+  /** Tint that tells the variants apart (the sculpted T-600 only needs light weathering). */
+  private tintFor(archetype: string): number {
+    if (archetype === 't600_rusted') return this.t600Set ? 0xe0d4c4 : 0xd2b08c;
+    if (archetype === 't700_scout') return 0xaeb4bb;
+    return 0xffffff;
   }
 
   public updateBatch(enemies: ActiveEnemy[], timeSeconds: number, playerX = 0, playerZ = 0): void {
-    let activeIndex = 0;
     let crabIndex = 0;
+    this.mainSet.index = 0;
+    if (this.t600Set) this.t600Set.index = 0;
 
     for (let i = 0; i < enemies.length; i++) {
       const enemy = enemies[i];
@@ -448,7 +484,8 @@ export class EndoskeletonBatch {
       ) {
         continue;
       }
-      if (activeIndex >= this.maxCount) continue;
+      const set = this.setFor(enemy.archetype);
+      if (set.index >= this.maxCount) continue;
 
       // Scale variation for T-600 heavy vs T-700 runner
       let scale = ENDO_VISUAL_SCALE;
@@ -481,68 +518,40 @@ export class EndoskeletonBatch {
       this.dummy.scale.set(scale, scale, scale);
       this.dummy.updateMatrix();
 
-      this.chassisInstancedMesh.setMatrixAt(activeIndex, this.dummy.matrix);
-      this.rifleInstancedMesh?.setMatrixAt(activeIndex, this.dummy.matrix);
-      this.opticsInstancedMesh.setMatrixAt(activeIndex, this.dummy.matrix);
+      set.chassis.setMatrixAt(set.index, this.dummy.matrix);
+      set.weapon?.setMatrixAt(set.index, this.dummy.matrix);
+      set.optics.setMatrixAt(set.index, this.dummy.matrix);
 
       // Left Leg articulated matrix
-      this.legDummy.position.set(posX, bobY + this.hipHeight * scale, posZ);
+      this.legDummy.position.set(posX, bobY + set.hipHeight * scale, posZ);
       this.legDummy.rotation.set(legStride + pitchX * 0.4, facingAngle, rollZ);
       this.legDummy.scale.set(scale, scale, scale);
       this.legDummy.updateMatrix();
-      this.leftLegInstancedMesh.setMatrixAt(activeIndex, this.legDummy.matrix);
+      set.leftLeg.setMatrixAt(set.index, this.legDummy.matrix);
 
       // Right Leg articulated matrix
       this.legDummy.rotation.set(-legStride + pitchX * 0.4, facingAngle, rollZ);
       this.legDummy.updateMatrix();
-      this.rightLegInstancedMesh.setMatrixAt(activeIndex, this.legDummy.matrix);
+      set.rightLeg.setMatrixAt(set.index, this.legDummy.matrix);
 
       // Color tint & hit flash
       if (enemy.hitFlashTimer > 0) {
         this.dummyColor.setHex(0xffffff);
       } else if (enemy.isElite && enemy.affix) {
         this.dummyColor.setHex(ELITE_AFFIXES[enemy.affix]?.tintColor ?? 0xffab00);
-      } else if (enemy.archetype === 't600_rusted') {
-        this.dummyColor.setHex(0xd2b08c); // Weathered bronze/iron T-600
-      } else if (enemy.archetype === 't700_scout') {
-        this.dummyColor.setHex(0xaeb4bb); // Gunmetal T-700
       } else {
-        this.dummyColor.setHex(0xffffff); // Gleaming Hyperalloy Chrome T-800
+        this.dummyColor.setHex(this.tintFor(enemy.archetype));
       }
-      this.chassisInstancedMesh.setColorAt(activeIndex, this.dummyColor);
-      this.leftLegInstancedMesh.setColorAt(activeIndex, this.dummyColor);
-      this.rightLegInstancedMesh.setColorAt(activeIndex, this.dummyColor);
+      set.chassis.setColorAt(set.index, this.dummyColor);
+      set.leftLeg.setColorAt(set.index, this.dummyColor);
+      set.rightLeg.setColorAt(set.index, this.dummyColor);
 
-      activeIndex++;
+      set.index++;
     }
 
-    const afterCorpses = this.renderCorpses(timeSeconds, activeIndex, crabIndex);
-    activeIndex = afterCorpses.active;
-    crabIndex = afterCorpses.crab;
-
-    this.chassisInstancedMesh.count = activeIndex;
-    this.leftLegInstancedMesh.count = activeIndex;
-    this.rightLegInstancedMesh.count = activeIndex;
-    this.opticsInstancedMesh.count = activeIndex;
-    if (this.rifleInstancedMesh) {
-      this.rifleInstancedMesh.count = activeIndex;
-      this.rifleInstancedMesh.instanceMatrix.needsUpdate = true;
-    }
-
-    this.chassisInstancedMesh.instanceMatrix.needsUpdate = true;
-    this.leftLegInstancedMesh.instanceMatrix.needsUpdate = true;
-    this.rightLegInstancedMesh.instanceMatrix.needsUpdate = true;
-    this.opticsInstancedMesh.instanceMatrix.needsUpdate = true;
-
-    if (this.chassisInstancedMesh.instanceColor) {
-      this.chassisInstancedMesh.instanceColor.needsUpdate = true;
-    }
-    if (this.leftLegInstancedMesh.instanceColor) {
-      this.leftLegInstancedMesh.instanceColor.needsUpdate = true;
-    }
-    if (this.rightLegInstancedMesh.instanceColor) {
-      this.rightLegInstancedMesh.instanceColor.needsUpdate = true;
-    }
+    crabIndex = this.renderCorpses(timeSeconds, crabIndex);
+    this.finishSet(this.mainSet);
+    if (this.t600Set) this.finishSet(this.t600Set);
 
     this.crabChassisInstancedMesh.count = crabIndex;
     this.crabOpticsInstancedMesh.count = crabIndex;
@@ -550,6 +559,15 @@ export class EndoskeletonBatch {
     this.crabOpticsInstancedMesh.instanceMatrix.needsUpdate = true;
     if (this.crabChassisInstancedMesh.instanceColor) {
       this.crabChassisInstancedMesh.instanceColor.needsUpdate = true;
+    }
+  }
+
+  private finishSet(set: WalkerSet): void {
+    for (const mesh of [set.chassis, set.leftLeg, set.rightLeg, set.optics, set.weapon]) {
+      if (!mesh) continue;
+      mesh.count = set.index;
+      mesh.instanceMatrix.needsUpdate = true;
+      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
     }
   }
 
@@ -571,7 +589,7 @@ export class EndoskeletonBatch {
     swap(this.leftLegInstancedMesh, model.leftLeg, model.material);
     swap(this.rightLegInstancedMesh, model.rightLeg, model.material);
     swap(this.opticsInstancedMesh, model.eyes);
-    this.hipHeight = model.hipHeight;
+    this.mainSet.hipHeight = model.hipHeight;
     // The sculpted rifle sits with its pistol grip in the right hand
     let rifleGeo = model.rifle;
     if (rifle) {
@@ -587,6 +605,38 @@ export class EndoskeletonBatch {
     this.rifleInstancedMesh.frustumCulled = false;
     this.rifleInstancedMesh.count = 0;
     this.group.add(this.rifleInstancedMesh);
+    this.mainSet.weapon = this.rifleInstancedMesh;
+  }
+
+  /** Gives the T-600s their own sculpted body (otherwise they share the T-800's with a bronze tint). */
+  public applyT600Model(model: EndoModel, rifle: { geometry: THREE.BufferGeometry; material: THREE.Material } | null): void {
+    if (this.t600Set) return;
+    // Same plasma rifle as the T-800, gripped in this body's right hand
+    let weapon: { geometry: THREE.BufferGeometry; material: THREE.Material } | null = null;
+    if (rifle) {
+      const grip = ModelLibrary.gripPoint(rifle.geometry);
+      weapon = {
+        geometry: rifle.geometry.clone().translate(model.rifleGrip.x - grip.x, model.rifleGrip.y - grip.y, model.rifleGrip.z - grip.z),
+        material: rifle.material
+      };
+    }
+    const make = (geometry: THREE.BufferGeometry, material: THREE.Material) => {
+      const mesh = new THREE.InstancedMesh(geometry, material, this.maxCount);
+      mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+      mesh.frustumCulled = false;
+      mesh.count = 0;
+      this.group.add(mesh);
+      return mesh;
+    };
+    this.t600Set = {
+      chassis: make(model.chassis, model.material),
+      leftLeg: make(model.leftLeg, model.material),
+      rightLeg: make(model.rightLeg, model.material),
+      optics: make(model.eyes, this.opticsInstancedMesh.material as THREE.Material),
+      weapon: weapon ? make(weapon.geometry, weapon.material) : null,
+      hipHeight: model.hipHeight,
+      index: 0
+    };
   }
 
   /** Swaps the procedural crab drone for the sculpted spider drone, with two eye beads on its front. */

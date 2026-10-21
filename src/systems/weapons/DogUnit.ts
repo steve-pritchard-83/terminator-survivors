@@ -149,6 +149,13 @@ export class DogUnit implements WeaponPattern {
           legs[1].rotation.x = -trotAngle;
           legs[2].rotation.x = -trotAngle;
           legs[3].rotation.x = trotAngle;
+        } else {
+          // Sculpted dog: a gallop is a bound and a rocking pitch
+          const body = dog.mesh.getObjectByName('body');
+          if (body) {
+            body.position.y = Math.abs(Math.sin(dog.trotPhase)) * 0.09;
+            body.rotation.x = Math.sin(dog.trotPhase) * 0.1;
+          }
         }
       }
 

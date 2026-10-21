@@ -140,9 +140,10 @@ export function createEnemyPreviewObject(archetype: EnemyArchetypeId): THREE.Obj
     }
 
     case 't600_rusted': {
-      const endo = ModelLibrary.getEndo();
+      const t600 = ModelLibrary.getT600();
+      const endo = t600 ?? ModelLibrary.getEndo();
       if (endo) {
-        root.add(createEndoPreview(endo, 0xc49a74));
+        root.add(createEndoPreview(endo, t600 ? 0xe0d4c4 : 0xc49a74));
         root.position.set(0, -0.9, 0);
         root.scale.setScalar(0.95);
         break;

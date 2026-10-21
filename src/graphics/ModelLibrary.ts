@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js';
-import { bakeEndoModel, markEndoShared, type EndoModel } from './EndoModel';
+import { bakeAutoRigged, bakeEndoModel, markEndoShared, type EndoModel } from './EndoModel';
 import { autoRigHumanoid, type AutoRigged } from './AutoRig';
 import { RENDER_BUDGET } from '../data/performance';
 
@@ -25,7 +25,15 @@ export type ModelName =
   | 'skynet_core'
   | 'plasma_rifle'
   | 'infiltrator'
-  | 'player';
+  | 'player'
+  | 't600'
+  | 'moto'
+  | 'aerostat'
+  | 'turret_base'
+  | 'turret_gun'
+  | 'k9'
+  | 'seeker'
+  | 'xp';
 
 interface ModelSpec {
   url: string;
@@ -70,7 +78,23 @@ const SPECS: Record<string, ModelSpec> = {
   plasma_rifle: { url: './models/plasma_rifle.glb', fit: { axis: 'z', size: 1.0 }, grounded: false, rotateY: -Math.PI / 2 },
   infiltrator: { url: './models/infiltrator.glb', fit: { axis: 'y', size: 1.95 }, grounded: true, skinned: true },
   // Unrigged A-pose soldier: rigged at load time (AutoRig)
-  player: { url: './models/player.glb', fit: { axis: 'y', size: 1.8 }, grounded: true }
+  player: { url: './models/player.glb', fit: { axis: 'y', size: 1.8 }, grounded: true },
+  // Unrigged T-pose: rigged, posed and split for the instanced batch at load time
+  t600: { url: './models/t600.glb', fit: { axis: 'y', size: 1.85 }, grounded: true, metal: { metalness: 0.7, roughness: 0.5 } },
+  // Faces -x in the source
+  moto: { url: './models/moto.glb', fit: { axis: 'z', size: 2.1 }, grounded: true, rotateY: Math.PI / 2 },
+  aerostat: { url: './models/aerostat.glb', fit: { axis: 'x', size: 1.7 }, grounded: false },
+  // The gun turns on its tripod
+  turret: {
+    url: './models/turret.glb',
+    fit: { axis: 'y', size: 1.4 },
+    grounded: true,
+    turretSplit: { hull: 'turret_base', turret: 'turret_gun', fraction: 0.4 }
+  },
+  // Faces +x in the source
+  k9: { url: './models/k9.glb', fit: { axis: 'z', size: 1.2 }, grounded: true, rotateY: -Math.PI / 2 },
+  seeker: { url: './models/seeker.glb', fit: { axis: 'x', size: 0.8 }, grounded: false },
+  xp: { url: './models/xp.glb', fit: { axis: 'y', size: 0.5 }, grounded: false }
 };
 const skinnedNames = new Set(Object.entries(SPECS).filter(([, s]) => s.skinned).map(([n]) => n));
 
@@ -96,6 +120,7 @@ function chromeEndoMaterial(mat: THREE.MeshStandardMaterial): void {
 const cache = new Map<ModelName, THREE.Object3D>();
 const meshData = new Map<ModelName, { geometry: THREE.BufferGeometry; material: THREE.Material }>();
 let endoModel: EndoModel | null = null;
+let t600Model: EndoModel | null = null;
 let loading: Promise<void> | null = null;
 
 function markShared(root: THREE.Object3D, metal?: ModelSpec['metal']): void {
@@ -209,8 +234,19 @@ export const ModelLibrary = {
           // Missing or unloadable model (tests, offline first run): the procedural mesh stays
         }
       })
-    ]).then(() => undefined);
+    ]).then(() => {
+      // The T-600 arrives unrigged: rig it, pose the rifle carry and split it like the T-800
+      const t600 = cache.get('t600');
+      const rigged = t600 ? autoRigHumanoid(t600) : null;
+      t600Model = rigged ? bakeAutoRigged(rigged) : null;
+      if (t600Model) markEndoShared(t600Model);
+    });
     return loading;
+  },
+
+  /** The baked T-600 pieces (same layout as the T-800's), or null if not loaded (yet). */
+  getT600(): EndoModel | null {
+    return t600Model;
   },
 
   /** The baked T-800 pieces for the instanced endoskeleton batch, or null if not loaded (yet). */
