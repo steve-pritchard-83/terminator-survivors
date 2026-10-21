@@ -125,8 +125,9 @@ export interface WeaponPatternParams {
   projectileVisual?: 'pellet' | 'plasma' | 'heavy_plasma' | 'bomb';
   projectileRadius?: number;
   flashColor?: number;
-  sfx?: 'shotgun' | 'plasma_light' | 'plasma_heavy' | 'rifle' | 'railgun' | 'emp' | 'none';
+  sfx?: 'shotgun' | 'shotgun_auto' | 'plasma_light' | 'plasma_heavy' | 'rifle' | 'railgun' | 'emp' | 'none';
   launchSfx?: 'throw' | 'grenade' | 'rocket';
+  deploySfx?: 'glass';
   parallelOffset?: number;
   jitterAngle?: number;
   jitterPos?: number;

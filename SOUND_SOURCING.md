@@ -27,15 +27,30 @@ Updated 2026-10-21 after wiring the owner's sound library. Sounds live in `SFX_W
 | `achievement` | 2 | achievement toast (no longer shares the vault sound) |
 | `aerialRockets`, `bombBeep` | 1, 1 | HK missile salvo warning, Self-Destruct elite |
 | `ambBed`, `ambDistant` | 60 s loop, 7 | battle ambience and random distant explosions |
+| `pumpRack` | 5 | Ithaca racks a shell 0.35 s after each blast |
+| `shotgunAuto` | 10 (SPAS, Remington) | Trench Sweeper Auto-12 (no pump rack) |
+| `glassBreak` | 3 | molotov, Firestorm Lane, Sarah's ability |
+| `strikeLock`, `strikeBeam` | 1, 4 | laser designator and orbital ion |
+| `droneZap` | 6 | seeker drones and perimeter ring hits |
+| `servo` | 3 | T-800 ally reboot, T-800 overdrive ability |
+| `stepEndo` | 8 metal steps | nearest walking endoskeleton within 10 m |
+| `hitLiquid` | 3 water hits | hits on the T-1000 |
+| `bossAerial`, `bossTank`, `bossCore` | 3, 2, 2 | engine/alarm layered on the boss stinger |
+| `revive`, `evolution`, `flareLaunch` | 1, 1, 1 | revive, weapon evolution, supply-drop flare |
+| `radioClick`, `magOut` | 1, 2 | John's rally and Reese 1984's dual-wield abilities |
+| `uiError` | `S_NoAmmo` replaces the other game's error sound | |
 
-## Still missing
+## Still missing (checked against the library on 2026-10-21; nothing suitable there)
 
-- **Per-boss stingers** (5) and boss phase-change cues; `bossStinger` and `hkAlert` still share files.
-- **Telegraph cues:** Tank mortar whistle, searchlight lock, strafing run, Core spokes, T-1000 landing.
-- **Character abilities** (6), none with their own sound.
-- **Weapons:** shotgun pump rack, molotov glass break, laser designator/ion charge and beam, K-9 bark/bite, drone hum/zap, T-800 ally boot-up.
-- **Enemies:** endoskeleton footsteps, HK flyover hum, tank treads, T-1000 liquid-metal sounds.
-- **UI:** distinct pause/resume pair, level-up card hover/select, reroll, banish; `uiError` still includes a sound from another game.
+- **K-9:** bark, growl, bite. The library has no animal sounds.
+- **Telegraph cues:** Tank mortar incoming whistle, searchlight lock-on tone, strafing run, Core spoke charge, T-1000 landing.
+- **Boss stingers** for the Infiltrator and T-1000, and phase-change cues.
+- **T-1000 liquid-metal** morph and flow sounds (only hits are covered).
+- **UI:** a distinct pause/resume pair, level-up card hover/select, reroll, banish.
 - **Music:** real calm/combat/boss stems (the game has one track split by filters).
 
-The library has candidates for some of these that were not wired: `Objects/Turret` (servo turn), `Objects/SilverFish` (skitter), `Reload` (pump racks), `Objects/S_BombBeep*` (longer countdowns) and the character voice folders (unheard, so skipped).
+## In the library but not wired (they need positional loops or new behaviour)
+
+- Loops: `Objects/S_AerialEngine*` and `S_DroneEngine` (flyover and drone hum), `Objects/TankContainers/S_TankMovement` (treads), `Ambient Part1/Fire` and `Objects/BarrelFire` (fire crackle for craters and wrecks), `Objects/S_LaserBeamLoop`.
+- `All/S_MinigunBurstWormup` (minigunner wind-up), `All/S_NearMiss*` (enemy bolts passing close), `Objects/SilverFish/SilverFishRun*` (crab drone skitter), `Objects/S_FuseBurning` (pipe-bomb fuse).
+- Voice folders (John Connor, Resistance soldiers, radio station lines) were skipped because their content can't be checked from file names.

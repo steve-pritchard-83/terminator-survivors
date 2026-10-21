@@ -270,7 +270,7 @@ export const BASE_WEAPONS: Record<BaseWeaponId, WeaponDefinition> = {
     evolvesInto: 'firestorm_lane',
     iconColor: '#ff7700',
     pattern: 'GroundZone',
-    patternParams: { baseRadius: 1.6, isLine: true, lineSpacing: 2.2 },
+    patternParams: { baseRadius: 1.6, isLine: true, lineSpacing: 2.2, deploySfx: 'glass' },
     knockback: 4,
     levels: buildWeaponLevels(
       { damage: 20, cooldown: 2.8, area: 1.2, speed: 12, amount: 3, duration: 3.5, pierce: 99 },
@@ -340,7 +340,7 @@ export const EVOLVED_WEAPONS: Record<EvolvedWeaponId, WeaponDefinition> = {
     evolvesFrom: 'ithaca_37',
     iconColor: '#ffa500',
     pattern: 'SpreadShot',
-    patternParams: { spreadAngle: Math.PI * 2, ringFull: true, projectileVisual: 'pellet', flashColor: 0xff5500, projectileRadius: 0.4 },
+    patternParams: { spreadAngle: Math.PI * 2, ringFull: true, projectileVisual: 'pellet', flashColor: 0xff5500, projectileRadius: 0.4, sfx: 'shotgun_auto' },
     knockback: 24,
     levels: [
       {
@@ -588,7 +588,7 @@ export const EVOLVED_WEAPONS: Record<EvolvedWeaponId, WeaponDefinition> = {
     evolvesFrom: 'molotov',
     iconColor: '#ff5500',
     pattern: 'GroundZone',
-    patternParams: { baseRadius: 2.2, isLine: true, lineSpacing: 2.6 },
+    patternParams: { baseRadius: 2.2, isLine: true, lineSpacing: 2.6, deploySfx: 'glass' },
     knockback: 6,
     levels: [
       {

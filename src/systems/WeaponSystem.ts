@@ -586,7 +586,13 @@ export class WeaponSystem {
             p.weaponId as WeaponId
           );
           if (hit) {
-            this.audio.playEndoHit(p.x, p.z, this.runState.playerPos.x, this.runState.playerPos.z);
+            this.audio.playEndoHit(
+              p.x,
+              p.z,
+              this.runState.playerPos.x,
+              this.runState.playerPos.z,
+              target.type === 'enemy' && (target as ActiveEnemy).archetype === 't1000_prototype'
+            );
             this.particles.spawnPlasmaImpact(p.x, p.y, p.z);
             p.pierceLeft--;
             if (p.pierceLeft <= 0) break;

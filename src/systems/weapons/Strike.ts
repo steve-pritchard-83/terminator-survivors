@@ -34,7 +34,7 @@ export class Strike implements WeaponPattern {
         x: px + (ctx.rng.next() - 0.5) * 16,
         z: pz + (ctx.rng.next() - 0.5) * 16
       };
-      ctx.audio.playPlasmaShot(true);
+      ctx.audio.playStrike();
       const ionRadius = baseRadius * areaMult;
       ctx.spawnOrbitalIonBeam(target.x, target.z, ionRadius);
       ctx.emit('camera:shake', { trauma: params.shakeTrauma ?? 0.32 });

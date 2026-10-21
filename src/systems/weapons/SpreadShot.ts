@@ -18,7 +18,7 @@ export class SpreadShot implements WeaponPattern {
     const durationMult = ctx.runState.computedStats.durationMultiplier;
     const amount = stats.amount + ctx.runState.computedStats.bonusAmount;
 
-    ctx.audio.playShotgunBlast();
+    ctx.audio.playShotgunBlast(def.patternParams?.sfx === 'shotgun_auto');
     ctx.playerMesh.pulseMuzzleFlash(params.flashColor ?? 0xff9900);
 
     const isRingFull = params.ringFull ?? false;

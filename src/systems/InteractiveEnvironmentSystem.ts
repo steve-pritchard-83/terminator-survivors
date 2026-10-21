@@ -351,7 +351,7 @@ export class InteractiveEnvironmentSystem {
       text: 'TECH-COM AIRDROP // REACH FLARE (20s)',
       color: '#ff6600'
     });
-    this.audio.playSearchlightAlert();
+    this.audio.playFlareLaunch();
   }
 
   public update(dt: number, environment?: IEnvironment): void {

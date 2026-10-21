@@ -88,8 +88,8 @@ export class RunController {
       globalEvents.on('vault:opened', ({ upgradesAwarded, evolvedWeapon, alloyBonus }) => {
         this.handleVaultOpened(upgradesAwarded, evolvedWeapon, alloyBonus);
       }),
-      globalEvents.on('boss:spawned', ({ name, maxHp }) => {
-        this.handleBossSpawned(name, maxHp);
+      globalEvents.on('boss:spawned', ({ archetype, name, maxHp }) => {
+        this.handleBossSpawned(name, maxHp, archetype);
       }),
       globalEvents.on('enemy:killed', ({ enemy }) => {
         this.handleEnemyKilled(enemy);
@@ -392,6 +392,7 @@ export class RunController {
   ): void {
     this.host.runState.mode = 'vault';
     this.host.sceneManager.addScreenShake(0.35);
+    if (evolvedWeapon) this.host.audioEngine.playEvolution();
     this.host.uiManager.vaultModal.show(upgradesAwarded, evolvedWeapon, alloyBonus, () => {
       this.host.audioEngine.playUpgradeApplied();
       this.host.runState.mode = 'playing';
@@ -407,9 +408,9 @@ export class RunController {
     });
   }
 
-  public handleBossSpawned(name: string, maxHp: number): void {
+  public handleBossSpawned(name: string, maxHp: number, archetype = ''): void {
     this.activeBoss = { name, hp: maxHp, maxHp };
-    this.host.audioEngine.playBossStinger();
+    this.host.audioEngine.playBossStinger(archetype);
     this.host.audioEngine.playSearchlightAlert();
     this.host.sceneManager.addScreenShake(0.65);
     this.host.uiManager.hudView.triggerBossWarning(name);
@@ -457,7 +458,7 @@ export class RunController {
           knockback: 18
         });
       }
-      this.host.audioEngine.playExplosion(0.8);
+      this.host.audioEngine.playLaunch('throw');
       this.host.sceneManager.addScreenShake(0.35);
     } else if (loadoutId === 'techcom_sapper') {
       for (const slot of this.host.runState.weapons.values()) {
@@ -493,14 +494,16 @@ export class RunController {
           'ithaca_37'
         );
       }
-      this.host.audioEngine.playExplosion(1.2);
+      this.host.audioEngine.playGlassBreak();
+      this.host.audioEngine.playFireDeploy();
       this.host.sceneManager.addScreenShake(0.3);
     } else if (loadoutId === 'reprogrammed_t800') {
       this.host.runState.invulnerabilityTimer = 5.0;
-      this.host.audioEngine.playSearchlightAlert();
+      this.host.audioEngine.playServo();
       this.host.sceneManager.addScreenShake(0.5);
     } else if (loadoutId === 'reese_1984' || loadoutId === 'john_connor') {
-      this.host.audioEngine.playSearchlightAlert();
+      if (loadoutId === 'john_connor') this.host.audioEngine.playRadioClick();
+      else this.host.audioEngine.playMagOut();
       this.host.sceneManager.addScreenShake(0.25);
     }
   }
@@ -557,6 +560,7 @@ export class RunController {
     if (lethalStatus === 'revived') {
       this.host.sceneManager.postProcessing.triggerEmpGlitch();
       this.host.audioEngine.playEmpBlast();
+      this.host.audioEngine.playRevive();
       globalEvents.emit('player:revived', { remaining: this.host.runState.revivalsLeft });
     } else if (lethalStatus === 'dead') {
       this.host.audioEngine.playPlayerTerminated();

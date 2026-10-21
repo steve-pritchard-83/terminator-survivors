@@ -15,10 +15,19 @@ export const SFX_WAV_MANIFEST: Record<string, string[]> = {
   rifle: seq('rifle', 8),
   railgun: seq('railgun', 4),
   shotgun: [fx('S_Ithica01.wav'), fx('S_Ithica02.wav'), fx('Shotgun_shot_spas.wav'), ...seq('shotgun_extra', 5)],
+  shotgunAuto: seq('shotgun_auto', 10),
+  pumpRack: seq('pump_rack', 5),
+  strikeLock: seq('strike_lock', 1),
+  strikeBeam: seq('strike_beam', 4),
+  droneZap: seq('drone_zap', 6),
+  servo: seq('servo', 3),
+  magOut: seq('mag_out', 2),
+  radioClick: seq('radio_click', 1),
   throw: seq('throw', 2),
   launchGrenade: seq('launch_grenade', 1),
   launchRocket: seq('launch_rocket', 2),
   fireWhoosh: seq('fire_whoosh', 5),
+  glassBreak: seq('glass_break', 3),
   empBlast: seq('emp', 3),
   swing: seq('swing', 10),
   // Enemy guns
@@ -35,8 +44,11 @@ export const SFX_WAV_MANIFEST: Record<string, string[]> = {
   explodeMed: [...seq('explode_med', 6), fx('plasma_explosion.wav')],
   explodeLarge: [...seq('explode_large', 4), fx('S_Explosion01.wav'), fx('S_Explosion02.wav')],
   explodeDrum: seq('explode_drum', 3),
+  hitLiquid: seq('hit_liquid', 3),
   playerHit: seq('player_hit', 6),
   stepPlayer: seq('step', 8),
+  stepEndo: seq('step_endo', 8),
+  revive: seq('revive', 1),
   // Cues
   hkAlert: [
     fx('S_TurretAlarm.wav'),
@@ -46,6 +58,10 @@ export const SFX_WAV_MANIFEST: Record<string, string[]> = {
   ],
   aerialRockets: seq('aerial_rockets', 1),
   bombBeep: seq('bomb_beep', 1),
+  bossAerial: seq('boss_aerial', 3),
+  bossTank: seq('boss_tank', 2),
+  bossCore: seq('boss_core', 2),
+  flareLaunch: seq('flare_launch', 1),
   bossStinger: [fx('S_Splash_Screen_Drums_x1.wav'), fx('hk_heavy1a_m.wav'), fx('S_TurretAlarm.wav')],
   // Pickups and rewards
   pickupGem: [fx('S_LootPickupStuff.wav'), fx('S_LootPickupQuest.wav')],
@@ -56,6 +72,7 @@ export const SFX_WAV_MANIFEST: Record<string, string[]> = {
   levelUp: [fx('S_ExpLevel.wav'), fx('S_NewLevel.wav'), fx('S_NewLevel2.wav'), fx('S_NewLevel3.wav')],
   vaultJackpot: [fx('S_ObjectiveComplete.wav'), fx('S_HckingCompleat.wav'), fx('S_AddtoArchive.wav')],
   achievement: seq('achievement', 2),
+  evolution: seq('evolution', 2),
   // Ambience
   ambDistant: seq('amb_distant', 7),
   ambBed: [fx('amb_battle_loop.mp3')],
@@ -63,7 +80,7 @@ export const SFX_WAV_MANIFEST: Record<string, string[]> = {
   uiClick: [fx('S_Click.wav'), fx('S_Click02.wav'), fx('S_Click03.wav'), fx('S_Click04.wav')],
   uiBeep: [fx('S_ButtonBeep01.wav'), fx('S_ButtonBeep02.wav')],
   uiBuy: [fx('S_Buy.wav')],
-  uiError: [fx('S_DetectiveModeError.wav'), fx('Frogger_Error.wav')],
+  uiError: [fx('S_DetectiveModeError.wav'), ...seq('ui_no_ammo', 1)],
   uiUpgradeApplied: [fx('S_WeaponUpgradesApplied.wav')],
   uiModalOpen: [
     fx('S_HUD_DetectiveModeOnNew.wav'),
@@ -83,6 +100,13 @@ import { AMBIENCE } from '../data/balance';
 export type GunSound = 'plasmaLight' | 'plasmaHeavy' | 'rifle' | 'railgun';
 export type EnemyShotSound = 'light' | 'heavy' | 'minigun';
 export type LaunchSound = 'throw' | 'grenade' | 'rocket';
+
+const PUMP_RACK_DELAY_MS = 350;
+const BOSS_SIGNATURES: Record<string, string> = {
+  hk_aerial_squadron_leader: 'bossAerial',
+  hk_tank_goliath: 'bossTank',
+  skynet_tde_core: 'bossCore'
+};
 
 export interface VoiceLimitConfig {
   maxVoices: number;
@@ -115,6 +139,12 @@ export const CATEGORY_VOICE_LIMITS: Record<string, VoiceLimitConfig> = {
   launchRocket: { maxVoices: 2, minRetriggerMs: 120 },
   fireWhoosh: { maxVoices: 2, minRetriggerMs: 150 },
   stepPlayer: { maxVoices: 2, minRetriggerMs: 120 },
+  stepEndo: { maxVoices: 2, minRetriggerMs: 150 },
+  droneZap: { maxVoices: 3, minRetriggerMs: 60 },
+  hitLiquid: { maxVoices: 4, minRetriggerMs: 40 },
+  pumpRack: { maxVoices: 2, minRetriggerMs: 200 },
+  shotgunAuto: { maxVoices: 3, minRetriggerMs: 60 },
+  strikeBeam: { maxVoices: 2, minRetriggerMs: 120 },
   ambDistant: { maxVoices: 1, minRetriggerMs: 2000 },
   bombBeep: { maxVoices: 3, minRetriggerMs: 60 }
 };
@@ -762,21 +792,62 @@ export class AudioEngine {
     this.playSample(category, baseGain * attenuation, 1.0, 0.08, pan);
   }
 
-  public playShotgunBlast(
-    sourceX?: number,
-    sourceZ?: number,
-    playerX?: number,
-    playerZ?: number
-  ): void {
-    let pan = 0;
-    let attenuation = 1.0;
-    if (sourceX !== undefined && sourceZ !== undefined && playerX !== undefined && playerZ !== undefined) {
-      const spatial = this.calculateSpatialParams(sourceX, sourceZ, playerX, playerZ, 6, 16);
-      pan = spatial.pan;
-      attenuation = spatial.attenuation;
-    }
+  /** Pump shotguns rack a fresh shell after the blast; the automatic one doesn't. */
+  public playShotgunBlast(automatic = false): void {
     this.triggerHaptic(12, 80);
-    this.playSample('shotgun', 0.72 * attenuation, 1.0, 0.06, pan);
+    if (automatic) {
+      this.playSample('shotgunAuto', 0.68, 1.0, 0.06);
+      return;
+    }
+    this.playSample('shotgun', 0.72, 1.0, 0.06);
+    setTimeout(() => this.playSample('pumpRack', 0.5, 1.0, 0.05), PUMP_RACK_DELAY_MS);
+  }
+
+  /** Laser designator / orbital ion: target-lock beep then the beam. */
+  public playStrike(): void {
+    this.playSample('strikeLock', 0.45, 1.0, 0.02);
+    this.playSample('strikeBeam', 0.6, 1.0, 0.06);
+  }
+
+  /** Molotov bottle shattering before it ignites. */
+  public playGlassBreak(): void {
+    this.playSample('glassBreak', 0.55, 1.0, 0.08);
+  }
+
+  /** Seeker drone or perimeter ring zapping an enemy. */
+  public playDroneZap(): void {
+    this.playSample('droneZap', 0.35, 1.0, 0.12);
+  }
+
+  /** T-800 servos: ally reboot and the T-800 overdrive ability. */
+  public playServo(): void {
+    this.playSample('servo', 0.55, 1.0, 0.06);
+  }
+
+  public playMagOut(): void {
+    this.playSample('magOut', 0.6, 1.0, 0.05);
+  }
+
+  public playRadioClick(): void {
+    this.playSample('radioClick', 0.6, 1.0, 0.0);
+  }
+
+  public playRevive(): void {
+    this.playSample('revive', 0.75, 1.0, 0.0);
+  }
+
+  public playEvolution(): void {
+    this.playSample('evolution', 0.75, 1.0, 0.0);
+  }
+
+  public playFlareLaunch(): void {
+    this.playSample('flareLaunch', 0.55, 1.0, 0.0);
+  }
+
+  /** Metal footstep of a nearby endoskeleton. */
+  public playEndoStep(sourceX: number, sourceZ: number, playerX: number, playerZ: number): void {
+    const { pan, attenuation } = this.calculateSpatialParams(sourceX, sourceZ, playerX, playerZ, 4, 12);
+    this.playSample('stepEndo', 0.3 * attenuation, 1.0, 0.15, pan);
   }
 
   public playExplosion(
@@ -847,11 +918,13 @@ export class AudioEngine {
     }
   }
 
+  /** `liquid` is the T-1000's liquid-metal splash instead of a metal clang. */
   public playEndoHit(
     sourceX?: number,
     sourceZ?: number,
     playerX?: number,
-    playerZ?: number
+    playerZ?: number,
+    liquid = false
   ): void {
     let pan = 0;
     let attenuation = 1.0;
@@ -860,7 +933,7 @@ export class AudioEngine {
       pan = spatial.pan;
       attenuation = spatial.attenuation;
     }
-    this.playSample('endoHit', 0.42 * attenuation, 1.0, 0.06, pan);
+    this.playSample(liquid ? 'hitLiquid' : 'endoHit', 0.42 * attenuation, 1.0, 0.06, pan);
   }
 
   public playEndoDestroy(
@@ -1029,7 +1102,8 @@ export class AudioEngine {
     }
   }
 
-  public playBossStinger(): void {
+  /** Generic boss stinger plus, where the library has one, the boss's own engine or alarm. */
+  public playBossStinger(archetype = ''): void {
     this.triggerHaptic([45, 60, 45, 60, 80], 350);
     if (this.gamepadManager) {
       this.gamepadManager.playRumble(250, 1.0, 0.8);
@@ -1043,6 +1117,8 @@ export class AudioEngine {
     if (this.bossGain) this.bossGain.gain.value = 1.0;
 
     this.playSample('bossStinger', 0.95, 0.9);
+    const signature = BOSS_SIGNATURES[archetype];
+    if (signature) this.playSample(signature, 0.7, 1.0, 0.0);
   }
 
   public playSearchlightAlert(): void {

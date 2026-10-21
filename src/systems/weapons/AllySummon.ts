@@ -59,7 +59,7 @@ export class AllySummon implements WeaponPattern {
       if (this.rebootTimer <= 0) {
         this.hp = this.maxHp;
         this.mesh.position.y = 0;
-        ctx.audio.playExplosion(0.8);
+        ctx.audio.playServo();
       }
       return;
     }

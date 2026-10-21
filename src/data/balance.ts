@@ -31,6 +31,8 @@ export const ENEMY_ATTACK_DAMAGE = {
 export const AMBIENCE = { bedGain: 0.2, distantGain: 0.32, distantMinSeconds: 8, distantMaxSeconds: 20 };
 // Seconds between player footstep sounds while moving.
 export const FOOTSTEP_INTERVAL_SECONDS = 0.34;
+// Metal footsteps of the nearest walking endoskeleton within `radius` metres.
+export const ENDO_STEP = { intervalSeconds: 0.42, radius: 10 };
 
 // Elite "Self-Destruct" affix: the blast is telegraphed for `delaySeconds` after the elite dies.
 export const SELF_DESTRUCT_BLAST = { damage: 28, radius: 3.8, delaySeconds: 0.7 };

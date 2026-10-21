@@ -20,6 +20,7 @@ import {
 } from '../data/waves';
 import { type EnemyBehaviour, type EnemyContext, createEnemyBehaviourRegistry } from './enemies';
 import type { IEnvironment } from '../graphics/environments';
+import { ENDO_STEP } from '../data/balance';
 
 export interface EnemyProjectile extends PoolableUser {
   poolIndex: number; x: number; y: number; z: number; vx: number; vz: number;
@@ -31,6 +32,7 @@ export class EnemySystem {
   public readonly activeEnemies: ActiveEnemy[] = [];
   public readonly enemyProjectiles: EnemyProjectile[] = [];
   private nextEnemyId = 1;
+  private endoStepTimer = 0;
   private readonly runState: RunState;
   private readonly grid: SpatialHashGrid;
   private readonly audio: AudioEngine;
@@ -159,6 +161,7 @@ export class EnemySystem {
     const pz = this.runState.playerPos.z;
     this.context.timeSeconds = timeSeconds;
     this.updatePendingBlasts(dt);
+    this.updateEndoSteps(dt, px, pz);
 
     for (let i = this.activeEnemies.length - 1; i >= 0; i--) {
       const enemy = this.activeEnemies[i];
@@ -287,6 +290,24 @@ export class EnemySystem {
     if (enemy.isFlying || (enemy.mass ?? 0) >= 8) return 'machine';
     if (enemy.radius < 0.5) return 'small';
     return 'humanoid';
+  }
+
+  /** Metal footsteps from the nearest walking endoskeleton, so they can be heard approaching. */
+  private updateEndoSteps(dt: number, px: number, pz: number): void {
+    this.endoStepTimer -= dt;
+    if (this.endoStepTimer > 0) return;
+    this.endoStepTimer = ENDO_STEP.intervalSeconds;
+    let nearest: ActiveEnemy | null = null;
+    let nearestDist = ENDO_STEP.radius;
+    for (const enemy of this.activeEnemies) {
+      if (this.deathKind(enemy) !== 'humanoid') continue;
+      const dist = Math.hypot(enemy.x - px, enemy.z - pz);
+      if (dist < nearestDist) {
+        nearest = enemy;
+        nearestDist = dist;
+      }
+    }
+    if (nearest) this.audio.playEndoStep(nearest.x, nearest.z, px, pz);
   }
 
   private killEnemy(enemy: ActiveEnemy, index: number): void {
