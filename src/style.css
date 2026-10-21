@@ -288,27 +288,6 @@ body,
   pointer-events: none;
 }
 
-.btn-mobile-dash {
-  position: absolute;
-  bottom: 35px;
-  right: 35px;
-  width: 76px;
-  height: 76px;
-  border-radius: 50%;
-  border: 2px solid var(--color-cyan);
-  background: radial-gradient(circle, rgba(77, 210, 255, 0.3) 0%, rgba(5, 13, 26, 0.8) 80%);
-  box-shadow: 0 0 14px rgba(77, 210, 255, 0.4);
-  color: var(--color-cyan);
-  font-family: var(--font-display);
-  font-size: 13px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 25;
-  cursor: pointer;
-  touch-action: none;
-}
-
 /* T-800 CSM-101 Optical Level-Up Modal */
 .modal-backdrop {
   position: absolute;
@@ -662,14 +641,6 @@ select:focus-visible,
     height: 38px;
   }
 
-  .btn-mobile-dash {
-    bottom: max(18px, env(safe-area-inset-bottom, 18px));
-    right: max(24px, env(safe-area-inset-right, 24px));
-    width: 66px;
-    height: 66px;
-    font-size: 12px;
-  }
-
   .hud-desktop-hint {
     display: none;
   }
@@ -859,13 +830,6 @@ select:focus-visible,
   }
 }
 
-.btn-mobile-dash.on-cooldown {
-  opacity: 0.45;
-  border-color: #555;
-  color: #888;
-  box-shadow: none;
-}
-
 /* Controller / Gamepad Navigation & HUD Notification */
 .upgrade-card.controller-selected,
 [data-loadout-card].controller-selected {
@@ -940,4 +904,355 @@ select:focus-visible,
     filter: brightness(1.8);
     box-shadow: 0 0 16px #ff0000, 0 0 28px #ff1744;
   }
+}
+
+/* ===== Icons (game-icons.net, inline SVG) ===== */
+.gi {
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.14em;
+  flex: none;
+  fill: currentColor;
+}
+
+.gi-label {
+  margin-left: 0.45em;
+}
+
+/* ===== Minimal HUD ===== */
+.hudm {
+  pointer-events: none;
+  font-family: var(--font-telemetry);
+}
+
+.hudm-fps {
+  position: absolute;
+  top: 28px;
+  right: 10px;
+  font-size: 11px;
+  color: var(--color-cyan);
+  background: rgba(0, 0, 0, 0.6);
+  padding: 2px 8px;
+  border-radius: 3px;
+  z-index: 100;
+}
+
+.hudm-xp {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 5px;
+  background: rgba(10, 22, 38, 0.7);
+}
+
+.hudm-xp-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #0088cc, var(--color-cyan));
+  box-shadow: 0 0 8px var(--color-cyan);
+  transition: width 0.12s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.hudm-xp-pulse .hudm-xp-fill {
+  background: linear-gradient(90deg, #00cc88, #70ffcb);
+  filter: brightness(1.4);
+}
+
+.hudm-top {
+  position: absolute;
+  top: 12px;
+  left: 0;
+  width: 100%;
+  padding: 0 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.hudm-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+  color: #fff;
+  text-shadow: 0 0 6px rgba(0, 0, 0, 0.9);
+}
+
+.hudm-chip .gi {
+  color: var(--color-cyan);
+  width: 18px;
+  height: 18px;
+}
+
+.hudm-clock {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-display);
+  letter-spacing: 2px;
+  color: var(--color-amber);
+}
+
+.hudm-clock .gi {
+  color: var(--color-amber);
+}
+
+.hudm-pause {
+  pointer-events: auto;
+  background: rgba(10, 18, 30, 0.6);
+  border: 1px solid rgba(77, 210, 255, 0.5);
+  color: var(--color-cyan);
+  width: 34px;
+  height: 34px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+}
+
+.hudm-pause .gi {
+  width: 20px;
+  height: 20px;
+}
+
+.hudm-pause:hover {
+  background: rgba(77, 210, 255, 0.25);
+}
+
+/* Boss bar */
+.hudm-boss {
+  position: absolute;
+  top: 46px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(560px, 70vw);
+  display: none;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.hudm-boss-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-family: var(--font-display);
+  font-size: 13px;
+  letter-spacing: 1px;
+  color: var(--color-red);
+  text-shadow: 0 0 6px rgba(0, 0, 0, 0.9);
+}
+
+.hudm-boss-title .gi {
+  width: 18px;
+  height: 18px;
+}
+
+.hudm-bar {
+  width: 100%;
+  background: rgba(20, 0, 0, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.hudm-bar-boss {
+  height: 10px;
+  border-color: var(--color-red);
+}
+
+.hudm-boss-fill {
+  height: 100%;
+  width: 100%;
+  background: var(--color-red);
+  box-shadow: 0 0 8px var(--color-red);
+  transition: width 0.1s linear;
+}
+
+/* Boss alert banner */
+.hudm-alert {
+  position: absolute;
+  top: 20%;
+  left: 50%;
+  transform: translateX(-50%);
+  display: none;
+  align-items: center;
+  gap: 12px;
+  max-width: 90vw;
+  background: rgba(40, 2, 2, 0.92);
+  border-top: 2px solid var(--color-red);
+  border-bottom: 2px solid var(--color-red);
+  box-shadow: 0 0 30px rgba(230, 25, 25, 0.6);
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: 18px;
+  letter-spacing: 2px;
+  padding: 10px 28px;
+  text-align: center;
+  z-index: 50;
+  animation: boss-warning-flash 0.6s infinite alternate;
+}
+
+.hudm-alert .gi {
+  width: 26px;
+  height: 26px;
+  color: var(--color-red);
+}
+
+/* Bottom: ability chip + health */
+.hudm-bottom {
+  position: absolute;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(320px, 60vw);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.hudm-hp {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hudm-hp-icon .gi {
+  width: 22px;
+  height: 22px;
+  color: var(--color-red);
+  filter: drop-shadow(0 0 4px rgba(255, 40, 60, 0.7));
+}
+
+.hudm-bar-hp {
+  flex: 1;
+  height: 12px;
+  border-color: var(--color-red);
+}
+
+.hudm-hp-fill {
+  width: 100%;
+  height: 100%;
+  background: var(--color-red);
+  box-shadow: 0 0 6px var(--color-red);
+  transition: width 0.1s linear;
+}
+
+.hudm-ability {
+  pointer-events: auto;
+  cursor: pointer;
+  align-self: flex-start;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  border-radius: 3px;
+  background: rgba(10, 18, 30, 0.7);
+  border: 1px solid var(--color-amber);
+  color: var(--color-amber);
+  font-size: 13px;
+}
+
+.hudm-ability[data-state='cooldown'] {
+  color: #888;
+  border-color: #555;
+}
+
+.hudm-ability[data-state='active'] {
+  color: #fff;
+  box-shadow: 0 0 10px var(--color-amber);
+}
+
+/* Toasts */
+.hudm-toast {
+  position: absolute;
+  top: 56px;
+  right: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(10, 20, 30, 0.92);
+  border: 1px solid var(--color-cyan);
+  border-radius: 4px;
+  padding: 6px 12px;
+  z-index: 100;
+  animation: fadeInOut 4s forwards;
+}
+
+.hudm-toast .gi {
+  width: 24px;
+  height: 24px;
+  color: var(--color-amber);
+}
+
+.hudm-toast-title {
+  font-family: var(--font-display);
+  font-size: 13px;
+  color: #fff;
+}
+
+.hudm-toast-sub {
+  font-size: 11px;
+  color: var(--color-cyan);
+}
+
+.hudm-controller {
+  position: absolute;
+  top: 56px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(10, 24, 38, 0.92);
+  border: 1px solid var(--color-cyan);
+  border-radius: 4px;
+  padding: 6px 16px;
+  font-size: 13px;
+  color: #fff;
+  z-index: 60;
+  animation: hud-notif-fade 3s cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
+}
+
+.hudm-controller .gi {
+  width: 20px;
+  height: 20px;
+  color: var(--color-cyan);
+}
+
+.hudm-controller-lost {
+  border-color: var(--color-red);
+}
+
+.hudm-controller-lost .gi {
+  color: var(--color-red);
+}
+
+@media (max-width: 900px) {
+  .hudm-chip {
+    font-size: 13px;
+  }
+  .hudm-boss {
+    top: 42px;
+  }
+  .hudm-alert {
+    font-size: 14px;
+    padding: 8px 16px;
+  }
+}
+
+.upgrade-card-icon {
+  width: 52px;
+  height: 52px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid currentColor;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.35);
+  filter: drop-shadow(0 0 6px currentColor);
 }

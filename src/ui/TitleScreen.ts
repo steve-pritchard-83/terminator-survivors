@@ -7,6 +7,7 @@ import type { CodexModal } from './CodexModal';
 import type { LoadoutId, MetaUpgradeId, RunConfig } from '../core/types';
 import type { GamepadManager } from '../input/GamepadManager';
 import { ModalA11y } from './A11yHelper';
+import { iconLabel } from './icons';
 import { APP_VERSION, BUILD_HASH } from '../core/version';
 
 interface BeforeInstallPromptEvent extends Event {
@@ -71,22 +72,22 @@ export class TitleScreen {
         </div>
         <div class="title-actions-row">
           <button class="btn-primary" data-testid="btn-start-run" id="btn-start-run" aria-label="Deploy to Sector 44">
-            DEPLOY TO SECTOR 44
+            ${iconLabel('play', 'DEPLOY TO SECTOR 44')}
           </button>
           <button class="btn-secondary" data-testid="btn-bunker-shop" id="btn-bunker-shop" aria-label="Tech-Com Bunker Requisition">
-            TECH-COM BUNKER REQUISITION
+            ${iconLabel('shop', 'TECH-COM BUNKER REQUISITION')}
           </button>
           <button class="btn-secondary" data-testid="btn-achievements" id="btn-achievements" aria-label="Tech-Com Intel Achievements">
-            TECH-COM INTEL // ACHIEVEMENTS
+            ${iconLabel('trophy', 'TECH-COM INTEL // ACHIEVEMENTS')}
           </button>
           <button class="btn-secondary" data-testid="btn-codex" id="btn-codex" aria-label="Tech-Com Codex Bestiary">
-            TECH-COM CODEX // BESTIARY
+            ${iconLabel('codex', 'TECH-COM CODEX // BESTIARY')}
           </button>
           <button class="btn-secondary" data-testid="btn-history" id="btn-history" aria-label="Tech-Com War Archives">
-            TECH-COM WAR ARCHIVES
+            ${iconLabel('history', 'TECH-COM WAR ARCHIVES')}
           </button>
           <button class="btn-secondary" data-testid="btn-settings" id="btn-settings" aria-label="Settings and Calibration">
-            SETTINGS // CALIBRATION
+            ${iconLabel('settings', 'SETTINGS // CALIBRATION')}
           </button>
           <button class="btn-secondary" id="btn-install-pwa" aria-label="Install App as PWA" style="display:none; border-color:var(--color-cyan); color:var(--color-cyan);">
             INSTALL APP (PWA)

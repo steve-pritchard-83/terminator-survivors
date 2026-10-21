@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test('Desktop gameplay: title, bunker shop, deploy, level up, and combat dive', async ({
+test('Desktop gameplay: title, bunker shop, deploy and level up', async ({
   page
 }) => {
   await page.goto('/');
@@ -35,11 +35,6 @@ test('Desktop gameplay: title, bunker shop, deploy, level up, and combat dive', 
   await expect(page.getByTestId('levelup-modal')).toBeHidden();
   await page.waitForTimeout(100);
 
-  // 6. Test Combat Dive (Dash)
-  await page.keyboard.press('Space');
-  await page.waitForTimeout(50);
-  const dashState = await page.evaluate(() => window.__GAME_DEBUG__?.getState());
-  expect(dashState?.isDashing || (dashState?.dashCooldown ?? 0) > 0).toBe(true);
 });
 
 // Playtest substitute: spawns every enemy and boss type, lets the simulation run, and fails on any

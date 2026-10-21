@@ -5,15 +5,12 @@ export const DEFAULT_KEY_BINDINGS: KeyBindings = {
   moveDown: ['KeyS', 'ArrowDown'],
   moveLeft: ['KeyA', 'ArrowLeft'],
   moveRight: ['KeyD', 'ArrowRight'],
-  dash: ['Space', 'ShiftLeft', 'ShiftRight'],
   ability: ['KeyE'],
   pause: ['Escape']
 };
 
 export const DEFAULT_GAMEPAD_BINDINGS: GamepadBindings = {
-  dash: [1, 4], // Button B (1), LB (4)
-  ability: [3, 2, 5], // Button Y (3), Button X (2), RB (5)
-  pause: [9, 8] // Start/Menu (9), Back/View (8)
+  ability: [3, 2, 5] // Button Y (3), Button X (2), RB (5); pause is fixed to Start (9)
 };
 
 export const DEFAULT_INPUT_MAPPINGS: InputMappingConfig = {

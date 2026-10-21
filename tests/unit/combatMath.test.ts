@@ -21,30 +21,6 @@ describe('Combat and Leveling Mathematics', () => {
     expect(computeMitigatedDamage(raw, 100)).toBeGreaterThanOrEqual(1); // Never deals 0 damage
   });
 
-  it('verifies combat dive invulnerability window', () => {
-    const state = new RunState();
-    state.initRun('reese_2029', {});
-
-    expect(state.isDashing).toBe(false);
-    expect(state.hp).toBe(100);
-
-    const dashed = state.triggerDash();
-    expect(dashed).toBe(true);
-    expect(state.isDashing).toBe(true);
-
-    // Damage taken during dash is 0 (i-frames)
-    const dmg = state.takeDamage(40);
-    expect(dmg).toBe(0);
-    expect(state.hp).toBe(100);
-
-    // After dash duration expires, damage applies normally
-    state.updateTimers(0.3);
-    expect(state.isDashing).toBe(false);
-    const normalDmg = state.takeDamage(40);
-    expect(normalDmg).toBe(40);
-    expect(state.hp).toBe(60);
-  });
-
   it('preserves purchased meta upgrades when in-run passives are applied', () => {
     const state = new RunState();
     // Start run with armor_vest = 2 (+2 armor) and combat_stims = 2 (+30 maxHp)

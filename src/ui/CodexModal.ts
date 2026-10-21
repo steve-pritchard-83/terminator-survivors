@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import type { EnemyArchetypeId } from '../core/types';
 import { ENEMY_CODEX, WEAPON_CODEX } from '../data/lore';
 import { ENEMY_CONFIGS } from '../data/enemies';
+import { iconLabel } from './icons';
 import { BASE_WEAPONS, EVOLVED_WEAPONS, PASSIVES } from '../data/weapons';
 import type { SaveManager } from '../state/SaveManager';
 import type { AudioEngine } from '../audio/AudioEngine';
@@ -50,10 +51,10 @@ export class CodexModal {
 
         <div style="display:flex; gap:10px; margin:12px 0 14px 0; border-bottom:1px solid rgba(77,210,255,0.25); padding-bottom:8px;">
           <button class="btn-secondary codex-tab-btn active" id="tab-codex-bestiary" aria-label="Machine Bestiary Tab" style="padding:6px 16px; font-size:12px;">
-            [1] MACHINE BESTIARY
+            ${iconLabel('boss', 'MACHINE BESTIARY')}
           </button>
           <button class="btn-secondary codex-tab-btn" id="tab-codex-armory" aria-label="Resistance Armory Tab" style="padding:6px 16px; font-size:12px;">
-            [2] RESISTANCE ARMORY
+            ${iconLabel('armor', 'RESISTANCE ARMORY')}
           </button>
         </div>
 

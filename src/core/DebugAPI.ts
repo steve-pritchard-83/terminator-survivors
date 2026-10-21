@@ -78,8 +78,6 @@ export class DebugAPI {
         alloyScrap: this.host.runState.alloyScrapEarned,
         activeEnemies: this.host.enemySystem.activeEnemies.length,
         playerPos: { ...this.host.runState.playerPos },
-        isDashing: this.host.runState.isDashing,
-        dashCooldown: this.host.runState.dashCooldownTimer,
         weapons: Array.from(this.host.runState.weapons.values()).map((w) => ({
           id: w.id,
           level: w.level,

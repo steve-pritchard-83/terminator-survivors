@@ -79,13 +79,13 @@ Available anywhere on desktop and mobile, with full progressive web app (PWA) of
   - Auto-detects standard USB and Bluetooth gamepads.
   - Left stick 360-degree movement, right stick dedicated twin-stick aiming.
   - Smooth stick-release handling preserving last facing angle without snapping to mouse.
-  - `Button B` (Circle) for combat dive / tactical dash; `Button A` (Cross) for modal confirmations.
+  - `Start` / `Menu` pauses; `Button A` (Cross) confirms in menus.
   - Dual-rumble actuator haptics for low-frequency explosions and high-frequency firing/XP ticks.
 - **Mobile Landscape PWA**:
   - Dedicated landscape orientation lock and immersive fullscreen prompt.
   - Installable PWA with offline caching via Workbox service worker.
-  - Dual touch controls: left-side floating virtual joystick and right-side tactical dash button.
-  - Native mobile vibration haptics (`navigator.vibrate`) on XP pickups, level-ups, and combat dive.
+  - Touch controls: left-side floating virtual joystick and a tappable ability chip.
+  - Native mobile vibration haptics (`navigator.vibrate`) on XP pickups and level-ups.
   - Responsive touch scrolling in Requisition & Boss Vault modals.
 
 ---
@@ -96,15 +96,15 @@ Available anywhere on desktop and mobile, with full progressive web app (PWA) of
 | :--------------------------- | :--------------- | :------------------------------------------------ |
 | **Desktop Keyboard / Mouse** | Movement         | `W`, `A`, `S`, `D` or Arrow Keys                  |
 | **Desktop Keyboard / Mouse** | Aiming           | Mouse cursor position                             |
-| **Desktop Keyboard / Mouse** | Tactical Dash    | `Space` or `Left Shift`                           |
+| **Desktop Keyboard / Mouse** | Ability          | `E` (loadouts with an ability)                    |
 | **Desktop Keyboard / Mouse** | Pause / Menu     | `Escape` or `P`                                   |
 | **Xbox / Standard Gamepad**  | Movement         | Left Thumbstick or D-Pad                          |
 | **Xbox / Standard Gamepad**  | 360° Aiming      | Right Thumbstick (retains angle on release)       |
-| **Xbox / Standard Gamepad**  | Tactical Dash    | `Button B` (East / Circle)                        |
+| **Xbox / Standard Gamepad**  | Ability          | `Button Y` / `Button X` / `RB`                    |
 | **Xbox / Standard Gamepad**  | Select / Upgrade | `Button A` (South / Cross)                        |
 | **Xbox / Standard Gamepad**  | Pause / Menu     | `Start` / `Menu` button                           |
 | **Mobile PWA**               | Movement         | Virtual Touch Joystick (drag left half of screen) |
-| **Mobile PWA**               | Tactical Dash    | Dedicated `DASH` button (bottom right)            |
+| **Mobile PWA**               | Ability          | Tap the ability chip above the health bar         |
 
 ---
 
@@ -119,7 +119,7 @@ Available anywhere on desktop and mobile, with full progressive web app (PWA) of
 - **PWA Tooling**: Vite Plugin PWA + Workbox (precache limit configured for high-fidelity assets)
 - **Testing**:
   - Unit Tests: Vitest (combat math, spatial hashing, weapon evolutions, save manager, wave director)
-  - E2E Test: one Playwright smoke test (title, bunker shop, deploy, level-up, dash)
+  - E2E Test: one Playwright smoke test (title, bunker shop, deploy, level-up)
 - **CI / CD**: GitHub Actions workflow (`ci-deploy.yml`) with automated typechecking, unit tests and production build
 - **Deployment**: Vercel Edge (`terminator-survivors.vercel.app`) + GitHub Pages backup
 
@@ -190,6 +190,6 @@ npm run test:e2e
 
 - Built with tribute to James Cameron, Gale Anne Hurd, Brad Fiedel, and the creators of _The Terminator_ franchise.
 - Created strictly as a non-commercial educational and entertainment fan project. Not endorsed by or affiliated with Orion Pictures, StudioCanal, or rights holders of _The Terminator_.
-- Complete asset provenance and licensing registers are tracked in [`ASSETS.md`](ASSETS.md).
+- Complete asset provenance and licensing registers are tracked in [`ASSETS.md`](ASSETS.md). UI icons are from [game-icons.net](https://game-icons.net) by Lorc, Delapouite and contributors (CC BY 3.0).
 
 _"There is no fate but what we make for ourselves."_

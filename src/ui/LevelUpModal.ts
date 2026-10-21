@@ -1,6 +1,7 @@
 import type { UpgradeChoice } from '../core/types';
 import { LORE } from '../data/lore';
 import { vfxRNG } from '../core/RNG';
+import { icon, passiveIcon, weaponIcon, iconLabel } from './icons';
 import type { GamepadManager } from '../input/GamepadManager';
 import { ModalA11y } from './A11yHelper';
 
@@ -157,17 +158,17 @@ export class LevelUpModal {
     const skips = actions?.skipsLeft ?? 0;
     const banishes = actions?.banishesLeft ?? 0;
 
-    this.rerollBtn.textContent = `REROLL (${rerolls})`;
+    this.rerollBtn.innerHTML = iconLabel('reroll', `REROLL (${rerolls})`);
     this.rerollBtn.disabled = rerolls <= 0;
     this.rerollBtn.style.opacity = rerolls > 0 ? '1.0' : '0.4';
     this.rerollBtn.style.cursor = rerolls > 0 ? 'pointer' : 'default';
 
-    this.skipBtn.textContent = `SKIP (+25 SCRAP) (${skips})`;
+    this.skipBtn.innerHTML = iconLabel('skip', `SKIP (+25 SCRAP) (${skips})`);
     this.skipBtn.disabled = skips <= 0;
     this.skipBtn.style.opacity = skips > 0 ? '1.0' : '0.4';
     this.skipBtn.style.cursor = skips > 0 ? 'pointer' : 'default';
 
-    this.banishBtn.textContent = `BANISH SELECTED (${banishes})`;
+    this.banishBtn.innerHTML = iconLabel('banish', `BANISH SELECTED (${banishes})`);
     this.banishBtn.disabled = banishes <= 0;
     this.banishBtn.style.opacity = banishes > 0 ? '1.0' : '0.4';
     this.banishBtn.style.cursor = banishes > 0 ? 'pointer' : 'default';
@@ -184,7 +185,7 @@ export class LevelUpModal {
       );
 
       card.innerHTML = `
-        <div style="width:12px; height:48px; background:${choice.accentColor}; border-radius:2px; flex-shrink:0;"></div>
+        <div class="upgrade-card-icon" style="color:${choice.accentColor}; border-color:${choice.accentColor};">${this.choiceIcon(choice)}</div>
         <div class="upgrade-card-info">
           <div class="upgrade-card-title">${choice.title}</div>
           <div class="upgrade-card-sub">${choice.subtitle}</div>
@@ -210,6 +211,20 @@ export class LevelUpModal {
 
     this.updateCardHighlight();
     this.a11y.activate(this.cards[0]);
+  }
+
+  private choiceIcon(choice: UpgradeChoice): string {
+    const opts = { size: 34 };
+    switch (choice.kind) {
+      case 'weapon':
+        return weaponIcon(choice.id as Parameters<typeof weaponIcon>[0], opts);
+      case 'passive':
+        return passiveIcon(choice.id as Parameters<typeof passiveIcon>[0], opts);
+      case 'heal':
+        return icon('health', opts);
+      default:
+        return icon('scrap', opts);
+    }
   }
 
   public updateCardHighlight(): void {

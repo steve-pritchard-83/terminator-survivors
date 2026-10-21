@@ -5,7 +5,6 @@ export type GameEventMap = {
   'player:healed': { currentHp: number; maxHp: number; amount: number };
   'player:died': void;
   'player:revived': { remaining: number };
-  'player:dash': { x: number; z: number };
   'enemy:killed': { enemy: ActiveEnemy; x: number; z: number; xp: number };
   'enemy:damaged': { x: number; z: number; damage: number; isCrit: boolean; enemyId?: number };
   'crate:destroyed': { crateId: number; x: number; z: number };

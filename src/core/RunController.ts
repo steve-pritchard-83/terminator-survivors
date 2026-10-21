@@ -172,7 +172,6 @@ export class RunController {
     this.host.interactiveEnv?.reset();
     this.host.waveDirector.reset();
     this.activeBoss = null;
-    this.host.inputManager.clearDashRequest();
 
     this.host.uiManager.titleScreen.hide();
     this.host.uiManager.hudView.damageNumbers.clear();
@@ -293,7 +292,6 @@ export class RunController {
     if (this.host.runState.mode !== 'paused') return;
     this.host.uiManager.pauseModal.hide();
     this.host.audioEngine.playHudScanClose();
-    this.host.inputManager.clearDashRequest();
     this.host.runState.mode = 'playing';
   }
 
@@ -324,7 +322,6 @@ export class RunController {
         this.host.audioEngine.playUpgradeApplied();
         this.host.runState.recordLevelUp(choice.title);
         this.host.runState.applyUpgrade(choice);
-        this.host.inputManager.clearDashRequest();
         if (this.host.runState.pendingLevelUps > 0) {
           this.host.runState.pendingLevelUps--;
           this.host.audioEngine.playLevelUp();
@@ -348,7 +345,6 @@ export class RunController {
         onSkip: () => {
           if (this.host.runState.useSkip()) {
             this.host.audioEngine.playUiBuy();
-            this.host.inputManager.clearDashRequest();
             if (this.host.runState.pendingLevelUps > 0) {
               this.host.runState.pendingLevelUps--;
               this.host.audioEngine.playLevelUp();
@@ -379,7 +375,6 @@ export class RunController {
     this.host.sceneManager.addScreenShake(0.35);
     this.host.uiManager.vaultModal.show(upgradesAwarded, evolvedWeapon, alloyBonus, () => {
       this.host.audioEngine.playUpgradeApplied();
-      this.host.inputManager.clearDashRequest();
       this.host.runState.mode = 'playing';
       if (!evolvedWeapon) {
         this.host.runState.pendingLevelUps += 3;

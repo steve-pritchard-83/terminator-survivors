@@ -48,9 +48,9 @@ export class SettingsPanel {
 
   private currentBindings: InputMappingConfig = JSON.parse(JSON.stringify(DEFAULT_INPUT_MAPPINGS));
   private listeningKeyAction: InputAction | null = null;
-  private listeningGamepadAction: 'dash' | 'ability' | 'pause' | null = null;
+  private listeningGamepadAction: 'ability' | null = null;
   private keyRemapButtons: Map<InputAction, HTMLButtonElement> = new Map();
-  private gpRemapButtons: Map<'dash' | 'ability' | 'pause', HTMLButtonElement> = new Map();
+  private gpRemapButtons: Map<'ability', HTMLButtonElement> = new Map();
   private resetInputsBtn!: HTMLButtonElement;
   private remapFeedbackEl!: HTMLElement;
   private keydownHandler?: (e: KeyboardEvent) => void;
@@ -263,10 +263,6 @@ export class SettingsPanel {
                 <button class="remap-key-btn" data-action="moveRight" aria-label="Remap Move Right key" style="min-width:85px; font-family:var(--font-telemetry); font-size:11px; padding:3px 6px; background:#142233; color:#fff; border:1px solid #3d6088; cursor:pointer;">D</button>
               </div>
               <div class="settings-row" style="display:flex; justify-content:space-between; align-items:center;">
-                <span>Combat Dive / Dash</span>
-                <button class="remap-key-btn" data-action="dash" aria-label="Remap Dash key" style="min-width:85px; font-family:var(--font-telemetry); font-size:11px; padding:3px 6px; background:#142233; color:#fff; border:1px solid #3d6088; cursor:pointer;">SPACE</button>
-              </div>
-              <div class="settings-row" style="display:flex; justify-content:space-between; align-items:center;">
                 <span>Tactical Ability / EMP</span>
                 <button class="remap-key-btn" data-action="ability" aria-label="Remap Ability key" style="min-width:85px; font-family:var(--font-telemetry); font-size:11px; padding:3px 6px; background:#142233; color:#fff; border:1px solid #3d6088; cursor:pointer;">E</button>
               </div>
@@ -275,16 +271,8 @@ export class SettingsPanel {
                 <button class="remap-key-btn" data-action="pause" aria-label="Remap Pause key" style="min-width:85px; font-family:var(--font-telemetry); font-size:11px; padding:3px 6px; background:#142233; color:#fff; border:1px solid #3d6088; cursor:pointer;">ESC</button>
               </div>
               <div class="settings-row" style="display:flex; justify-content:space-between; align-items:center;">
-                <span>Gamepad Dash</span>
-                <button class="remap-gp-btn" data-gp-action="dash" aria-label="Remap Gamepad Dash button" style="min-width:85px; font-family:var(--font-telemetry); font-size:11px; padding:3px 6px; background:#142233; color:#fff; border:1px solid #3d6088; cursor:pointer;">BUTTON B</button>
-              </div>
-              <div class="settings-row" style="display:flex; justify-content:space-between; align-items:center;">
                 <span>Gamepad Ability</span>
                 <button class="remap-gp-btn" data-gp-action="ability" aria-label="Remap Gamepad Ability button" style="min-width:85px; font-family:var(--font-telemetry); font-size:11px; padding:3px 6px; background:#142233; color:#fff; border:1px solid #3d6088; cursor:pointer;">BUTTON Y</button>
-              </div>
-              <div class="settings-row" style="display:flex; justify-content:space-between; align-items:center;">
-                <span>Gamepad Pause</span>
-                <button class="remap-gp-btn" data-gp-action="pause" aria-label="Remap Gamepad Pause button" style="min-width:85px; font-family:var(--font-telemetry); font-size:11px; padding:3px 6px; background:#142233; color:#fff; border:1px solid #3d6088; cursor:pointer;">START</button>
               </div>
             </div>
           </div>
@@ -341,7 +329,7 @@ export class SettingsPanel {
     this.gpRemapButtons.clear();
     const gpBtns = this.container.querySelectorAll<HTMLButtonElement>('.remap-gp-btn');
     gpBtns.forEach((btn) => {
-      const act = btn.getAttribute('data-gp-action') as 'dash' | 'ability' | 'pause';
+      const act = btn.getAttribute('data-gp-action') as 'ability';
       if (act) this.gpRemapButtons.set(act, btn);
     });
 
@@ -658,7 +646,7 @@ export class SettingsPanel {
     window.addEventListener('keydown', this.keydownHandler, { capture: true, once: true });
   }
 
-  public startListeningGamepad(action: 'dash' | 'ability' | 'pause'): void {
+  public startListeningGamepad(action: 'ability'): void {
     this.cancelListening();
     this.listeningGamepadAction = action;
     this.updateInputButtonLabels();

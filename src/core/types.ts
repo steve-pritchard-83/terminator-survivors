@@ -279,22 +279,19 @@ export interface GameSettings {
   qualityPreset?: QualityPreset;
 }
 
-export type InputAction = 'moveUp' | 'moveDown' | 'moveLeft' | 'moveRight' | 'dash' | 'ability' | 'pause';
+export type InputAction = 'moveUp' | 'moveDown' | 'moveLeft' | 'moveRight' | 'ability' | 'pause';
 
 export interface KeyBindings {
   moveUp: string[];
   moveDown: string[];
   moveLeft: string[];
   moveRight: string[];
-  dash: string[];
   ability: string[];
   pause: string[];
 }
 
 export interface GamepadBindings {
-  dash: number[];
   ability: number[];
-  pause: number[];
 }
 
 export interface InputMappingConfig {
@@ -391,8 +388,6 @@ export interface GameDebugAPI {
     alloyScrap: number;
     activeEnemies: number;
     playerPos: { x: number; z: number };
-    isDashing: boolean;
-    dashCooldown: number;
     weapons: Array<{ id: WeaponId; level: number; evolved: boolean }>;
     passives: Array<{ id: PassiveId; level: number }>;
     revivalsLeft: number;

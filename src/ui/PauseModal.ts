@@ -5,6 +5,7 @@ import type { GamepadManager } from '../input/GamepadManager';
 import { BASE_WEAPONS, EVOLVED_WEAPONS, PASSIVES } from '../data/weapons';
 import type { BaseWeaponId, WeaponId } from '../core/types';
 import { ModalA11y } from './A11yHelper';
+import { icon, iconLabel, passiveIcon, weaponIcon } from './icons';
 
 export class PauseModal {
   public readonly container: HTMLElement;
@@ -42,7 +43,7 @@ export class PauseModal {
 
     this.container.innerHTML = `
       <div class="t800-modal-box" style="max-width: 680px; max-height: 88vh; overflow-y: auto;">
-        <div class="t800-header">MISSION PAUSED</div>
+        <div class="t800-header">${icon('pause')}<span class="gi-label">MISSION PAUSED</span></div>
         <div class="t800-ticker" style="margin-bottom:14px;">TACTICAL TELEMETRY // OVERRIDE MODE ACTIVE</div>
 
         <div style="margin-bottom:16px; border-bottom:1px solid rgba(77,210,255,0.25); padding-bottom:12px;">
@@ -90,13 +91,13 @@ export class PauseModal {
         </div>
 
         <div style="display:flex; gap:12px; justify-content:center; margin-top:8px;">
-          <button class="btn-primary" data-testid="btn-pause-resume" id="btn-pause-resume" aria-label="Resume Mission" style="flex:1;">RESUME MISSION</button>
-          <button class="btn-secondary" id="btn-pause-settings" aria-label="All Settings" style="flex:1;">ALL SETTINGS</button>
-          <button class="btn-secondary" data-testid="btn-pause-abort" id="btn-pause-abort" aria-label="Abort Mission" style="flex:1; border-color:var(--color-red); color:var(--color-red);">ABORT MISSION</button>
+          <button class="btn-primary" data-testid="btn-pause-resume" id="btn-pause-resume" aria-label="Resume Mission" style="flex:1;">${iconLabel('resume', 'RESUME MISSION')}</button>
+          <button class="btn-secondary" id="btn-pause-settings" aria-label="All Settings" style="flex:1;">${iconLabel('settings', 'ALL SETTINGS')}</button>
+          <button class="btn-secondary" data-testid="btn-pause-abort" id="btn-pause-abort" aria-label="Abort Mission" style="flex:1; border-color:var(--color-red); color:var(--color-red);">${iconLabel('exit', 'ABORT MISSION')}</button>
         </div>
 
         <div id="pause-controller-hint" style="font-family:var(--font-telemetry); font-size:12px; color:var(--color-cyan); margin-top:14px; text-align:center; display:none;">
-          [D-PAD / ARROWS] NAVIGATE / ADJUST &nbsp;//&nbsp; [ENTER / A] TOGGLE &nbsp;//&nbsp; [ESC / B] RESUME
+          [D-PAD / ARROWS] NAVIGATE / ADJUST &nbsp;//&nbsp; [ENTER / A] TOGGLE &nbsp;//&nbsp; [START / ESC / B] RESUME
         </div>
       </div>
     `;
@@ -280,7 +281,7 @@ export class PauseModal {
         item.style.cssText = 'background:rgba(15,25,35,0.7); border:1px solid rgba(77,210,255,0.25); border-radius:3px; padding:6px 10px; display:flex; justify-content:space-between; align-items:center;';
         item.innerHTML = `
           <div style="font-size:12px; color:#fff; display:flex; align-items:center; gap:6px;">
-            <span style="display:inline-block; width:8px; height:8px; background:${color}; border-radius:1px;"></span>
+            ${weaponIcon(wId as WeaponId, { size: 20, color })}
             ${name}
           </div>
           <div style="font-family:var(--font-telemetry); font-size:11px; color:${slot.evolved ? '#00ff88' : 'var(--color-cyan)'}; font-weight:bold;">${badge}</div>
@@ -295,7 +296,7 @@ export class PauseModal {
         item.style.cssText = 'background:rgba(15,25,35,0.7); border:1px solid rgba(255,170,0,0.25); border-radius:3px; padding:6px 10px; display:flex; justify-content:space-between; align-items:center;';
         item.innerHTML = `
           <div style="font-size:12px; color:#fff; display:flex; align-items:center; gap:6px;">
-            <span style="display:inline-block; width:8px; height:8px; background:${def.iconColor}; border-radius:1px;"></span>
+            ${passiveIcon(pId, { size: 20, color: def.iconColor })}
             ${def.name}
           </div>
           <div style="font-family:var(--font-telemetry); font-size:11px; color:var(--color-amber); font-weight:bold;">LV ${lv}/${def.maxLevel}</div>
@@ -333,7 +334,7 @@ export class PauseModal {
       if (isEvolved) {
         statusBadge = '<span style="color:#00ff88; font-weight:bold;">✓ EVOLVED</span>';
       } else if (isReady) {
-        statusBadge = '<span style="color:#00e5ff; font-weight:bold;">★ SYNTHESIS READY</span>';
+        statusBadge = `<span style="color:#00e5ff; font-weight:bold;">${icon('evolution')} SYNTHESIS READY</span>`;
       } else if (weaponLv > 0 || passiveLv > 0) {
         statusBadge = `<span style="color:var(--color-amber);">W: ${weaponLv}/8 · P: ${passiveLv}/1</span>`;
       }

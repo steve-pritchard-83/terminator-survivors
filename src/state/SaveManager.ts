@@ -259,14 +259,11 @@ export class SaveManager {
         moveDown: Array.isArray(current.inputBindings?.keyboard?.moveDown) ? current.inputBindings.keyboard.moveDown : [...DEFAULT_INPUT_MAPPINGS.keyboard.moveDown],
         moveLeft: Array.isArray(current.inputBindings?.keyboard?.moveLeft) ? current.inputBindings.keyboard.moveLeft : [...DEFAULT_INPUT_MAPPINGS.keyboard.moveLeft],
         moveRight: Array.isArray(current.inputBindings?.keyboard?.moveRight) ? current.inputBindings.keyboard.moveRight : [...DEFAULT_INPUT_MAPPINGS.keyboard.moveRight],
-        dash: Array.isArray(current.inputBindings?.keyboard?.dash) ? current.inputBindings.keyboard.dash : [...DEFAULT_INPUT_MAPPINGS.keyboard.dash],
         ability: Array.isArray(current.inputBindings?.keyboard?.ability) ? current.inputBindings.keyboard.ability : [...DEFAULT_INPUT_MAPPINGS.keyboard.ability],
         pause: Array.isArray(current.inputBindings?.keyboard?.pause) ? current.inputBindings.keyboard.pause : [...DEFAULT_INPUT_MAPPINGS.keyboard.pause]
       },
       gamepad: {
-        dash: Array.isArray(current.inputBindings?.gamepad?.dash) ? current.inputBindings.gamepad.dash : [...DEFAULT_INPUT_MAPPINGS.gamepad.dash],
-        ability: Array.isArray(current.inputBindings?.gamepad?.ability) ? current.inputBindings.gamepad.ability : [...DEFAULT_INPUT_MAPPINGS.gamepad.ability],
-        pause: Array.isArray(current.inputBindings?.gamepad?.pause) ? current.inputBindings.gamepad.pause : [...DEFAULT_INPUT_MAPPINGS.gamepad.pause]
+        ability: Array.isArray(current.inputBindings?.gamepad?.ability) ? current.inputBindings.gamepad.ability : [...DEFAULT_INPUT_MAPPINGS.gamepad.ability]
       }
     };
 

@@ -81,11 +81,10 @@ export class UIManager {
     const touchZone = root.querySelector('#touch-zone-left') as HTMLElement;
     const joystickBase = root.querySelector('#joystick-base') as HTMLElement;
     const joystickKnob = root.querySelector('#joystick-knob') as HTMLElement;
-    const dashBtn = root.querySelector('#btn-mobile-dash') as HTMLElement;
     const abilityBtn = root.querySelector('#btn-mobile-ability') as HTMLElement | null;
 
-    if (touchZone && joystickBase && joystickKnob && dashBtn) {
-      inputManager.setupTouchControls(touchZone, joystickBase, joystickKnob, dashBtn, abilityBtn ?? undefined);
+    if (touchZone && joystickBase && joystickKnob) {
+      inputManager.setupTouchControls(touchZone, joystickBase, joystickKnob, abilityBtn ?? undefined);
     }
 
     // 7. Mobile Portrait-to-Landscape Enforcer Overlay

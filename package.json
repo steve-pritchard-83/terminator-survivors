@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "build:icons": "node scripts/build-icons.mjs",
     "prepare-assets": "node scripts/generate-pwa-icons.mjs",
     "dev": "vite",
     "build": "node scripts/generate-pwa-icons.mjs && tsc --noEmit && vite build",
@@ -22,6 +23,7 @@
     "three": "^0.170.0"
   },
   "devDependencies": {
+    "@iconify-json/game-icons": "^1.2.4",
     "@playwright/test": "^1.48.2",
     "@types/node": "^26.6.5",
     "@types/three": "^0.170.0",

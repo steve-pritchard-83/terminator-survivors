@@ -18,7 +18,7 @@
 - `src/input`: Keyboard, mouse, virtual touch joystick, and standard Gamepad API with dual-rumble haptics
 - `src/state`: RunState (in-run player stats & leveling math) and SaveManager (LocalStorage persistence)
 - `src/systems`: Core gameplay systems: EnemySystem, PlayerSystem, WeaponSystem, PickupSystem, ParticleSystem
-- `src/ui`: Tactical CSM-101 HUD, TitleScreen, BunkerRequisition, LevelUpModal, VaultJackpotModal, PauseModal
+- `src/ui`: minimal HUD (health, XP, timer, boss bar/alert), icons (`src/ui/icons`: edit `iconMap.ts`, then `npm run build:icons`), Tactical CSM-101 HUD, TitleScreen, BunkerRequisition, LevelUpModal, VaultJackpotModal, PauseModal
 
 ## 3. Debug API (`window.__GAME_DEBUG__`)
 

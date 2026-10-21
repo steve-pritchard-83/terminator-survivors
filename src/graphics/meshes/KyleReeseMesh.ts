@@ -13,7 +13,6 @@ export class KyleReeseMesh {
   private animTimer = 0;
   private recoilOffset = 0;
   private recoilPitch = 0;
-  private dashRollTimer = 0;
 
   public get recoil(): { offset: number; pitch: number } {
     return { offset: this.recoilOffset, pitch: this.recoilPitch };
@@ -336,7 +335,7 @@ export class KyleReeseMesh {
     }
   }
 
-  public updateAnimation(dt: number, speed: number, aimAngle: number, isDashing: boolean): void {
+  public updateAnimation(dt: number, speed: number, aimAngle: number): void {
     if (this.muzzleLight.intensity > 0) {
       this.muzzleLight.intensity = Math.max(0, this.muzzleLight.intensity - dt * 22);
     }
@@ -351,23 +350,6 @@ export class KyleReeseMesh {
 
     this.group.rotation.y = aimAngle;
 
-    if (isDashing) {
-      this.dashRollTimer += dt;
-      const rollDuration = 0.3;
-      const rollProgress = Math.min(1.0, this.dashRollTimer / rollDuration);
-      const rollAngle = rollProgress * Math.PI * 2;
-
-      this.torsoGroup.position.y = 0.45 + Math.sin(rollProgress * Math.PI) * 0.14;
-      this.torsoGroup.rotation.x = rollAngle;
-      this.torsoGroup.rotation.y = 0;
-      this.torsoGroup.rotation.z = 0;
-      this.coatTails.rotation.x = 0.8 + Math.sin(rollAngle) * 0.25;
-      this.leftLeg.rotation.x = -0.7;
-      this.rightLeg.rotation.x = -0.5;
-      return;
-    }
-
-    this.dashRollTimer = 0;
     this.torsoGroup.position.y = 0.85;
     this.torsoGroup.rotation.x = 0;
 

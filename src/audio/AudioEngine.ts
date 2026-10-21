@@ -47,11 +47,6 @@ export const SFX_WAV_MANIFEST: Record<string, string[]> = {
     './audio/effects/S_HckingCompleat.wav',
     './audio/effects/S_AddtoArchive.wav'
   ],
-  combatDive: [
-    './audio/effects/S_Woosh.wav',
-    './audio/effects/S_Swing01.wav',
-    './audio/effects/S_Swing02.wav'
-  ],
   playerHit: ['./audio/effects/S_BulletHitBody01.wav', './audio/effects/S_BulletHitBody02.wav'],
   uiClick: [
     './audio/effects/S_Click.wav',
@@ -858,11 +853,6 @@ export class AudioEngine {
   public playVaultJackpot(): void {
     this.triggerHaptic([22, 40, 28, 40, 60], 150);
     this.playSample('vaultJackpot', 0.85, 1.0, 0.0);
-  }
-
-  public playCombatDive(): void {
-    this.triggerHaptic(16, 60);
-    this.playSample('combatDive', 0.68);
   }
 
   private heartbeatTimer = 0;

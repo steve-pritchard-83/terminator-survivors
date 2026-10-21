@@ -9,11 +9,6 @@ export class PlayerSystem {
   private readonly runState: RunState;
   private readonly playerMesh: KyleReeseMesh;
   private readonly particles?: ParticleSystem;
-  private dashAfterimageTimer = 0;
-
-  // Dash cooldown ring ground decal
-  public readonly dashRingMesh: THREE.Mesh;
-  public readonly dashRingMat: THREE.MeshBasicMaterial;
 
   // Ground aim reticle
   public readonly reticleGroup = new THREE.Group();
@@ -24,20 +19,7 @@ export class PlayerSystem {
     this.playerMesh = playerMesh;
     this.particles = particles;
 
-    // 1. Dash cooldown ring
-    const dashRingGeo = new THREE.RingGeometry(0.72, 0.85, 32);
-    dashRingGeo.rotateX(-Math.PI / 2);
-    this.dashRingMat = new THREE.MeshBasicMaterial({
-      color: 0x00e5ff,
-      transparent: true,
-      opacity: 0.75,
-      side: THREE.DoubleSide,
-      depthWrite: false
-    });
-    this.dashRingMesh = new THREE.Mesh(dashRingGeo, this.dashRingMat);
-    this.group.add(this.dashRingMesh);
-
-    // 2. Ground aim reticle
+    // Ground aim reticle
     this.reticleMat = new THREE.MeshBasicMaterial({
       color: 0x00e5ff,
       transparent: true,
@@ -83,7 +65,6 @@ export class PlayerSystem {
     const interpX = prevPos.x + (this.runState.playerPos.x - prevPos.x) * clampedAlpha;
     const interpZ = prevPos.z + (this.runState.playerPos.z - prevPos.z) * clampedAlpha;
     this.playerMesh.group.position.set(interpX, 0, interpZ);
-    this.dashRingMesh.position.set(interpX, 0.02, interpZ);
     return { x: interpX, z: interpZ };
   }
 
@@ -96,10 +77,7 @@ export class PlayerSystem {
   ): void {
     this.runState.updateTimers(dt);
 
-    let speed = this.runState.computedStats.moveSpeed;
-    if (this.runState.isDashing) {
-      speed *= 2.8; // Combat dive burst speed
-    }
+    const speed = this.runState.computedStats.moveSpeed;
 
     const inputLen = Math.hypot(moveInput.x, moveInput.z);
     let vx = 0;
@@ -109,10 +87,6 @@ export class PlayerSystem {
       const normZ = moveInput.z / inputLen;
       vx = normX * speed * dt;
       vz = normZ * speed * dt;
-    } else if (this.runState.isDashing) {
-      const dashAngle = targetAngle !== null ? targetAngle : this.runState.playerFacing;
-      vx = Math.sin(dashAngle) * speed * dt;
-      vz = Math.cos(dashAngle) * speed * dt;
     }
 
     let nextX = this.runState.playerPos.x + vx;
@@ -157,8 +131,7 @@ export class PlayerSystem {
     this.playerMesh.updateAnimation(
       dt,
       inputLen > 0.05 ? speed : 0,
-      facing,
-      this.runState.isDashing
+      facing
     );
 
     // i-frame flicker after damage
@@ -166,23 +139,6 @@ export class PlayerSystem {
       this.playerMesh.group.visible = Math.floor(this.runState.invulnerabilityTimer * 24) % 2 === 0;
     } else {
       this.playerMesh.group.visible = true;
-    }
-
-    // Dash cooldown ring ground decal
-    this.dashRingMesh.position.set(nextX, 0.02, nextZ);
-    if (this.runState.dashCooldownTimer > 0) {
-      const progress = Math.max(
-        0,
-        Math.min(1, 1 - this.runState.dashCooldownTimer / this.runState.dashCooldown)
-      );
-      this.dashRingMat.color.setHex(0x005577);
-      this.dashRingMat.opacity = 0.25 + 0.45 * progress;
-      const ringScale = 0.6 + 0.4 * progress;
-      this.dashRingMesh.scale.set(ringScale, 1.0, ringScale);
-    } else {
-      this.dashRingMat.color.setHex(0x00e5ff);
-      this.dashRingMat.opacity = 0.75;
-      this.dashRingMesh.scale.set(1.0, 1.0, 1.0);
     }
 
     // Ground aim reticle
@@ -201,16 +157,6 @@ export class PlayerSystem {
       this.reticleGroup.visible = false;
     }
 
-    // Combat dive afterimage ghost trail
-    if (this.runState.isDashing && this.particles) {
-      this.dashAfterimageTimer -= dt;
-      if (this.dashAfterimageTimer <= 0) {
-        this.dashAfterimageTimer = 0.035;
-        this.particles.spawnDashAfterimage(nextX, 0.45, nextZ);
-      }
-    } else {
-      this.dashAfterimageTimer = 0;
-    }
   }
 
   public dispose(): void {

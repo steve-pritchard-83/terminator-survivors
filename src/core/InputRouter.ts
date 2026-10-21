@@ -27,15 +27,6 @@ export class InputRouter {
   }
 
   private setupCallbacks(): void {
-    this.host.inputManager.onDashCallback = () => {
-      if (this.host.runState.mode === 'playing') {
-        this.host.inputManager.consumeDash();
-        if (this.host.runState.triggerDash()) {
-          this.host.audioEngine.playCombatDive();
-        }
-      }
-    };
-
     this.host.inputManager.onAbilityCallback = () => {
       if (this.host.runState.mode === 'playing') {
         this.host.inputManager.consumeAbility();
@@ -49,12 +40,10 @@ export class InputRouter {
 
     this.host.inputManager.gamepadManager.onConnectCallback = (status) => {
       this.host.uiManager.hudView.showControllerNotification(status.name, true);
-      this.host.uiManager.hudView.setGamepadActive(true, status.isXbox);
     };
 
     this.host.inputManager.gamepadManager.onDisconnectCallback = (status) => {
       this.host.uiManager.hudView.showControllerNotification(status.name, false);
-      this.host.uiManager.hudView.setGamepadActive(false, false);
     };
   }
 
@@ -64,13 +53,6 @@ export class InputRouter {
 
     if (this.host.runState.mode !== 'playing') {
       return { move: { x: 0, z: 0 }, aim: null };
-    }
-
-    if (this.host.inputManager.consumeDash()) {
-      const dashed = this.host.runState.triggerDash();
-      if (dashed) {
-        this.host.audioEngine.playCombatDive();
-      }
     }
 
     if (this.host.inputManager.consumeAbility()) {

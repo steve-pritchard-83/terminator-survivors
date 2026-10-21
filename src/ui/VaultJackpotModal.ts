@@ -2,6 +2,7 @@ import type { WeaponId } from '../core/types';
 import { ALL_WEAPONS } from '../data/weapons';
 import type { GamepadManager } from '../input/GamepadManager';
 import { ModalA11y } from './A11yHelper';
+import { icon } from './icons';
 
 export class VaultJackpotModal {
   public readonly container: HTMLElement;
@@ -70,7 +71,7 @@ export class VaultJackpotModal {
 
     if (evolvedWeapon) {
       const def = ALL_WEAPONS[evolvedWeapon];
-      this.titleEl.textContent = 'SUPERWEAPON EVOLUTION UNLOCKED!';
+      this.titleEl.innerHTML = `${icon('evolution')}<span class="gi-label">SUPERWEAPON EVOLUTION UNLOCKED!</span>`;
       this.titleEl.style.color = '#e600ff';
       this.descEl.innerHTML = `
         <div style="font-family:var(--font-display); font-size:20px; color:#e600ff; margin-bottom:8px;">
@@ -80,7 +81,7 @@ export class VaultJackpotModal {
         <div style="color:var(--color-amber);">+${alloyBonus} ALLOY SCRAP SECURED</div>
       `;
     } else {
-      this.titleEl.textContent = 'SKYNET DATA VAULT UNLOCKED';
+      this.titleEl.innerHTML = `${icon('vault')}<span class="gi-label">SKYNET DATA VAULT UNLOCKED</span>`;
       this.titleEl.style.color = 'var(--color-amber)';
       this.descEl.innerHTML = `
         <div style="font-family:var(--font-display); font-size:18px; color:var(--color-cyan); margin-bottom:8px;">

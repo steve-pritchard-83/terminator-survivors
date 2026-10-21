@@ -69,11 +69,6 @@ export class RunState {
   public playerFacing = 0; // radians
   public playerMoveAngle = 0; // radians
   public isMoving = false;
-  public isDashing = false;
-  public dashTimer = 0;
-  public dashCooldownTimer = 0;
-  public readonly dashDuration = 0.28;
-  public readonly dashCooldown = 1.8;
   public abilityCooldownTimer = 0;
   public abilityActiveDuration = 0;
   public isAbilityActive = false;
@@ -149,9 +144,6 @@ export class RunState {
     this.playerFacing = 0;
     this.playerMoveAngle = 0;
     this.isMoving = false;
-    this.isDashing = false;
-    this.dashTimer = 0;
-    this.dashCooldownTimer = 0;
     this.abilityCooldownTimer = 0;
     this.abilityActiveDuration = 0;
     this.isAbilityActive = false;
@@ -267,7 +259,7 @@ export class RunState {
 
   public takeDamage(rawDamage: number): number {
     if (this.isDead || this.hp <= 0 || this.mode !== 'playing') return 0;
-    if (this.godMode || this.isDashing || this.invulnerabilityTimer > 0) return 0;
+    if (this.godMode || this.invulnerabilityTimer > 0) return 0;
     const mitigated = computeMitigatedDamage(rawDamage, this.computedStats.armor);
     if (mitigated > 0) {
       this.hp = Math.max(0, this.hp - mitigated);
@@ -314,14 +306,6 @@ export class RunState {
     return this.hp - before;
   }
 
-  public triggerDash(): boolean {
-    if (this.isDashing || this.dashCooldownTimer > 0) return false;
-    this.isDashing = true;
-    this.dashTimer = this.dashDuration;
-    this.dashCooldownTimer = this.dashCooldown;
-    return true;
-  }
-
   public triggerAbility(): boolean {
     const loadout = LOADOUTS[this.loadoutId];
     if (!loadout || !loadout.ability) return false;
@@ -344,16 +328,6 @@ export class RunState {
   }
 
   public updateTimers(dt: number): void {
-    if (this.isDashing) {
-      this.dashTimer -= dt;
-      if (this.dashTimer <= 0) {
-        this.isDashing = false;
-        this.dashTimer = 0;
-      }
-    }
-    if (this.dashCooldownTimer > 0) {
-      this.dashCooldownTimer = Math.max(0, this.dashCooldownTimer - dt);
-    }
     if (this.abilityCooldownTimer > 0) {
       this.abilityCooldownTimer = Math.max(0, this.abilityCooldownTimer - dt);
     }

@@ -1,4 +1,5 @@
 import { LORE } from '../data/lore';
+import { icon, iconLabel } from './icons';
 import { ALL_WEAPONS } from '../data/weapons';
 import { ENEMY_CONFIGS } from '../data/enemies';
 import { LOADOUTS } from '../data/upgrades';
@@ -81,7 +82,7 @@ export class EndRunModal {
 
         <div style="display:flex; flex-direction:column; gap:10px; align-items:center; margin-top:12px;">
           <button class="btn-primary" id="btn-return-bunker" aria-label="Return to Command">
-            RETURN TO COMMAND
+            ${iconLabel('back', 'RETURN TO COMMAND')}
           </button>
         </div>
         <div id="end-controller-hint" style="font-family:var(--font-telemetry); font-size:12px; color:var(--color-cyan); margin-top:8px; display:none;">
@@ -195,11 +196,11 @@ export class EndRunModal {
     const timeFormatted = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 
     if (victory) {
-      this.titleEl.textContent = 'MISSION ACCOMPLISHED';
+      this.titleEl.innerHTML = `${icon('victory')}<span class="gi-label">MISSION ACCOMPLISHED</span>`;
       this.titleEl.style.color = 'var(--color-cyan)';
       this.loreEl.textContent = LORE.victoryText;
     } else {
-      this.titleEl.textContent = defeatReason ?? 'TERMINATED';
+      this.titleEl.innerHTML = `${icon('defeat')}<span class="gi-label">${defeatReason ?? 'TERMINATED'}</span>`;
       this.titleEl.style.color = 'var(--color-red)';
       this.loreEl.textContent = defeatReason ? `CRITICAL FAILURE // ${defeatReason}` : LORE.defeatText;
     }
@@ -222,7 +223,7 @@ export class EndRunModal {
     this.onReturnCallback = onReturn;
     this.container.style.display = 'flex';
 
-    this.titleEl.textContent = 'TECH-COM ARCHIVES';
+    this.titleEl.innerHTML = `${icon('history')}<span class="gi-label">TECH-COM ARCHIVES</span>`;
     this.titleEl.style.color = 'var(--color-cyan)';
     this.loreEl.textContent = 'Historical combat mission telemetry retrieved from bunker sub-core.';
 

@@ -46,7 +46,6 @@ export class GamepadManager {
   private gamepadName = '';
   private isConnected = false;
 
-  private dashRequested = false;
   private pauseRequested = false;
 
   // Repeat timer for menu navigation
@@ -57,7 +56,6 @@ export class GamepadManager {
 
   public onConnectCallback: ((status: GamepadStatus) => void) | null = null;
   public onDisconnectCallback: ((status: GamepadStatus) => void) | null = null;
-  public onDashCallback: (() => void) | null = null;
   public onAbilityCallback: (() => void) | null = null;
   public onPauseCallback: (() => void) | null = null;
 
@@ -227,19 +225,6 @@ export class GamepadManager {
     this.hasInputThisFrame = hasStickInput || hasButtonInput;
 
     // Gameplay triggers
-    const dashPressed =
-      this.gamepadBindings.dash.some((b) => this.isButtonJustPressed(b)) ||
-      this.isButtonJustPressed(XBOX_BUTTON.L3) ||
-      (this.buttonValues[XBOX_BUTTON.LT] !== undefined &&
-        this.buttonValues[XBOX_BUTTON.LT] > 0.45 &&
-        (this.lastButtons[XBOX_BUTTON.LT] === false ||
-          this.lastButtons[XBOX_BUTTON.LT] === undefined));
-
-    if (dashPressed) {
-      this.dashRequested = true;
-      this.onDashCallback?.();
-    }
-
     const abilityPressed = this.gamepadBindings.ability.some((b) => this.isButtonJustPressed(b));
 
     if (abilityPressed) {
@@ -247,10 +232,8 @@ export class GamepadManager {
       this.onAbilityCallback?.();
     }
 
-    // Pause: configured pause buttons or View
-    const pausePressed =
-      this.gamepadBindings.pause.some((b) => this.isButtonJustPressed(b)) ||
-      this.isButtonJustPressed(XBOX_BUTTON.VIEW);
+    // Pause is fixed to the Start / Menu button
+    const pausePressed = this.isButtonJustPressed(XBOX_BUTTON.MENU);
 
     if (pausePressed) {
       this.pauseRequested = true;
@@ -262,10 +245,6 @@ export class GamepadManager {
 
   public hasRecentInput(): boolean {
     return this.hasInputThisFrame;
-  }
-
-  public clearDashRequest(): void {
-    this.dashRequested = false;
   }
 
   public consumeAbility(): boolean {
@@ -356,12 +335,6 @@ export class GamepadManager {
     const vec = this.getAimVector();
     if (!vec) return null;
     return Math.atan2(vec.x, vec.z);
-  }
-
-  public consumeDash(): boolean {
-    const dash = this.dashRequested;
-    this.dashRequested = false;
-    return dash;
   }
 
   public consumePause(): boolean {
@@ -507,7 +480,7 @@ export class GamepadManager {
         // Shotgun / railgun burst
         this.playRumble(85, 0.45, 0.55);
       } else if (pattern <= 65) {
-        // Combat dive / solid hit
+        // Solid hit
         this.playRumble(110, 0.55, 0.65);
       } else {
         // Heavy impact

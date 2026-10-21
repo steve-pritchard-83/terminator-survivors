@@ -20,9 +20,7 @@ export class InputManager {
   private targetAimAngle: number | null = null;
   private mouseScreenPos: { x: number; y: number } | null = null;
   private leftMouseDown = false;
-  private dashRequested = false;
   private abilityRequested = false;
-  public onDashCallback: (() => void) | null = null;
   public onAbilityCallback: (() => void) | null = null;
   public onPauseCallback: (() => void) | null = null;
 
@@ -40,10 +38,6 @@ export class InputManager {
       if (saved?.keyboard) this.setKeyBindings(saved.keyboard);
       if (saved?.gamepad) this.gamepadManager.setGamepadBindings(saved.gamepad);
     }
-    this.gamepadManager.onDashCallback = () => {
-      this.dashRequested = true;
-      this.onDashCallback?.();
-    };
     this.gamepadManager.onAbilityCallback = () => {
       this.abilityRequested = true;
       this.onAbilityCallback?.();
@@ -73,7 +67,7 @@ export class InputManager {
   private isInteractiveUiTarget(target: EventTarget | null): boolean {
     if (!(target instanceof HTMLElement)) return false;
     return Boolean(
-      target.closest('button, .upgrade-card, .btn-primary, .btn-secondary, .btn-mobile-dash, input')
+      target.closest('button, .upgrade-card, .btn-primary, .btn-secondary, .btn-mobile-ability, input')
     );
   }
 
@@ -90,11 +84,7 @@ export class InputManager {
     if (e.pointerType === 'mouse' && window.innerWidth > 900) {
       this.lastActiveDevice = 'mouse_keyboard';
       this.mouseScreenPos = { x: e.clientX, y: e.clientY };
-      if (e.button === 2) {
-        // Right-click triggers Combat Dive / Dash
-        this.dashRequested = true;
-        this.onDashCallback?.();
-      } else if (e.button === 0 && !this.isInteractiveUiTarget(e.target)) {
+      if (e.button === 0 && !this.isInteractiveUiTarget(e.target)) {
         this.leftMouseDown = true;
       }
     }
@@ -115,7 +105,6 @@ export class InputManager {
     touchZoneEl: HTMLElement,
     baseEl: HTMLElement,
     knobEl: HTMLElement,
-    dashBtnEl: HTMLElement,
     abilityBtnEl?: HTMLElement
   ): void {
     this.joystickBaseEl = baseEl;
@@ -163,17 +152,6 @@ export class InputManager {
     touchZoneEl.addEventListener('pointerup', resetTouch);
     touchZoneEl.addEventListener('pointercancel', resetTouch);
 
-    // Mobile Dash Touch Button
-    const onDash = (e: Event) => {
-      e.preventDefault();
-      this.lastActiveDevice = 'touch';
-      this.dashRequested = true;
-      this.onDashCallback?.();
-    };
-    dashBtnEl.addEventListener('pointerdown', onDash);
-    dashBtnEl.addEventListener('touchstart', onDash);
-    dashBtnEl.addEventListener('click', onDash);
-
     // Mobile Ability Touch Button
     if (abilityBtnEl) {
       const onAbility = (e: Event) => {
@@ -191,10 +169,7 @@ export class InputManager {
   private onKeyDown = (e: KeyboardEvent): void => {
     this.lastActiveDevice = 'mouse_keyboard';
     this.keys.add(e.code);
-    if (this.keyBindings.dash.includes(e.code)) {
-      this.dashRequested = true;
-      this.onDashCallback?.();
-    } else if (this.keyBindings.ability.includes(e.code)) {
+    if (this.keyBindings.ability.includes(e.code)) {
       this.abilityRequested = true;
       this.onAbilityCallback?.();
     } else if (this.keyBindings.pause.includes(e.code)) {
@@ -274,17 +249,6 @@ export class InputManager {
     return null;
   }
 
-  public consumeDash(): boolean {
-    const dash = this.dashRequested || this.gamepadManager.consumeDash();
-    this.dashRequested = false;
-    return dash;
-  }
-
-  public clearDashRequest(): void {
-    this.dashRequested = false;
-    this.gamepadManager.clearDashRequest();
-  }
-
   public consumeAbility(): boolean {
     const ability = this.abilityRequested || this.gamepadManager.consumeAbility();
     this.abilityRequested = false;
@@ -299,10 +263,6 @@ export class InputManager {
   // Playwright & Unit test helpers
   public setJoystickVectorForTest(x: number, z: number): void {
     this.touchVec = { x, z };
-  }
-
-  public triggerDashForTest(): void {
-    this.dashRequested = true;
   }
 
   public triggerAbilityForTest(): void {
