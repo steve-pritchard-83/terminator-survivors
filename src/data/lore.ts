@@ -158,29 +158,11 @@ export const WEAPON_CODEX: Record<
     lore: 'Radial capacitor discharger that generates localized electromagnetic pulses, overloading machine neural net buses and stripping hyperalloy armor coatings.',
     manufacturer: 'Tech-Com Tactical Science Division'
   },
-  m79_thumper: {
-    name: 'M79 "Thumper" Grenade Launcher',
-    designation: '40mm Break-Action Ordnance Launcher',
-    lore: 'Single-shot break-open launcher firing 40x46mm high-explosive grenades. Its characteristic hollow "thump" upon discharge is a welcome sound to cornered human resistance fighters.',
-    manufacturer: 'Springfield Armory'
-  },
-  napalm_canister: {
-    name: 'Aerosolized Napalm Canister',
-    designation: 'Incendiary Area Denial Projectile',
-    lore: 'Pressurized canisters of viscous chemical incendiary fuel that coat the ground in persistent flames, incinerating low-altitude drones and melting machine rubber flesh coverings.',
-    manufacturer: 'Tech-Com Chemical Works'
-  },
   laser_designator: {
     name: 'Tactical Laser Designator',
     designation: 'Orbital & Heavy Mortar Uplink Node',
     lore: 'Handheld pulsed infrared collimator linked to scavenged automated defense satellite arrays and bunker mortar emplacements to rain pin-point kinetic strikes.',
     manufacturer: 'Tech-Com Signal Corps'
-  },
-  m16_carbine: {
-    name: 'Colt M16A1 Assault Rifle',
-    designation: '5.56x45mm NATO Select-Fire Rifle',
-    lore: 'A pre-war classic that saw continuous service into the late 2020s. Lightweight, high cyclic rate of fire, and deadly when loaded with hand-crafted tungsten-core penetrators.',
-    manufacturer: 'Colt Defense'
   },
   rpg_launcher: {
     name: 'RPG-7 Rocket Launcher',
@@ -242,29 +224,11 @@ export const WEAPON_CODEX: Record<
     lore: 'Overcharges the central flux coil into a screen-clearing electromagnetic shockwave that permanently strips armor plating from all surrounding machines.',
     manufacturer: 'Tech-Com Tactical Science Division'
   },
-  mm1_barrage: {
-    name: 'MM-1 Rotary Barrage',
-    designation: 'Evolved 12-Shot Rotary Grenade Platform',
-    lore: '12-round rotary grenade launcher system that floods the combat sector in perpetual explosive detonations, leaving no machine standing.',
-    manufacturer: 'Springfield / Tech-Com Armory'
-  },
-  firestorm_wall: {
-    name: 'Firestorm Wall Projector',
-    designation: 'Evolved Pressurized Chemical Barrier',
-    lore: 'Continuous pressurized aerosol flame streams forming an impenetrable wall of burning chemical inferno that consumes incoming swarms.',
-    manufacturer: 'Tech-Com Chemical Works'
-  },
   orbital_ion: {
     name: 'Orbital Ion Cannon Strike',
     designation: 'Evolved Defense Satellite Beam Uplink',
     lore: 'Commands orbital kinetic ion satellites to focus multi-gigawatt particle beams directly onto heavy machine priority targets.',
     manufacturer: 'US Space Command / Tech-Com'
-  },
-  phased_plasma_assault: {
-    name: 'Phased Plasma Carbine',
-    designation: 'Evolved Plasma-Enriched Assault Rifle',
-    lore: 'Converts standard 5.56mm kinetic ammunition into accelerated plasma-coated micro-rounds, combining ballistic penetration with thermal vaporization.',
-    manufacturer: 'Tech-Com Field R&D'
   },
   tandem_warhead: {
     name: 'Tandem Hyperalloy Warhead',

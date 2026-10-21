@@ -176,40 +176,6 @@ export const BASE_WEAPONS: Record<BaseWeaponId, WeaponDefinition> = {
       'PULSE'
     )
   },
-  m79_thumper: {
-    id: 'm79_thumper',
-    name: 'M79 Grenade Thumper',
-    codeName: '40MM HIGH EXPLOSIVE',
-    isEvolved: false,
-    pairedPassive: 'bandolier',
-    evolvesInto: 'mm1_barrage',
-    iconColor: '#ffbb00',
-    pattern: 'Lobbed',
-    patternParams: { projectileVisual: 'bomb', arcSpread: Math.PI * 2, minDist: 6, maxDist: 15, vy: 5.5, flightTime: 0.7, areaRadius: 3.2, launchSfx: 'grenade' },
-    knockback: 15,
-    levels: buildWeaponLevels(
-      { damage: 52, cooldown: 2.1, area: 1.2, speed: 16, amount: 1, duration: 0.8, pierce: 99 },
-      ['Lobs high-arcing 40mm HE grenades at heavy enemy clusters.'],
-      'GRENADE'
-    )
-  },
-  napalm_canister: {
-    id: 'napalm_canister',
-    name: 'Napalm Canister',
-    codeName: 'PROMETHEUM FUEL',
-    isEvolved: false,
-    pairedPassive: 'fuel_tank',
-    evolvesInto: 'firestorm_wall',
-    iconColor: '#ff2200',
-    pattern: 'GroundZone',
-    patternParams: { baseRadius: 2.0, minDist: 4, maxDist: 7 },
-    knockback: 3,
-    levels: buildWeaponLevels(
-      { damage: 16, cooldown: 2.6, area: 1.3, speed: 10, amount: 1, duration: 3.0, pierce: 99 },
-      ['Throws a fuel canister creating lingering burning ground fire.'],
-      'CANISTER'
-    )
-  },
   laser_designator: {
     id: 'laser_designator',
     name: 'Bunker Laser Targeter',
@@ -225,23 +191,6 @@ export const BASE_WEAPONS: Record<BaseWeaponId, WeaponDefinition> = {
       { damage: 60, cooldown: 2.8, area: 1.1, speed: 40, amount: 1, duration: 0.5, pierce: 99 },
       ['Paints heavy targets with a red laser, calling down Resistance artillery.'],
       'STRIKE'
-    )
-  },
-  m16_carbine: {
-    id: 'm16_carbine',
-    name: 'M-16 Plasma Carbine',
-    codeName: 'TECH-COM 5.56 PLASMA',
-    isEvolved: false,
-    pairedPassive: 'ammo_belt',
-    evolvesInto: 'phased_plasma_assault',
-    iconColor: '#00b4d8',
-    pattern: 'StraightShot',
-    patternParams: { projectileVisual: 'plasma', flashColor: 0xd04cff, parallelOffset: 0, jitterAngle: 0.08, projectileRadius: 0.3, sfx: 'rifle' },
-    knockback: 7,
-    levels: buildWeaponLevels(
-      { damage: 22, cooldown: 0.85, area: 1.0, speed: 32, amount: 3, duration: 0.9, pierce: 2 },
-      ['Fires a 3-round burst of phased plasma cartridges.'],
-      'BOLT'
     )
   },
   rpg_launcher: {
@@ -457,56 +406,6 @@ export const EVOLVED_WEAPONS: Record<EvolvedWeaponId, WeaponDefinition> = {
       }
     ]
   },
-  mm1_barrage: {
-    id: 'mm1_barrage',
-    name: 'MM1 40mm Rotary Barrage',
-    codeName: 'SUPERWEAPON: CARPET THUMPER',
-    isEvolved: true,
-    evolvesFrom: 'm79_thumper',
-    iconColor: '#ffd700',
-    pattern: 'Lobbed',
-    patternParams: { projectileVisual: 'bomb', arcSpread: Math.PI * 2, minDist: 6, maxDist: 15, vy: 5.5, flightTime: 0.7, areaRadius: 3.2, launchSfx: 'grenade' },
-    knockback: 18,
-    levels: [
-      {
-        level: 1,
-        damage: 155,
-        cooldown: 1.35,
-        area: 1.8,
-        speed: 18,
-        amount: 6,
-        duration: 1.0,
-        pierce: 99,
-        description:
-          'Unleashes continuous 6-round rolling 40mm artillery carpet bombardments across the wasteland.'
-      }
-    ]
-  },
-  firestorm_wall: {
-    id: 'firestorm_wall',
-    name: 'Skynet Firestorm Wall',
-    codeName: 'SUPERWEAPON: NAPALM RING',
-    isEvolved: true,
-    evolvesFrom: 'napalm_canister',
-    iconColor: '#ff5500',
-    pattern: 'GroundZone',
-    patternParams: { baseRadius: 3.2, minDist: 4, maxDist: 7 },
-    knockback: 5,
-    levels: [
-      {
-        level: 1,
-        damage: 52,
-        cooldown: 1.8,
-        area: 2.2,
-        speed: 12,
-        amount: 4,
-        duration: 4.5,
-        pierce: 99,
-        description:
-          'Expanding ring-walls of chemical blue-orange fire that scorch the earth and incinerate approaching machines.'
-      }
-    ]
-  },
   orbital_ion: {
     id: 'orbital_ion',
     name: 'Captured HK-Orbital Ion',
@@ -529,30 +428,6 @@ export const EVOLVED_WEAPONS: Record<EvolvedWeaponId, WeaponDefinition> = {
         pierce: 99,
         description:
           'Sweeps colossal sky-piercing cyan-magenta orbital ion beams across enemy hordes every 1.8 seconds.'
-      }
-    ]
-  },
-  phased_plasma_assault: {
-    id: 'phased_plasma_assault',
-    name: 'Phased Plasma Assault Carbine',
-    codeName: 'SUPERWEAPON: ION CYCLER',
-    isEvolved: true,
-    evolvesFrom: 'm16_carbine',
-    iconColor: '#38bdf8',
-    pattern: 'StraightShot',
-    patternParams: { projectileVisual: 'heavy_plasma', flashColor: 0xd04cff, parallelOffset: 0.1, jitterAngle: 0.05, projectileRadius: 0.45, sfx: 'plasma_heavy' },
-    knockback: 12,
-    levels: [
-      {
-        level: 1,
-        damage: 65,
-        cooldown: 0.35,
-        area: 1.35,
-        speed: 38,
-        amount: 5,
-        duration: 1.2,
-        pierce: 6,
-        description: 'Continuous 5-round ionized hyper-bursts that shred enemy armor and energy shields.'
       }
     ]
   },
@@ -734,22 +609,12 @@ export const PASSIVES: Record<PassiveId, PassiveDefinition> = {
     descriptionPerLevel: '+25% pickup magnet range and +10% max HP.',
     statPerLevel: { magnetRadius: 1.8, maxHp: 15 }
   },
-  bandolier: {
-    id: 'bandolier',
-    name: 'Ammo Bandolier',
-    codeName: 'MUNITIONS RIG',
-    maxLevel: 2,
-    evolvesWeapon: 'm79_thumper',
-    iconColor: '#ffbb00',
-    descriptionPerLevel: '+1 projectile amount to all weapons.',
-    statPerLevel: { bonusAmount: 1 }
-  },
   fuel_tank: {
     id: 'fuel_tank',
     name: 'Promethium Fuel Tank',
     codeName: 'PROPELLANT CELL',
     maxLevel: 5,
-    evolvesWeapon: 'napalm_canister',
+    evolvesWeapon: 'molotov',
     iconColor: '#ff2200',
     descriptionPerLevel: '+12% projectile speed and +8% Kyle movement speed.',
     statPerLevel: { speedMultiplier: 0.12, moveSpeed: 0.45 }
@@ -763,16 +628,6 @@ export const PASSIVES: Record<PassiveId, PassiveDefinition> = {
     iconColor: '#ff0055',
     descriptionPerLevel: '+8% critical strike chance and +15% Luck.',
     statPerLevel: { critChance: 0.08, luckMultiplier: 0.15 }
-  },
-  ammo_belt: {
-    id: 'ammo_belt',
-    name: 'Munitions Ammo Belt',
-    codeName: 'DURATION EXTENDER',
-    maxLevel: 5,
-    evolvesWeapon: 'm16_carbine',
-    iconColor: '#00b4d8',
-    descriptionPerLevel: '+15% projectile duration and +5% projectile speed.',
-    statPerLevel: { durationMultiplier: 0.15, speedMultiplier: 0.05 }
   },
   infrared_goggles: {
     id: 'infrared_goggles',

@@ -2,6 +2,7 @@ import type { BaseWeaponId, ColorBlindMode, DamageNumberSetting, GameSettings, I
 import { LOADOUTS, META_UPGRADES } from '../data/upgrades';
 import { ACHIEVEMENTS, DEFAULT_UNLOCKED_WEAPONS } from '../data/achievements';
 import { DEFAULT_INPUT_MAPPINGS } from '../data/inputDefaults';
+import { BASE_WEAPONS } from '../data/weapons';
 
 const STORAGE_KEY = 'TERMINATOR_SURVIVORS_SAVE_V1';
 
@@ -196,7 +197,8 @@ export class SaveManager {
     const unlockedWeapons: BaseWeaponId[] = [...DEFAULT_UNLOCKED_WEAPONS];
     if (Array.isArray(current.unlockedWeapons)) {
       for (const w of current.unlockedWeapons) {
-        if (typeof w === 'string' && !unlockedWeapons.includes(w as BaseWeaponId)) {
+        // Weapons cut from the game drop out of old saves
+        if (typeof w === 'string' && w in BASE_WEAPONS && !unlockedWeapons.includes(w as BaseWeaponId)) {
           unlockedWeapons.push(w as BaseWeaponId);
         }
       }
@@ -226,7 +228,7 @@ export class SaveManager {
     const discoveredWeapons: string[] = [...DEFAULT_UNLOCKED_WEAPONS];
     if (Array.isArray(current.discoveredWeapons)) {
       for (const w of current.discoveredWeapons) {
-        if (typeof w === 'string' && !discoveredWeapons.includes(w)) {
+        if (typeof w === 'string' && w in BASE_WEAPONS && !discoveredWeapons.includes(w)) {
           discoveredWeapons.push(w);
         }
       }

@@ -24,9 +24,8 @@ describe('P11-08: Save migration to v3 and throttled writes', () => {
 
     expect(migrated.version).toBe(3);
     // Since saveV1 had victories = 1 > 0:
-    // Achievement rewards include weapons like m79_thumper, napalm_canister, rpg_launcher, etc.
-    expect(migrated.unlockedWeapons).toContain('m79_thumper');
-    expect(migrated.unlockedWeapons).toContain('napalm_canister');
+    // Achievement reward weapons are granted; weapons since cut from the game are dropped
+    expect(migrated.unlockedWeapons).not.toContain('m79_thumper');
     expect(migrated.unlockedWeapons).toContain('rpg_launcher');
     expect(migrated.alloyScrap).toBe(350);
   });
@@ -37,8 +36,8 @@ describe('P11-08: Save migration to v3 and throttled writes', () => {
 
     expect(migrated.version).toBe(3);
     expect(migrated.unlockedWeapons).toContain('ithaca_37');
-    expect(migrated.unlockedWeapons).toContain('plasma_rifle');
-    expect(migrated.unlockedWeapons).toContain('m79_thumper');
+    expect(migrated.unlockedWeapons).not.toContain('plasma_rifle');
+    expect(migrated.unlockedWeapons).not.toContain('m79_thumper');
     expect(migrated.unlockedWeapons).toContain('rpg_launcher');
     expect(migrated.alloyScrap).toBe(800);
   });

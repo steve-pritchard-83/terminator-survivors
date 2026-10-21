@@ -5,8 +5,8 @@ import type { BaseWeaponId, PassiveId } from '../../src/core/types';
 describe('Weapon Progression and Evolutions', () => {
   const baseWeaponIds = Object.keys(BASE_WEAPONS) as BaseWeaponId[];
 
-  it('verifies all 14 base weapons have exactly 8 defined levels', () => {
-    expect(baseWeaponIds).toHaveLength(14);
+  it('verifies all 11 base weapons have exactly 8 defined levels', () => {
+    expect(baseWeaponIds).toHaveLength(11);
     for (const wId of baseWeaponIds) {
       const def = BASE_WEAPONS[wId];
       expect(def.levels).toHaveLength(8);
@@ -20,7 +20,7 @@ describe('Weapon Progression and Evolutions', () => {
     }
   });
 
-  it('verifies all 14 evolved superweapons exist and pair with correct base weapons', () => {
+  it('verifies all 11 evolved superweapons exist and pair with correct base weapons', () => {
     for (const wId of baseWeaponIds) {
       const baseDef = BASE_WEAPONS[wId];
       expect(baseDef.pairedPassive).toBeDefined();
@@ -47,7 +47,7 @@ describe('Weapon Progression and Evolutions', () => {
     expect(canEvolveWeapon('ithaca_37', 8, zeroPassives)).toBeNull();
   });
 
-  it('successfully evolves all 14 weapons when weapon is Level 8 and passive Level >= 1', () => {
+  it('successfully evolves all 11 weapons when weapon is Level 8 and passive Level >= 1', () => {
     for (const wId of baseWeaponIds) {
       const baseDef = BASE_WEAPONS[wId];
       const passives = new Map<PassiveId, number>([[baseDef.pairedPassive!, 1]]);
