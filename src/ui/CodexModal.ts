@@ -3,20 +3,24 @@ import type { EnemyArchetypeId } from '../core/types';
 import { ENEMY_CODEX, WEAPON_CODEX } from '../data/lore';
 import { ENEMY_CONFIGS } from '../data/enemies';
 import { iconLabel } from './icons';
-import { BASE_WEAPONS, EVOLVED_WEAPONS, PASSIVES } from '../data/weapons';
+import { ALL_WEAPONS, BASE_WEAPONS, EVOLVED_WEAPONS, PASSIVES } from '../data/weapons';
+import { ACHIEVEMENTS, TOTAL_ACHIEVEMENTS } from '../data/achievements';
 import type { SaveManager } from '../state/SaveManager';
 import type { AudioEngine } from '../audio/AudioEngine';
 import { createEnemyPreviewObject } from '../graphics/meshes/EnemyTurntablePreview';
 import { disposeObject3D } from '../graphics/dispose';
 import { ModalA11y } from './A11yHelper';
 
+type ArchivesTab = 'bestiary' | 'armory' | 'achievements' | 'log';
+
+/** The Archives: machines, armory, achievements and the run log. */
 export class CodexModal {
   public readonly container: HTMLElement;
   private readonly saveManager: SaveManager;
   private readonly audioEngine: AudioEngine;
   private readonly a11y: ModalA11y;
 
-  private currentTab: 'bestiary' | 'armory' = 'bestiary';
+  private currentTab: ArchivesTab = 'bestiary';
   private selectedEnemyId: EnemyArchetypeId = 't800_endoskeleton';
   private selectedWeaponId = 'ithaca_37';
 
@@ -41,12 +45,12 @@ export class CodexModal {
     this.container.id = 'codex-modal';
     this.container.setAttribute('role', 'dialog');
     this.container.setAttribute('aria-modal', 'true');
-    this.container.setAttribute('aria-label', 'Codex Archive');
+    this.container.setAttribute('aria-label', 'Archives');
     this.container.style.display = 'none';
 
     this.container.innerHTML = `
       <div class="t800-modal-box" style="max-width:860px; width:92%;">
-        <div class="t800-header">CODEX</div>
+        <div class="t800-header">ARCHIVES</div>
 
         <div style="display:flex; gap:8px; margin:6px 0 12px; padding-bottom:10px; border-bottom:1px solid var(--t-line);">
           <button class="btn-secondary btn-sm codex-tab-btn active" id="tab-codex-bestiary" aria-label="Machines Tab">
@@ -54,6 +58,12 @@ export class CodexModal {
           </button>
           <button class="btn-secondary btn-sm codex-tab-btn" id="tab-codex-armory" aria-label="Armory Tab">
             ${iconLabel('armor', 'ARMORY')}
+          </button>
+          <button class="btn-secondary btn-sm codex-tab-btn" id="tab-codex-achievements" aria-label="Achievements Tab">
+            ${iconLabel('trophy', 'ACHIEVEMENTS')}
+          </button>
+          <button class="btn-secondary btn-sm codex-tab-btn" id="tab-codex-log" aria-label="Run Log Tab">
+            ${iconLabel('history', 'RUN LOG')}
           </button>
         </div>
 
@@ -99,6 +109,12 @@ export class CodexModal {
     this.container.querySelector('#tab-codex-armory')?.addEventListener('click', () => {
       this.switchTab('armory');
     });
+    this.container.querySelector('#tab-codex-achievements')?.addEventListener('click', () => {
+      this.switchTab('achievements');
+    });
+    this.container.querySelector('#tab-codex-log')?.addEventListener('click', () => {
+      this.switchTab('log');
+    });
 
     this.container.querySelector('#btn-close-codex')?.addEventListener('click', () => {
       this.hide();
@@ -125,7 +141,7 @@ export class CodexModal {
     return this.container.style.display !== 'none';
   }
 
-  private switchTab(tab: 'bestiary' | 'armory'): void {
+  private switchTab(tab: ArchivesTab): void {
     if (this.currentTab === tab) return;
     this.audioEngine.playUiBuy();
     this.currentTab = tab;
@@ -204,9 +220,87 @@ export class CodexModal {
   private renderCurrentTab(): void {
     if (this.currentTab === 'bestiary') {
       this.renderBestiary();
-    } else {
+    } else if (this.currentTab === 'armory') {
       this.renderArmory();
+    } else if (this.currentTab === 'achievements') {
+      this.renderAchievements();
+    } else {
+      this.renderRunLog();
     }
+  }
+
+  // --- ACHIEVEMENTS TAB ---
+  private renderAchievements(): void {
+    const listEl = this.container.querySelector('#codex-item-list')!;
+    const dossierEl = this.container.querySelector('#codex-dossier')!;
+    const unlockedIds = this.saveManager.getUnlockedAchievements();
+    const count = Object.keys(ACHIEVEMENTS).filter((id) => unlockedIds.includes(id)).length;
+    const pct = Math.round((count / TOTAL_ACHIEVEMENTS) * 100);
+
+    listEl.innerHTML = Object.values(ACHIEVEMENTS)
+      .map((ach) => {
+        const isUnlocked = unlockedIds.includes(ach.id);
+        return `
+          <div class="upgrade-card${isUnlocked ? '' : ' is-locked'}" aria-label="${ach.title}. ${ach.description}. ${isUnlocked ? 'Secured' : 'Locked'}">
+            <div class="upgrade-card-info">
+              <div class="upgrade-card-head">
+                <div class="upgrade-card-title" style="font-size:12px;">${ach.title}</div>
+                ${isUnlocked ? '<span class="t-tag t-tag-on">SECURED</span>' : ''}
+              </div>
+              <div class="upgrade-card-desc">${ach.description}</div>
+              <div class="t-muted" style="font-size:10px; margin-top:2px;">${ach.reward.description}</div>
+            </div>
+          </div>
+        `;
+      })
+      .join('');
+
+    dossierEl.innerHTML = `
+      <div class="t-section-label" style="margin-top:0;">SECURED</div>
+      <div style="font-size:28px;">${count} / ${TOTAL_ACHIEVEMENTS}</div>
+      <div class="t-bar"><div style="width:${pct}%;"></div></div>
+      <div class="t-hint" style="text-align:left;">Boss kills and level 20 unlock new weapons for the field upgrade pool.</div>
+    `;
+  }
+
+  // --- RUN LOG TAB ---
+  private renderRunLog(): void {
+    const listEl = this.container.querySelector('#codex-item-list')!;
+    const dossierEl = this.container.querySelector('#codex-dossier')!;
+    const data = this.saveManager.getData();
+    const history = this.saveManager.getRunHistory();
+    const clock = (seconds: number) => {
+      const sec = Math.floor(seconds);
+      return `${Math.floor(sec / 60).toString().padStart(2, '0')}:${(sec % 60).toString().padStart(2, '0')}`;
+    };
+
+    listEl.innerHTML =
+      history.length === 0
+        ? '<div class="t-empty">NO PRIOR MISSIONS</div>'
+        : history
+            .map((r, i) => {
+              const isVic = r.outcome === 'victory';
+              const top = r.topWeapon?.id ? (ALL_WEAPONS[r.topWeapon.id]?.name ?? r.topWeapon.id) : 'N/A';
+              return `
+                <div class="t-panel" style="margin-bottom:8px; font-size:12px;">
+                  <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                    <span class="${isVic ? '' : 't-red'}">#${history.length - i} ${isVic ? 'VICTORY' : 'TERMINATED'}</span>
+                    <span>${clock(r.durationSeconds)}</span>
+                  </div>
+                  <div class="t-muted">LV ${r.levelReached} · ${r.kills} KILLS · +${r.scrapEarned} SCRAP</div>
+                  <div class="t-muted" style="margin-top:4px; font-size:11px;">TOP WEAPON: <span style="color:var(--t-text);">${top}</span></div>
+                </div>
+              `;
+            })
+            .join('');
+
+    dossierEl.innerHTML = `
+      <div class="t-section-label" style="margin-top:0;">SERVICE RECORD</div>
+      <div class="t-row"><span class="t-muted">BEST TIME</span><span>${clock(data.bestTimeSeconds)}</span></div>
+      <div class="t-row"><span class="t-muted">VICTORIES</span><span>${data.victories}</span></div>
+      <div class="t-row"><span class="t-muted">MACHINES DESTROYED</span><span>${data.totalKills.toLocaleString()}</span></div>
+      <div class="t-row"><span class="t-muted">ALLOY SCRAP</span><span>${data.alloyScrap.toLocaleString()}</span></div>
+    `;
   }
 
   // --- 1. BESTIARY TAB ---

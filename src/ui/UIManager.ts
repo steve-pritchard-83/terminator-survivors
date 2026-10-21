@@ -54,7 +54,6 @@ export class UIManager {
       saveManager,
       audioEngine,
       onStartRun,
-      () => this.endRunModal.showArchives(() => this.titleScreen.show()),
       () => this.openSettings(() => this.titleScreen.show())
     );
     this.levelUpModal = new LevelUpModal(root);

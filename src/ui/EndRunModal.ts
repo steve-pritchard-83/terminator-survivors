@@ -1,5 +1,5 @@
 import { LORE } from '../data/lore';
-import { icon, iconLabel } from './icons';
+import { iconLabel } from './icons';
 import { ALL_WEAPONS } from '../data/weapons';
 import { ENEMY_CONFIGS } from '../data/enemies';
 import { LOADOUTS } from '../data/upgrades';
@@ -208,19 +208,6 @@ export class EndRunModal {
     this.renderWeaponTelemetry(details?.weaponDamageBreakdown, timeSeconds);
     this.renderCasualties(details?.killsByType);
     this.renderTimeline(details?.levelUpTimeline);
-    this.a11y.activate();
-  }
-
-  public showArchives(onReturn: () => void): void {
-    this.onReturnCallback = onReturn;
-    this.container.style.display = 'flex';
-
-    this.titleEl.classList.remove('t800-header-big');
-    this.titleEl.innerHTML = `${icon('history')}<span class="gi-label">ARCHIVES</span>`;
-    this.titleEl.style.color = '';
-    this.loreEl.textContent = '';
-
-    this.switchTab('archives');
     this.a11y.activate();
   }
 
