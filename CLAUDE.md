@@ -8,6 +8,7 @@
 - `npm run test:unit`: Run Vitest unit tests (pure logic only)
 - `npm run test:e2e`: Run the single Playwright smoke test (rarely needed)
 - `npm run lint` / `npm run format`: available, not required
+- `/asset-lab.html` (dev server only): interactive review of every model with its in-game animation, effects, sounds, music and movies (`src/dev/assetLab.ts`)
 
 ## 2. Codebase Architecture (`src/`)
 

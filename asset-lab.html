@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Asset Lab (dev only)</title>
+    <link rel="icon" href="/icons/favicon.png" />
+    <style>
+      :root {
+        --bg: #07090c;
+        --panel: #0d1117;
+        --line: #26303b;
+        --text: #d9dee4;
+        --muted: #8592a0;
+        --accent: #ff3b2f;
+        --accent-dim: #7a1f19;
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font: 13px/1.4 system-ui, sans-serif; }
+      body { display: grid; grid-template-columns: 340px 1fr; height: 100vh; overflow: hidden; }
+      aside { display: flex; flex-direction: column; border-right: 1px solid var(--line); background: var(--panel); min-height: 0; }
+      header { padding: 10px 12px 6px; }
+      header h1 { margin: 0; font-size: 14px; letter-spacing: 0.12em; color: var(--accent); }
+      header p { margin: 2px 0 0; color: var(--muted); font-size: 11px; }
+      nav { display: flex; gap: 2px; padding: 0 8px; border-bottom: 1px solid var(--line); }
+      nav button { flex: 1; background: none; border: 0; border-bottom: 2px solid transparent; color: var(--muted); padding: 8px 4px; cursor: pointer; font-size: 12px; }
+      nav button.active { color: var(--text); border-bottom-color: var(--accent); }
+      #list { flex: 1; overflow-y: auto; padding: 6px 8px 16px; min-height: 0; }
+      .group-title { margin: 12px 4px 4px; font-size: 11px; letter-spacing: 0.1em; color: var(--muted); text-transform: uppercase; }
+      .item { display: flex; align-items: center; justify-content: space-between; gap: 6px; width: 100%; text-align: left; background: none; border: 1px solid transparent; color: var(--text); padding: 5px 8px; cursor: pointer; border-radius: 3px; }
+      .item:hover { border-color: var(--line); }
+      .item.active { border-color: var(--accent); background: #1a0d0c; }
+      .item small { color: var(--muted); }
+      main { position: relative; min-width: 0; }
+      canvas { display: block; width: 100%; height: 100%; }
+      .overlay { position: absolute; background: rgba(13, 17, 23, 0.92); border: 1px solid var(--line); border-radius: 4px; padding: 10px 12px; }
+      #controls { top: 12px; right: 12px; width: 300px; max-height: calc(100% - 24px); overflow-y: auto; }
+      #info { left: 12px; bottom: 12px; max-width: 460px; max-height: 40%; overflow: auto; font: 11px/1.45 ui-monospace, Consolas, monospace; color: var(--muted); }
+      #info b { color: var(--text); }
+      .ctl { display: grid; grid-template-columns: 110px 1fr 48px; align-items: center; gap: 6px; margin: 4px 0; }
+      .ctl label { color: var(--muted); font-size: 12px; }
+      .ctl output { text-align: right; font: 11px ui-monospace, Consolas, monospace; }
+      .ctl.toggle { grid-template-columns: 1fr auto; }
+      .btns { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0; }
+      button.act { background: #141a21; border: 1px solid var(--line); color: var(--text); padding: 5px 9px; border-radius: 3px; cursor: pointer; font-size: 12px; }
+      button.act:hover { border-color: var(--accent); }
+      button.act.primary { border-color: var(--accent-dim); }
+      h3 { margin: 10px 0 4px; font-size: 11px; letter-spacing: 0.1em; color: var(--accent); text-transform: uppercase; }
+      input[type='range'] { width: 100%; accent-color: var(--accent); }
+      .sound-row { display: grid; grid-template-columns: 28px 1fr auto; align-items: center; gap: 6px; padding: 2px 4px; }
+      .sound-row button { width: 26px; height: 22px; padding: 0; }
+      .sound-row span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .sound-row small { color: var(--muted); font: 10px ui-monospace, Consolas, monospace; }
+      #media { position: absolute; inset: 0; overflow-y: auto; padding: 16px; display: none; background: var(--bg); }
+      #media video { width: min(100%, 860px); display: block; margin: 6px 0 20px; border: 1px solid var(--line); background: #000; }
+      #media audio { width: min(100%, 860px); display: block; margin: 6px 0 14px; }
+      .hint { color: var(--muted); font-size: 11px; }
+      .sound-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 4px 18px; align-items: start; }
+      #unlock { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.55); z-index: 5; cursor: pointer; }
+      #unlock div { padding: 14px 20px; border: 1px solid var(--accent); background: var(--panel); }
+    </style>
+  </head>
+  <body>
+    <aside>
+      <header>
+        <h1>ASSET LAB</h1>
+        <p>Dev only · every model, animation, effect, sound and movie in the game</p>
+      </header>
+      <nav>
+        <button data-tab="models" class="active">Models</button>
+        <button data-tab="effects">Effects</button>
+        <button data-tab="sounds">Sounds</button>
+        <button data-tab="media">Music &amp; movies</button>
+      </nav>
+      <div id="list"></div>
+    </aside>
+    <main>
+      <canvas id="view"></canvas>
+      <div id="controls" class="overlay"></div>
+      <div id="info" class="overlay"></div>
+      <div id="media"></div>
+      <div id="unlock"><div>Loading models… then click anywhere to enable sound</div></div>
+    </main>
+    <script type="module" src="/src/dev/assetLab.ts"></script>
+  </body>
+</html>
