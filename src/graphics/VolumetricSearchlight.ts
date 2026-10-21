@@ -18,7 +18,7 @@ export class VolumetricSearchlight {
     this.coneMat = new THREE.MeshBasicMaterial({
       color: 0x9cd8ff,
       transparent: true,
-      opacity: 0.11,
+      opacity: 0.07,
       depthWrite: false,
       side: THREE.DoubleSide,
       blending: THREE.AdditiveBlending,
@@ -34,7 +34,7 @@ export class VolumetricSearchlight {
     this.groundDiscMat = new THREE.MeshBasicMaterial({
       color: 0x9cd8ff,
       transparent: true,
-      opacity: 0.16,
+      opacity: 0.09,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
       fog: false
@@ -50,10 +50,10 @@ export class VolumetricSearchlight {
     const pulse = 0.92 + 0.08 * Math.sin(timeSeconds * 4.0);
 
     this.coneMat.color.lerpColors(this.normalColor, this.alertColor, clampedAlert);
-    this.coneMat.opacity = (0.09 + 0.08 * clampedAlert) * pulse;
+    this.coneMat.opacity = (0.05 + 0.08 * clampedAlert) * pulse;
 
     this.groundDiscMat.color.lerpColors(this.normalColor, this.alertColor, clampedAlert);
-    this.groundDiscMat.opacity = (0.14 + 0.12 * clampedAlert) * pulse;
+    this.groundDiscMat.opacity = (0.07 + 0.12 * clampedAlert) * pulse;
 
     const disc = this.group.getObjectByName('groundDisc');
     if (disc) {

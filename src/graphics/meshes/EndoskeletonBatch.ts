@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { disposeObject3D } from '../dispose';
 import { bakePart, mergeParts } from './geometryUtils';
+import { buildEndoChassis, buildEndoLeg, buildEndoOptics } from './EndoskeletonGeometry';
 import type { ActiveEnemy } from '../../core/types';
 import { ProceduralTextures } from '../ProceduralTextures';
 import { ELITE_AFFIXES } from '../../data/enemies';
@@ -22,305 +23,27 @@ export class EndoskeletonBatch {
   constructor(maxCount = 650) {
     this.maxCount = maxCount;
 
-    const chromeBright = 0xb8c6d4;
-    const chromeMid = 0x8e9eae;
-    const darkSocket = 0x10161e;
-    const pistonSteel = 0x5c6c7c;
-    const gunmetal = 0x2a3340;
-    const teethIvory = 0xbec8d2;
+    // Neutral polished steel (the endoskeleton is silver chrome, not blue)
+    const chromeBright = 0xd6dadf;
+    const chromeMid = 0xa0a6ad;
+    const darkSocket = 0x07090c;
+    const pistonSteel = 0x6e747b;
+    const gunmetal = 0x2b2f35;
+    const teethIvory = 0xdedcd4;
 
-    // 1. Build detailed T-800 Upper Body, Skull, Ribcage, Pelvis & M-25 Rifle
-    const chassisParts: THREE.BufferGeometry[] = [
-      // Sculpted cranium dome & occipital rear plate
-      bakePart(new THREE.SphereGeometry(0.185, 14, 12), 0, 1.75, -0.01, 0, 0, 0, chromeBright),
-      bakePart(
-        new THREE.CylinderGeometry(0.15, 0.12, 0.16, 10),
-        0,
-        1.66,
-        -0.02,
-        0,
-        0,
-        0,
-        chromeMid
-      ),
-      // Heavy supraorbital brow ridge
-      bakePart(new THREE.BoxGeometry(0.31, 0.065, 0.18), 0, 1.75, 0.09, 0.08, 0, 0, chromeBright),
-      // Recessed dark orbital eye socket cavity (prevents glowing eyes from washing out face)
-      bakePart(new THREE.BoxGeometry(0.26, 0.075, 0.12), 0, 1.69, 0.1, 0, 0, 0, darkSocket),
-      // Zygomatic cheekbones L/R
-      bakePart(
-        new THREE.BoxGeometry(0.06, 0.08, 0.16),
-        -0.135,
-        1.65,
-        0.08,
-        0,
-        0.15,
-        0,
-        chromeBright
-      ),
-      bakePart(
-        new THREE.BoxGeometry(0.06, 0.08, 0.16),
-        0.135,
-        1.65,
-        0.08,
-        0,
-        -0.15,
-        0,
-        chromeBright
-      ),
-      // Dark triangular nasal aperture
-      bakePart(new THREE.BoxGeometry(0.055, 0.065, 0.08), 0, 1.64, 0.155, 0, 0, 0, darkSocket),
-      // Upper maxilla & metallic teeth grille
-      bakePart(new THREE.BoxGeometry(0.18, 0.065, 0.16), 0, 1.59, 0.09, 0, 0, 0, chromeMid),
-      bakePart(new THREE.BoxGeometry(0.15, 0.04, 0.14), 0, 1.545, 0.11, 0, 0, 0, teethIvory),
-      // Articulated lower mandible jawbone
-      bakePart(new THREE.BoxGeometry(0.19, 0.065, 0.18), 0, 1.495, 0.07, 0.08, 0, 0, chromeBright),
-      // Cheek hydraulic pistons L/R
-      bakePart(
-        new THREE.CylinderGeometry(0.022, 0.022, 0.19, 8),
-        -0.13,
-        1.58,
-        0.03,
-        0.15,
-        0,
-        0.18,
-        pistonSteel
-      ),
-      bakePart(
-        new THREE.CylinderGeometry(0.022, 0.022, 0.19, 8),
-        0.13,
-        1.58,
-        0.03,
-        0.15,
-        0,
-        -0.18,
-        pistonSteel
-      ),
-
-      // Cervical spine & dual neck hydraulic dampers
-      bakePart(
-        new THREE.CylinderGeometry(0.065, 0.075, 0.18, 10),
-        0,
-        1.43,
-        -0.02,
-        0,
-        0,
-        0,
-        pistonSteel
-      ),
-      bakePart(
-        new THREE.CylinderGeometry(0.02, 0.02, 0.18, 6),
-        -0.07,
-        1.43,
-        0.02,
-        0,
-        0,
-        -0.15,
-        chromeBright
-      ),
-      bakePart(
-        new THREE.CylinderGeometry(0.02, 0.02, 0.18, 6),
-        0.07,
-        1.43,
-        0.02,
-        0,
-        0,
-        0.15,
-        chromeBright
-      ),
-
-      // Broad armored trapezius & clavicle yoke (strong top-down silhouette)
-      bakePart(new THREE.BoxGeometry(0.7, 0.1, 0.28), 0, 1.35, -0.01, 0, 0, 0, chromeBright),
-      // Shoulder ball-joint rotary actuators L/R
-      bakePart(new THREE.SphereGeometry(0.11, 10, 8), -0.37, 1.34, 0, 0, 0, 0, chromeMid),
-      bakePart(new THREE.SphereGeometry(0.11, 10, 8), 0.37, 1.34, 0, 0, 0, 0, chromeMid),
-
-      // Dark inner hydraulic chest core + breastplate sternum + 3 segmented rib arches
-      bakePart(
-        new THREE.CylinderGeometry(0.19, 0.14, 0.44, 10),
-        0,
-        1.13,
-        -0.01,
-        0,
-        0,
-        0,
-        darkSocket
-      ),
-      bakePart(new THREE.BoxGeometry(0.14, 0.36, 0.24), 0, 1.15, 0.03, 0, 0, 0, chromeBright),
-      bakePart(new THREE.BoxGeometry(0.5, 0.065, 0.26), 0, 1.26, 0.01, 0, 0, 0, chromeBright),
-      bakePart(new THREE.BoxGeometry(0.46, 0.06, 0.24), 0, 1.15, 0.01, 0, 0, 0, chromeMid),
-      bakePart(new THREE.BoxGeometry(0.4, 0.055, 0.21), 0, 1.04, 0.0, 0, 0, 0, chromeBright),
-
-      // Lumbar spinal vertebrae column & twin abdominal hydraulic struts
-      bakePart(
-        new THREE.CylinderGeometry(0.06, 0.065, 0.34, 8),
-        0,
-        0.88,
-        -0.04,
-        0,
-        0,
-        0,
-        chromeMid
-      ),
-      bakePart(
-        new THREE.CylinderGeometry(0.024, 0.024, 0.3, 6),
-        -0.11,
-        0.88,
-        0.03,
-        0,
-        0,
-        0.12,
-        pistonSteel
-      ),
-      bakePart(
-        new THREE.CylinderGeometry(0.024, 0.024, 0.3, 6),
-        0.11,
-        0.88,
-        0.03,
-        0,
-        0,
-        -0.12,
-        pistonSteel
-      ),
-
-      // Heavy pelvic H-Chassis & hip sockets
-      bakePart(new THREE.BoxGeometry(0.46, 0.15, 0.25), 0, 0.72, 0, 0, 0, 0, chromeBright),
-      bakePart(new THREE.BoxGeometry(0.14, 0.2, 0.27), 0, 0.7, 0, 0, 0, 0, pistonSteel),
-
-      // Left & Right Upper Humerus Struts & Elbow Servos
-      bakePart(
-        new THREE.CylinderGeometry(0.055, 0.048, 0.34, 8),
-        -0.37,
-        1.16,
-        0.04,
-        0.35,
-        0,
-        0.08,
-        chromeBright
-      ),
-      bakePart(
-        new THREE.CylinderGeometry(0.055, 0.048, 0.34, 8),
-        0.37,
-        1.16,
-        0.04,
-        0.35,
-        0,
-        -0.08,
-        chromeBright
-      ),
-      bakePart(new THREE.SphereGeometry(0.065, 8, 8), -0.35, 1.0, 0.12, 0, 0, 0, pistonSteel),
-      bakePart(new THREE.SphereGeometry(0.065, 8, 8), 0.35, 1.0, 0.12, 0, 0, 0, pistonSteel),
-
-      // Left support forearm reaching across to rifle handguard
-      bakePart(
-        new THREE.CylinderGeometry(0.045, 0.04, 0.36, 8),
-        -0.16,
-        0.98,
-        0.26,
-        1.25,
-        0.55,
-        0,
-        chromeMid
-      ),
-      // Right trigger forearm
-      bakePart(
-        new THREE.CylinderGeometry(0.045, 0.04, 0.34, 8),
-        0.28,
-        0.98,
-        0.25,
-        1.35,
-        -0.2,
-        0,
-        chromeMid
-      ),
-
-      // Westinghouse M-25 40W Phased Plasma Rifle (receiver, cooling shroud, barrel, stock, magazine)
-      bakePart(new THREE.BoxGeometry(0.09, 0.13, 0.56), 0.18, 1.0, 0.38, 0, -0.08, 0, gunmetal),
-      bakePart(
-        new THREE.CylinderGeometry(0.032, 0.032, 0.38, 8),
-        0.16,
-        1.02,
-        0.72,
-        Math.PI / 2,
-        0,
-        0.08,
-        chromeMid
-      ),
-      bakePart(new THREE.BoxGeometry(0.06, 0.14, 0.09), 0.18, 0.89, 0.42, 0.2, -0.08, 0, darkSocket)
-    ];
-
-    const chassisGeo = mergeParts(chassisParts);
-
-    // 2. Build Articulated Leg Geometry (origin at hip y = 0.68 so rotation.x swings the leg naturally)
-    const buildLegGeo = (sideOffset: number): THREE.BufferGeometry => {
-      return mergeParts([
-        // Upper femur main strut + parallel hydraulic piston
-        bakePart(
-          new THREE.CylinderGeometry(0.065, 0.055, 0.34, 8),
-          sideOffset,
-          -0.16,
-          0,
-          0,
-          0,
-          0,
-          chromeBright
-        ),
-        bakePart(
-          new THREE.CylinderGeometry(0.025, 0.025, 0.32, 6),
-          sideOffset,
-          -0.16,
-          -0.055,
-          0,
-          0,
-          0,
-          pistonSteel
-        ),
-        // Knee actuator joint drum
-        bakePart(
-          new THREE.SphereGeometry(0.068, 8, 8),
-          sideOffset,
-          -0.34,
-          0.01,
-          0,
-          0,
-          0,
-          chromeMid
-        ),
-        // Lower tibia shin strut
-        bakePart(
-          new THREE.CylinderGeometry(0.052, 0.042, 0.32, 8),
-          sideOffset,
-          -0.5,
-          0,
-          0,
-          0,
-          0,
-          chromeBright
-        ),
-        // Skeletal mechanical foot & heel spur
-        bakePart(
-          new THREE.BoxGeometry(0.11, 0.06, 0.24),
-          sideOffset,
-          -0.65,
-          0.04,
-          0,
-          0,
-          0,
-          pistonSteel
-        )
-      ]);
-    };
-
-    const leftLegGeo = buildLegGeo(-0.15);
-    const rightLegGeo = buildLegGeo(0.15);
+    // 1. T-800 endoskeleton geometry (skull, torso, arms, M-25 rifle) and the two animated legs
+    const chassisGeo = buildEndoChassis();
+    const leftLegGeo = buildEndoLeg(-0.15);
+    const rightLegGeo = buildEndoLeg(0.15);
 
     const chassisMat = new THREE.MeshStandardMaterial({
       color: 0xffffff,
       vertexColors: true,
-      emissive: 0x0a1018,
-      emissiveIntensity: 0.12,
-      metalness: 0.48,
-      roughness: 0.48,
+      emissive: 0x000000,
+      emissiveIntensity: 0,
+      metalness: 0.95,
+      roughness: 0.36,
+      envMapIntensity: 1.5,
       normalMap: ProceduralTextures.getBrushedMetalNormal(),
       roughnessMap: ProceduralTextures.getBrushedMetalRoughness()
     });
@@ -337,21 +60,14 @@ export class EndoskeletonBatch {
     this.rightLegInstancedMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     this.rightLegInstancedMesh.frustumCulled = false;
 
-    // 3. Build glowing pinpoint crimson optics & rifle plasma coil
-    const opticsParts: THREE.BufferGeometry[] = [
-      // Left & Right pinpoint crimson optical sensors inside the dark eye sockets
-      bakePart(new THREE.SphereGeometry(0.026, 8, 8), -0.068, 1.69, 0.165, 0, 0, 0, 0xff2222),
-      bakePart(new THREE.SphereGeometry(0.026, 8, 8), 0.068, 1.69, 0.165, 0, 0, 0, 0xff2222),
-      // M-25 rifle glowing plasma chamber strip
-      bakePart(new THREE.BoxGeometry(0.098, 0.04, 0.22), 0.18, 1.03, 0.44, 0, -0.08, 0, 0xd400ff)
-    ];
-    const opticsGeo = mergeParts(opticsParts);
+    // 3. Glowing red optics and rifle plasma chamber
+    const opticsGeo = buildEndoOptics();
 
     const opticsMat = new THREE.MeshStandardMaterial({
       color: 0xffffff,
       vertexColors: true,
-      emissive: 0xff1111,
-      emissiveIntensity: 2.8,
+      emissive: 0xff0000,
+      emissiveIntensity: 1.5,
       roughness: 0.2,
       metalness: 0.1
     });
@@ -521,7 +237,7 @@ export class EndoskeletonBatch {
     this.crabChassisInstancedMesh.frustumCulled = false;
 
     const crabOpticsGeo = mergeParts([
-      bakePart(new THREE.BoxGeometry(0.22, 0.045, 0.06), 0, 0.32, 0.37, 0, 0, 0, 0xff2222),
+      bakePart(new THREE.BoxGeometry(0.22, 0.045, 0.06), 0, 0.32, 0.37, 0, 0, 0, 0xff0000),
       bakePart(new THREE.SphereGeometry(0.03, 8, 8), -0.07, 0.32, 0.38, 0, 0, 0, 0xff4444),
       bakePart(new THREE.SphereGeometry(0.03, 8, 8), 0.07, 0.32, 0.38, 0, 0, 0, 0xff4444)
     ]);
@@ -649,11 +365,11 @@ export class EndoskeletonBatch {
       } else if (enemy.isElite && enemy.affix) {
         this.dummyColor.setHex(ELITE_AFFIXES[enemy.affix]?.tintColor ?? 0xffab00);
       } else if (enemy.archetype === 't600_rusted') {
-        this.dummyColor.setHex(0x8c7662); // Weathered bronze/iron T-600
+        this.dummyColor.setHex(0xd2b08c); // Weathered bronze/iron T-600
       } else if (enemy.archetype === 't700_scout') {
-        this.dummyColor.setHex(0x8899ad); // Gunmetal T-700
+        this.dummyColor.setHex(0xaeb4bb); // Gunmetal T-700
       } else {
-        this.dummyColor.setHex(0xd0e0f0); // Gleaming Hyperalloy Chrome T-800
+        this.dummyColor.setHex(0xffffff); // Gleaming Hyperalloy Chrome T-800
       }
       this.chassisInstancedMesh.setColorAt(activeIndex, this.dummyColor);
       this.leftLegInstancedMesh.setColorAt(activeIndex, this.dummyColor);

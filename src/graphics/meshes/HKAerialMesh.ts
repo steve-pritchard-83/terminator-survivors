@@ -1,6 +1,13 @@
 import * as THREE from 'three';
 import { VolumetricSearchlight } from '../VolumetricSearchlight';
 import { disposeObject3D } from '../dispose';
+import {
+  buildAerialCannons,
+  buildAerialGlow,
+  buildAerialHull,
+  buildAerialNacelle,
+  buildAerialThrust
+} from './HKAerialGeometry';
 
 export class HKAerialMesh {
   public readonly group = new THREE.Group();
@@ -18,18 +25,15 @@ export class HKAerialMesh {
   constructor(isSquadronLeader = false) {
     const scale = isSquadronLeader ? 1.55 : 1.1;
 
-    const hullMat = new THREE.MeshStandardMaterial({
-      color: isSquadronLeader ? 0x778899 : 0x6e7b8c,
-      metalness: 0.48,
-      roughness: 0.48
+    // Matte gunmetal with strong reflections; squadron leaders are tinted lighter
+    const metalMat = new THREE.MeshStandardMaterial({
+      color: isSquadronLeader ? 0xb9c6d4 : 0xffffff,
+      vertexColors: true,
+      metalness: 0.72,
+      roughness: 0.45,
+      envMapIntensity: 1.4
     });
-
-    const glowCyanMat = new THREE.MeshStandardMaterial({
-      color: 0x00e5ff,
-      emissive: 0x00b8e6,
-      emissiveIntensity: 1.6,
-      roughness: 0.35
-    });
+    const glowMat = new THREE.MeshBasicMaterial({ color: 0xffffff, vertexColors: true });
 
     const strobeRedMat = new THREE.MeshStandardMaterial({
       color: 0xff1111,
@@ -38,70 +42,31 @@ export class HKAerialMesh {
       roughness: 0.3
     });
 
-    // 1. Central fuselage hull & forward sensor nose (non-zero tip cylinder avoids degenerate cone apex normals)
-    const noseGeo = new THREE.CylinderGeometry(0.18, 0.7, 2.2, 8);
-    noseGeo.rotateX(Math.PI / 2);
-    const noseMesh = new THREE.Mesh(noseGeo, hullMat);
-    noseMesh.position.set(0, 0, 1.4);
-
-    const bodyMesh = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.9, 3.2), hullMat);
-
-    // Forward optical sensor visor (crimson bar)
-    const visorMesh = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.12, 0.2), strobeRedMat);
-    visorMesh.position.set(0, 0.1, 2.1);
-
-    this.group.add(noseMesh, bodyMesh, visorMesh);
-
-    // 2. Swept wings
-    const wingGeo = new THREE.BoxGeometry(6.4, 0.15, 1.2);
-    const wingMesh = new THREE.Mesh(wingGeo, hullMat);
-    wingMesh.position.set(0, 0.15, -0.4);
-    this.group.add(wingMesh);
+    // 1. Hull (fuselage, wings, canopy, chin mount) and emissive visor / emitters
+    this.group.add(new THREE.Mesh(buildAerialHull(), metalMat), new THREE.Mesh(buildAerialGlow(), glowMat));
 
     // Wingtip red strobes
     this.leftStrobe = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), strobeRedMat);
-    this.leftStrobe.position.set(-3.2, 0.15, -0.4);
+    this.leftStrobe.position.set(-3.2, -0.3, -0.35);
     this.rightStrobe = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), strobeRedMat);
-    this.rightStrobe.position.set(3.2, 0.15, -0.4);
+    this.rightStrobe.position.set(3.2, -0.3, -0.35);
     this.group.add(this.leftStrobe, this.rightStrobe);
 
-    // 3. Port & Starboard Tilting Turbine Nacelles
+    // 2. Port & starboard tilting turbine nacelles (ducted fans)
+    const nacelleGeo = buildAerialNacelle();
+    const thrustGeo = buildAerialThrust();
     this.leftTurbine = new THREE.Group();
     this.leftTurbine.position.set(-2.6, 0.1, -0.3);
-    const nacelleGeo = new THREE.CylinderGeometry(0.45, 0.45, 1.6, 12);
-    nacelleGeo.rotateX(Math.PI / 2);
-    const leftNacelleMesh = new THREE.Mesh(nacelleGeo, hullMat);
-    const leftThrustGlow = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.35, 0.1, 0.4, 12),
-      glowCyanMat
-    );
-    leftThrustGlow.position.set(0, 0, -0.9);
-    leftThrustGlow.rotateX(Math.PI / 2);
-    this.leftTurbine.add(leftNacelleMesh, leftThrustGlow);
-
+    this.leftTurbine.add(new THREE.Mesh(nacelleGeo, metalMat), new THREE.Mesh(thrustGeo, glowMat));
     this.rightTurbine = new THREE.Group();
     this.rightTurbine.position.set(2.6, 0.1, -0.3);
-    const rightNacelleMesh = new THREE.Mesh(nacelleGeo, hullMat);
-    const rightThrustGlow = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.35, 0.1, 0.4, 12),
-      glowCyanMat
-    );
-    rightThrustGlow.position.set(0, 0, -0.9);
-    rightThrustGlow.rotateX(Math.PI / 2);
-    this.rightTurbine.add(rightNacelleMesh, rightThrustGlow);
-
+    this.rightTurbine.add(new THREE.Mesh(nacelleGeo, metalMat), new THREE.Mesh(thrustGeo, glowMat));
     this.group.add(this.leftTurbine, this.rightTurbine);
 
-    // 4. Twin Underslung Plasma Cannons
+    // 3. Twin chin plasma cannons
     this.plasmaBarrels = new THREE.Group();
-    this.plasmaBarrels.position.set(0, -0.55, 0.6);
-    const barrelGeo = new THREE.CylinderGeometry(0.06, 0.06, 1.2, 8);
-    barrelGeo.rotateX(Math.PI / 2);
-    const barrelL = new THREE.Mesh(barrelGeo, hullMat);
-    barrelL.position.x = -0.4;
-    const barrelR = new THREE.Mesh(barrelGeo, hullMat);
-    barrelR.position.x = 0.4;
-    this.plasmaBarrels.add(barrelL, barrelR);
+    this.plasmaBarrels.position.set(0, -0.35, 1.45);
+    this.plasmaBarrels.add(new THREE.Mesh(buildAerialCannons(), metalMat));
     this.group.add(this.plasmaBarrels);
 
     // 5. Dual Volumetric Searchlights (scaled appropriately for parent group)

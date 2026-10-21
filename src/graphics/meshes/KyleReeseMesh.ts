@@ -20,25 +20,25 @@ export class KyleReeseMesh {
 
   constructor() {
     const trouserMat = new THREE.MeshStandardMaterial({
-      color: 0x3b4856, // Combat slate trousers
+      color: 0x3a4b6c, // Worn blue jeans
       roughness: 0.78,
       metalness: 0.12
     });
 
     const bootMat = new THREE.MeshStandardMaterial({
-      color: 0x1c2026,
-      roughness: 0.65,
-      metalness: 0.25
+      color: 0x131519,
+      roughness: 0.6,
+      metalness: 0.2
     });
 
     const coatMat = new THREE.MeshStandardMaterial({
-      color: 0x5c584c, // Weathered olive-charcoal trenchcoat
+      color: 0x4d4e44, // Long dark olive-charcoal trench coat
       roughness: 0.82,
       metalness: 0.1
     });
 
     const vestMat = new THREE.MeshStandardMaterial({
-      color: 0x2c353e, // Tactical under-vest & shoulder armor
+      color: 0x80878d, // Grey t-shirt under the open coat
       roughness: 0.6,
       metalness: 0.35
     });
@@ -50,8 +50,8 @@ export class KyleReeseMesh {
     });
 
     const hairMat = new THREE.MeshStandardMaterial({
-      color: 0x3a2b20,
-      roughness: 0.85,
+      color: 0x2a1f18,
+      roughness: 0.9,
       metalness: 0.05
     });
 
@@ -68,23 +68,10 @@ export class KyleReeseMesh {
     });
 
     const gunMat = new THREE.MeshStandardMaterial({
-      color: 0x556474,
-      metalness: 0.8,
-      roughness: 0.25
+      color: 0x2c333b, // Blued steel
+      metalness: 0.85,
+      roughness: 0.32
     });
-
-    // Subtle Tactical Ground Ring & Soft Rim Light (never blows out bloom)
-    const ringGeo = new THREE.RingGeometry(0.56, 0.64, 32);
-    ringGeo.rotateX(-Math.PI / 2);
-    const ringMat = new THREE.MeshBasicMaterial({
-      color: 0x00b8e6,
-      transparent: true,
-      opacity: 0.42,
-      side: THREE.DoubleSide
-    });
-    const groundRing = new THREE.Mesh(ringGeo, ringMat);
-    groundRing.position.y = 0.03;
-    this.group.add(groundRing);
 
     const playerLight = new THREE.PointLight(0x70a8e8, 1.15, 14, 1.4);
     playerLight.position.set(0, 3.6, 0);
@@ -98,10 +85,7 @@ export class KyleReeseMesh {
       const thigh = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.075, 0.38, 10), trouserMat);
       thigh.position.y = -0.18;
 
-      const kneePad = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.11, 0.14), vestMat);
-      kneePad.position.set(0, -0.36, 0.03);
-
-      const shin = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.065, 0.32, 10), trouserMat);
+        const shin = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.065, 0.32, 10), trouserMat);
       shin.position.y = -0.48;
 
       const bootShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.078, 0.072, 0.24, 10), bootMat);
@@ -110,7 +94,7 @@ export class KyleReeseMesh {
       const bootFoot = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.11, 0.26), bootMat);
       bootFoot.position.set(0, -0.69, 0.05);
 
-      leg.add(thigh, kneePad, shin, bootShaft, bootFoot);
+      leg.add(thigh, shin, bootShaft, bootFoot);
       return leg;
     };
 
@@ -142,14 +126,6 @@ export class KyleReeseMesh {
     );
     collarMesh.position.set(0, 0.57, -0.01);
 
-    const shoulderPadL = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.08, 0.28), vestMat);
-    shoulderPadL.position.set(-0.27, 0.53, 0);
-    shoulderPadL.rotation.z = 0.18;
-
-    const shoulderPadR = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.08, 0.28), vestMat);
-    shoulderPadR.position.set(0.27, 0.53, 0);
-    shoulderPadR.rotation.z = -0.18;
-
     // Cross-body ammo bandolier strap with 12-gauge brass shells
     const bandolierGroup = new THREE.Group();
     bandolierGroup.position.set(0, 0.29, 0);
@@ -176,8 +152,8 @@ export class KyleReeseMesh {
     shoulderBeacon.position.set(-0.26, 0.58, 0.02);
 
     // Flaring Trenchcoat Tails (segmented)
-    const coatTailGeo = new THREE.BoxGeometry(0.5, 0.44, 0.08);
-    coatTailGeo.translate(0, -0.22, -0.12);
+    const coatTailGeo = new THREE.BoxGeometry(0.5, 0.66, 0.08);
+    coatTailGeo.translate(0, -0.33, -0.12);
     this.coatTails = new THREE.Mesh(coatTailGeo, coatMat);
     this.coatTails.position.set(0, 0.1, 0);
 
@@ -187,28 +163,49 @@ export class KyleReeseMesh {
       coatSideL,
       coatSideR,
       collarMesh,
-      shoulderPadL,
-      shoulderPadR,
       bandolierGroup,
       belt,
       shoulderBeacon,
       this.coatTails
     );
 
-    // 3. Sculpted Head, Hair & Tech-Com Tactical Headband
+    // 3. Head: visible face, short dark messy hair, brow, nose, ears and stubble
     const headGroup = new THREE.Group();
-    headGroup.position.set(0, 0.68, 0.02);
-    const neckMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.075, 0.12, 8), skinMat);
-    neckMesh.position.y = -0.08;
-    const headMesh = new THREE.Mesh(new THREE.SphereGeometry(0.135, 14, 12), skinMat);
-    const jawMesh = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.1, 0.16), skinMat);
-    jawMesh.position.set(0, -0.04, 0.03);
-    const headband = new THREE.Mesh(new THREE.CylinderGeometry(0.142, 0.142, 0.045, 12), vestMat);
-    headband.position.set(0, 0.04, 0);
-    const hairTop = new THREE.Mesh(new THREE.SphereGeometry(0.145, 12, 10), hairMat);
-    hairTop.position.set(0, 0.05, -0.02);
-    hairTop.scale.set(1.0, 0.85, 1.08);
-    headGroup.add(neckMesh, headMesh, jawMesh, headband, hairTop);
+    headGroup.position.set(0, 0.7, 0.02);
+    const stubbleMat = new THREE.MeshStandardMaterial({ color: 0x9a7a64, roughness: 0.8, metalness: 0 });
+    const darkMat = new THREE.MeshStandardMaterial({ color: 0x1a1512, roughness: 0.7, metalness: 0 });
+    const neckMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.08, 0.13, 8), skinMat);
+    neckMesh.position.y = -0.09;
+    const headMesh = new THREE.Mesh(new THREE.SphereGeometry(0.15, 14, 12), skinMat);
+    headMesh.scale.set(0.92, 1.05, 1.0);
+    const jawMesh = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.09, 0.14), stubbleMat);
+    jawMesh.position.set(0, -0.085, 0.045);
+    const browMesh = new THREE.Mesh(new THREE.BoxGeometry(0.19, 0.025, 0.05), darkMat);
+    browMesh.position.set(0, 0.035, 0.125);
+    const noseMesh = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.06, 0.05), skinMat);
+    noseMesh.position.set(0, -0.015, 0.15);
+    const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.016, 6, 6), darkMat);
+    eyeL.position.set(-0.05, 0.005, 0.138);
+    const eyeR = eyeL.clone();
+    eyeR.position.x = 0.05;
+    const earL = new THREE.Mesh(new THREE.SphereGeometry(0.03, 6, 6), skinMat);
+    earL.position.set(-0.14, -0.01, 0);
+    earL.scale.set(0.5, 1, 0.8);
+    const earR = earL.clone();
+    earR.position.x = 0.14;
+    // Short messy hair: a cap over the crown and back of the head, leaving the face clear
+    const hairTop = new THREE.Mesh(new THREE.SphereGeometry(0.158, 12, 10, 0, Math.PI * 2, 0, Math.PI * 0.55), hairMat);
+    hairTop.position.set(0, 0.025, -0.02);
+    hairTop.rotation.x = -0.25;
+    hairTop.scale.set(1.0, 1.0, 1.05);
+    const hairBack = new THREE.Mesh(new THREE.SphereGeometry(0.15, 10, 8), hairMat);
+    hairBack.position.set(0, -0.01, -0.06);
+    hairBack.scale.set(0.95, 0.9, 0.8);
+    const sideburnL = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.07, 0.05), hairMat);
+    sideburnL.position.set(-0.125, 0.0, 0.07);
+    const sideburnR = sideburnL.clone();
+    sideburnR.position.x = 0.125;
+    headGroup.add(neckMesh, headMesh, jawMesh, browMesh, noseMesh, eyeL, eyeR, earL, earR, hairTop, hairBack, sideburnL, sideburnR);
     this.torsoGroup.add(headGroup);
 
     // 4. Two-Handed Arms & Detailed Tech-Com Weapon Assembly

@@ -232,7 +232,7 @@ export class InteractiveEnvironmentSystem {
     // Car chassis body
     const bodyGeo = new THREE.BoxGeometry(2.1, 0.7, 3.8);
     const bodyMat = new THREE.MeshStandardMaterial({
-      color: 0x3d3530, // Burnt rust metal
+      color: 0x735e4b, // Burnt rust metal (light enough to read from the top-down camera)
       roughness: 0.9,
       metalness: 0.3
     });

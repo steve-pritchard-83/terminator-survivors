@@ -17,9 +17,9 @@ export class InfiltratorMesh {
   constructor() {
     // Materials
     const leatherMat = new THREE.MeshStandardMaterial({
-      color: 0x181818, // Matte black biker leather
-      roughness: 0.82,
-      metalness: 0.18
+      color: 0x28292d, // Black biker leather
+      roughness: 0.5,
+      metalness: 0.25
     });
 
     const chromeMat = new THREE.MeshStandardMaterial({
@@ -56,90 +56,127 @@ export class InfiltratorMesh {
       metalness: 0.75
     });
 
-    // 1. Legs & Boots
-    this.leftLeg = new THREE.Group();
-    this.leftLeg.position.set(-0.28, 0.9, 0);
-    const leftThigh = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.5, 0.26), trouserMat);
-    leftThigh.position.y = -0.22;
-    const leftShin = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.45, 0.24), trouserMat);
-    leftShin.position.y = -0.62;
-    const leftBoot = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.24, 0.36), bootMat);
-    leftBoot.position.set(0, -0.85, 0.05);
-    this.leftLeg.add(leftThigh, leftShin, leftBoot);
+    const hairMat = new THREE.MeshStandardMaterial({ color: 0x15110e, roughness: 0.9, metalness: 0.05 });
+    const shadesMat = new THREE.MeshStandardMaterial({ color: 0x050506, roughness: 0.12, metalness: 0.8 });
 
-    this.rightLeg = new THREE.Group();
-    this.rightLeg.position.set(0.28, 0.9, 0);
-    const rightThigh = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.5, 0.26), trouserMat);
-    rightThigh.position.y = -0.22;
-    const rightShin = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.45, 0.24), trouserMat);
-    rightShin.position.y = -0.62;
-    const rightBoot = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.24, 0.36), bootMat);
-    rightBoot.position.set(0, -0.85, 0.05);
-    this.rightLeg.add(rightThigh, rightShin, rightBoot);
-
+    // 1. Legs: black jeans over heavy boots
+    const buildLeg = (x: number): THREE.Group => {
+      const leg = new THREE.Group();
+      leg.position.set(x, 0.9, 0);
+      const thigh = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.12, 0.52, 10), trouserMat);
+      thigh.position.y = -0.24;
+      const knee = new THREE.Mesh(new THREE.SphereGeometry(0.125, 8, 6), trouserMat);
+      knee.position.y = -0.5;
+      const shin = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.1, 0.46, 10), trouserMat);
+      shin.position.y = -0.66;
+      const bootShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.115, 0.125, 0.2, 10), bootMat);
+      bootShaft.position.y = -0.84;
+      const bootFoot = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.13, 0.4), bootMat);
+      bootFoot.position.set(0, -0.93, 0.07);
+      const sole = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.035, 0.42), shadesMat);
+      sole.position.set(0, -0.99, 0.07);
+      leg.add(thigh, knee, shin, bootShaft, bootFoot, sole);
+      return leg;
+    };
+    this.leftLeg = buildLeg(-0.25);
+    this.rightLeg = buildLeg(0.25);
     this.group.add(this.leftLeg, this.rightLeg);
 
-    // 2. Torso with heavy biker jacket
+    // 2. Torso: tapered leather biker jacket with lapels, collar, zip, belt and a torn chrome rib plate
     this.torsoGroup = new THREE.Group();
     this.torsoGroup.position.set(0, 0.9, 0);
 
-    const torso = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.65, 0.42), leatherMat);
-    torso.position.y = 0.35;
-
-    // Exposed chrome endo rib plate on battle-torn left torso
+    const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.34, 0.7, 14), leatherMat);
+    torso.position.y = 0.38;
+    torso.scale.set(1, 1, 0.66);
+    const hem = new THREE.Mesh(new THREE.CylinderGeometry(0.345, 0.345, 0.07, 14), leatherMat);
+    hem.position.y = 0.03;
+    hem.scale.set(1, 1, 0.68);
     const ribPlate = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.3, 0.04), chromeMat);
-    ribPlate.position.set(-0.16, 0.35, 0.215);
+    ribPlate.position.set(-0.14, 0.4, 0.235);
+    ribPlate.rotation.y = 0.15;
+    const lapelL = new THREE.Mesh(new THREE.BoxGeometry(0.17, 0.3, 0.05), leatherMat);
+    lapelL.position.set(-0.13, 0.62, 0.23);
+    lapelL.rotation.set(0, 0.3, 0.32);
+    const lapelR = new THREE.Mesh(new THREE.BoxGeometry(0.17, 0.3, 0.05), leatherMat);
+    lapelR.position.set(0.13, 0.62, 0.23);
+    lapelR.rotation.set(0, -0.3, -0.32);
+    const collar = new THREE.Mesh(new THREE.TorusGeometry(0.17, 0.05, 6, 14), leatherMat);
+    collar.position.set(0, 0.74, -0.01);
+    collar.rotation.x = Math.PI / 2;
+    const zip = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.5, 0.02), chromeMat);
+    zip.position.set(0, 0.34, 0.235);
+    const belt = new THREE.Mesh(new THREE.CylinderGeometry(0.345, 0.345, 0.07, 14), bootMat);
+    belt.position.y = 0.0;
+    belt.scale.set(1, 1, 0.68);
+    const buckle = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.07, 0.03), chromeMat);
+    buckle.position.set(0, 0.0, 0.235);
+    const shoulderL = new THREE.Mesh(new THREE.SphereGeometry(0.13, 10, 8), leatherMat);
+    shoulderL.position.set(-0.45, 0.66, 0);
+    const shoulderR = shoulderL.clone();
+    shoulderR.position.x = 0.45;
 
-    // Collar / lapels
-    const lapel = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.25, 0.1), leatherMat);
-    lapel.position.set(0, 0.6, 0.18);
+    this.torsoGroup.add(torso, hem, ribPlate, lapelL, lapelR, collar, zip, belt, buckle, shoulderL, shoulderR);
 
-    // Belt and chrome buckle
-    const belt = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.08, 0.4), bootMat);
-    belt.position.y = 0.04;
-    const buckle = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.1, 0.04), chromeMat);
-    buckle.position.set(0, 0.04, 0.21);
-
-    this.torsoGroup.add(torso, ribPlate, lapel, belt, buckle);
-
-    // 3. Head: sculpted jaw, partially sheared flesh revealing chrome skull & crimson optic
+    // 3. Head: flesh with hair and sunglasses on the left, exposed chrome skull and crimson optic on the right
     const headGroup = new THREE.Group();
-    headGroup.position.set(0, 0.8, 0);
+    headGroup.position.set(0, 0.88, 0);
 
-    const headFlesh = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.34, 0.3), skinMat);
-    headFlesh.position.set(-0.04, 0, 0);
+    const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.11, 0.14, 8), skinMat);
+    neck.position.y = -0.1;
+    const headFlesh = new THREE.Mesh(new THREE.SphereGeometry(0.17, 16, 12), skinMat);
+    headFlesh.scale.set(0.94, 1.1, 1.02);
+    const jaw = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.1, 0.18), skinMat);
+    jaw.position.set(0, -0.1, 0.05);
+    const nose = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.07, 0.06), skinMat);
+    nose.position.set(0, -0.01, 0.17);
+    const hair = new THREE.Mesh(new THREE.SphereGeometry(0.178, 14, 8, 0, Math.PI * 2, 0, Math.PI * 0.46), hairMat);
+    hair.position.set(0, 0.03, -0.01);
+    hair.scale.set(0.96, 1.05, 1.05);
+    // Sunglasses over the intact eye
+    const shades = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.05, 0.03), shadesMat);
+    shades.position.set(-0.07, 0.03, 0.165);
+    const shadesBridge = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.012, 0.012), shadesMat);
+    shadesBridge.position.set(0, 0.04, 0.16);
 
-    // Chrome skull temple & jaw visible on right side
-    const skullPlate = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.32, 0.28), chromeMat);
-    skullPlate.position.set(0.12, 0, 0);
+    // Chrome half-skull over the right side of the face (x >= 0)
+    const skullPlate = new THREE.Mesh(
+      new THREE.SphereGeometry(0.176, 14, 12, Math.PI / 2, Math.PI, 0, Math.PI),
+      chromeMat
+    );
+    skullPlate.scale.set(0.94, 1.1, 1.02);
+    const skullJaw = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.09, 0.17), chromeMat);
+    skullJaw.position.set(0.06, -0.1, 0.05);
 
-    // Iconic glowing crimson sensor eye
-    this.redOptic = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 8), opticMat);
-    this.redOptic.position.set(0.09, 0.04, 0.16);
+    // Iconic glowing crimson sensor eye in a dark socket
+    const socket = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.055, 0.05, 12), shadesMat);
+    socket.rotation.x = Math.PI / 2;
+    socket.position.set(0.075, 0.03, 0.15);
+    this.redOptic = new THREE.Mesh(new THREE.SphereGeometry(0.03, 10, 8), opticMat);
+    this.redOptic.position.set(0.075, 0.03, 0.165);
 
     this.opticLight = new THREE.PointLight(0xff0022, 0.8, 3.5);
-    this.opticLight.position.set(0.09, 0.04, 0.22);
+    this.opticLight.position.set(0.075, 0.03, 0.24);
 
-    headGroup.add(headFlesh, skullPlate, this.redOptic, this.opticLight);
+    headGroup.add(neck, headFlesh, jaw, nose, hair, shades, shadesBridge, skullPlate, skullJaw, socket, this.redOptic, this.opticLight);
     this.torsoGroup.add(headGroup);
 
-    // 4. Arms
-    // Left arm (jacket sleeve with chrome hand)
+    // 4. Arms: leather sleeves with elbow joints; left hand is exposed chrome
+    const buildSleeve = (): THREE.Mesh => {
+      const m = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.085, 0.58, 10), leatherMat);
+      m.position.y = -0.26;
+      return m;
+    };
     this.leftArm = new THREE.Group();
-    this.leftArm.position.set(-0.46, 0.62, 0);
-    const leftSleeve = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.58, 0.2), leatherMat);
-    leftSleeve.position.y = -0.24;
-    const leftHand = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.16, 0.14), chromeMat);
-    leftHand.position.y = -0.58;
-    this.leftArm.add(leftSleeve, leftHand);
+    this.leftArm.position.set(-0.5, 0.64, 0);
+    const leftHand = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.16, 0.13), chromeMat);
+    leftHand.position.y = -0.6;
+    this.leftArm.add(buildSleeve(), leftHand);
 
-    // Right arm (holding plasma rifle)
     this.rightArm = new THREE.Group();
-    this.rightArm.position.set(0.46, 0.62, 0);
-    const rightSleeve = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.58, 0.2), leatherMat);
-    rightSleeve.position.y = -0.24;
-    const rightHand = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.16, 0.14), chromeMat);
-    rightHand.position.y = -0.58;
+    this.rightArm.position.set(0.5, 0.64, 0);
+    const rightHand = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.16, 0.13), skinMat);
+    rightHand.position.y = -0.6;
 
     // Westinghouse M-27 Phased Plasma Rifle
     this.plasmaRifle = new THREE.Group();
@@ -154,7 +191,7 @@ export class InfiltratorMesh {
     muzzleSight.position.set(0, 0.11, 0.68);
 
     this.plasmaRifle.add(gunBody, barrel, muzzleSight);
-    this.rightArm.add(rightSleeve, rightHand, this.plasmaRifle);
+    this.rightArm.add(buildSleeve(), rightHand, this.plasmaRifle);
 
     this.torsoGroup.add(this.leftArm, this.rightArm);
     this.group.add(this.torsoGroup);

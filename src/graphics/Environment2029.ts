@@ -3,6 +3,11 @@ import { ProceduralTextures } from './ProceduralTextures';
 import { bakePart, mergeParts } from './meshes/geometryUtils';
 import type { IEnvironment } from './environments/IEnvironment';
 import { disposeObject3D } from './dispose';
+import { buildBoneGeometry, buildFlameGeometry, buildGlowGeometry, buildSkullGeometry } from './EnvironmentDetail';
+
+const SKULL_CAPACITY = 6000;
+const BONE_CAPACITY = 2600;
+const FIRE_CAPACITY = 40;
 
 interface Chunk {
   x: number;
@@ -20,6 +25,10 @@ export class Environment2029 implements IEnvironment {
   private readonly groundMat: THREE.MeshStandardMaterial;
 
   private readonly skullInstancedMesh: THREE.InstancedMesh;
+  private readonly boneInstancedMesh: THREE.InstancedMesh;
+  private readonly flameInstancedMesh: THREE.InstancedMesh;
+  private readonly fireGlowInstancedMesh: THREE.InstancedMesh;
+  private readonly fires: Array<{ x: number; z: number; scale: number; phase: number }> = [];
   private readonly rebarInstancedMesh: THREE.InstancedMesh;
   private readonly carInstancedMesh: THREE.InstancedMesh;
   private readonly hedgehogInstancedMesh: THREE.InstancedMesh;
@@ -36,13 +45,14 @@ export class Environment2029 implements IEnvironment {
     phase: number;
   }> = [];
   private fogTime = 0;
+  private readonly fireDummy = new THREE.Object3D();
 
   constructor() {
     this.groundGeo = new THREE.PlaneGeometry(this.chunkSize, this.chunkSize, 24, 24);
     this.groundGeo.rotateX(-Math.PI / 2);
 
     this.groundMat = new THREE.MeshStandardMaterial({
-      color: 0x485e78,
+      color: 0x6b7480, // scorched ash, cold night cast
       map: ProceduralTextures.getWastelandGroundAlbedo(),
       bumpMap: ProceduralTextures.getWastelandGroundBump(),
       bumpScale: 0.2,
@@ -50,25 +60,9 @@ export class Environment2029 implements IEnvironment {
       metalness: 0.08
     });
 
-    // 1. Build dark, earthy half-buried skull remnants (blends into soil, never looks like XP drops)
-    const boneWeathered = 0x524a42;
-    const boneShadow = 0x3b352f;
-    const socketVoid = 0x0c0e12;
-
-    const skullParts: THREE.BufferGeometry[] = [
-      // Cranium vault
-      bakePart(new THREE.SphereGeometry(0.14, 10, 8), 0, 0.12, -0.02, 0, 0, 0, boneWeathered),
-      // Brow ridge & cheekbones
-      bakePart(new THREE.BoxGeometry(0.2, 0.05, 0.12), 0, 0.14, 0.07, 0.1, 0, 0, boneWeathered),
-      // Deep dark eye sockets L/R
-      bakePart(new THREE.SphereGeometry(0.042, 6, 6), -0.052, 0.115, 0.105, 0, 0, 0, socketVoid),
-      bakePart(new THREE.SphereGeometry(0.042, 6, 6), 0.052, 0.115, 0.105, 0, 0, 0, socketVoid),
-      // Dark nasal cavity
-      bakePart(new THREE.BoxGeometry(0.036, 0.05, 0.06), 0, 0.08, 0.12, 0, 0, 0, socketVoid),
-      // Upper maxilla & jaw
-      bakePart(new THREE.BoxGeometry(0.12, 0.06, 0.12), 0, 0.04, 0.06, 0, 0, 0, boneShadow)
-    ];
-    const skullGeo = mergeParts(skullParts);
+    // 1. Human skulls and bones carpet the ground (the iconic future-war image)
+    const skullGeo = buildSkullGeometry();
+    const boneGeo = buildBoneGeometry();
     const skullMat = new THREE.MeshStandardMaterial({
       color: 0xffffff,
       vertexColors: true,
@@ -187,9 +181,9 @@ export class Environment2029 implements IEnvironment {
     });
 
     // 3. Build detailed 1980s Burnt-Out Sedan Wreckage (matte scorched steel, no harsh glints)
-    const bodyPaint = 0x384758;
-    const bodyScorched = 0x242e3a;
-    const cabinInterior = 0x0c1016;
+    const bodyPaint = 0x7a6552; // rust and soot, light enough to read from above
+    const bodyScorched = 0x4a4540;
+    const cabinInterior = 0x232a33;
     const chromeTrim = 0x5c6c7c;
     const tireRubber = 0x14181e;
 
@@ -414,10 +408,38 @@ export class Environment2029 implements IEnvironment {
       metalness: 0.15
     });
 
-    const totalSkulls = 650;
+    const totalSkulls = SKULL_CAPACITY;
     this.skullInstancedMesh = new THREE.InstancedMesh(skullGeo, skullMat, totalSkulls);
     this.skullInstancedMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     this.skullInstancedMesh.frustumCulled = false;
+
+    this.boneInstancedMesh = new THREE.InstancedMesh(boneGeo, skullMat, BONE_CAPACITY);
+    this.boneInstancedMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    this.boneInstancedMesh.frustumCulled = false;
+
+    // Fires on wrecks and craters: additive flame tongues plus a soft orange glow on the ground
+    const flameMat = new THREE.MeshBasicMaterial({
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.6,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      side: THREE.DoubleSide
+    });
+    this.flameInstancedMesh = new THREE.InstancedMesh(buildFlameGeometry(), flameMat, FIRE_CAPACITY);
+    this.flameInstancedMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    this.flameInstancedMesh.frustumCulled = false;
+    const glowMat = new THREE.MeshBasicMaterial({
+      map: ProceduralTextures.getSoftGlowSprite(),
+      color: 0xff5a10,
+      transparent: true,
+      opacity: 0.8,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+    this.fireGlowInstancedMesh = new THREE.InstancedMesh(buildGlowGeometry(11), glowMat, FIRE_CAPACITY);
+    this.fireGlowInstancedMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    this.fireGlowInstancedMesh.frustumCulled = false;
 
     const totalRebar = 90;
     this.rebarInstancedMesh = new THREE.InstancedMesh(rebarGeo, concreteMat, totalRebar);
@@ -446,6 +468,9 @@ export class Environment2029 implements IEnvironment {
 
     this.group.add(
       this.skullInstancedMesh,
+      this.boneInstancedMesh,
+      this.flameInstancedMesh,
+      this.fireGlowInstancedMesh,
       this.rebarInstancedMesh,
       this.carInstancedMesh,
       this.hedgehogInstancedMesh,
@@ -488,13 +513,13 @@ export class Environment2029 implements IEnvironment {
 
     // 8. Distant Ruined Wasteland Skyline Ring with searchlights
     this.skylineRing = new THREE.Group();
-    const refineryMat = new THREE.MeshBasicMaterial({ color: 0x050b16 });
-    const ruinedSteelMat = new THREE.MeshBasicMaterial({ color: 0x0a1422 });
+    const refineryMat = new THREE.MeshBasicMaterial({ color: 0x050b16, fog: false });
+    const ruinedSteelMat = new THREE.MeshBasicMaterial({ color: 0x0a1422, fog: false });
     const beaconMat = new THREE.MeshBasicMaterial({ color: 0xff1122 });
 
     for (let i = 0; i < 42; i++) {
       const angle = (i / 42) * Math.PI * 2;
-      const dist = 115 + (i % 3) * 8;
+      const dist = 85 + (i % 3) * 8;
       const pseudoRand = (Math.sin(i * 12.9898) * 43758.5453) % 1;
       const normRand = Math.abs(pseudoRand);
       const height = 14 + (i % 7) * 4.5 + normRand * 8;
@@ -568,6 +593,8 @@ export class Environment2029 implements IEnvironment {
     this.obstacleColliders.length = 0;
 
     let skullIdx = 0;
+    let boneIdx = 0;
+    this.fires.length = 0;
     let rebarIdx = 0;
     let carIdx = 0;
     let hedgehogIdx = 0;
@@ -585,23 +612,44 @@ export class Environment2029 implements IEnvironment {
         return val - Math.floor(val);
       };
 
-      // 1. Half-buried earthy skulls embedded low in the ash (subtle terrain detail)
-      for (let s = 0; s < 55; s++) {
-        if (skullIdx >= 650) break;
-        const sx = originX + (rng(s * 3 + 1) - 0.5) * (this.chunkSize - 6);
-        const sz = originZ + (rng(s * 5 + 2) - 0.5) * (this.chunkSize - 6);
-        const sy = -0.04 + rng(s * 7) * 0.02;
-
-        dummy.position.set(sx, sy, sz);
-        dummy.rotation.set(
-          (rng(s * 11) - 0.5) * 0.45,
-          rng(s * 13) * Math.PI * 2,
-          (rng(s * 17) - 0.5) * 0.45
-        );
-        const sc = 0.65 + rng(s * 19) * 0.22;
+      // 1. Skull piles, stray skulls and bones carpeting the ash
+      const placeSkull = (x: number, z: number, y: number, sc: number, salt: number): void => {
+        if (skullIdx >= SKULL_CAPACITY) return;
+        dummy.position.set(x, y, z);
+        dummy.rotation.set((rng(salt + 1) - 0.5) * 0.7, rng(salt + 2) * Math.PI * 2, (rng(salt + 3) - 0.5) * 0.7);
         dummy.scale.set(sc, sc, sc);
         dummy.updateMatrix();
         this.skullInstancedMesh.setMatrixAt(skullIdx++, dummy.matrix);
+      };
+      const placeBone = (x: number, z: number, salt: number): void => {
+        if (boneIdx >= BONE_CAPACITY) return;
+        dummy.position.set(x, 0.0, z);
+        dummy.rotation.set(0, rng(salt + 4) * Math.PI * 2, 0);
+        const bs = 0.8 + rng(salt + 5) * 0.7;
+        dummy.scale.set(bs, bs, bs);
+        dummy.updateMatrix();
+        this.boneInstancedMesh.setMatrixAt(boneIdx++, dummy.matrix);
+      };
+      for (let p = 0; p < 40; p++) {
+        const pcx = originX + (rng(p * 31 + 400) - 0.5) * (this.chunkSize - 8);
+        const pcz = originZ + (rng(p * 31 + 401) - 0.5) * (this.chunkSize - 8);
+        const n = 5 + Math.floor(rng(p * 31 + 402) * 9);
+        for (let k = 0; k < n; k++) {
+          const salt = p * 97 + k * 7 + 1000;
+          const ang = rng(salt) * Math.PI * 2;
+          const rad = rng(salt + 6) * 1.5;
+          placeSkull(pcx + Math.cos(ang) * rad, pcz + Math.sin(ang) * rad, rng(salt + 7) * 0.16, 1.0 + rng(salt + 8) * 0.5, salt);
+        }
+        for (let k = 0; k < 4; k++) {
+          const salt = p * 53 + k * 11 + 2000;
+          placeBone(pcx + (rng(salt) - 0.5) * 3.2, pcz + (rng(salt + 6) - 0.5) * 3.2, salt);
+        }
+      }
+      for (let s = 0; s < 110; s++) {
+        const sx = originX + (rng(s * 3 + 1) - 0.5) * (this.chunkSize - 6);
+        const sz = originZ + (rng(s * 5 + 2) - 0.5) * (this.chunkSize - 6);
+        placeSkull(sx, sz, -0.01 + rng(s * 7) * 0.03, 0.95 + rng(s * 19) * 0.4, s * 13);
+        if (s % 2 === 0) placeBone(sx + 0.6, sz - 0.4, s * 29);
       }
 
       // 2. Shattered Highway Overpass Columns (Obstacles)
@@ -630,6 +678,7 @@ export class Environment2029 implements IEnvironment {
         dummy.updateMatrix();
         this.carInstancedMesh.setMatrixAt(carIdx++, dummy.matrix);
         this.obstacleColliders.push({ x: cx, z: cz, radius: 1.85 });
+        if (cr % 2 === 0) this.fires.push({ x: cx, z: cz, scale: 1.5, phase: rng(cr + 60) * 10 });
       }
 
       // 4. Anti-Tank Czech Hedgehogs (Obstacles)
@@ -673,10 +722,13 @@ export class Environment2029 implements IEnvironment {
         dummy.scale.set(sc, 1, sc);
         dummy.updateMatrix();
         this.craterInstancedMesh.setMatrixAt(craterIdx++, dummy.matrix);
+        if (cr % 2 === 1) this.fires.push({ x: crx, z: crz, scale: 1.0 + sc * 0.3, phase: rng(cr + 120) * 10 });
       }
     }
 
     this.skullInstancedMesh.count = skullIdx;
+    this.boneInstancedMesh.count = boneIdx;
+    this.boneInstancedMesh.instanceMatrix.needsUpdate = true;
     this.rebarInstancedMesh.count = rebarIdx;
     this.carInstancedMesh.count = carIdx;
     this.hedgehogInstancedMesh.count = hedgehogIdx;
@@ -692,6 +744,7 @@ export class Environment2029 implements IEnvironment {
 
   public update(playerX: number, playerZ: number): void {
     this.fogTime += 0.016;
+    this.updateFires();
     const curChunkX = Math.round(playerX / this.chunkSize);
     const curChunkZ = Math.round(playerZ / this.chunkSize);
 
@@ -728,6 +781,33 @@ export class Environment2029 implements IEnvironment {
     if (needsRepopulate) {
       this.repopulateProps(curChunkX, curChunkZ);
     }
+  }
+
+  /** Flicker every fire's flame height and glow each frame. */
+  private updateFires(): void {
+    const dummy = this.fireDummy;
+    const n = Math.min(this.fires.length, FIRE_CAPACITY);
+    for (let i = 0; i < n; i++) {
+      const f = this.fires[i];
+      const t = this.fogTime;
+      const flick = 0.85 + 0.2 * Math.sin(t * 9 + f.phase) + 0.1 * Math.sin(t * 17 + f.phase * 1.7);
+      dummy.position.set(f.x, 0.25, f.z);
+      dummy.rotation.set(0, f.phase + t * 0.4, 0);
+      dummy.scale.set(f.scale * (0.9 + 0.12 * Math.sin(t * 7 + f.phase)), f.scale * flick, f.scale);
+      dummy.updateMatrix();
+      this.flameInstancedMesh.setMatrixAt(i, dummy.matrix);
+
+      dummy.position.set(f.x, 0.06, f.z);
+      dummy.rotation.set(0, 0, 0);
+      const g = f.scale * (0.9 + 0.1 * flick);
+      dummy.scale.set(g, 1, g);
+      dummy.updateMatrix();
+      this.fireGlowInstancedMesh.setMatrixAt(i, dummy.matrix);
+    }
+    this.flameInstancedMesh.count = n;
+    this.fireGlowInstancedMesh.count = n;
+    this.flameInstancedMesh.instanceMatrix.needsUpdate = true;
+    this.fireGlowInstancedMesh.instanceMatrix.needsUpdate = true;
   }
 
   public dispose(): void {

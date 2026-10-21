@@ -14,7 +14,7 @@
 - `src/audio`: Web Audio API synthesis, SFX trigger library, and gapless background music streamer
 - `src/core`: Game orchestrator, fixed 60Hz GameLoop, EventBus, and `window.__GAME_DEBUG__` interface
 - `src/data`: Game balance data (weapons, passives, evolutions, meta-upgrades, wave schedule) — **all balance numbers live here**
-- `src/graphics`: Three.js scene manager, camera, post-processing, procedural textures, and custom meshes
+- `src/graphics`: (visual review: run `npx vite --port 5199` and `node scripts/mesh-shots.mjs <outDir> kyle:35:15:4 env:game ...` to screenshot meshes via /mesh-preview.html; the game skips its reflection map under automation, so mask `navigator.webdriver` when screenshotting the real game) Three.js scene manager, camera, post-processing, procedural textures, and custom meshes
 - `src/input`: Keyboard, mouse, virtual touch joystick, and standard Gamepad API with dual-rumble haptics
 - `src/state`: RunState (in-run player stats & leveling math) and SaveManager (LocalStorage persistence)
 - `src/systems`: Core gameplay systems: EnemySystem, PlayerSystem, WeaponSystem, PickupSystem, ParticleSystem

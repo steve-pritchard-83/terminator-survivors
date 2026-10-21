@@ -76,23 +76,51 @@ export class ProceduralTextures {
 
   public static getMetallicEnvMap(): THREE.CanvasTexture {
     if (this.envMap) return this.envMap;
-    const width = 512;
-    const height = 256;
+    const width = 1024;
+    const height = 512;
     const canvas = document.createElement('canvas');
     canvas.width = width;
     canvas.height = height;
     const ctx = this.get2DContext(canvas);
 
     if (ctx) {
-      // Soft, diffused nocturnal slate-blue gradient (eliminates harsh specular metal glints)
-      const grad = ctx.createLinearGradient(0, 0, 0, height);
-      grad.addColorStop(0.0, '#16263b');
-      grad.addColorStop(0.42, '#2b4260');
-      grad.addColorStop(0.5, '#3b5678');
-      grad.addColorStop(0.58, '#22354d');
-      grad.addColorStop(1.0, '#0d1624');
-      ctx.fillStyle = grad;
+      // Future-war night: dark steel-blue sky, burning amber horizon, bright cold highlights.
+      // Chrome needs strong contrast in what it reflects, otherwise it reads as flat blue plastic.
+      const sky = ctx.createLinearGradient(0, 0, 0, height);
+      // The camera looks down on the action, so top-facing chrome reflects the zenith: keep it a cold silver-grey
+      sky.addColorStop(0.0, '#6f86a3');
+      sky.addColorStop(0.3, '#3d5373');
+      sky.addColorStop(0.46, '#4a5e78');
+      sky.addColorStop(0.5, '#7d6556'); // dull fires on the horizon
+      sky.addColorStop(0.54, '#2a2a30');
+      sky.addColorStop(1.0, '#06090e');
+      ctx.fillStyle = sky;
       ctx.fillRect(0, 0, width, height);
+
+      // Cold moon-like key light
+      const moon = ctx.createRadialGradient(width * 0.3, height * 0.18, 4, width * 0.3, height * 0.18, 70);
+      moon.addColorStop(0, 'rgba(235,245,255,1)');
+      moon.addColorStop(1, 'rgba(235,245,255,0)');
+      ctx.fillStyle = moon;
+      ctx.fillRect(0, 0, width, height);
+
+      // Searchlight / HK glare streaks
+      ctx.globalCompositeOperation = 'lighter';
+      const streaks: Array<[number, number, number, number]> = [
+        [0.62, 0.12, 0.05, 0.9],
+        [0.78, 0.2, 0.035, 0.7],
+        [0.08, 0.26, 0.04, 0.6],
+        [0.9, 0.08, 0.03, 0.5]
+      ];
+      for (const [fx, fy, fw, alpha] of streaks) {
+        const g = ctx.createLinearGradient((fx - fw) * width, 0, (fx + fw) * width, 0);
+        g.addColorStop(0, 'rgba(255,255,255,0)');
+        g.addColorStop(0.5, `rgba(220,236,255,${alpha})`);
+        g.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.fillStyle = g;
+        ctx.fillRect((fx - fw) * width, fy * height - 4, fw * 2 * width, 8);
+      }
+      ctx.globalCompositeOperation = 'source-over';
     }
 
     const tex = new THREE.CanvasTexture(canvas);
