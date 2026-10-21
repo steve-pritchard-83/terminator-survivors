@@ -58,9 +58,11 @@ export const VIEW_PROFILES = {
     cameraZoom: 1.0,
     exposure: LIGHTING.exposure,
     hemiIntensity: LIGHTING.hemiIntensity,
-    ambientIntensity: LIGHTING.ambientIntensity
+    ambientIntensity: LIGHTING.ambientIntensity,
+    envIntensity: LIGHTING.envIntensity
   },
-  compact: { cameraZoom: 0.7, exposure: 1.4, hemiIntensity: 0.9, ambientIntensity: 0.55 }
+  // Phone screens are small, dimmer and often viewed outdoors: a much brighter night
+  compact: { cameraZoom: 0.7, exposure: 1.9, hemiIntensity: 1.25, ambientIntensity: 0.8, envIntensity: 1.7 }
 };
 /** Screens at or below this width (CSS px) use the compact profile, as do coarse-pointer devices. */
 export const COMPACT_VIEW_MAX_WIDTH = 960;

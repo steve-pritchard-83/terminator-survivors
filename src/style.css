@@ -948,8 +948,9 @@ select.controller-selected {
 
 .hudm-fps {
   position: absolute;
-  top: 28px;
-  right: 10px;
+  /* Under the pause button */
+  top: 62px;
+  right: max(16px, env(safe-area-inset-right));
   font-size: 11px;
   color: var(--t-muted);
   z-index: 100;

@@ -98,13 +98,21 @@ const SPECS: Record<string, ModelSpec> = {
 };
 const skinnedNames = new Set(Object.entries(SPECS).filter(([, s]) => s.skinned).map(([n]) => n));
 
+/** Phones: a faint cool glow through the material's own texture so dark metal reads against the ground. */
+function liftMachine(mat: THREE.MeshStandardMaterial): void {
+  if (!RENDER_BUDGET.machineLift) return;
+  mat.emissive.setRGB(0.8, 0.88, 1).multiplyScalar(RENDER_BUDGET.machineLift);
+  mat.emissiveMap = mat.map;
+}
+
 /**
  * The T-800 texture has a rust-copper cast; the films' endoskeleton is polished silver chrome.
  * Keep the texture's detail but drain most of its colour, tint it cool silver and make it fully metallic.
  */
 function chromeEndoMaterial(mat: THREE.MeshStandardMaterial): void {
   mat.color.setHex(0xd2dbe4);
-  mat.metalness = 1;
+  mat.metalness = RENDER_BUDGET.metalScale;
+  liftMachine(mat);
   mat.roughness = 0.75; // multiplies the texture's own roughness
   mat.envMapIntensity = 1.5;
   mat.side = THREE.FrontSide;
@@ -133,7 +141,8 @@ function markShared(root: THREE.Object3D, metal?: ModelSpec['metal']): void {
       m.userData.shared = true;
       const std = m as THREE.MeshStandardMaterial;
       if (std.isMeshStandardMaterial && metal) {
-        std.metalness = metal.metalness;
+        std.metalness = metal.metalness * RENDER_BUDGET.metalScale;
+        liftMachine(std);
         std.roughness = metal.roughness;
         std.envMapIntensity = 1.2;
       }

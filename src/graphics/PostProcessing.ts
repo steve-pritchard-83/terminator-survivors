@@ -207,6 +207,9 @@ export class PostProcessingManager {
         ? { type: THREE.UnsignedByteType, samples: 0 }
         : { type: THREE.HalfFloatType, samples: 4 }
     );
+    // 8 bits of linear light crush a night scene into its bottom few levels; stored sRGB-encoded
+    // (and decoded on read) the dark tones keep their detail
+    if (this.useFastPath || isMobile) renderTarget.texture.colorSpace = THREE.SRGBColorSpace;
 
     this.composer = new EffectComposer(renderer, renderTarget);
 

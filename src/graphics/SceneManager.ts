@@ -153,6 +153,8 @@ export class SceneManager {
     this.renderer.toneMappingExposure = p.exposure;
     this.hemiLight.intensity = p.hemiIntensity;
     this.ambientLight.intensity = p.ambientIntensity;
+    // The machines are mostly metal, which shows reflections rather than the ambient fill
+    if (this.scene.environment) this.scene.environmentIntensity = p.envIntensity;
   }
 
   public onResize = (): void => {

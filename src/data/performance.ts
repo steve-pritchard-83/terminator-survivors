@@ -27,7 +27,11 @@ export const RENDER_BUDGET = IS_MOBILE
       /** Seconds of low frame rate before the resolution is lowered */
       lowFpsSeconds: 1.5,
       /** Load the light model variants (fewer triangles, 512 px textures) */
-      modelSuffix: '.m'
+      modelSuffix: '.m',
+      /** Machine metalness is scaled by this: on a small dark screen pure chrome reads as black */
+      metalScale: 0.6,
+      /** Faint cool self-light on the machines (through their own texture) so they stand off the ground */
+      machineLift: 0.22
     }
   : {
       flashLights: 8,
@@ -37,5 +41,7 @@ export const RENDER_BUDGET = IS_MOBILE
       bloomScale: 1,
       maxAutoPreset: 'ultra' as const,
       lowFpsSeconds: 3,
-      modelSuffix: ''
+      modelSuffix: '',
+      metalScale: 1,
+      machineLift: 0
     };
