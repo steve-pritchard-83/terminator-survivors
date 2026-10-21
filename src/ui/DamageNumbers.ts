@@ -16,7 +16,7 @@ export interface DamageNumberSlot {
 export class DamageNumbers {
   public static readonly MAX_POOL_SIZE = 64;
   public static readonly AGGREGATE_WINDOW = 0.15; // 150 ms hit aggregation window
-  public static readonly DURATION = 0.75; // 750 ms total lifetime
+  public static readonly DURATION = 0.55; // 550 ms total lifetime
 
   private readonly pool: DamageNumberSlot[] = [];
   private readonly container: HTMLElement;
@@ -77,13 +77,11 @@ export class DamageNumbers {
         existing.damageSum += damage;
         if (isCrit) {
           existing.isCrit = true;
-          existing.element.style.color = 'var(--color-amber)';
-          existing.element.style.fontWeight = 'bold';
-          existing.element.style.fontSize = '1.25rem';
+          existing.element.classList.add('is-crit');
         }
         existing.element.textContent = existing.isCrit
-          ? `-${existing.damageSum} CRIT!`
-          : `-${existing.damageSum}`;
+          ? `${existing.damageSum}!`
+          : `${existing.damageSum}`;
         existing.screenX = screenX;
         existing.screenY = screenY;
         existing.aggregateTimer = DamageNumbers.AGGREGATE_WINDOW;
@@ -107,16 +105,15 @@ export class DamageNumbers {
     slot.screenY = screenY;
 
     const el = slot.element;
-    el.textContent = isCrit ? `-${damage} CRIT!` : `-${damage}`;
-    el.style.color = isCrit ? 'var(--color-amber)' : 'var(--color-chrome)';
-    el.style.fontWeight = isCrit ? 'bold' : 'normal';
-    el.style.fontSize = isCrit ? '1.25rem' : '1.0rem';
+    el.textContent = isCrit ? `${damage}!` : `${damage}`;
+    el.classList.toggle('is-crit', isCrit);
     el.style.display = 'block';
 
     this.renderSlot(slot);
   }
 
-  public spawnText(text: string, color: string, screenX: number, screenY: number): void {
+  /** Pickup / reward callouts. `_color` is kept for API compatibility; the HUD palette is used. */
+  public spawnText(text: string, _color: string, screenX: number, screenY: number): void {
     const slot = this.acquireSlot();
     slot.active = true;
     slot.damageSum = 0;
@@ -130,8 +127,7 @@ export class DamageNumbers {
 
     const el = slot.element;
     el.textContent = text;
-    el.style.color = color;
-    el.style.fontSize = '1.0rem';
+    el.classList.remove('is-crit');
     el.style.display = 'block';
 
     this.renderSlot(slot);
@@ -182,25 +178,14 @@ export class DamageNumbers {
 
   private renderSlot(slot: DamageNumberSlot): void {
     const t = Math.min(1.0, slot.elapsed / slot.duration);
-    // Ease out upwards motion: -36px over lifetime
-    const yOffset = -36 * (1 - (1 - t) * (1 - t));
+    // Ease out upwards drift of 24px; no scale pop
+    const yOffset = -24 * (1 - (1 - t) * (1 - t));
 
-    // Scale: pop up to 1.15 at t=0.25, then settle to 0.9
-    let scale = 1.0;
-    if (t < 0.25) {
-      scale = 1.0 + (t / 0.25) * 0.15;
-    } else {
-      scale = 1.15 - ((t - 0.25) / 0.75) * 0.25;
-    }
-    if (slot.isCrit) {
-      scale *= 1.4;
-    }
-
-    // Opacity: stay 1 until 60% of duration, then fade to 0
-    const opacity = t < 0.6 ? 1.0 : 1.0 - (t - 0.6) / 0.4;
+    // Opacity: hold until 45% of the lifetime, then fade out
+    const opacity = t < 0.45 ? 1.0 : 1.0 - (t - 0.45) / 0.55;
 
     const el = slot.element;
-    el.style.transform = `translate3d(${Math.round(slot.screenX)}px, ${Math.round(slot.screenY + yOffset)}px, 0) translate(-50%, -50%) scale(${scale.toFixed(3)})`;
+    el.style.transform = `translate3d(${Math.round(slot.screenX)}px, ${Math.round(slot.screenY + yOffset)}px, 0) translate(-50%, -50%)`;
     el.style.opacity = Math.max(0, opacity).toFixed(3);
   }
 

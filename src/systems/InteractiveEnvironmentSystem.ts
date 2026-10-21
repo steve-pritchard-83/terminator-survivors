@@ -7,9 +7,16 @@ import type { PickupSystem } from './PickupSystem';
 import type { EnemySystem } from './EnemySystem';
 import type { ActiveEnemy, SpatialEntity } from '../core/types';
 import { globalEvents } from '../core/EventBus';
-import { globalRNG } from '../core/RNG';
+import { globalRNG, vfxRNG } from '../core/RNG';
 import { disposeObject3D } from '../graphics/dispose';
 import type { IEnvironment } from '../graphics/environments/IEnvironment';
+import { buildCarWreckGeometry, createCarWreckMaterial } from '../graphics/EnvironmentDetail';
+import { ModelLibrary } from '../graphics/ModelLibrary';
+
+const shared = <T extends { userData: Record<string, unknown> }>(resource: T): T => {
+  resource.userData = { shared: true };
+  return resource;
+};
 
 export interface FuelDrum extends SpatialEntity {
   type: 'crate';
@@ -45,6 +52,13 @@ export class InteractiveEnvironmentSystem {
   public activeFlare: SupplyDropFlare | null = null;
 
   private nextEntityId = 50000;
+  // Shared across every wreck and drum, so removing one never frees GPU resources the others use
+  private readonly carWreckGeo = shared(buildCarWreckGeometry());
+  private readonly carWreckMat = shared(createCarWreckMaterial());
+  private readonly drumGeo = shared(new THREE.CylinderGeometry(0.38, 0.38, 0.85, 12));
+  private readonly drumMat = shared(new THREE.MeshStandardMaterial({ color: 0x7a1608, roughness: 0.55, metalness: 0.55 }));
+  private readonly drumBandGeo = shared(new THREE.CylinderGeometry(0.39, 0.39, 0.12, 12));
+  private readonly drumBandMat = shared(new THREE.MeshStandardMaterial({ color: 0xb08820, roughness: 0.6, metalness: 0.4 }));
   private lastFlareDropTime = 0;
   private readonly unbinds: Array<() => void> = [];
 
@@ -113,23 +127,14 @@ export class InteractiveEnvironmentSystem {
     const group = new THREE.Group();
     group.position.set(x, 0, z);
 
-    // Red drum body
-    const drumGeo = new THREE.CylinderGeometry(0.38, 0.38, 0.85, 12);
-    const drumMat = new THREE.MeshStandardMaterial({
-      color: 0xcc1100,
-      roughness: 0.5,
-      metalness: 0.6
-    });
-    const drumMesh = new THREE.Mesh(drumGeo, drumMat);
+    // Rust-red fuel drum with faded hazard bands
+    const drumMesh = new THREE.Mesh(this.drumGeo, this.drumMat);
     drumMesh.position.y = 0.425;
     group.add(drumMesh);
 
-    // Yellow hazard bands
-    const bandGeo = new THREE.CylinderGeometry(0.39, 0.39, 0.12, 12);
-    const bandMat = new THREE.MeshBasicMaterial({ color: 0xffcc00 });
-    const topBand = new THREE.Mesh(bandGeo, bandMat);
+    const topBand = new THREE.Mesh(this.drumBandGeo, this.drumBandMat);
     topBand.position.y = 0.65;
-    const botBand = new THREE.Mesh(bandGeo, bandMat);
+    const botBand = new THREE.Mesh(this.drumBandGeo, this.drumBandMat);
     botBand.position.y = 0.2;
     group.add(topBand, botBand);
 
@@ -229,37 +234,10 @@ export class InteractiveEnvironmentSystem {
     const group = new THREE.Group();
     group.position.set(x, 0, z);
 
-    // Car chassis body
-    const bodyGeo = new THREE.BoxGeometry(2.1, 0.7, 3.8);
-    const bodyMat = new THREE.MeshStandardMaterial({
-      color: 0x735e4b, // Burnt rust metal (light enough to read from the top-down camera)
-      roughness: 0.9,
-      metalness: 0.3
-    });
-    const body = new THREE.Mesh(bodyGeo, bodyMat);
-    body.position.y = 0.45;
-    group.add(body);
-
-    // Cabin roof
-    const roofGeo = new THREE.BoxGeometry(1.8, 0.55, 2.0);
-    const roof = new THREE.Mesh(roofGeo, bodyMat);
-    roof.position.set(0, 1.0, -0.2);
-    group.add(roof);
-
-    // 4 Wheels
-    const wheelGeo = new THREE.CylinderGeometry(0.35, 0.35, 0.25, 8);
-    wheelGeo.rotateZ(Math.PI / 2);
-    const wheelMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.95 });
-
-    const wFL = new THREE.Mesh(wheelGeo, wheelMat);
-    wFL.position.set(-1.1, 0.35, 1.2);
-    const wFR = new THREE.Mesh(wheelGeo, wheelMat);
-    wFR.position.set(1.1, 0.35, 1.2);
-    const wBL = new THREE.Mesh(wheelGeo, wheelMat);
-    wBL.position.set(-1.1, 0.35, -1.2);
-    const wBR = new THREE.Mesh(wheelGeo, wheelMat);
-    wBR.position.set(1.1, 0.35, -1.2);
-    group.add(wFL, wFR, wBL, wBR);
+    // Burnt-out sedan, the same model as the scenery wrecks
+    const wreck = ModelLibrary.getMeshData('burnt_car');
+    group.add(new THREE.Mesh(wreck?.geometry ?? this.carWreckGeo, wreck?.material ?? this.carWreckMat));
+    group.rotation.y = vfxRNG.next() * Math.PI * 2;
 
     this.group.add(group);
 
@@ -348,7 +326,7 @@ export class InteractiveEnvironmentSystem {
     globalEvents.emit('pickup:reward', {
       x,
       z,
-      text: 'TECH-COM AIRDROP // REACH FLARE (20s)',
+      text: 'SUPPLY DROP: REACH THE FLARE (20S)',
       color: '#ff6600'
     });
     this.audio.playFlareLaunch();
@@ -413,7 +391,7 @@ export class InteractiveEnvironmentSystem {
         globalEvents.emit('pickup:reward', {
           x: fx,
           z: fz,
-          text: '+50 ALLOY // CACHE RECOVERED',
+          text: '+50 SCRAP',
           color: '#00e5ff'
         });
 

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { VolumetricSearchlight } from '../VolumetricSearchlight';
 import { disposeObject3D } from '../dispose';
+import { ModelLibrary } from '../ModelLibrary';
 import {
   buildAerialCannons,
   buildAerialGlow,
@@ -18,6 +19,9 @@ export class HKAerialMesh {
   private readonly leftStrobe: THREE.Mesh;
   private readonly rightStrobe: THREE.Mesh;
   private readonly plasmaBarrels: THREE.Group;
+  // Procedural hull pieces, replaced by the sculpted model once it has loaded
+  private readonly proceduralParts: THREE.Object3D[] = [];
+  private modelApplied = false;
 
   public currentPitch = 0;
   public currentRoll = 0;
@@ -25,13 +29,13 @@ export class HKAerialMesh {
   constructor(isSquadronLeader = false) {
     const scale = isSquadronLeader ? 1.55 : 1.1;
 
-    // Matte gunmetal with strong reflections; squadron leaders are tinted lighter
+    // Dark gunmetal, as in the films: it reads by its rim highlights, engines and searchlights
     const metalMat = new THREE.MeshStandardMaterial({
-      color: isSquadronLeader ? 0xb9c6d4 : 0xffffff,
+      color: 0x8a9098,
       vertexColors: true,
-      metalness: 0.72,
-      roughness: 0.45,
-      envMapIntensity: 1.4
+      metalness: 0.82,
+      roughness: 0.4,
+      envMapIntensity: 1.2
     });
     const glowMat = new THREE.MeshBasicMaterial({ color: 0xffffff, vertexColors: true });
 
@@ -43,7 +47,9 @@ export class HKAerialMesh {
     });
 
     // 1. Hull (fuselage, wings, canopy, chin mount) and emissive visor / emitters
-    this.group.add(new THREE.Mesh(buildAerialHull(), metalMat), new THREE.Mesh(buildAerialGlow(), glowMat));
+    const hull = new THREE.Mesh(buildAerialHull(), metalMat);
+    const glow = new THREE.Mesh(buildAerialGlow(), glowMat);
+    this.group.add(hull, glow);
 
     // Wingtip red strobes
     this.leftStrobe = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), strobeRedMat);
@@ -81,6 +87,26 @@ export class HKAerialMesh {
     this.group.add(this.leftSearchlight.group, this.rightSearchlight.group);
 
     this.group.scale.set(scale, scale, scale);
+    this.proceduralParts.push(hull, glow, this.leftTurbine, this.rightTurbine, this.plasmaBarrels);
+    this.applyModelIfReady();
+  }
+
+  /** Swaps the procedural hull for the sculpted model as soon as it is available. */
+  private applyModelIfReady(): void {
+    if (this.modelApplied) return;
+    const model = ModelLibrary.get('hk_aerial');
+    if (!model) return;
+    this.modelApplied = true;
+    for (const part of this.proceduralParts) {
+      this.group.remove(part);
+      disposeObject3D(part);
+    }
+    this.group.add(model);
+    // Strobes on the engine pods, searchlights under the nose
+    this.leftStrobe.position.set(-2.95, 0.25, -0.3);
+    this.rightStrobe.position.set(2.95, 0.25, -0.3);
+    this.leftSearchlight.group.position.set(-0.55, -0.9, 2.3);
+    this.rightSearchlight.group.position.set(0.55, -0.9, 2.3);
   }
 
   public update(
@@ -91,6 +117,7 @@ export class HKAerialMesh {
     vz = 0,
     dt = 0.016
   ): void {
+    this.applyModelIfReady();
     // Flight pitch and bank roll based on velocity relative to heading
     const heading = this.group.rotation.y;
     const fwdSpeed = vx * Math.sin(heading) + vz * Math.cos(heading);

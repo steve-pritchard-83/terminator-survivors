@@ -1,17 +1,29 @@
 import * as THREE from 'three';
 import { ProceduralTextures } from './ProceduralTextures';
+import { ModelLibrary } from './ModelLibrary';
+import { RENDER_BUDGET } from '../data/performance';
 import { bakePart, mergeParts } from './meshes/geometryUtils';
 import type { IEnvironment } from './environments/IEnvironment';
 import { disposeObject3D } from './dispose';
-import { buildBoneGeometry, buildFlameGeometry, buildGlowGeometry, buildSkullGeometry } from './EnvironmentDetail';
+import {
+  buildBoneGeometry,
+  buildCarWreckGeometry,
+  buildFlameGeometry,
+  buildGlowGeometry,
+  buildRuinWallGeometry,
+  buildSkullGeometry,
+  createCarWreckMaterial
+} from './EnvironmentDetail';
 
 const SKULL_CAPACITY = 6000;
 const BONE_CAPACITY = 2600;
-const FIRE_CAPACITY = 40;
-const FIRE_LIGHT_COUNT = 3;
+const FIRE_CAPACITY = 80;
+const RUIN_CAPACITY = 60;
+const PUDDLE_CAPACITY = 60;
+const FIRE_LIGHT_COUNT = RENDER_BUDGET.fireLights;
 const FIRE_LIGHT_DISTANCE = 14;
 const FIRE_LIGHT_RANGE = 30; // fires farther than this from the player get no light
-const FIRE_LIGHT_INTENSITY = 7;
+const FIRE_LIGHT_INTENSITY = 9;
 
 interface Chunk {
   x: number;
@@ -35,9 +47,12 @@ export class Environment2029 implements IEnvironment {
   private readonly fires: Array<{ x: number; z: number; scale: number; phase: number }> = [];
   private readonly rebarInstancedMesh: THREE.InstancedMesh;
   private readonly carInstancedMesh: THREE.InstancedMesh;
+  private disposed = false;
   private readonly hedgehogInstancedMesh: THREE.InstancedMesh;
   private readonly rubbleInstancedMesh: THREE.InstancedMesh;
   private readonly craterInstancedMesh: THREE.InstancedMesh;
+  private readonly ruinInstancedMesh: THREE.InstancedMesh;
+  private readonly puddleInstancedMesh: THREE.InstancedMesh;
   private readonly skylineRing: THREE.Group;
   private readonly horizonBeams: THREE.Mesh[] = [];
   private readonly fogMistGroup: THREE.Group;
@@ -60,7 +75,7 @@ export class Environment2029 implements IEnvironment {
     this.groundGeo.rotateX(-Math.PI / 2);
 
     this.groundMat = new THREE.MeshStandardMaterial({
-      color: 0x6b7480, // scorched ash, cold night cast
+      color: 0x4a4846, // scorched ash; the moonlight supplies the blue
       map: ProceduralTextures.getWastelandGroundAlbedo(),
       bumpMap: ProceduralTextures.getWastelandGroundBump(),
       bumpScale: 0.2,
@@ -71,17 +86,19 @@ export class Environment2029 implements IEnvironment {
     // 1. Human skulls and bones carpet the ground (the iconic future-war image)
     const skullGeo = buildSkullGeometry();
     const boneGeo = buildBoneGeometry();
+    // Dimmed so the bone carpet sits in the ground instead of being the brightest thing on screen
     const skullMat = new THREE.MeshStandardMaterial({
-      color: 0xffffff,
+      color: 0x8c8780,
       vertexColors: true,
       roughness: 0.96,
       metalness: 0.0
     });
 
     // 2. Build detailed shattered Highway Overpass Column & Rubble Base (matte concrete)
-    const concreteMid = 0x3d4b5a;
-    const concreteDark = 0x26303a;
-    const concreteLight = 0x4d5d70;
+    // Neutral, slightly warm concrete: the moonlight adds the blue, so the base colours must not
+    const concreteMid = 0x4a4744;
+    const concreteDark = 0x2c2a28;
+    const concreteLight = 0x5c5854;
     const rustedSteel = 0x3d2e28;
 
     const rebarParts: THREE.BufferGeometry[] = [
@@ -188,137 +205,9 @@ export class Environment2029 implements IEnvironment {
       metalness: 0.1
     });
 
-    // 3. Build detailed 1980s Burnt-Out Sedan Wreckage (matte scorched steel, no harsh glints)
-    const bodyPaint = 0x7a6552; // rust and soot, light enough to read from above
-    const bodyScorched = 0x4a4540;
-    const cabinInterior = 0x232a33;
-    const chromeTrim = 0x5c6c7c;
-    const tireRubber = 0x14181e;
-
-    const carParts: THREE.BufferGeometry[] = [
-      bakePart(new THREE.BoxGeometry(1.96, 0.52, 4.3), 0, 0.46, 0, 0, 0, 0, bodyPaint),
-      bakePart(new THREE.BoxGeometry(1.86, 0.18, 1.35), 0, 0.74, 1.38, 0.08, 0, 0.03, bodyScorched),
-      bakePart(new THREE.BoxGeometry(1.7, 0.24, 1.15), 0, 0.64, 1.4, 0, 0, 0, cabinInterior),
-      bakePart(new THREE.BoxGeometry(1.88, 0.2, 1.05), 0, 0.74, -1.55, -0.05, 0, 0, bodyPaint),
-      bakePart(new THREE.BoxGeometry(2.06, 0.2, 0.22), 0, 0.34, 2.18, 0, 0, 0, chromeTrim),
-      bakePart(new THREE.BoxGeometry(2.06, 0.2, 0.22), 0, 0.34, -2.18, 0, 0, 0, chromeTrim),
-      bakePart(new THREE.BoxGeometry(1.4, 0.24, 0.12), 0, 0.56, 2.14, 0, 0, 0, cabinInterior),
-      bakePart(new THREE.BoxGeometry(0.28, 0.16, 0.12), -0.72, 0.58, 2.14, 0, 0, 0, chromeTrim),
-      bakePart(new THREE.BoxGeometry(0.28, 0.16, 0.12), 0.72, 0.58, 2.14, 0, 0, 0, chromeTrim),
-      bakePart(new THREE.BoxGeometry(1.56, 0.48, 1.72), 0, 0.94, -0.12, 0, 0, 0, cabinInterior),
-      bakePart(new THREE.BoxGeometry(1.62, 0.1, 1.65), 0, 1.22, -0.15, 0.04, 0, -0.04, bodyPaint),
-      bakePart(new THREE.BoxGeometry(0.1, 0.56, 0.12), -0.78, 0.96, 0.68, -0.45, 0, 0.1, bodyPaint),
-      bakePart(new THREE.BoxGeometry(0.1, 0.56, 0.12), 0.78, 0.96, 0.68, -0.45, 0, -0.1, bodyPaint),
-      bakePart(new THREE.BoxGeometry(0.1, 0.52, 0.14), -0.8, 0.96, -0.12, 0, 0, 0.08, bodyScorched),
-      bakePart(new THREE.BoxGeometry(0.1, 0.52, 0.14), 0.8, 0.96, -0.12, 0, 0, -0.08, bodyScorched),
-      bakePart(
-        new THREE.BoxGeometry(0.12, 0.56, 0.22),
-        -0.78,
-        0.96,
-        -0.92,
-        0.42,
-        0,
-        0.1,
-        bodyPaint
-      ),
-      bakePart(
-        new THREE.BoxGeometry(0.12, 0.56, 0.22),
-        0.78,
-        0.96,
-        -0.92,
-        0.42,
-        0,
-        -0.1,
-        bodyPaint
-      ),
-      bakePart(
-        new THREE.CylinderGeometry(0.38, 0.38, 0.26, 12),
-        -0.98,
-        0.36,
-        1.32,
-        0,
-        0,
-        Math.PI / 2,
-        tireRubber
-      ),
-      bakePart(
-        new THREE.CylinderGeometry(0.2, 0.2, 0.28, 8),
-        -0.98,
-        0.36,
-        1.32,
-        0,
-        0,
-        Math.PI / 2,
-        chromeTrim
-      ),
-      bakePart(
-        new THREE.CylinderGeometry(0.38, 0.38, 0.26, 12),
-        0.98,
-        0.36,
-        1.32,
-        0,
-        0,
-        Math.PI / 2,
-        tireRubber
-      ),
-      bakePart(
-        new THREE.CylinderGeometry(0.2, 0.2, 0.28, 8),
-        0.98,
-        0.36,
-        1.32,
-        0,
-        0,
-        Math.PI / 2,
-        chromeTrim
-      ),
-      bakePart(
-        new THREE.CylinderGeometry(0.38, 0.38, 0.26, 12),
-        -0.98,
-        0.36,
-        -1.32,
-        0,
-        0,
-        Math.PI / 2,
-        tireRubber
-      ),
-      bakePart(
-        new THREE.CylinderGeometry(0.2, 0.2, 0.28, 8),
-        -0.98,
-        0.36,
-        -1.32,
-        0,
-        0,
-        Math.PI / 2,
-        chromeTrim
-      ),
-      bakePart(
-        new THREE.CylinderGeometry(0.38, 0.38, 0.26, 12),
-        0.98,
-        0.36,
-        -1.32,
-        0,
-        0,
-        Math.PI / 2,
-        tireRubber
-      ),
-      bakePart(
-        new THREE.CylinderGeometry(0.2, 0.2, 0.28, 8),
-        0.98,
-        0.36,
-        -1.32,
-        0,
-        0,
-        Math.PI / 2,
-        chromeTrim
-      )
-    ];
-    const carGeo = mergeParts(carParts);
-    const carMat = new THREE.MeshStandardMaterial({
-      color: 0xffffff,
-      vertexColors: true,
-      metalness: 0.28,
-      roughness: 0.68
-    });
+    // 3. Burnt-out 1980s sedans (shared with the destructible wrecks)
+    const carGeo = buildCarWreckGeometry();
+    const carMat = createCarWreckMaterial();
 
     // 4. Build Anti-Tank Czech Hedgehogs (welded rusted steel I-beams)
     const ironRusted = 0x3d302a;
@@ -341,9 +230,9 @@ export class Environment2029 implements IEnvironment {
     });
 
     // 5. Build Shattered Concrete Foundation Ruins & Rubble Slabs with rebar
-    const slabDark = 0x28333e;
-    const slabMid = 0x3e4e5e;
-    const slabCracked = 0x323f4c;
+    const slabDark = 0x2e2c2a;
+    const slabMid = 0x4a4642;
+    const slabCracked = 0x383532;
     const rebarRust = 0x3e2a22;
     const rubbleParts: THREE.BufferGeometry[] = [
       bakePart(new THREE.BoxGeometry(2.4, 0.38, 1.8), 0, 0.28, 0, 0.22, 0.35, -0.12, slabMid),
@@ -482,7 +371,22 @@ export class Environment2029 implements IEnvironment {
     this.craterInstancedMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     this.craterInstancedMesh.frustumCulled = false;
 
+    // Broken building walls, clustered around each chunk's sites
+    this.ruinInstancedMesh = new THREE.InstancedMesh(buildRuinWallGeometry(), concreteMat, RUIN_CAPACITY);
+    this.ruinInstancedMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    this.ruinInstancedMesh.frustumCulled = false;
+
+    // Standing water in the low ground near the ruins: near-black mirrors for the cold sky
+    const puddleGeo = new THREE.CircleGeometry(1, 18);
+    puddleGeo.rotateX(-Math.PI / 2);
+    const puddleMat = new THREE.MeshStandardMaterial({ color: 0x07090c, metalness: 0.85, roughness: 0.28 });
+    this.puddleInstancedMesh = new THREE.InstancedMesh(puddleGeo, puddleMat, PUDDLE_CAPACITY);
+    this.puddleInstancedMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    this.puddleInstancedMesh.frustumCulled = false;
+
     this.group.add(
+      this.puddleInstancedMesh,
+      this.ruinInstancedMesh,
       this.skullInstancedMesh,
       this.boneInstancedMesh,
       this.flameInstancedMesh,
@@ -500,9 +404,9 @@ export class Environment2029 implements IEnvironment {
     mistGeo.rotateX(-Math.PI / 2);
     const mistMat = new THREE.MeshBasicMaterial({
       map: ProceduralTextures.getSoftGlowSprite(),
-      color: 0x4a6e96,
+      color: 0x3c4652, // grey battlefield smoke, lit cold by the moon
       transparent: true,
-      opacity: 0.14,
+      opacity: 0.2,
       depthWrite: false,
       side: THREE.DoubleSide
     });
@@ -513,7 +417,8 @@ export class Environment2029 implements IEnvironment {
       const dist = 6 + (m % 4) * 6.5;
       const ox = Math.cos(angle) * dist;
       const oz = Math.sin(angle) * dist;
-      mistMesh.position.set(ox, 0.35 + (m % 3) * 0.25, oz);
+      // Most smoke hugs the ground; every fourth patch drifts higher, between the camera and the fight
+      mistMesh.position.set(ox, m % 4 === 0 ? 3.5 + (m % 3) : 0.35 + (m % 3) * 0.25, oz);
       const s = 0.85 + (m % 3) * 0.35;
       mistMesh.scale.set(s, 1, s);
       this.fogMistGroup.add(mistMesh);
@@ -602,6 +507,17 @@ export class Environment2029 implements IEnvironment {
     }
 
     this.repopulateProps(0, 0);
+    void ModelLibrary.preload().then(() => this.applyModels());
+  }
+
+  /** Swaps the procedural wrecks for the sculpted burnt-out car once it has loaded. */
+  private applyModels(): void {
+    const car = ModelLibrary.getMeshData('burnt_car');
+    if (this.disposed || !car) return;
+    this.carInstancedMesh.geometry.dispose();
+    (this.carInstancedMesh.material as THREE.Material).dispose();
+    this.carInstancedMesh.geometry = car.geometry;
+    this.carInstancedMesh.material = car.material;
   }
 
   private repopulateProps(_centerChunkX: number, _centerChunkZ: number): void {
@@ -616,6 +532,8 @@ export class Environment2029 implements IEnvironment {
     let hedgehogIdx = 0;
     let rubbleIdx = 0;
     let craterIdx = 0;
+    let ruinIdx = 0;
+    let puddleIdx = 0;
 
     for (let i = 0; i < this.chunks.length; i++) {
       const c = this.chunks[i];
@@ -646,7 +564,7 @@ export class Environment2029 implements IEnvironment {
         dummy.updateMatrix();
         this.boneInstancedMesh.setMatrixAt(boneIdx++, dummy.matrix);
       };
-      for (let p = 0; p < 40; p++) {
+      for (let p = 0; p < Math.round(40 * RENDER_BUDGET.groundClutter); p++) {
         const pcx = originX + (rng(p * 31 + 400) - 0.5) * (this.chunkSize - 8);
         const pcz = originZ + (rng(p * 31 + 401) - 0.5) * (this.chunkSize - 8);
         const n = 5 + Math.floor(rng(p * 31 + 402) * 9);
@@ -661,84 +579,113 @@ export class Environment2029 implements IEnvironment {
           placeBone(pcx + (rng(salt) - 0.5) * 3.2, pcz + (rng(salt + 6) - 0.5) * 3.2, salt);
         }
       }
-      for (let s = 0; s < 110; s++) {
+      for (let s = 0; s < Math.round(110 * RENDER_BUDGET.groundClutter); s++) {
         const sx = originX + (rng(s * 3 + 1) - 0.5) * (this.chunkSize - 6);
         const sz = originZ + (rng(s * 5 + 2) - 0.5) * (this.chunkSize - 6);
         placeSkull(sx, sz, -0.01 + rng(s * 7) * 0.03, 0.95 + rng(s * 19) * 0.4, s * 13);
         if (s % 2 === 0) placeBone(sx + 0.6, sz - 0.4, s * 29);
       }
 
-      // 2. Shattered Highway Overpass Columns (Obstacles)
-      for (let r = 0; r < 7; r++) {
-        if (rebarIdx >= 90) break;
-        const rx = originX + (rng(r * 4 + 20) - 0.5) * (this.chunkSize - 14);
-        const rz = originZ + (rng(r * 4 + 21) - 0.5) * (this.chunkSize - 14);
-
-        dummy.position.set(rx, 0, rz);
-        dummy.rotation.set(0, rng(r) * Math.PI * 2, 0);
-        dummy.scale.set(1, 1, 1);
+      // Hand-placed feel: each chunk has a few sites where wrecks, ruins and rubble gather,
+      // a collapsed overpass in a straight row and a defensive line of hedgehogs, with open ground between.
+      const sites = [0, 1, 2].map((k) => ({
+        x: originX + (rng(900 + k * 3) - 0.5) * (this.chunkSize - 24),
+        z: originZ + (rng(901 + k * 3) - 0.5) * (this.chunkSize - 24)
+      }));
+      const nearSite = (salt: number, minR: number, spread: number): [number, number] => {
+        const site = sites[Math.floor(rng(salt) * sites.length) % sites.length];
+        const a = rng(salt + 1) * Math.PI * 2;
+        const r = minR + rng(salt + 2) * spread;
+        return [site.x + Math.cos(a) * r, site.z + Math.sin(a) * r];
+      };
+      const place = (mesh: THREE.InstancedMesh, idx: number, x: number, z: number, rotY: number, sc = 1, tilt = 0): void => {
+        dummy.position.set(x, 0, z);
+        dummy.rotation.set(0, rotY, tilt);
+        dummy.scale.set(sc, sc, sc);
         dummy.updateMatrix();
-        this.rebarInstancedMesh.setMatrixAt(rebarIdx++, dummy.matrix);
+        mesh.setMatrixAt(idx, dummy.matrix);
+      };
+
+      // 2. Collapsed highway overpass: a row of broken columns
+      const rowAngle = rng(20) * Math.PI;
+      const rowX = originX + (rng(21) - 0.5) * (this.chunkSize - 30);
+      const rowZ = originZ + (rng(22) - 0.5) * (this.chunkSize - 30);
+      for (let r = 0; r < 4; r++) {
+        if (rebarIdx >= 90) break;
+        const along = (r - 1.5) * 9;
+        const rx = rowX + Math.cos(rowAngle) * along;
+        const rz = rowZ + Math.sin(rowAngle) * along;
+        place(this.rebarInstancedMesh, rebarIdx++, rx, rz, rng(r) * Math.PI * 2);
         this.obstacleColliders.push({ x: rx, z: rz, radius: 1.25 });
       }
 
-      // 3. Burnt-out 1980s Cars (Obstacles)
+      // 3. Burnt-out cars at the sites, every one still burning
       for (let cr = 0; cr < 4; cr++) {
         if (carIdx >= 45) break;
-        const cx = originX + (rng(cr * 6 + 50) - 0.5) * (this.chunkSize - 18);
-        const cz = originZ + (rng(cr * 6 + 51) - 0.5) * (this.chunkSize - 18);
-
-        dummy.position.set(cx, 0, cz);
-        dummy.rotation.set(0, rng(cr * 2) * Math.PI * 2, (rng(cr) - 0.5) * 0.08);
-        dummy.scale.set(1, 1, 1);
-        dummy.updateMatrix();
-        this.carInstancedMesh.setMatrixAt(carIdx++, dummy.matrix);
+        const [cx, cz] = nearSite(cr * 6 + 50, 3, 6);
+        place(this.carInstancedMesh, carIdx++, cx, cz, rng(cr * 2) * Math.PI * 2, 1, (rng(cr) - 0.5) * 0.08);
         this.obstacleColliders.push({ x: cx, z: cz, radius: 1.85 });
-        if (cr % 2 === 0) this.fires.push({ x: cx, z: cz, scale: 1.5, phase: rng(cr + 60) * 10 });
+        this.fires.push({ x: cx, z: cz, scale: 1.3 + rng(cr + 61) * 0.5, phase: rng(cr + 60) * 10 });
       }
 
-      // 4. Anti-Tank Czech Hedgehogs (Obstacles)
+      // 4. Anti-tank hedgehogs in a defensive line
+      const lineAngle = rng(70) * Math.PI;
+      const [lineX, lineZ] = nearSite(71, 8, 6);
       for (let h = 0; h < 6; h++) {
         if (hedgehogIdx >= 60) break;
-        const hx = originX + (rng(h * 5 + 70) - 0.5) * (this.chunkSize - 16);
-        const hz = originZ + (rng(h * 5 + 71) - 0.5) * (this.chunkSize - 16);
-
-        dummy.position.set(hx, 0, hz);
-        dummy.rotation.set(0, rng(h * 3) * Math.PI * 2, 0);
-        dummy.scale.set(1, 1, 1);
-        dummy.updateMatrix();
-        this.hedgehogInstancedMesh.setMatrixAt(hedgehogIdx++, dummy.matrix);
+        const along = (h - 2.5) * 2.8;
+        const hx = lineX + Math.cos(lineAngle) * along + (rng(h * 5 + 72) - 0.5) * 0.6;
+        const hz = lineZ + Math.sin(lineAngle) * along + (rng(h * 5 + 73) - 0.5) * 0.6;
+        place(this.hedgehogInstancedMesh, hedgehogIdx++, hx, hz, rng(h * 3) * Math.PI * 2);
         this.obstacleColliders.push({ x: hx, z: hz, radius: 1.15 });
       }
 
-      // 5. Shattered Concrete Foundation Rubble Slabs (Obstacles)
+      // 5. Concrete rubble slabs around the sites
       for (let rb = 0; rb < 7; rb++) {
         if (rubbleIdx >= 65) break;
-        const rbx = originX + (rng(rb * 7 + 85) - 0.5) * (this.chunkSize - 14);
-        const rbz = originZ + (rng(rb * 7 + 86) - 0.5) * (this.chunkSize - 14);
-
-        dummy.position.set(rbx, 0, rbz);
-        dummy.rotation.set(0, rng(rb * 4) * Math.PI * 2, (rng(rb) - 0.5) * 0.1);
+        const [rbx, rbz] = nearSite(rb * 7 + 85, 2, 9);
         const sc = 0.85 + rng(rb * 2) * 0.35;
-        dummy.scale.set(sc, sc, sc);
-        dummy.updateMatrix();
-        this.rubbleInstancedMesh.setMatrixAt(rubbleIdx++, dummy.matrix);
+        place(this.rubbleInstancedMesh, rubbleIdx++, rbx, rbz, rng(rb * 4) * Math.PI * 2, sc, (rng(rb) - 0.5) * 0.1);
         this.obstacleColliders.push({ x: rbx, z: rbz, radius: 1.35 * sc });
       }
 
-      // 6. Smoldering Blast Craters & Ember Pits (Detailed terrain relief)
+      // 6. Ruined building walls: two per site, at angles to each other like the corner of a room
+      for (let w = 0; w < sites.length * 2; w++) {
+        if (ruinIdx >= RUIN_CAPACITY) break;
+        const site = sites[Math.floor(w / 2)];
+        const baseAngle = rng(130 + Math.floor(w / 2)) * Math.PI;
+        const angle = baseAngle + (w % 2) * (Math.PI / 2 + (rng(131 + w) - 0.5) * 0.3);
+        const wx = site.x + Math.cos(angle) * 2.6;
+        const wz = site.z - Math.sin(angle) * 2.6;
+        place(this.ruinInstancedMesh, ruinIdx++, wx, wz, angle);
+        for (const along of [-1.7, 0, 1.7]) {
+          this.obstacleColliders.push({ x: wx + Math.cos(angle) * along, z: wz - Math.sin(angle) * along, radius: 0.8 });
+        }
+      }
+
+      // Puddles, one or two per site, squashed into irregular ovals
+      for (let pd = 0; pd < 5; pd++) {
+        if (puddleIdx >= PUDDLE_CAPACITY) break;
+        const [pdx, pdz] = nearSite(pd * 9 + 160, 3, 7);
+        dummy.position.set(pdx, 0.02, pdz);
+        dummy.rotation.set(0, rng(pd * 9 + 163) * Math.PI, 0);
+        dummy.scale.set(0.8 + rng(pd * 9 + 164) * 1.4, 1, 0.5 + rng(pd * 9 + 165) * 0.7);
+        dummy.updateMatrix();
+        this.puddleInstancedMesh.setMatrixAt(puddleIdx++, dummy.matrix);
+      }
+
+      // 7. Shell craters are scattered at random (shelling is random); most are still smouldering
       for (let cr = 0; cr < 5; cr++) {
         if (craterIdx >= 50) break;
         const crx = originX + (rng(cr * 8 + 110) - 0.5) * (this.chunkSize - 12);
         const crz = originZ + (rng(cr * 8 + 111) - 0.5) * (this.chunkSize - 12);
-
+        const sc = 0.8 + rng(cr * 3) * 0.45;
         dummy.position.set(crx, 0, crz);
         dummy.rotation.set(0, rng(cr * 5) * Math.PI * 2, 0);
-        const sc = 0.8 + rng(cr * 3) * 0.45;
         dummy.scale.set(sc, 1, sc);
         dummy.updateMatrix();
         this.craterInstancedMesh.setMatrixAt(craterIdx++, dummy.matrix);
-        if (cr % 2 === 1) this.fires.push({ x: crx, z: crz, scale: 1.0 + sc * 0.3, phase: rng(cr + 120) * 10 });
+        if (cr % 3 !== 2) this.fires.push({ x: crx, z: crz, scale: 0.9 + sc * 0.3, phase: rng(cr + 120) * 10 });
       }
     }
 
@@ -750,6 +697,10 @@ export class Environment2029 implements IEnvironment {
     this.hedgehogInstancedMesh.count = hedgehogIdx;
     this.rubbleInstancedMesh.count = rubbleIdx;
     this.craterInstancedMesh.count = craterIdx;
+    this.ruinInstancedMesh.count = ruinIdx;
+    this.puddleInstancedMesh.count = puddleIdx;
+    this.puddleInstancedMesh.instanceMatrix.needsUpdate = true;
+    this.ruinInstancedMesh.instanceMatrix.needsUpdate = true;
     this.skullInstancedMesh.instanceMatrix.needsUpdate = true;
     this.rebarInstancedMesh.instanceMatrix.needsUpdate = true;
     this.carInstancedMesh.instanceMatrix.needsUpdate = true;
@@ -759,7 +710,13 @@ export class Environment2029 implements IEnvironment {
   }
 
   public setFireLightsEnabled(enabled: boolean): void {
+    if (enabled === this.fireLightsEnabled) return;
     this.fireLightsEnabled = enabled;
+    // Removed rather than dimmed: a light at zero intensity still costs every lit pixel
+    for (const light of this.fireLights) {
+      if (enabled) this.group.add(light);
+      else this.group.remove(light);
+    }
   }
 
   public update(playerX: number, playerZ: number): void {
@@ -868,6 +825,7 @@ export class Environment2029 implements IEnvironment {
   }
 
   public dispose(): void {
+    this.disposed = true;
     disposeObject3D(this.group);
     this.obstacleColliders.length = 0;
     this.chunks.length = 0;

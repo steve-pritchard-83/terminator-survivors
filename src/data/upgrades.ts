@@ -26,9 +26,9 @@ export const LOADOUTS: Record<LoadoutId, LoadoutConfig> = {
     id: 'reese_2029',
     name: 'Kyle Reese — Tech-Com Sergeant',
     callsign: 'DN38416',
-    startingWeapon: 'ithaca_37',
+    startingWeapon: 'm25_plasma',
     description:
-      'Veteran guerilla fighter of the 132nd Tech-Com division. Starts with Ithaca 37 shotgun spread.',
+      'Veteran guerilla fighter of the 132nd Tech-Com division. Starts with the Westinghouse M-25 plasma rifle.',
     bonusStats: { moveSpeed: 0.6, bonusAmount: 0 },
     unlockRequirement: 'Available by default.',
     cost: 0,

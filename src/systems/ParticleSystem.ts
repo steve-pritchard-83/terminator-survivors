@@ -295,45 +295,88 @@ export class ParticleSystem {
     };
   }
 
+  /** Pooled particle materials are shared between effects, so every spawn sets its own colour (HDR so it blooms). */
+  private tint(p: Particle, r: number, g: number, b: number): void {
+    (p.mesh.material as THREE.MeshBasicMaterial).color.setRGB(r, g, b);
+  }
+
+  private emit(
+    type: ParticleType,
+    x: number,
+    y: number,
+    z: number,
+    vx: number,
+    vy: number,
+    vz: number,
+    maxLife: number,
+    scaleStart: number,
+    scaleEnd: number
+  ): Particle {
+    const p = this.acquireParticle(type);
+    p.mesh.position.set(x, y, z);
+    p.vx = vx;
+    p.vy = vy;
+    p.vz = vz;
+    p.life = 0;
+    p.maxLife = maxLife;
+    p.scaleStart = scaleStart;
+    p.scaleEnd = scaleEnd;
+    this.particles.push(p);
+    return p;
+  }
+
+  /** Film-style blast: white-hot flash, orange fireball, flying sparks, then dark smoke that lingers. */
   public spawnExplosion(x: number, y: number, z: number, scale = 1.0): void {
     // Visual size is capped so large boss blasts stay readable; `scale` is still reported to listeners.
     const eventScale = scale;
     scale = Math.min(scale, EXPLOSION_VISUAL_SCALE_CAP);
-    for (let i = 0; i < 6; i++) {
-      const p = this.acquireParticle('fire');
-      p.mesh.position.set(
+
+    this.tint(this.emit('fire', x, y + 0.3, z, 0, 0, 0, 0.08, 1.0 * scale, 2.6 * scale), 1.3, 1.1, 0.85);
+
+    for (let i = 0; i < 4; i++) {
+      const p = this.emit(
+        'fire',
         x + (vfxRNG.next() - 0.5) * 0.8 * scale,
-        y + 0.1 + i * 0.05,
-        z + (vfxRNG.next() - 0.5) * 0.8 * scale
+        y + 0.15 + i * 0.05,
+        z + (vfxRNG.next() - 0.5) * 0.8 * scale,
+        (vfxRNG.next() - 0.5) * 1.5,
+        0.6 + vfxRNG.next() * 1.2,
+        (vfxRNG.next() - 0.5) * 1.5,
+        0.35 + vfxRNG.next() * 0.25,
+        0.8 * scale,
+        3.4 * scale
       );
-      p.vx = (vfxRNG.next() - 0.5) * 1.5;
-      p.vy = 0.5 + vfxRNG.next() * 1.2;
-      p.vz = (vfxRNG.next() - 0.5) * 1.5;
-      p.life = 0;
-      p.maxLife = 0.45 + vfxRNG.next() * 0.25;
-      p.scaleStart = 1.2 * scale;
-      p.scaleEnd = 5.2 * scale;
-      this.particles.push(p);
+      this.tint(p, 1.7, 0.6 + vfxRNG.next() * 0.2, 0.12);
     }
 
-    // Black smoke puffs rising
+    const sparks = Math.round(5 * scale);
+    for (let i = 0; i < sparks; i++) {
+      const a = vfxRNG.next() * Math.PI * 2;
+      const speed = 6 + vfxRNG.next() * 4;
+      const p = this.emit('plasma', x, y + 0.4, z, Math.cos(a) * speed, 2 + vfxRNG.next() * 3, Math.sin(a) * speed, 0.3 + vfxRNG.next() * 0.2, 0.35, 0.08);
+      this.tint(p, 2.0, 1.3, 0.6);
+    }
+
     for (let i = 0; i < 4; i++) {
-      const p = this.acquireParticle('smoke');
-      p.mesh.position.set(x, y + 0.2, z);
-      p.vx = (vfxRNG.next() - 0.5) * 0.8;
-      p.vy = 1.2 + vfxRNG.next() * 1.5;
-      p.vz = (vfxRNG.next() - 0.5) * 0.8;
-      p.life = 0;
-      p.maxLife = 0.8 + vfxRNG.next() * 0.4;
-      p.scaleStart = 2.0 * scale;
-      p.scaleEnd = EXPLOSION_SMOKE_END * scale;
-      this.particles.push(p);
+      const p = this.emit(
+        'smoke',
+        x + (vfxRNG.next() - 0.5) * 0.6,
+        y + 0.3,
+        z + (vfxRNG.next() - 0.5) * 0.6,
+        (vfxRNG.next() - 0.5) * 0.7,
+        0.8 + vfxRNG.next() * 0.6,
+        (vfxRNG.next() - 0.5) * 0.7,
+        1.4 + vfxRNG.next() * 0.8,
+        1.6 * scale,
+        EXPLOSION_SMOKE_END * scale
+      );
+      this.tint(p, 0.08, 0.085, 0.095);
     }
 
     globalEvents.emit('vfx:explosion', { x, y, z, scale: eventScale });
   }
 
-  /** Showers of sparks and a flash for machines that are destroyed (drones, tanks, turrets). */
+  /** Showers of sparks for machines that are destroyed (drones, tanks, turrets). */
   public spawnDeathBurst(x: number, y: number, z: number, size = 1.0): void {
     const sparks = size > 1.5 ? 8 : 5;
     for (let i = 0; i < sparks; i++) {
@@ -343,17 +386,14 @@ export class ParticleSystem {
     }
   }
 
+  /** Plasma hit: a white-hot pop with a few sparks thrown off. */
   public spawnPlasmaImpact(x: number, y: number, z: number): void {
-    const p = this.acquireParticle('plasma');
-    p.mesh.position.set(x, y + 0.15, z);
-    p.vx = 0;
-    p.vy = 0.2;
-    p.vz = 0;
-    p.life = 0;
-    p.maxLife = 0.22;
-    p.scaleStart = 0.48;
-    p.scaleEnd = 2.16;
-    this.particles.push(p);
+    this.tint(this.emit('plasma', x, y + 0.15, z, 0, 0.2, 0, 0.12, 0.35, 0.9), 1.4, 1.15, 1.5);
+    for (let i = 0; i < 2; i++) {
+      const a = vfxRNG.next() * Math.PI * 2;
+      const p = this.emit('plasma', x, y + 0.2, z, Math.cos(a) * 5, 1.5, Math.sin(a) * 5, 0.2, 0.22, 0.05);
+      this.tint(p, 1.8, 1.3, 0.8);
+    }
 
     globalEvents.emit('vfx:plasma', { x, y, z });
   }

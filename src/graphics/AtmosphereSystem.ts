@@ -1,6 +1,11 @@
 import * as THREE from 'three';
 import { globalEvents } from '../core/EventBus';
 import { vfxRNG } from '../core/RNG';
+import { ProceduralTextures } from './ProceduralTextures';
+import { PALETTE } from '../data/artDirection';
+
+/** Share of falling particles that are glowing embers rather than grey ash. */
+const EMBER_SHARE = 0.14;
 
 interface ScorchSlot {
   mesh: THREE.Mesh;
@@ -31,9 +36,10 @@ export class AtmosphereSystem {
   private nextFlashTimer = 5.0;
   private isDoubleStrike = false;
   private secondStrikeDelay = 0;
-  private readonly baseFogColor = new THREE.Color(0x162840);
-  private readonly flashFogColor = new THREE.Color(0x84b2e8);
-  private readonly currentFogColor = new THREE.Color(0x162840);
+  // Distant explosions briefly warm the smoke on the horizon
+  private readonly baseFogColor = new THREE.Color(PALETTE.fog);
+  private readonly flashFogColor = new THREE.Color(0x5a3420);
+  private readonly currentFogColor = new THREE.Color(PALETTE.fog);
 
   // 3. Ground Scorch Decals
   private readonly scorchSlots: ScorchSlot[] = [];
@@ -58,14 +64,26 @@ export class AtmosphereSystem {
       this.ashPhases[i] = vfxRNG.next() * Math.PI * 2;
     }
 
+    // Grey ash flakes plus a few embers; ember colours go above 1.0 so they catch the bloom
+    const ashColors = new Float32Array(AtmosphereSystem.ASH_PARTICLE_COUNT * 3);
+    const ash = new THREE.Color(PALETTE.ash);
+    const ember = new THREE.Color(PALETTE.fire).multiplyScalar(2.2);
+    for (let i = 0; i < AtmosphereSystem.ASH_PARTICLE_COUNT; i++) {
+      const c = vfxRNG.next() < EMBER_SHARE ? ember : ash;
+      ashColors[i * 3] = c.r;
+      ashColors[i * 3 + 1] = c.g;
+      ashColors[i * 3 + 2] = c.b;
+    }
     this.ashGeo = new THREE.BufferGeometry();
     this.ashGeo.setAttribute('position', new THREE.BufferAttribute(this.ashPositions, 3));
+    this.ashGeo.setAttribute('color', new THREE.BufferAttribute(ashColors, 3));
 
     this.ashMat = new THREE.PointsMaterial({
-      color: 0xc8d2de,
-      size: 0.24,
+      vertexColors: true,
+      map: typeof document !== 'undefined' ? ProceduralTextures.getSoftGlowSprite() : null,
+      size: 0.16,
       transparent: true,
-      opacity: 0.55,
+      opacity: 0.7,
       depthWrite: false
     });
 
@@ -208,23 +226,23 @@ export class AtmosphereSystem {
     // 2. Update Distant Lightning Skyline Flashes
     this.nextFlashTimer -= dt;
     if (this.nextFlashTimer <= 0) {
-      this.triggerLightningFlash(0.95);
-      this.isDoubleStrike = vfxRNG.next() > 0.45;
+      this.triggerLightningFlash(0.6 + vfxRNG.next() * 0.3);
+      this.isDoubleStrike = vfxRNG.next() > 0.65;
       if (this.isDoubleStrike) {
         this.secondStrikeDelay = 0.14;
       }
-      this.nextFlashTimer = 5.0 + vfxRNG.next() * 4.5;
+      this.nextFlashTimer = 7.0 + vfxRNG.next() * 8.0;
     }
 
     if (this.secondStrikeDelay > 0) {
       this.secondStrikeDelay -= dt;
       if (this.secondStrikeDelay <= 0) {
-        this.triggerLightningFlash(0.75);
+        this.triggerLightningFlash(0.45);
       }
     }
 
     if (this.flashIntensity > 0) {
-      this.flashIntensity = Math.max(0, this.flashIntensity - dt * 6.5);
+      this.flashIntensity = Math.max(0, this.flashIntensity - dt * 2.5);
       if (this.scene.fog) {
         this.currentFogColor.lerpColors(this.baseFogColor, this.flashFogColor, this.flashIntensity * 0.7);
         this.scene.fog.color.copy(this.currentFogColor);

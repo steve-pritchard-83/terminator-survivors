@@ -1,6 +1,4 @@
 import type { UpgradeChoice } from '../core/types';
-import { LORE } from '../data/lore';
-import { vfxRNG } from '../core/RNG';
 import { icon, passiveIcon, weaponIcon, iconLabel } from './icons';
 import type { GamepadManager } from '../input/GamepadManager';
 import { ModalA11y } from './A11yHelper';
@@ -37,29 +35,23 @@ export class LevelUpModal {
     this.container.setAttribute('data-testid', 'levelup-modal');
     this.container.setAttribute('role', 'dialog');
     this.container.setAttribute('aria-modal', 'true');
-    this.container.setAttribute('aria-label', 'Tactical Upgrade Selection');
+    this.container.setAttribute('aria-label', 'Select Upgrade');
     this.container.style.display = 'none';
 
     this.container.innerHTML = `
       <div class="t800-modal-box">
-        <div class="t800-header">TACTICAL UPGRADE // CSM-101</div>
-        <div class="t800-ticker" id="levelup-ticker">03A0: A9 01 8D 20 D0 // SCANNING ARSENAL</div>
+        <div class="t800-header">SELECT UPGRADE</div>
+        <div class="t800-ticker" id="levelup-ticker">LEVEL 2</div>
         <div class="upgrade-card-list" id="levelup-cards"></div>
-        
-        <div class="levelup-actions-row" style="display:flex; justify-content:center; gap:10px; margin-top:14px; flex-wrap:wrap;">
-          <button class="btn-secondary" id="btn-levelup-reroll" aria-label="Reroll Upgrade Choices" style="padding:6px 14px; font-size:12px; border-color:var(--color-cyan); color:var(--color-cyan);">
-            REROLL (0)
-          </button>
-          <button class="btn-secondary" id="btn-levelup-skip" aria-label="Skip Upgrade and Gain Scrap" style="padding:6px 14px; font-size:12px; border-color:var(--color-amber); color:var(--color-amber);">
-            SKIP (+25 SCRAP) (0)
-          </button>
-          <button class="btn-secondary" id="btn-levelup-banish" aria-label="Banish Selected Upgrade" style="padding:6px 14px; font-size:12px; border-color:var(--color-red); color:var(--color-red);">
-            BANISH SELECTED (0)
-          </button>
+
+        <div class="btn-row levelup-actions-row">
+          <button class="btn-secondary btn-sm" id="btn-levelup-reroll" aria-label="Reroll Upgrade Choices">REROLL (0)</button>
+          <button class="btn-secondary btn-sm" id="btn-levelup-skip" aria-label="Skip Upgrade and Gain Scrap">SKIP +25 SCRAP (0)</button>
+          <button class="btn-secondary btn-sm" id="btn-levelup-banish" aria-label="Banish Selected Upgrade">BANISH (0)</button>
         </div>
 
-        <div id="levelup-controller-hint" style="font-family:var(--font-telemetry); font-size:12px; color:var(--color-cyan); margin-top:10px; text-align:center; display:none;">
-          [D-PAD / LS / ARROWS] SELECT &nbsp;//&nbsp; [ENTER / A] CONFIRM &nbsp;//&nbsp; [R] REROLL &nbsp;//&nbsp; [S] SKIP &nbsp;//&nbsp; [B] BANISH
+        <div class="t-hint" id="levelup-controller-hint" style="display:none;">
+          [D-PAD / ARROWS] SELECT &nbsp; [A / ENTER] CONFIRM &nbsp; [R] REROLL &nbsp; [S] SKIP &nbsp; [B] BANISH
         </div>
       </div>
     `;
@@ -149,29 +141,21 @@ export class LevelUpModal {
     this.cards = [];
     this.selectables = [];
 
-    // Pick random 6502 assembly line for flavor
-    const tickerLine = vfxRNG.pick(LORE.assembly6502);
-    this.tickerEl.textContent = `${tickerLine} // LEVEL ${level}`;
+    this.tickerEl.textContent = `LEVEL ${level}`;
 
-    // Update Action Button states
+    // Update Action Button states (disabled styling comes from CSS)
     const rerolls = actions?.rerollsLeft ?? 0;
     const skips = actions?.skipsLeft ?? 0;
     const banishes = actions?.banishesLeft ?? 0;
 
     this.rerollBtn.innerHTML = iconLabel('reroll', `REROLL (${rerolls})`);
     this.rerollBtn.disabled = rerolls <= 0;
-    this.rerollBtn.style.opacity = rerolls > 0 ? '1.0' : '0.4';
-    this.rerollBtn.style.cursor = rerolls > 0 ? 'pointer' : 'default';
 
-    this.skipBtn.innerHTML = iconLabel('skip', `SKIP (+25 SCRAP) (${skips})`);
+    this.skipBtn.innerHTML = iconLabel('skip', `SKIP +25 SCRAP (${skips})`);
     this.skipBtn.disabled = skips <= 0;
-    this.skipBtn.style.opacity = skips > 0 ? '1.0' : '0.4';
-    this.skipBtn.style.cursor = skips > 0 ? 'pointer' : 'default';
 
-    this.banishBtn.innerHTML = iconLabel('banish', `BANISH SELECTED (${banishes})`);
+    this.banishBtn.innerHTML = iconLabel('banish', `BANISH (${banishes})`);
     this.banishBtn.disabled = banishes <= 0;
-    this.banishBtn.style.opacity = banishes > 0 ? '1.0' : '0.4';
-    this.banishBtn.style.cursor = banishes > 0 ? 'pointer' : 'default';
 
     this.cardContainer.innerHTML = '';
     choices.forEach((choice, idx) => {
@@ -184,13 +168,16 @@ export class LevelUpModal {
         `${choice.title}: ${choice.subtitle}. ${choice.description}`
       );
 
+      const isStatDiff = choice.description.includes(' · ');
       card.innerHTML = `
-        <div class="upgrade-card-icon" style="color:${choice.accentColor}; border-color:${choice.accentColor};">${this.choiceIcon(choice)}</div>
+        <div class="upgrade-card-icon">${this.choiceIcon(choice)}</div>
         <div class="upgrade-card-info">
-          <div class="upgrade-card-title">${choice.title}</div>
-          <div class="upgrade-card-sub">${choice.subtitle}</div>
-          <div class="upgrade-card-desc" style="${choice.description.includes(' · ') ? 'font-family:var(--font-telemetry); color:var(--color-amber); letter-spacing:0.5px;' : ''}">${choice.description}</div>
-          ${choice.synergyHint ? `<div style="font-size:11px; color:#00e5ff; margin-top:3px;">${choice.synergyHint}</div>` : ''}
+          <div class="upgrade-card-head">
+            <div class="upgrade-card-title">${choice.title}</div>
+            <div class="upgrade-card-sub">${choice.subtitle}</div>
+          </div>
+          <div class="upgrade-card-desc${isStatDiff ? ' upgrade-card-stats' : ''}">${choice.description}</div>
+          ${choice.synergyHint ? `<div class="upgrade-card-desc">${choice.synergyHint}</div>` : ''}
         </div>
       `;
 

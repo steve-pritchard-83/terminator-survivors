@@ -1,4 +1,5 @@
 import { RUN_DURATION_MINUTES } from './waves';
+import { LIGHTING, PALETTE } from './artDirection';
 
 export interface StageDefinition {
   name: string;
@@ -19,11 +20,11 @@ export const WASTELAND_STAGE: StageDefinition = {
   subtitle: 'THE RUINS OF JUDGMENT DAY',
   description:
     'Crushed skull carpets, shattered highway overpasses, and roaming Hunter-Killer patrols across the nuclear night.',
-  fogColor: 0x081a33,
-  fogDensity: 0.016,
-  skyZenith: 0x040b18,
-  skyHorizon: 0x0f294a,
-  ambientLightColor: 0x162d4c,
-  directionalLightColor: 0x4a88d9,
+  fogColor: PALETTE.fog,
+  fogDensity: 1 / LIGHTING.fogFar,
+  skyZenith: PALETTE.sky,
+  skyHorizon: PALETTE.fog,
+  ambientLightColor: LIGHTING.ambient,
+  directionalLightColor: PALETTE.moon,
   durationMinutes: RUN_DURATION_MINUTES
 };

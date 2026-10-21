@@ -7,6 +7,8 @@ import { AtmosphereSystem } from './AtmosphereSystem';
 import { globalEvents } from '../core/EventBus';
 import type { QualityPreset } from '../core/types';
 import { getQualityProfile, detectPresetFromFps } from './qualityPresets';
+import { LIGHTING, PALETTE } from '../data/artDirection';
+import { RENDER_BUDGET } from '../data/performance';
 
 export class SceneManager {
   public readonly scene: THREE.Scene;
@@ -75,7 +77,7 @@ export class SceneManager {
   private hemiLight: THREE.HemisphereLight;
   private ambientLight: THREE.AmbientLight;
   private moonLight: THREE.DirectionalLight;
-  private rimLight: THREE.DirectionalLight;
+  private fireFill: THREE.DirectionalLight;
 
   constructor(container: HTMLElement) {
     const isAutomated = typeof navigator !== 'undefined' && navigator.webdriver === true;
@@ -88,12 +90,12 @@ export class SceneManager {
     });
 
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x162840);
-    // Camera is ~21.5m from player; starting fog at 23.5m keeps the play area crisp while misting the outer perimeter
-    this.scene.fog = new THREE.Fog(0x162840, 23.5, 48.0);
+    this.scene.background = new THREE.Color(PALETTE.sky);
+    // Camera is ~21.5m from the player: the play area stays crisp, the perimeter fades into blue-grey smoke
+    this.scene.fog = new THREE.Fog(PALETTE.fog, LIGHTING.fogNear, LIGHTING.fogFar);
     if (!isAutomated) {
       this.scene.environment = ProceduralTextures.getMetallicEnvMap();
-      this.scene.environmentIntensity = 0.5;
+      this.scene.environmentIntensity = LIGHTING.envIntensity;
     }
 
     const width = container.clientWidth || window.innerWidth;
@@ -112,25 +114,26 @@ export class SceneManager {
     this.renderer.setSize(width, height);
     this.renderer.setPixelRatio(isAutomated ? 1 : Math.min(window.devicePixelRatio || 1, 2));
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.2;
+    this.renderer.toneMappingExposure = LIGHTING.exposure;
 
     container.appendChild(this.renderer.domElement);
 
-    // Balanced "in-between" nocturnal moonlight: clear battlefield visibility with diffused metallic sheen
-    this.hemiLight = new THREE.HemisphereLight(0x7aa8d8, 0x203044, 1.25);
+    // Cold sky from above, fire bounce from below: tops read blue, undersides warm
+    this.hemiLight = new THREE.HemisphereLight(LIGHTING.hemiSky, LIGHTING.hemiGround, LIGHTING.hemiIntensity);
     this.scene.add(this.hemiLight);
 
-    this.ambientLight = new THREE.AmbientLight(0x345070, 1.05);
+    this.ambientLight = new THREE.AmbientLight(LIGHTING.ambient, LIGHTING.ambientIntensity);
     this.scene.add(this.ambientLight);
 
-    this.moonLight = new THREE.DirectionalLight(0x90bce8, 1.45);
-    this.moonLight.position.set(-16, 30, -14);
+    // Moon key from behind the action, so chrome and silhouettes get bright rims towards the camera
+    this.moonLight = new THREE.DirectionalLight(PALETTE.moon, LIGHTING.moonIntensity);
+    this.moonLight.position.set(...LIGHTING.moonPosition);
     this.scene.add(this.moonLight);
 
-    // Subtle counter-rim light for silhouettes emerging from the fog
-    this.rimLight = new THREE.DirectionalLight(0x5288c4, 0.85);
-    this.rimLight.position.set(18, 14, 20);
-    this.scene.add(this.rimLight);
+    // Low warm fill from the burning horizon
+    this.fireFill = new THREE.DirectionalLight(LIGHTING.fireFill, LIGHTING.fireFillIntensity);
+    this.fireFill.position.set(...LIGHTING.fireFillPosition);
+    this.scene.add(this.fireFill);
 
     this.postProcessing = new PostProcessingManager(this.renderer, this.scene, this.camera);
     this.postProcessing.setSize(width, height);
@@ -267,16 +270,8 @@ export class SceneManager {
       this.scene.fog.near = far * 0.45;
       this.scene.fog.far = far;
     }
-    if (this.ambientLight) {
-      this.ambientLight.color.setHex(stage.ambientLightColor);
-    }
-    if (this.moonLight) {
-      this.moonLight.color.setHex(stage.directionalLightColor);
-    }
-    if (this.hemiLight) {
-      this.hemiLight.color.setHex(stage.skyZenith);
-      this.hemiLight.groundColor.setHex(stage.skyHorizon);
-    }
+    this.ambientLight.color.setHex(stage.ambientLightColor);
+    this.moonLight.color.setHex(stage.directionalLightColor);
   }
 
   public adjustQuality(fps: number, dt = 1 / 60): void {
@@ -291,7 +286,7 @@ export class SceneManager {
           this.initialFpsSamples.length;
         const deviceRatio =
           typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
-        const detected = detectPresetFromFps(avgFps, deviceRatio);
+        const detected = detectPresetFromFps(avgFps, deviceRatio, RENDER_BUDGET.maxAutoPreset);
         this.applyQualityPreset(detected);
         globalEvents.emit('quality:autodetected', { preset: detected, avgFps });
       }
@@ -316,7 +311,7 @@ export class SceneManager {
     const profile = getQualityProfile(this.currentPreset);
 
     if (this.qualityCooldownTimer <= 0) {
-      if (this.lowFpsDuration >= 3.0 && currentRatio > profile.minPixelRatio) {
+      if (this.lowFpsDuration >= RENDER_BUDGET.lowFpsSeconds && currentRatio > profile.minPixelRatio) {
         this.applyQualityChange(profile.minPixelRatio);
       } else if (this.highFpsDuration >= 3.0 && currentRatio < profile.maxPixelRatio) {
         this.applyQualityChange(profile.maxPixelRatio);

@@ -1,5 +1,27 @@
 import * as THREE from 'three';
 import { disposeObject3D } from '../dispose';
+import { ModelLibrary } from '../ModelLibrary';
+import { HumanoidAnimator, findBones } from '../HumanoidAnimator';
+
+// Rig bone names of the sculpted infiltrator (game-style skeleton)
+const INFILTRATOR_BONES = {
+  hips: 'root hips',
+  chest: 'spine upper',
+  upperArmL: 'arm left shoulder 2',
+  foreArmL: 'arm left elbow',
+  handL: 'arm left wrist',
+  upperArmR: 'arm right shoulder 2',
+  foreArmR: 'arm right elbow',
+  handR: 'arm right wrist',
+  thighL: 'leg left thigh',
+  shinL: 'leg left knee',
+  footL: 'leg left foot',
+  toeL: 'leg left toe',
+  thighR: 'leg right thigh',
+  shinR: 'leg right knee',
+  footR: 'leg right foot',
+  toeR: 'leg right toe'
+};
 
 export class InfiltratorMesh {
   public readonly group = new THREE.Group();
@@ -13,6 +35,15 @@ export class InfiltratorMesh {
   private readonly opticLight: THREE.PointLight;
 
   private walkCycle = 0;
+
+  // Sculpted, rigged figure (when loaded): animated by the rig instead of the procedural limbs
+  private rig: HumanoidAnimator | null = null;
+  private model: THREE.Object3D | null = null;
+  private rifleMesh: THREE.Mesh | null = null;
+  private readonly rifleGrip = new THREE.Vector3();
+  private rightX = -1;
+  private readonly gripR = new THREE.Vector3();
+  private readonly gripL = new THREE.Vector3();
 
   constructor() {
     // Materials
@@ -198,10 +229,61 @@ export class InfiltratorMesh {
 
     // Scale up slightly for imposing boss presence
     this.group.scale.set(1.22, 1.22, 1.22);
+    this.applyModel();
+  }
+
+  /** Replaces the procedural figure with the sculpted, rigged infiltrator when it has loaded. */
+  private applyModel(): void {
+    const model = ModelLibrary.get('infiltrator');
+    const bones = model ? findBones(model, INFILTRATOR_BONES) : null;
+    if (!model || !bones) return;
+    // Own materials, so the phase-3 chrome change stays on this boss
+    model.traverse((o) => {
+      const mesh = o as THREE.Mesh;
+      if (!mesh.isMesh) return;
+      mesh.material = (mesh.material as THREE.Material).clone();
+      (mesh.material as THREE.Material).userData = {};
+    });
+    this.redOptic.removeFromParent();
+    this.opticLight.removeFromParent();
+    for (const child of [...this.group.children]) {
+      this.group.remove(child);
+      disposeObject3D(child);
+    }
+    this.group.add(model);
+    this.model = model;
+    this.rig = new HumanoidAnimator(model, bones, 3.0);
+    this.rightX = Math.sign(model.worldToLocal(bones.upperArmR.getWorldPosition(new THREE.Vector3())).x) || -1;
+
+    const rifle = ModelLibrary.getMeshData('plasma_rifle');
+    if (rifle) {
+      this.rifleMesh = new THREE.Mesh(rifle.geometry, rifle.material);
+      this.rifleGrip.copy(ModelLibrary.gripPoint(rifle.geometry));
+      model.add(this.rifleMesh);
+    }
+
+    // The red optic shows through the torn face; it rides on the head bone
+    const head = findBones(model, { head: 'head neck upper' })?.head;
+    model.add(this.redOptic, this.opticLight);
+    this.redOptic.position.set(this.rightX * 0.035, 1.79, 0.1);
+    this.opticLight.position.set(this.rightX * 0.035, 1.79, 0.2);
+    head?.attach(this.redOptic);
+    head?.attach(this.opticLight);
   }
 
   public updateAnimation(dt: number, speed: number, facing: number, isFiring = false): void {
     this.group.rotation.y = facing;
+
+    if (this.rig && this.model) {
+      // Rifle at the hip when advancing, raised to the shoulder when firing
+      this.gripR.set(this.rightX * 0.13, isFiring ? 1.32 : 1.05, isFiring ? 0.28 : 0.3);
+      this.gripL.set(this.rightX * 0.1, this.gripR.y + 0.05, this.gripR.z + 0.33);
+      this.rifleMesh?.position.copy(this.gripR).sub(this.rifleGrip);
+      this.rig.update(dt, speed, this.gripR, this.gripL);
+      this.model.position.y = this.rig.bob;
+      this.opticLight.intensity = 0.8 * (1.0 + Math.sin(Date.now() * 0.008) * 0.35);
+      return;
+    }
 
     if (speed > 0.1) {
       this.walkCycle += dt * 6.5;

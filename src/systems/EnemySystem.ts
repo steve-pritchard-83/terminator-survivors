@@ -21,6 +21,8 @@ import {
 import { type EnemyBehaviour, type EnemyContext, createEnemyBehaviourRegistry } from './enemies';
 import type { IEnvironment } from '../graphics/environments';
 import { ENDO_STEP } from '../data/balance';
+import { PALETTE } from '../data/artDirection';
+import { buildBoltGeometry, createBoltMaterial } from '../graphics/PlasmaBolts';
 
 export interface EnemyProjectile extends PoolableUser {
   poolIndex: number; x: number; y: number; z: number; vx: number; vz: number;
@@ -46,8 +48,9 @@ export class EnemySystem {
   private readonly pendingBlasts: Array<{ x: number; z: number; radius: number; damage: number; remaining: number; total: number; telegraph: CircleTelegraph }> = [];
   private readonly eliteAuraGeo = new THREE.SphereGeometry(0.95, 14, 10);
   private readonly eliteAuraMats = new Map<number, THREE.MeshBasicMaterial>();
-  private readonly enemyPlasmaGeo = new THREE.CylinderGeometry(0.09, 0.09, 0.75, 8);
-  private readonly enemyPlasmaMat = new THREE.MeshBasicMaterial({ color: 0xff1144 });
+  // Skynet plasma: red streaks with hot cores, distinct from the Resistance's pink-violet
+  private readonly enemyPlasmaGeo = buildBoltGeometry(1.5, 0.04, 0.12, PALETTE.plasmaSkynetCore, PALETTE.plasmaSkynet);
+  private readonly enemyPlasmaMat = createBoltMaterial(2.6);
 
   constructor(
     runState: RunState,
@@ -59,7 +62,6 @@ export class EnemySystem {
   ) {
     this.runState = runState; this.grid = grid; this.audio = audio;
     this.particles = particles; this.endoBatch = endoBatch; this.behaviours = behaviours;
-    this.enemyPlasmaGeo.rotateX(Math.PI / 2);
     this.enemyPlasmaGeo.userData = { shared: true }; this.enemyPlasmaMat.userData = { shared: true };
     this.eliteAuraGeo.userData = { shared: true };
     this.enemyPool = new InstancedPool<EnemyProjectile>(this.enemyPlasmaGeo, this.enemyPlasmaMat, 256, this.group);

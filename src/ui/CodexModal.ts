@@ -45,32 +45,25 @@ export class CodexModal {
     this.container.style.display = 'none';
 
     this.container.innerHTML = `
-      <div class="t800-modal-box" style="max-width:860px; width:92%; max-height:90vh; display:flex; flex-direction:column; padding:18px 24px;">
-        <div class="t800-header" style="font-size:20px; margin-bottom:4px;">TECH-COM INTEL // CODEX ARCHIVE</div>
-        <div class="t800-ticker" id="codex-status-ticker">CLASSIFIED ARCHIVAL DATA // DN38416 SECURED</div>
+      <div class="t800-modal-box" style="max-width:860px; width:92%;">
+        <div class="t800-header">CODEX</div>
 
-        <div style="display:flex; gap:10px; margin:12px 0 14px 0; border-bottom:1px solid rgba(77,210,255,0.25); padding-bottom:8px;">
-          <button class="btn-secondary codex-tab-btn active" id="tab-codex-bestiary" aria-label="Machine Bestiary Tab" style="padding:6px 16px; font-size:12px;">
-            ${iconLabel('boss', 'MACHINE BESTIARY')}
+        <div style="display:flex; gap:8px; margin:6px 0 12px; padding-bottom:10px; border-bottom:1px solid var(--t-line);">
+          <button class="btn-secondary btn-sm codex-tab-btn active" id="tab-codex-bestiary" aria-label="Machines Tab">
+            ${iconLabel('boss', 'MACHINES')}
           </button>
-          <button class="btn-secondary codex-tab-btn" id="tab-codex-armory" aria-label="Resistance Armory Tab" style="padding:6px 16px; font-size:12px;">
-            ${iconLabel('armor', 'RESISTANCE ARMORY')}
+          <button class="btn-secondary btn-sm codex-tab-btn" id="tab-codex-armory" aria-label="Armory Tab">
+            ${iconLabel('armor', 'ARMORY')}
           </button>
         </div>
 
-        <div id="codex-content-body" style="flex:1; display:flex; gap:18px; overflow-y:auto; min-height:360px;">
-          <!-- Left item list -->
-          <div id="codex-item-list" style="width:260px; min-width:240px; display:flex; flex-direction:column; gap:6px; overflow-y:auto; padding-right:6px; border-right:1px solid rgba(255,255,255,0.1);">
-          </div>
-          <!-- Right dossier & turntable -->
-          <div id="codex-dossier" style="flex:1; display:flex; flex-direction:column; overflow-y:auto;">
-          </div>
+        <div id="codex-content-body" class="codex-body">
+          <div id="codex-item-list" class="codex-list"></div>
+          <div id="codex-dossier" class="codex-dossier"></div>
         </div>
 
-        <div style="display:flex; justify-content:center; align-items:center; gap:12px; margin-top:14px; border-top:1px solid rgba(255,255,255,0.1); padding-top:10px;">
-          <button class="btn-secondary" id="btn-close-codex" aria-label="Return to Command" style="padding:8px 28px;">
-            RETURN TO COMMAND
-          </button>
+        <div class="btn-row">
+          <button class="btn-secondary" id="btn-close-codex" aria-label="Back">BACK</button>
         </div>
       </div>
     `;
@@ -80,7 +73,7 @@ export class CodexModal {
     this.canvas = document.createElement('canvas');
     this.canvas.width = 300;
     this.canvas.height = 200;
-    this.canvas.style.cssText = 'width:100%; max-width:320px; height:200px; background:#080d14; border:1px solid var(--color-cyan); border-radius:4px; box-shadow:0 0 12px rgba(77,210,255,0.25);';
+    this.canvas.className = 'codex-canvas';
 
     this.a11y = new ModalA11y(this.container, {
       onClose: () => {
@@ -160,10 +153,10 @@ export class CodexModal {
       this.camera.position.set(0, 1.2, 3.8);
       this.camera.lookAt(0, 0.4, 0);
 
-      const amb = new THREE.AmbientLight(0x405566, 1.2);
-      const dirLight = new THREE.DirectionalLight(0x4dd2ff, 2.2);
+      const amb = new THREE.AmbientLight(0x554444, 1.2);
+      const dirLight = new THREE.DirectionalLight(0xf2e9e4, 2.2);
       dirLight.position.set(3, 4, 3);
-      const rimLight = new THREE.DirectionalLight(0xff0044, 1.5);
+      const rimLight = new THREE.DirectionalLight(0xff2a1a, 1.5);
       rimLight.position.set(-3, -1, -2);
       this.scene.add(amb, dirLight, rimLight);
     } catch {
@@ -234,18 +227,12 @@ export class CodexModal {
       item.type = 'button';
       item.className = 'upgrade-card';
       item.setAttribute('aria-label', `${codex.name}: Threat ${codex.threat}, ${kills} confirmed kills`);
-      item.style.cssText = `
-        padding: 6px 10px;
-        background: ${isSelected ? 'rgba(77,210,255,0.2)' : 'rgba(15,25,35,0.7)'};
-        border: 1px solid ${isSelected ? 'var(--color-cyan)' : 'rgba(77,210,255,0.2)'};
-        border-radius: 3px;
-        cursor: pointer;
-      `;
+      item.classList.toggle('is-selected', isSelected);
       item.innerHTML = `
-        <div style="font-family:var(--font-display); font-size:11px; color:#fff;">${codex.name}</div>
-        <div style="display:flex; justify-content:space-between; font-size:10px; margin-top:2px;">
-          <span style="color:var(--color-amber);">${codex.threat}</span>
-          <span style="color:${kills > 0 ? '#00ff88' : '#888'};">KILLS: ${kills}</span>
+        <div class="upgrade-card-title" style="font-size:12px;">${codex.name}</div>
+        <div class="t-muted" style="display:flex; justify-content:space-between; font-size:10px; margin-top:2px;">
+          <span>${codex.threat}</span>
+          <span>KILLS ${kills}</span>
         </div>
       `;
 
@@ -265,29 +252,23 @@ export class CodexModal {
     this.setTurntableMesh(this.selectedEnemyId);
 
     dossierEl.innerHTML = `
-      <div style="display:flex; gap:16px; flex-wrap:wrap; margin-bottom:12px;">
-        <div id="turntable-host" style="width:300px; height:200px;"></div>
-        <div style="flex:1; min-width:220px;">
-          <div style="font-family:var(--font-display); font-size:18px; color:#fff; font-weight:bold;">${activeCodex.name}</div>
-          <div style="font-family:var(--font-telemetry); font-size:11px; color:var(--color-cyan); margin-bottom:6px;">${activeCodex.designation}</div>
-          <div style="display:inline-block; font-size:11px; padding:2px 8px; border-radius:3px; background:${this.getThreatColor(activeCodex.threat)}; color:#000; font-weight:bold; margin-bottom:10px;">
-            THREAT: ${activeCodex.threat}
-          </div>
-          <div style="font-size:12px; color:var(--color-amber); margin-bottom:4px;">
-            MACHINES ELIMINATED: <strong style="color:#fff; font-size:14px;">${kills}</strong>
-          </div>
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:11px; color:#ccc; background:rgba(0,0,0,0.3); padding:8px; border-radius:3px; border:1px solid rgba(255,255,255,0.08);">
-            <div>BASE CHASSIS HP: <strong style="color:var(--color-cyan);">${stats?.maxHp ?? 'N/A'}</strong></div>
-            <div>TACTICAL VELOCITY: <strong style="color:var(--color-cyan);">${stats?.speed ?? 'N/A'} m/s</strong></div>
-            <div>STRIKE DAMAGE: <strong style="color:var(--color-red);">${stats?.damage ?? 'N/A'}</strong></div>
-            <div>FLIGHT CAPABLE: <strong style="color:#fff;">${stats?.isFlying ? 'YES (VTOL)' : 'NO (GROUND)'}</strong></div>
+      <div style="display:flex; gap:16px; flex-wrap:wrap; margin-bottom:8px;">
+        <div id="turntable-host" style="width:300px; max-width:100%; height:200px;"></div>
+        <div style="flex:1; min-width:200px;">
+          <div class="codex-name">${activeCodex.name}</div>
+          <div class="t-muted" style="font-size:11px; margin-bottom:8px;">${activeCodex.designation}</div>
+          <span class="t-tag">THREAT: ${activeCodex.threat}</span>
+          <div class="codex-stats">
+            <div>KILLS: <strong>${kills}</strong></div>
+            <div>HP: <strong>${stats?.maxHp ?? 'N/A'}</strong></div>
+            <div>SPEED: <strong>${stats?.speed ?? 'N/A'} M/S</strong></div>
+            <div>DAMAGE: <strong>${stats?.damage ?? 'N/A'}</strong></div>
+            <div>FLIGHT: <strong>${stats?.isFlying ? 'YES' : 'NO'}</strong></div>
           </div>
         </div>
       </div>
-      <div style="font-family:var(--font-display); font-size:12px; color:var(--color-cyan); margin-bottom:4px;">TACTICAL RECONNAISSANCE DOSSIER:</div>
-      <div style="font-size:12px; color:#ddd; line-height:1.5; background:rgba(10,20,30,0.6); padding:10px; border-radius:3px; border-left:3px solid var(--color-cyan);">
-        ${activeCodex.codex}
-      </div>
+      <div class="t-section-label">DOSSIER</div>
+      <div class="codex-lore">${activeCodex.codex}</div>
     `;
 
     const host = dossierEl.querySelector('#turntable-host');
@@ -315,20 +296,11 @@ export class CodexModal {
       item.type = 'button';
       item.className = 'upgrade-card';
       item.setAttribute('aria-label', `${def?.name ?? wId}: ${isEvo ? 'Evolved Superweapon' : 'Standard Weapon'}`);
-      item.style.cssText = `
-        padding: 6px 10px;
-        background: ${isSelected ? 'rgba(77,210,255,0.2)' : 'rgba(15,25,35,0.7)'};
-        border: 1px solid ${isSelected ? 'var(--color-cyan)' : 'rgba(77,210,255,0.2)'};
-        border-radius: 3px;
-        cursor: pointer;
-      `;
+      item.classList.toggle('is-selected', isSelected);
       item.innerHTML = `
-        <div style="display:flex; align-items:center; gap:6px;">
-          <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:${def?.iconColor ?? '#fff'};"></span>
-          <span style="font-family:var(--font-display); font-size:11px; color:#fff;">${def?.name ?? wId}</span>
-        </div>
-        <div style="font-size:10px; color:${isEvo ? 'var(--color-amber)' : 'var(--color-cyan)'}; margin-top:2px;">
-          ${isEvo ? (isDiscovered ? 'EVOLVED WEAPON' : 'CLASSIFIED EVOLUTION') : 'STANDARD ORDNANCE'}
+        <div class="upgrade-card-title" style="font-size:12px;">${def?.name ?? wId}</div>
+        <div class="${isEvo ? 't-red' : 't-muted'}" style="font-size:10px; margin-top:2px;">
+          ${isEvo ? (isDiscovered ? 'EVOLVED' : 'CLASSIFIED') : 'STANDARD'}
         </div>
       `;
 
@@ -349,37 +321,30 @@ export class CodexModal {
 
     dossierEl.innerHTML = `
       <div style="margin-bottom:12px;">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <div>
-            <div style="font-family:var(--font-display); font-size:18px; color:#fff; font-weight:bold;">${def?.name ?? this.selectedWeaponId}</div>
-            <div style="font-family:var(--font-telemetry); font-size:11px; color:var(--color-cyan);">${lore?.designation ?? def?.codeName ?? 'TECH-COM ARMAMENT'}</div>
-          </div>
-          <div style="font-size:11px; color:var(--color-amber);">MANUFACTURER: ${lore?.manufacturer ?? 'TECH-COM'}</div>
+        <div class="codex-name">${def?.name ?? this.selectedWeaponId}</div>
+        <div class="t-muted" style="font-size:11px;">
+          ${lore?.designation ?? def?.codeName ?? 'TECH-COM ARMAMENT'} · ${lore?.manufacturer ?? 'TECH-COM'}
         </div>
 
-        <div style="margin:12px 0; background:rgba(0,0,0,0.4); padding:10px; border-radius:4px; border:1px solid rgba(255,255,255,0.08);">
-          <div style="font-family:var(--font-display); font-size:11px; color:var(--color-amber); margin-bottom:6px;">TACTICAL SPECIFICATIONS (LEVEL 1):</div>
-          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:6px; font-size:11px; color:#ccc;">
-            <div>DAMAGE: <strong style="color:#fff;">${stats?.damage ?? 0}</strong></div>
-            <div>COOLDOWN: <strong style="color:#fff;">${stats?.cooldown ?? 0}s</strong></div>
-            <div>PROJECTILES: <strong style="color:#fff;">${stats?.amount ?? 1}</strong></div>
-            <div>AREA RADIUS: <strong style="color:#fff;">${stats?.area ?? 1.0}x</strong></div>
-            <div>VELOCITY: <strong style="color:#fff;">${stats?.speed ?? 0}</strong></div>
-            <div>PIERCE: <strong style="color:#fff;">${stats?.pierce ?? 1}</strong></div>
-            <div>KNOCKBACK: <strong style="color:#fff;">${def?.knockback ?? 0}</strong></div>
-            <div>EVOLVED: <strong style="color:${isEvo ? '#00ff88' : '#888'};">${isEvo ? 'YES' : 'NO'}</strong></div>
-          </div>
+        <div class="t-section-label">LEVEL 1</div>
+        <div class="codex-stats" style="margin-top:0;">
+          <div>DAMAGE: <strong>${stats?.damage ?? 0}</strong></div>
+          <div>COOLDOWN: <strong>${stats?.cooldown ?? 0}S</strong></div>
+          <div>PROJECTILES: <strong>${stats?.amount ?? 1}</strong></div>
+          <div>AREA: <strong>${stats?.area ?? 1.0}X</strong></div>
+          <div>VELOCITY: <strong>${stats?.speed ?? 0}</strong></div>
+          <div>PIERCE: <strong>${stats?.pierce ?? 1}</strong></div>
+          <div>KNOCKBACK: <strong>${def?.knockback ?? 0}</strong></div>
         </div>
 
         ${
           !isEvo && def && 'pairedPassive' in def && def.pairedPassive && 'evolvesInto' in def && def.evolvesInto
             ? `
-          <div style="background:rgba(10,25,35,0.7); border:1px solid var(--color-cyan); padding:8px 12px; border-radius:4px; margin-bottom:12px;">
-            <div style="font-family:var(--font-display); font-size:11px; color:var(--color-cyan); margin-bottom:2px;">TECH-COM VAULT EVOLUTION RECIPE:</div>
-            <div style="font-size:12px; color:#fff;">
-              ${def.name} (LV 8) + <strong>${PASSIVES[def.pairedPassive]?.name ?? def.pairedPassive}</strong> ➔ 
-              <span style="color:var(--color-amber); font-weight:bold;">${EVOLVED_WEAPONS[def.evolvesInto]?.name ?? def.evolvesInto}</span>
-            </div>
+          <div class="t-section-label">EVOLUTION</div>
+          <div style="font-size:12px;">
+            ${def.name} LV 8 + ${PASSIVES[def.pairedPassive]?.name ?? def.pairedPassive}
+            <span class="t-muted">→</span>
+            <span class="t-red">${EVOLVED_WEAPONS[def.evolvesInto]?.name ?? def.evolvesInto}</span>
           </div>
         `
             : ''
@@ -388,38 +353,20 @@ export class CodexModal {
         ${
           isEvo
             ? `
-          <div style="background:rgba(30,20,10,0.7); border:1px solid var(--color-amber); padding:8px 12px; border-radius:4px; margin-bottom:12px;">
-            <div style="font-family:var(--font-display); font-size:11px; color:var(--color-amber); margin-bottom:2px;">FIELD RECONNAISSANCE STATUS:</div>
-            <div style="font-size:12px; color:${isDiscovered ? '#00ff88' : '#ff4444'}; font-weight:bold;">
-              ${isDiscovered ? '★ EVOLUTION DECRYPTED & CONFIRMED' : '⚠ CLASSIFIED // EVOLVE AT BUNKER VAULT TO DECRYPT'}
-            </div>
+          <div class="t-section-label">STATUS</div>
+          <div style="font-size:12px;" class="${isDiscovered ? '' : 't-muted'}">
+            ${isDiscovered ? 'DECRYPTED' : 'CLASSIFIED. EVOLVE THIS WEAPON IN A RUN TO DECRYPT.'}
           </div>
         `
             : ''
         }
 
-        <div style="font-family:var(--font-display); font-size:12px; color:var(--color-cyan); margin-bottom:4px;">ORDNANCE DOSSIER & COMBAT LOG:</div>
-        <div style="font-size:12px; color:#ddd; line-height:1.5; background:rgba(10,20,30,0.6); padding:10px; border-radius:3px; border-left:3px solid var(--color-cyan);">
+        <div class="t-section-label">DOSSIER</div>
+        <div class="codex-lore">
           ${lore?.lore ?? def?.levels[0].description ?? 'Standard Tech-Com combat weapon.'}
         </div>
       </div>
     `;
-  }
-
-  private getThreatColor(threat: string): string {
-    switch (threat) {
-      case 'LOW':
-        return '#00ff88';
-      case 'MEDIUM':
-        return '#ffb700';
-      case 'HIGH':
-        return '#ff6600';
-      case 'EXTREME':
-        return '#ff0044';
-      case 'LETHAL':
-      default:
-        return '#ff00ff';
-    }
   }
 
   public dispose(): void {

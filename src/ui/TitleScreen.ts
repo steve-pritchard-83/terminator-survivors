@@ -65,107 +65,90 @@ export class TitleScreen {
 
     this.container.innerHTML = `
       <div class="title-container">
-        <div class="title-logo">TERMINATOR SURVIVORS</div>
-        <div class="title-sub">LOS ANGELES, 2029 A.D. // TECH-COM DN38416</div>
+        <div class="title-logo" aria-label="Terminator Survivors">TERMIN<span class="logo-kern">A</span>TOR SURVIVORS</div>
+        <div class="title-sub">LOS ANGELES 2029 A.D.</div>
         <div class="title-prologue">
           ${LORE.prologue}
         </div>
         <div class="title-actions-row">
-          <button class="btn-primary" data-testid="btn-start-run" id="btn-start-run" aria-label="Deploy to Sector 44">
-            ${iconLabel('play', 'DEPLOY TO SECTOR 44')}
+          <button class="btn-primary" data-testid="btn-start-run" id="btn-start-run" aria-label="Deploy">
+            ${iconLabel('play', 'DEPLOY')}
           </button>
-          <button class="btn-secondary" data-testid="btn-bunker-shop" id="btn-bunker-shop" aria-label="Tech-Com Bunker Requisition">
-            ${iconLabel('shop', 'TECH-COM BUNKER REQUISITION')}
+          <button class="btn-secondary" data-testid="btn-bunker-shop" id="btn-bunker-shop" aria-label="Requisition">
+            ${iconLabel('shop', 'REQUISITION')}
           </button>
-          <button class="btn-secondary" data-testid="btn-achievements" id="btn-achievements" aria-label="Tech-Com Intel Achievements">
-            ${iconLabel('trophy', 'TECH-COM INTEL // ACHIEVEMENTS')}
+          <button class="btn-secondary" data-testid="btn-achievements" id="btn-achievements" aria-label="Achievements">
+            ${iconLabel('trophy', 'ACHIEVEMENTS')}
           </button>
-          <button class="btn-secondary" data-testid="btn-codex" id="btn-codex" aria-label="Tech-Com Codex Bestiary">
-            ${iconLabel('codex', 'TECH-COM CODEX // BESTIARY')}
+          <button class="btn-secondary" data-testid="btn-codex" id="btn-codex" aria-label="Codex">
+            ${iconLabel('codex', 'CODEX')}
           </button>
-          <button class="btn-secondary" data-testid="btn-history" id="btn-history" aria-label="Tech-Com War Archives">
-            ${iconLabel('history', 'TECH-COM WAR ARCHIVES')}
+          <button class="btn-secondary" data-testid="btn-history" id="btn-history" aria-label="Archives">
+            ${iconLabel('history', 'ARCHIVES')}
           </button>
-          <button class="btn-secondary" data-testid="btn-settings" id="btn-settings" aria-label="Settings and Calibration">
-            ${iconLabel('settings', 'SETTINGS // CALIBRATION')}
+          <button class="btn-secondary" data-testid="btn-settings" id="btn-settings" aria-label="Settings">
+            ${iconLabel('settings', 'SETTINGS')}
           </button>
-          <button class="btn-secondary" id="btn-install-pwa" aria-label="Install App as PWA" style="display:none; border-color:var(--color-cyan); color:var(--color-cyan);">
-            INSTALL APP (PWA)
+          <button class="btn-secondary" id="btn-install-pwa" aria-label="Install App" style="display:none;">
+            INSTALL APP
           </button>
-          <div id="title-controller-hint" style="font-family:var(--font-telemetry); font-size:12px; color:var(--color-cyan); margin-top:8px; text-align:center; display:none;">
-            [D-PAD / ARROWS] SELECT &nbsp;//&nbsp; [ENTER / A / START] DEPLOY
+          <div class="t-hint" id="title-controller-hint" style="display:none;">
+            [D-PAD / ARROWS] SELECT &nbsp; [A / ENTER] CONFIRM
           </div>
           <div class="title-version-watermark" data-testid="title-version-watermark" id="title-version-watermark">
-            v${APP_VERSION} [${BUILD_HASH}] // RESISTANCE PROTOCOL
+            v${APP_VERSION} [${BUILD_HASH}]
           </div>
-          <div data-testid="title-disclaimer" style="font-family:var(--font-telemetry); font-size:10px; opacity:0.6; margin-top:6px; text-align:center;">
+          <div class="title-disclaimer" data-testid="title-disclaimer">
             NON-COMMERCIAL FAN PROJECT. NOT ENDORSED BY OR AFFILIATED WITH THE RIGHTS HOLDERS OF THE TERMINATOR FRANCHISE.
           </div>
         </div>
       </div>
 
-      <div class="modal-backdrop" id="pwa-install-modal" role="dialog" aria-modal="true" aria-label="Install Tactical PWA" style="display:none;">
+      <div class="modal-backdrop" id="pwa-install-modal" role="dialog" aria-modal="true" aria-label="Install App" style="display:none;">
         <div class="t800-modal-box" style="max-width:480px; text-align:center; align-items:center;">
-          <img src="./icons/icon-192.png" alt="Terminator Survivors Icon" style="width:76px; height:76px; border-radius:16px; border:2px solid var(--color-cyan); box-shadow:0 0 18px rgba(77,210,255,0.45); margin-bottom:10px;" />
-          <div class="t800-header" style="font-size:20px; margin-bottom:6px;">INSTALL TACTICAL PWA</div>
-          <div class="t800-ticker" style="width:100%;">FULLSCREEN LANDSCAPE // OFFLINE READY</div>
-          <div id="pwa-install-instructions" style="font-size:13px; color:var(--color-chrome); line-height:1.5; margin-bottom:16px;">
+          <img class="pwa-icon" src="./icons/icon-192.png" alt="Terminator Survivors Icon" />
+          <div class="t800-header">INSTALL APP</div>
+          <div id="pwa-install-instructions" class="t-muted" style="font-size:12px; line-height:1.6; margin:8px 0 16px;">
             Install <strong>Terminator Survivors</strong> to your home screen for locked fullscreen landscape controls and offline play.
           </div>
-          <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center;">
-            <button class="btn-primary" id="btn-trigger-pwa-install" aria-label="Install App Now" style="margin-bottom:0; padding:11px 24px; font-size:14px;">
-              INSTALL APP NOW
-            </button>
-            <button class="btn-secondary" id="btn-dismiss-pwa-modal" aria-label="Continue in Browser" style="padding:11px 20px;">
-              CONTINUE IN BROWSER
-            </button>
+          <div class="btn-row" style="margin-top:0;">
+            <button class="btn-primary" id="btn-trigger-pwa-install" aria-label="Install App Now">INSTALL</button>
+            <button class="btn-secondary" id="btn-dismiss-pwa-modal" aria-label="Continue in Browser">CONTINUE IN BROWSER</button>
           </div>
         </div>
       </div>
 
-      <div class="modal-backdrop" id="bunker-modal" role="dialog" aria-modal="true" aria-label="Tech-Com Bunker Requisition" style="display:none;">
-        <div class="t800-modal-box" style="max-width:760px; max-height:88vh; overflow-y:auto;">
-          <div class="t800-header">TECH-COM BUNKER REQUISITION</div>
-          <div class="t800-ticker" id="bunker-scrap-header">AVAILABLE ALLOY SCRAP: 0</div>
-          
-          <div style="margin-bottom:12px;">
-            <div style="font-family:var(--font-display); font-size:13px; color:var(--color-cyan); margin-bottom:6px;">
-              ACTIVE RESISTANCE OPERATIVE:
-            </div>
-            <div id="loadout-selection-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:8px;"></div>
-          </div>
+      <div class="modal-backdrop" id="bunker-modal" role="dialog" aria-modal="true" aria-label="Requisition" style="display:none;">
+        <div class="t800-modal-box" style="max-width:760px;">
+          <div class="t800-header">REQUISITION</div>
+          <div class="t800-ticker" id="bunker-scrap-header">SCRAP 0</div>
 
-          <div style="font-family:var(--font-display); font-size:13px; color:var(--color-amber); margin-bottom:6px;">
-            PERMANENT FIELD UPGRADES:
-          </div>
+          <div class="t-section-label" style="margin-top:0;">OPERATIVE</div>
+          <div id="loadout-selection-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:8px;"></div>
+
+          <div class="t-section-label">PERMANENT UPGRADES</div>
           <div id="bunker-upgrades-list" class="upgrade-card-list"></div>
 
-          <div style="display:flex; justify-content:center; align-items:center; gap:12px; margin-top:14px;">
-            <button class="btn-secondary" id="btn-refund-upgrades" aria-label="Refund All Alloy Scrap" style="border-color:#ff8844; color:#ffaa66;">
-              REFUND ALL ALLOY
-            </button>
-            <button class="btn-secondary" id="btn-close-bunker" aria-label="Return to Command" style="align-self:center;">
-              RETURN TO COMMAND
-            </button>
+          <div class="btn-row">
+            <button class="btn-secondary" id="btn-refund-upgrades" aria-label="Refund All Scrap">REFUND ALL</button>
+            <button class="btn-secondary" id="btn-close-bunker" aria-label="Back">BACK</button>
           </div>
-          <div id="bunker-controller-hint" style="font-family:var(--font-telemetry); font-size:12px; color:var(--color-cyan); margin-top:6px; text-align:center; display:none;">
-            [D-PAD / ARROWS] BROWSE &nbsp;//&nbsp; [ENTER / A] PURCHASE/SELECT &nbsp;//&nbsp; [ESC / B] RETURN
+          <div class="t-hint" id="bunker-controller-hint" style="display:none;">
+            [D-PAD / ARROWS] BROWSE &nbsp; [A / ENTER] SELECT &nbsp; [B / ESC] BACK
           </div>
         </div>
       </div>
 
-      <div class="modal-backdrop" id="achievements-modal" role="dialog" aria-modal="true" aria-label="Tech-Com Intel Achievements" style="display:none;">
-        <div class="t800-modal-box" style="max-width:800px; max-height:88vh; overflow-y:auto;">
-          <div class="t800-header">TECH-COM INTEL // ACHIEVEMENTS</div>
-          <div class="t800-ticker" id="achievements-scrap-header">RECORDS SECURED: 0 / 40</div>
-          <div id="achievements-list" class="upgrade-card-list" style="margin-top:10px; display:flex; flex-direction:column; gap:8px;"></div>
-          <div style="display:flex; justify-content:center; align-items:center; gap:12px; margin-top:14px;">
-            <button class="btn-secondary" id="btn-close-achievements" aria-label="Return to Command" style="align-self:center;">
-              RETURN TO COMMAND
-            </button>
+      <div class="modal-backdrop" id="achievements-modal" role="dialog" aria-modal="true" aria-label="Achievements" style="display:none;">
+        <div class="t800-modal-box" style="max-width:800px;">
+          <div class="t800-header">ACHIEVEMENTS</div>
+          <div class="t800-ticker" id="achievements-scrap-header">SECURED 0 / 40</div>
+          <div id="achievements-list" class="upgrade-card-list"></div>
+          <div class="btn-row">
+            <button class="btn-secondary" id="btn-close-achievements" aria-label="Back">BACK</button>
           </div>
-          <div id="achievements-controller-hint" style="font-family:var(--font-telemetry); font-size:12px; color:var(--color-cyan); margin-top:6px; text-align:center; display:none;">
-            [D-PAD / ARROWS] BROWSE &nbsp;//&nbsp; [ESC / B] RETURN
+          <div class="t-hint" id="achievements-controller-hint" style="display:none;">
+            [D-PAD / ARROWS] BROWSE &nbsp; [B / ESC] BACK
           </div>
         </div>
       </div>
@@ -373,7 +356,7 @@ export class TitleScreen {
       } else if (isIos) {
         triggerInstallBtn.style.display = 'none';
         instructionsEl.innerHTML =
-          'To install on iPhone/iPad:<br/><span style="color:var(--color-cyan);">1.</span> Tap the Safari <strong>Share</strong> button <strong>[↑]</strong><br/><span style="color:var(--color-cyan);">2.</span> Select <strong>"Add to Home Screen"</strong> and launch from your home screen.';
+          'To install on iPhone/iPad:<br/><span class="t-red">1.</span> Tap the Safari <strong>Share</strong> button <strong>[↑]</strong><br/><span class="t-red">2.</span> Select <strong>"Add to Home Screen"</strong> and launch from your home screen.';
       } else {
         triggerInstallBtn.style.display = 'none';
         instructionsEl.innerHTML =
@@ -674,7 +657,7 @@ export class TitleScreen {
   private renderBunkerContents(): void {
     const data = this.saveManager.getData();
     const scrapHeader = this.bunkerModal.querySelector('#bunker-scrap-header')!;
-    scrapHeader.textContent = `AVAILABLE ALLOY SCRAP: ${data.alloyScrap} // TOTAL KILLS: ${data.totalKills}`;
+    scrapHeader.textContent = `SCRAP ${data.alloyScrap} · KILLS ${data.totalKills}`;
 
     this.bunkerSelectables = [];
 
@@ -692,21 +675,18 @@ export class TitleScreen {
         'aria-label',
         `${cfg.name}, ${cfg.callsign}. Special: ${cfg.ability.name}. ${isSelected ? 'Active' : isUnlocked ? 'Select' : `Unlock: ${cfg.cost} scrap`}`
       );
-      card.style.cssText = `
-        padding: 8px 10px;
-        background: ${isSelected ? 'rgba(77,210,255,0.2)' : 'rgba(15,25,38,0.7)'};
-        border: 1px solid ${isSelected ? 'var(--color-cyan)' : 'rgba(77,210,255,0.3)'};
-        border-radius: 3px;
-        cursor: pointer;
-        transition: all 0.15s ease;
-      `;
+      card.classList.toggle('is-selected', isSelected);
       card.innerHTML = `
-        <div style="font-family:var(--font-display); font-size:11px; color:#fff;">${cfg.name}</div>
-        <div style="font-size:10px; color:var(--color-amber);">${cfg.callsign}</div>
-        <div style="font-size:9px; color:var(--color-cyan); margin-top:2px;">SPEC: ${cfg.ability.name}</div>
-        <div style="font-size:10px; margin-top:4px; color:${isUnlocked ? '#00ff88' : '#ff4444'}">
-          ${isSelected ? 'ACTIVE' : isUnlocked ? 'SELECT' : `UNLOCK: ${cfg.cost} SCRAP`}
-        </div>
+        <div class="card-name">${cfg.name}</div>
+        <div class="t-muted">${cfg.callsign}</div>
+        <div class="t-muted">SPEC: ${cfg.ability.name}</div>
+        <div style="margin-top:4px;">${
+          isSelected
+            ? '<span class="t-tag t-tag-on">ACTIVE</span>'
+            : isUnlocked
+              ? '<span class="t-tag">SELECT</span>'
+              : `<span class="t-muted">UNLOCK ${cfg.cost} SCRAP</span>`
+        }</div>
       `;
 
       card.onclick = () => {
@@ -743,11 +723,9 @@ export class TitleScreen {
       );
       card.innerHTML = `
         <div class="upgrade-card-info">
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <div class="upgrade-card-title">${cfg.name} (LV ${curLv}/${cfg.maxLevel})</div>
-            <div style="font-family:var(--font-telemetry); font-size:12px; color:var(--color-amber);">
-              ${isMax ? 'MAX LEVEL' : `COST: ${cost} SCRAP`}
-            </div>
+          <div class="upgrade-card-head">
+            <div class="upgrade-card-title">${cfg.name} <span class="t-muted">LV ${curLv}/${cfg.maxLevel}</span></div>
+            <div class="upgrade-card-sub">${isMax ? 'MAX' : `${cost} SCRAP`}</div>
           </div>
           <div class="upgrade-card-desc">${cfg.description}</div>
         </div>
@@ -760,7 +738,7 @@ export class TitleScreen {
           this.renderBunkerContents();
         };
       } else if (isMax) {
-        card.style.opacity = '0.6';
+        card.classList.add('is-maxed');
         card.style.cursor = 'default';
       } else {
         card.onclick = () => {
@@ -808,7 +786,7 @@ export class TitleScreen {
     const pct = Math.round((count / TOTAL_ACHIEVEMENTS) * 100);
 
     const scrapHeader = this.achievementsModal.querySelector('#achievements-scrap-header')!;
-    scrapHeader.textContent = `RECORDS SECURED: ${count} / ${TOTAL_ACHIEVEMENTS} (${pct}%) // ALLOY SCRAP: ${this.saveManager.getData().alloyScrap}`;
+    scrapHeader.textContent = `SECURED ${count} / ${TOTAL_ACHIEVEMENTS} (${pct}%)`;
 
     this.achievementsSelectables = [];
     const listEl = this.achievementsModal.querySelector('#achievements-list')!;
@@ -823,38 +801,15 @@ export class TitleScreen {
         'aria-label',
         `${ach.title}, ${ach.category}. ${ach.description}. ${isUnlocked ? 'Secured' : 'Locked'}`
       );
-      card.style.cssText = `
-        padding: 10px 14px;
-        background: ${isUnlocked ? 'rgba(10, 30, 20, 0.6)' : 'rgba(15, 20, 25, 0.6)'};
-        border: 1px solid ${isUnlocked ? 'rgba(0, 255, 136, 0.4)' : 'rgba(255, 255, 255, 0.1)'};
-        border-radius: 4px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 12px;
-      `;
+      if (!isUnlocked) card.classList.add('is-locked');
 
       card.innerHTML = `
-        <div style="flex: 1;">
-          <div style="display:flex; align-items:center; gap:8px;">
-            <span style="font-family:var(--font-display); font-size:13px; color:${isUnlocked ? '#fff' : '#aaa'}; font-weight:bold;">
-              ${isUnlocked ? '★ ' : '○ '}${ach.title}
-            </span>
-            <span style="font-size:10px; padding:2px 6px; border-radius:3px; background:rgba(77,210,255,0.15); color:var(--color-cyan); text-transform:uppercase;">
-              ${ach.category}
-            </span>
+        <div class="upgrade-card-info">
+          <div class="upgrade-card-head">
+            <div class="upgrade-card-title">${ach.title} <span class="t-tag">${ach.category}</span></div>
+            ${isUnlocked ? '<span class="t-tag t-tag-on">SECURED</span>' : `<span class="upgrade-card-sub">${ach.reward.description}</span>`}
           </div>
-          <div style="font-size:11px; color:#bbb; margin-top:3px;">
-            ${ach.description}
-          </div>
-        </div>
-        <div style="text-align:right; min-width:180px;">
-          <div style="font-size:11px; font-weight:bold; color:${isUnlocked ? '#00ff88' : 'var(--color-amber)'};">
-            ${isUnlocked ? 'SECURED' : ach.reward.description}
-          </div>
-          <div style="font-size:10px; color:${isUnlocked ? 'rgba(0,255,136,0.8)' : '#888'}; margin-top:2px;">
-            ${isUnlocked ? 'INTEL ACQUIRED' : 'LOCKED'}
-          </div>
+          <div class="upgrade-card-desc">${ach.description}</div>
         </div>
       `;
 

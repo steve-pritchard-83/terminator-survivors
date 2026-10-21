@@ -111,11 +111,9 @@ export class UIManager {
     overlay.id = 'landscape-enforcer';
     overlay.className = 'landscape-enforcer';
     overlay.innerHTML = `
-      <div class="landscape-phone-icon">📱↻</div>
-      <div class="t800-header" style="font-size:20px; margin-top:12px;">ROTATE DEVICE TO LANDSCAPE</div>
-      <div style="font-family:var(--font-telemetry); font-size:13px; color:var(--color-cyan); max-width:300px; text-align:center; line-height:1.5;">
-        TECH-COM TACTICAL HUD REQUIRES WIDESCREEN LANDSCAPE ORIENTATION TO ENGAGE SKYNET FORCES.
-      </div>
+      <div class="landscape-phone-icon">↻</div>
+      <div class="t800-header">ROTATE DEVICE</div>
+      <div class="t-muted" style="font-size:12px;">LANDSCAPE REQUIRED</div>
     `;
     root.appendChild(overlay);
 

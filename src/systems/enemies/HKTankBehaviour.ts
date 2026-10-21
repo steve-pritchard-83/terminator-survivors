@@ -1,6 +1,6 @@
 import type * as THREE from 'three';
 import { tickCooldown } from './attackTimer';
-import { ENEMY_ATTACK_DAMAGE, TANK_MORTAR_WARNING_SECONDS } from '../../data/balance';
+import { ENEMY_ATTACK_DAMAGE, TANK_MORTAR_WARNING_SECONDS, TANK_RUMBLE } from '../../data/balance';
 import type { ActiveEnemy } from '../../core/types';
 import type { EnemyBehaviour, EnemyContext } from './EnemyBehaviour';
 import { HKTankMesh } from '../../graphics/meshes/HKTankMesh';
@@ -105,6 +105,13 @@ export class HKTankBehaviour implements EnemyBehaviour {
     // ATTACK 2: Frontal Twin Plasma Cannon Spread
     let cannonCooldown = state.cannonCooldown ?? 2.8;
     const distToPlayer = Math.hypot(px - enemy.x, pz - enemy.z);
+
+    // The ground shakes under the treads when the tank is close
+    state.rumbleTimer = (state.rumbleTimer ?? 0) - dt;
+    if (distToPlayer < TANK_RUMBLE.radius && state.rumbleTimer <= 0) {
+      state.rumbleTimer = TANK_RUMBLE.intervalSeconds;
+      ctx.emit('camera:shake', { trauma: TANK_RUMBLE.trauma * (1 - distToPlayer / TANK_RUMBLE.radius) });
+    }
     cannonCooldown = tickCooldown(cannonCooldown, dt, distToPlayer < 24.0, 0.5);
     let cannonTelegraph = this.cannonTelegraphs.get(enemy.id);
     if (!cannonTelegraph) {

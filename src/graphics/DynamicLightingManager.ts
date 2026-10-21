@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { globalEvents } from '../core/EventBus';
+import { RENDER_BUDGET } from '../data/performance';
 
 export interface LightSlot {
   light: THREE.PointLight;
@@ -11,7 +12,7 @@ export interface LightSlot {
 }
 
 export class DynamicLightingManager {
-  public static readonly POOL_SIZE = 8;
+  public static readonly POOL_SIZE = RENDER_BUDGET.flashLights;
   private readonly slots: LightSlot[] = [];
   private enabled = true;
   private playerX = 0;
@@ -55,9 +56,13 @@ export class DynamicLightingManager {
   }
 
   public setEnabled(enabled: boolean): void {
+    if (enabled === this.enabled) return;
     this.enabled = enabled;
-    if (!enabled) {
-      this.clear();
+    if (!enabled) this.clear();
+    // Removed rather than dimmed: a light at zero intensity still costs every lit pixel
+    for (const slot of this.slots) {
+      if (enabled) this.scene.add(slot.light);
+      else this.scene.remove(slot.light);
     }
   }
 

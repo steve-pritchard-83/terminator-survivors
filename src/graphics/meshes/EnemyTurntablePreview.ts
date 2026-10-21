@@ -14,6 +14,8 @@ import {
   PlasmaTurretMesh,
   T600MinigunnerMesh
 } from './NewEnemyMeshes';
+import { ModelLibrary } from '../ModelLibrary';
+import { createEndoPreview } from '../EndoModel';
 
 export function createEnemyPreviewObject(archetype: EnemyArchetypeId): THREE.Object3D {
   const root = new THREE.Group();
@@ -28,12 +30,6 @@ export function createEnemyPreviewObject(archetype: EnemyArchetypeId): THREE.Obj
     case 'hk_aerial_squadron_leader': {
       const leader = new HKAerialMesh();
       leader.group.scale.set(1.15, 1.15, 1.15);
-      // Add command antennae
-      const antGeom = new THREE.CylinderGeometry(0.04, 0.04, 1.2, 6);
-      const antMat = new THREE.MeshBasicMaterial({ color: 0xff0044 });
-      const ant = new THREE.Mesh(antGeom, antMat);
-      ant.position.set(0, 1.4, -0.6);
-      leader.group.add(ant);
       root.add(leader.group);
       root.position.set(0, 0.5, 0);
       root.scale.setScalar(0.65);
@@ -50,6 +46,7 @@ export function createEnemyPreviewObject(archetype: EnemyArchetypeId): THREE.Obj
 
     case 'infiltrator_csm101': {
       const inf = new InfiltratorMesh();
+      inf.updateAnimation(0.016, 0, 0); // settle the rig into its rifle hold
       root.add(inf.group);
       root.scale.setScalar(1.0);
       root.position.set(0, -0.9, 0);
@@ -143,6 +140,13 @@ export function createEnemyPreviewObject(archetype: EnemyArchetypeId): THREE.Obj
     }
 
     case 't600_rusted': {
+      const endo = ModelLibrary.getEndo();
+      if (endo) {
+        root.add(createEndoPreview(endo, 0xc49a74));
+        root.position.set(0, -0.9, 0);
+        root.scale.setScalar(0.95);
+        break;
+      }
       const rustSteel = 0x5a483a;
       const rubberSkin = 0x3d3530;
       const opticRed = 0xff2200;
@@ -165,6 +169,13 @@ export function createEnemyPreviewObject(archetype: EnemyArchetypeId): THREE.Obj
     }
 
     case 't700_scout': {
+      const endo = ModelLibrary.getEndo();
+      if (endo) {
+        root.add(createEndoPreview(endo, 0x9aa3ad));
+        root.position.set(0, -0.9, 0);
+        root.scale.setScalar(0.9);
+        break;
+      }
       const gunmetal = 0x36404d;
       const chromeDark = 0x556270;
       const opticRed = 0xff0044;
@@ -188,6 +199,13 @@ export function createEnemyPreviewObject(archetype: EnemyArchetypeId): THREE.Obj
 
     case 't800_endoskeleton':
     default: {
+      const endo = ModelLibrary.getEndo();
+      if (endo) {
+        root.add(createEndoPreview(endo));
+        root.position.set(0, -0.9, 0);
+        root.scale.setScalar(0.95);
+        break;
+      }
       const chromeBright = 0xc5d3e0;
       const chromeMid = 0x8a99a8;
       const darkSocket = 0x10141a;

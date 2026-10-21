@@ -18,22 +18,17 @@ export class VaultJackpotModal {
     this.container.setAttribute('data-testid', 'vault-modal');
     this.container.setAttribute('role', 'dialog');
     this.container.setAttribute('aria-modal', 'true');
-    this.container.setAttribute('aria-label', 'Skynet Data Vault Decrypted');
+    this.container.setAttribute('aria-label', 'Data Vault Decrypted');
     this.container.style.display = 'none';
 
     this.container.innerHTML = `
-      <div class="t800-modal-box" style="text-align:center;">
-        <div class="t800-header" id="vault-title" style="color:var(--color-amber);">
-          SKYNET DATA VAULT DECRYPTED
-        </div>
-        <div class="t800-ticker">SECURITY PROTOCOL BYPASSED // REQUISITION OVERRIDE</div>
-        <div id="vault-desc" style="font-size:15px; color:#fff; margin:20px 0; line-height:1.6;"></div>
-        <button class="btn-primary" data-testid="btn-claim-vault" id="btn-claim-vault" aria-label="Secure Salvage" style="align-self:center;">
-          SECURE SALVAGE
+      <div class="t800-modal-box" style="max-width:480px; text-align:center;">
+        <div class="t800-header" id="vault-title">DATA VAULT DECRYPTED</div>
+        <div id="vault-desc" style="margin:18px 0; line-height:1.7;"></div>
+        <button class="btn-primary" data-testid="btn-claim-vault" id="btn-claim-vault" aria-label="Claim" style="align-self:center;">
+          CLAIM
         </button>
-        <div id="vault-controller-hint" style="font-family:var(--font-telemetry); font-size:12px; color:var(--color-cyan); margin-top:12px; display:none;">
-          [ENTER / SPACE / A / START] SECURE SALVAGE
-        </div>
+        <div class="t-hint" id="vault-controller-hint" style="display:none;">[A / ENTER] CLAIM</div>
       </div>
     `;
 
@@ -71,23 +66,17 @@ export class VaultJackpotModal {
 
     if (evolvedWeapon) {
       const def = ALL_WEAPONS[evolvedWeapon];
-      this.titleEl.innerHTML = `${icon('evolution')}<span class="gi-label">SUPERWEAPON EVOLUTION UNLOCKED!</span>`;
-      this.titleEl.style.color = '#e600ff';
+      this.titleEl.innerHTML = `${icon('evolution')}<span class="gi-label">EVOLUTION UNLOCKED</span>`;
       this.descEl.innerHTML = `
-        <div style="font-family:var(--font-display); font-size:20px; color:#e600ff; margin-bottom:8px;">
-          ${def?.name ?? evolvedWeapon}
-        </div>
-        <div style="color:var(--color-chrome); margin-bottom:12px;">${def?.levels[0].description}</div>
-        <div style="color:var(--color-amber);">+${alloyBonus} ALLOY SCRAP SECURED</div>
+        <div style="font-size:20px;">${def?.name ?? evolvedWeapon}</div>
+        <div class="t-muted" style="font-size:12px; margin:6px 0 12px;">${def?.levels[0].description}</div>
+        <div>+${alloyBonus} SCRAP</div>
       `;
     } else {
-      this.titleEl.innerHTML = `${icon('vault')}<span class="gi-label">SKYNET DATA VAULT UNLOCKED</span>`;
-      this.titleEl.style.color = 'var(--color-amber)';
+      this.titleEl.innerHTML = `${icon('vault')}<span class="gi-label">DATA VAULT DECRYPTED</span>`;
       this.descEl.innerHTML = `
-        <div style="font-family:var(--font-display); font-size:18px; color:var(--color-cyan); margin-bottom:8px;">
-          3 REQUISITIONS AUTHORISED
-        </div>
-        <div style="color:var(--color-amber);">+${alloyBonus} ALLOY SCRAP SECURED</div>
+        <div style="font-size:18px;">3 UPGRADES AUTHORISED</div>
+        <div>+${alloyBonus} SCRAP</div>
       `;
     }
 

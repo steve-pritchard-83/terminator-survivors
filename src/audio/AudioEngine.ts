@@ -64,7 +64,8 @@ export const SFX_WAV_MANIFEST: Record<string, string[]> = {
   flareLaunch: seq('flare_launch', 1),
   bossStinger: [fx('S_Splash_Screen_Drums_x1.wav'), fx('hk_heavy1a_m.wav'), fx('S_TurretAlarm.wav')],
   // Pickups and rewards
-  pickupGem: [fx('S_LootPickupStuff.wav'), fx('S_LootPickupQuest.wav')],
+  // A salvaged power cell latching in with a short charge-up (plasma reload click + energy layer)
+  pickupGem: seq('pickup_cell', 3),
   lootHeal: seq('loot_heal', 2),
   lootScrap: seq('loot_scrap', 3),
   crateBreak: seq('crate_break', 4),
@@ -656,65 +657,6 @@ export class AudioEngine {
     }
   }
 
-  private playXpTactileClick(combo = 0): void {
-    if (this.isMuted) return;
-    if (!this.initialized) {
-      this.init();
-    }
-    if (!this.ctx || !this.sfxGain) return;
-
-    try {
-      const now = this.ctx.currentTime;
-      const step = Math.min(16, Math.max(0, combo));
-      // Pentatonic ascending crystal pitch ratio
-      const semitones = [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24, 26, 28, 31, 33, 36, 38][step] ?? 0;
-      const pitchMult = Math.pow(2, semitones / 12);
-
-      // 1. Crisp mechanical micro-switch click transient (2.8kHz -> 920Hz in 9ms)
-      const clickOsc = this.ctx.createOscillator();
-      const clickGain = this.ctx.createGain();
-      clickOsc.type = 'triangle';
-      clickOsc.frequency.setValueAtTime(2800 * Math.min(1.35, pitchMult), now);
-      clickOsc.frequency.exponentialRampToValueAtTime(920, now + 0.009);
-      clickGain.gain.setValueAtTime(0.42, now);
-      clickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.011);
-      clickOsc.connect(clickGain);
-      clickGain.connect(this.sfxGain);
-      clickOsc.start(now);
-      clickOsc.stop(now + 0.012);
-
-      // 2. Crystalline harmonic chime ping (1180Hz * pitchMult)
-      const chimeOsc = this.ctx.createOscillator();
-      const chimeGain = this.ctx.createGain();
-      chimeOsc.type = 'sine';
-      const baseFreq = 1046.5 * pitchMult; // C6 ascending
-      chimeOsc.frequency.setValueAtTime(baseFreq, now + 0.002);
-      chimeOsc.frequency.exponentialRampToValueAtTime(baseFreq * 1.015, now + 0.075);
-      chimeGain.gain.setValueAtTime(0.001, now);
-      chimeGain.gain.linearRampToValueAtTime(0.28, now + 0.004);
-      chimeGain.gain.exponentialRampToValueAtTime(0.001, now + 0.085);
-      chimeOsc.connect(chimeGain);
-      chimeGain.connect(this.sfxGain);
-      chimeOsc.start(now);
-      chimeOsc.stop(now + 0.09);
-
-      // 3. Subtle low-end tactile thump (145Hz -> 58Hz in 18ms) for physical weight on phone speakers
-      const thumpOsc = this.ctx.createOscillator();
-      const thumpGain = this.ctx.createGain();
-      thumpOsc.type = 'sine';
-      thumpOsc.frequency.setValueAtTime(145, now);
-      thumpOsc.frequency.exponentialRampToValueAtTime(58, now + 0.018);
-      thumpGain.gain.setValueAtTime(0.32, now);
-      thumpGain.gain.exponentialRampToValueAtTime(0.001, now + 0.02);
-      thumpOsc.connect(thumpGain);
-      thumpGain.connect(this.sfxGain);
-      thumpOsc.start(now);
-      thumpOsc.stop(now + 0.022);
-    } catch {
-      // Ignore synthesis errors in restricted contexts
-    }
-  }
-
   /**
    * Calculates stereo pan (-1 to 1) and distance attenuation (0.12 to 1)
    * relative to player/camera position.
@@ -1128,9 +1070,8 @@ export class AudioEngine {
 
   public playPickupGem(combo = 0): void {
     this.triggerHaptic(9, 24);
-    this.playXpTactileClick(combo);
     const pitch = Math.min(1.5, 1.05 + (combo % 14) * 0.035);
-    this.playSample('pickupGem', 0.42, pitch, 0.02);
+    this.playSample('pickupGem', 0.75, pitch, 0.04);
   }
 
   public playLevelUp(): void {

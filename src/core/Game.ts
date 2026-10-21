@@ -9,6 +9,8 @@ import { ParticleSystem } from '../systems/ParticleSystem';
 import { createEnvironment, type IEnvironment } from '../graphics/environments';
 import { KyleReeseMesh } from '../graphics/meshes/KyleReeseMesh';
 import { EndoskeletonBatch } from '../graphics/meshes/EndoskeletonBatch';
+import { TitleFlyover } from '../graphics/TitleFlyover';
+import { ModelLibrary } from '../graphics/ModelLibrary';
 import { PlayerSystem } from '../systems/PlayerSystem';
 import { WeaponSystem } from '../systems/WeaponSystem';
 import { EnemySystem } from '../systems/EnemySystem';
@@ -37,6 +39,7 @@ export class Game implements RunControllerHost, InputRouterHost, DebugAPIHost {
   public environment: IEnvironment;
   public readonly playerMesh: KyleReeseMesh;
   public readonly endoBatch: EndoskeletonBatch;
+  private readonly titleFlyover: TitleFlyover;
 
   public readonly playerSystem: PlayerSystem;
   public readonly weaponSystem: WeaponSystem;
@@ -70,11 +73,23 @@ export class Game implements RunControllerHost, InputRouterHost, DebugAPIHost {
     appContainer.appendChild(canvasContainer);
 
     this.sceneManager = new SceneManager(canvasContainer);
+    // Sculpted models stream in; the procedural stand-ins are used until then
+    void ModelLibrary.preload().then(() => {
+      const rifle = ModelLibrary.getMeshData('plasma_rifle');
+      const endo = ModelLibrary.getEndo();
+      if (endo) this.endoBatch.applySculptedModel(endo, rifle);
+      const crab = ModelLibrary.getMeshData('crab_drone');
+      if (crab) this.endoBatch.applyCrabModel(crab);
+      if (rifle) this.playerMesh.applyRifleModel(rifle);
+      const player = ModelLibrary.getPlayer();
+      if (player && rifle) this.playerMesh.applyPlayerModel(player, rifle);
+    });
     this.particles = new ParticleSystem();
     this.environment = createEnvironment();
     this.playerMesh = new KyleReeseMesh();
     this.endoBatch = new EndoskeletonBatch(650);
     this.sceneManager.scene.add(this.environment.group, this.playerMesh.group, this.endoBatch.group, this.particles.group);
+    this.titleFlyover = new TitleFlyover(this.sceneManager.scene);
 
     // 3. Gameplay Systems
     this.playerSystem = new PlayerSystem(this.runState, this.playerMesh, this.particles);
@@ -148,8 +163,10 @@ export class Game implements RunControllerHost, InputRouterHost, DebugAPIHost {
   private fixedUpdate(dt: number): void {
     const input = this.inputRouter.update(dt);
 
+    const onTitle = this.runState.mode === 'title';
+    this.titleFlyover.update(dt, onTitle);
     if (this.runState.mode !== 'playing') {
-      if (this.runState.mode === 'title') this.environment.update(0, 0);
+      if (onTitle) this.environment.update(this.titleFlyover.panPos.x, this.titleFlyover.panPos.z);
       return;
     }
 
@@ -192,7 +209,7 @@ export class Game implements RunControllerHost, InputRouterHost, DebugAPIHost {
       this.sceneManager.updateCamera(interp.x, interp.z, dt);
       this.uiManager.hudView.updateDamageNumbers(dt);
     } else {
-      const p = this.runState.mode === 'title' ? { x: 0, z: 0 } : this.runState.playerPos;
+      const p = this.runState.mode === 'title' ? this.titleFlyover.panPos : this.runState.playerPos;
       this.sceneManager.updateCamera(p.x, p.z, dt);
     }
     this.sceneManager.render(dt, this.runState.timeSeconds);
@@ -200,6 +217,6 @@ export class Game implements RunControllerHost, InputRouterHost, DebugAPIHost {
 
   public dispose(): void {
     this.gameLoop.stop(); this.runController.dispose(); this.debugAPI?.dispose();
-    this.pickupSystem.dispose(); this.interactiveEnv.dispose(); this.environment.dispose();
+    this.pickupSystem.dispose(); this.interactiveEnv.dispose(); this.environment.dispose(); this.titleFlyover.dispose();
   }
 }

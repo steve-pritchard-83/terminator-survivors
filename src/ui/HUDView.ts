@@ -45,8 +45,8 @@ export class HUDView {
       <div class="hudm-xp" id="hud-xp-container"><div class="hudm-xp-fill" id="hud-xp-fill"></div></div>
 
       <div class="hudm-top">
-        <div class="hudm-chip" data-testid="hud-level">${icon('level')}<span id="hud-level-text">1</span></div>
-        <div class="hudm-chip hudm-clock" data-testid="hud-timer">${icon('timer')}<span id="hud-clock-text">00:00</span></div>
+        <div class="hudm-chip" data-testid="hud-level"><span id="hud-level-text">LV 1</span></div>
+        <div class="hudm-chip hudm-clock" data-testid="hud-timer"><span id="hud-clock-text">00:00</span></div>
         <button class="hudm-pause" data-testid="btn-hud-pause" id="btn-hud-pause" aria-label="Pause">${icon('pause')}</button>
       </div>
 
@@ -56,7 +56,7 @@ export class HUDView {
       </div>
 
       <div class="hudm-alert" id="hud-boss-warning" data-testid="hud-boss-warning">
-        ${icon('bossAlert')}<span id="hud-boss-warning-text">BOSS DETECTED</span>
+        ${icon('bossAlert')}<span id="hud-boss-warning-text">THREAT DETECTED</span>
       </div>
 
       <div class="hud-floating-text-layer" id="floating-text-layer" data-testid="floating-text-layer"></div>
@@ -147,7 +147,7 @@ export class HUDView {
   ): void {
     if (this.fpsCounterEl.style.display !== 'none' && typeof fps === 'number') {
       const ms = fps > 0 ? (1000 / fps).toFixed(1) : '0.0';
-      this.fpsCounterEl.textContent = `FPS: ${fps} // ${ms}ms`;
+      this.fpsCounterEl.textContent = `FPS ${fps} ${ms}MS`;
     }
 
     // XP bar + pickup pulse
@@ -162,7 +162,7 @@ export class HUDView {
     this.lastXp = runState.xp;
     this.lastLevel = runState.level;
     this.xpFill.style.width = `${Math.min(100, (runState.xp / runState.xpToNext) * 100)}%`;
-    this.levelEl.textContent = `${runState.level}`;
+    this.levelEl.textContent = `LV ${runState.level}`;
 
     // Health bar
     const hpPercent = Math.max(0, Math.min(100, (runState.hp / runState.maxHp) * 100));
@@ -203,7 +203,7 @@ export class HUDView {
   }
 
   public triggerBossWarning(bossName: string): void {
-    this.bossWarningText.textContent = bossName.toUpperCase();
+    this.bossWarningText.textContent = `THREAT DETECTED: ${bossName.toUpperCase()}`;
     this.bossWarningBanner.style.display = 'flex';
     if (this.bossWarningTimer !== null) window.clearTimeout(this.bossWarningTimer);
     this.bossWarningTimer = window.setTimeout(() => {

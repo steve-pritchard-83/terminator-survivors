@@ -21,9 +21,9 @@ export class PlayerSystem {
 
     // Ground aim reticle
     this.reticleMat = new THREE.MeshBasicMaterial({
-      color: 0x00e5ff,
+      color: 0xff3a2a, // Terminator-vision red, matching the HUD
       transparent: true,
-      opacity: 0.85,
+      opacity: 0.6,
       side: THREE.DoubleSide,
       depthWrite: false
     });
@@ -119,8 +119,10 @@ export class PlayerSystem {
       this.runState.isMoving = false;
     }
 
-    if (targetAngle !== null) {
-      facing = targetAngle;
+    // Always face where the rifle is firing: manual aim, else the auto-aim target, else the way we move
+    const aim = targetAngle ?? this.runState.autoAimAngle;
+    if (aim !== null) {
+      facing = aim;
     } else if (this.runState.isMoving) {
       facing = this.runState.playerMoveAngle;
     }
@@ -131,7 +133,8 @@ export class PlayerSystem {
     this.playerMesh.updateAnimation(
       dt,
       inputLen > 0.05 ? speed : 0,
-      facing
+      facing,
+      this.runState.playerMoveAngle
     );
 
     // i-frame flicker after damage

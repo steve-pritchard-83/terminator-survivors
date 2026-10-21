@@ -428,7 +428,7 @@ export class PickupSystem {
         globalEvents.emit('pickup:reward', {
           x: p.x,
           z: p.z,
-          text: 'CORE VACUUM!',
+          text: 'CORES RECALLED',
           color: 'var(--color-amber)'
         });
       }

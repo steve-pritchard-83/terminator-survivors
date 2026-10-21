@@ -1,11 +1,17 @@
 import * as THREE from 'three';
 import { bakePart, mergeParts } from './geometryUtils';
 import { disposeObject3D } from '../dispose';
+import { ModelLibrary } from '../ModelLibrary';
 
 export class T1MinigunMesh {
   public readonly group = new THREE.Group();
 
   constructor() {
+    const model = ModelLibrary.get('t1_tracked');
+    if (model) {
+      this.group.add(model);
+      return;
+    }
     const trackSteel = 0x22262c;
     const armorGreen = 0x4a5246;
     const gunSteel = 0x181a1e;

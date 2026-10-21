@@ -36,27 +36,26 @@ export class EndRunModal {
     this.container.className = 'modal-backdrop';
     this.container.setAttribute('role', 'dialog');
     this.container.setAttribute('aria-modal', 'true');
-    this.container.setAttribute('aria-label', 'Mission Debrief and Combat Record');
+    this.container.setAttribute('aria-label', 'Mission Debrief');
     this.container.style.display = 'none';
 
     this.container.innerHTML = `
-      <div class="t800-modal-box" style="text-align:center; max-width:680px; width:92%; max-height:88vh; display:flex; flex-direction:column;">
-        <div class="t800-header" id="end-title">TERMINATED</div>
-        <div class="t800-ticker" id="end-ticker">WAR LOG // LOS ANGELES 2029</div>
+      <div class="t800-modal-box" style="text-align:center; width:92%;">
+        <div class="t800-header t800-header-big" id="end-title">TERMINATED</div>
 
-        <div class="end-tabs" style="display:flex; justify-content:center; gap:6px; margin:12px 0 10px 0; flex-wrap:wrap;">
-          <button class="btn-secondary end-tab-btn active" data-tab="debrief" aria-label="Debrief Tab" style="font-size:11px; padding:6px 12px;">[DEBRIEF]</button>
-          <button class="btn-secondary end-tab-btn" data-tab="weapons" aria-label="Weapons Breakdown Tab" style="font-size:11px; padding:6px 12px;">[WEAPONS]</button>
-          <button class="btn-secondary end-tab-btn" data-tab="casualties" aria-label="Casualties Breakdown Tab" style="font-size:11px; padding:6px 12px;">[CASUALTIES]</button>
-          <button class="btn-secondary end-tab-btn" data-tab="timeline" aria-label="Timeline History Tab" style="font-size:11px; padding:6px 12px;">[TIMELINE]</button>
-          <button class="btn-secondary end-tab-btn" data-tab="archives" aria-label="War Archives Tab" style="font-size:11px; padding:6px 12px;">[WAR ARCHIVES]</button>
+        <div class="end-tabs" style="display:flex; justify-content:center; gap:6px; margin:10px 0; flex-wrap:wrap;">
+          <button class="btn-secondary btn-sm end-tab-btn active" data-tab="debrief" aria-label="Debrief Tab">DEBRIEF</button>
+          <button class="btn-secondary btn-sm end-tab-btn" data-tab="weapons" aria-label="Weapons Breakdown Tab">WEAPONS</button>
+          <button class="btn-secondary btn-sm end-tab-btn" data-tab="casualties" aria-label="Kills Breakdown Tab">KILLS</button>
+          <button class="btn-secondary btn-sm end-tab-btn" data-tab="timeline" aria-label="Timeline Tab">TIMELINE</button>
+          <button class="btn-secondary btn-sm end-tab-btn" data-tab="archives" aria-label="Archives Tab">ARCHIVES</button>
         </div>
 
         <div class="end-tab-content-container" style="overflow-y:auto; flex:1; min-height:200px; max-height:48vh; padding:0 8px;">
           <!-- Tab 1: Debrief -->
           <div id="tab-debrief" class="end-tab-pane">
-            <div id="end-stats" style="font-family:var(--font-telemetry); font-size:15px; color:#fff; margin:14px 0; line-height:1.8;"></div>
-            <div id="end-lore" style="font-size:13px; color:var(--color-chrome); margin-bottom:16px; line-height:1.5;"></div>
+            <div id="end-stats" style="font-size:15px; margin:14px 0; line-height:1.8;"></div>
+            <div id="end-lore" class="t-muted" style="font-size:12px; margin-bottom:16px; line-height:1.55;"></div>
           </div>
 
           <!-- Tab 2: Weapons -->
@@ -80,13 +79,13 @@ export class EndRunModal {
           </div>
         </div>
 
-        <div style="display:flex; flex-direction:column; gap:10px; align-items:center; margin-top:12px;">
-          <button class="btn-primary" id="btn-return-bunker" aria-label="Return to Command">
-            ${iconLabel('back', 'RETURN TO COMMAND')}
+        <div class="btn-row" style="margin-top:12px;">
+          <button class="btn-primary" id="btn-return-bunker" aria-label="Continue">
+            ${iconLabel('back', 'CONTINUE')}
           </button>
         </div>
-        <div id="end-controller-hint" style="font-family:var(--font-telemetry); font-size:12px; color:var(--color-cyan); margin-top:8px; display:none;">
-          [LB/RB / ARROWS] SWITCH TABS // [ENTER / ESC / A / B] RETURN TO COMMAND
+        <div class="t-hint" id="end-controller-hint" style="display:none;">
+          [LB / RB] TABS &nbsp; [A / B] CONTINUE
         </div>
       </div>
     `;
@@ -155,15 +154,7 @@ export class EndRunModal {
     this.activeTab = tab;
     this.audioEngine?.playUiClick();
     this.tabButtons.forEach((b) => {
-      if (b.dataset.tab === tab) {
-        b.classList.add('active');
-        b.style.borderColor = 'var(--color-cyan)';
-        b.style.color = '#fff';
-      } else {
-        b.classList.remove('active');
-        b.style.borderColor = '';
-        b.style.color = '';
-      }
+      b.classList.toggle('active', b.dataset.tab === tab);
     });
 
     for (const [k, pane] of Object.entries(this.tabPanes)) {
@@ -195,22 +186,23 @@ export class EndRunModal {
     const s = sec % 60;
     const timeFormatted = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 
+    this.titleEl.classList.add('t800-header-big');
     if (victory) {
-      this.titleEl.innerHTML = `${icon('victory')}<span class="gi-label">MISSION ACCOMPLISHED</span>`;
-      this.titleEl.style.color = 'var(--color-cyan)';
+      this.titleEl.textContent = 'MISSION ACCOMPLISHED';
+      this.titleEl.style.color = 'var(--t-text)';
       this.loreEl.textContent = LORE.victoryText;
     } else {
-      this.titleEl.innerHTML = `${icon('defeat')}<span class="gi-label">${defeatReason ?? 'TERMINATED'}</span>`;
-      this.titleEl.style.color = 'var(--color-red)';
-      this.loreEl.textContent = defeatReason ? `CRITICAL FAILURE // ${defeatReason}` : LORE.defeatText;
+      this.titleEl.textContent = defeatReason ?? 'TERMINATED';
+      this.titleEl.style.color = '';
+      this.loreEl.textContent = LORE.defeatText;
     }
 
     this.statsEl.innerHTML = `
-      <div>TIME SURVIVED: <span style="color:var(--color-amber)">${timeFormatted}</span></div>
-      <div>TERMINATIONS: <span style="color:var(--color-red)">${kills}</span></div>
-      <div>FIELD LEVEL: <span style="color:var(--color-cyan)">LV ${level}</span></div>
-      <div>ALLOY SCRAP RECOVERED: <span style="color:#ffd700">+${scrap}</span></div>
-      ${seed !== undefined ? `<div>MISSION SEED: <span style="color:var(--color-chrome)">${seed}</span></div>` : ''}
+      <div><span class="t-muted">TIME:</span> ${timeFormatted}</div>
+      <div><span class="t-muted">KILLS:</span> ${kills}</div>
+      <div><span class="t-muted">LEVEL:</span> ${level}</div>
+      <div><span class="t-muted">SCRAP:</span> +${scrap}</div>
+      ${seed !== undefined ? `<div class="t-muted" style="font-size:11px;">MISSION SEED: ${seed}</div>` : ''}
     `;
 
     this.renderWeaponTelemetry(details?.weaponDamageBreakdown, timeSeconds);
@@ -223,9 +215,10 @@ export class EndRunModal {
     this.onReturnCallback = onReturn;
     this.container.style.display = 'flex';
 
-    this.titleEl.innerHTML = `${icon('history')}<span class="gi-label">TECH-COM ARCHIVES</span>`;
-    this.titleEl.style.color = 'var(--color-cyan)';
-    this.loreEl.textContent = 'Historical combat mission telemetry retrieved from bunker sub-core.';
+    this.titleEl.classList.remove('t800-header-big');
+    this.titleEl.innerHTML = `${icon('history')}<span class="gi-label">ARCHIVES</span>`;
+    this.titleEl.style.color = '';
+    this.loreEl.textContent = '';
 
     this.switchTab('archives');
     this.a11y.activate();
@@ -236,7 +229,7 @@ export class EndRunModal {
     if (!listEl) return;
 
     if (!damageMap || Object.keys(damageMap).length === 0) {
-      listEl.innerHTML = `<div style="color:var(--color-chrome); font-size:13px; text-align:center; padding:16px;">NO WEAPON TELEMETRY LOGGED</div>`;
+      listEl.innerHTML = `<div class="t-empty">NO WEAPON DATA</div>`;
       return;
     }
 
@@ -251,14 +244,12 @@ export class EndRunModal {
         const pct = totalDamage > 0 ? Math.round((dmg / totalDamage) * 100) : 0;
         const dps = (dmg / safeTime).toFixed(1);
         return `
-          <div style="margin-bottom:10px; background:rgba(0,0,0,0.55); padding:8px 12px; border:1px solid #333; border-radius:4px;">
-            <div style="display:flex; justify-content:space-between; font-family:var(--font-telemetry); font-size:13px; color:#fff;">
-              <span style="font-weight:bold; color:var(--color-cyan);">${name}</span>
-              <span>${dmg.toLocaleString()} DMG (${dps} DPS) &bull; <span style="color:var(--color-amber)">${pct}%</span></span>
+          <div style="padding:6px 2px 8px; border-bottom:1px solid var(--t-line); font-size:12px;">
+            <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+              <span>${name}</span>
+              <span class="t-muted">${dmg.toLocaleString()} DMG · ${dps} DPS · ${pct}%</span>
             </div>
-            <div style="height:6px; background:#1a1a1a; border-radius:3px; margin-top:6px; overflow:hidden;">
-              <div style="width:${pct}%; height:100%; background:linear-gradient(90deg, var(--color-cyan), var(--color-amber));"></div>
-            </div>
+            <div class="t-bar"><div style="width:${pct}%;"></div></div>
           </div>
         `;
       })
@@ -270,7 +261,7 @@ export class EndRunModal {
     if (!listEl) return;
 
     if (!killsMap || Object.keys(killsMap).length === 0) {
-      listEl.innerHTML = `<div style="color:var(--color-chrome); font-size:13px; text-align:center; padding:16px;">NO CASUALTIES LOGGED</div>`;
+      listEl.innerHTML = `<div class="t-empty">NO KILLS LOGGED</div>`;
       return;
     }
 
@@ -280,9 +271,9 @@ export class EndRunModal {
         const cfg = ENEMY_CONFIGS[archetype as EnemyArchetypeId];
         const name = cfg?.name ?? archetype;
         return `
-          <div style="display:flex; justify-content:space-between; padding:6px 12px; border-bottom:1px solid rgba(255,255,255,0.08); font-family:var(--font-telemetry); font-size:13px;">
-            <span style="color:var(--color-chrome);">${name}</span>
-            <span style="color:var(--color-red); font-weight:bold;">${count.toLocaleString()}</span>
+          <div class="t-row">
+            <span class="t-muted">${name}</span>
+            <span>${count.toLocaleString()}</span>
           </div>
         `;
       })
@@ -294,7 +285,7 @@ export class EndRunModal {
     if (!listEl) return;
 
     if (!timeline || timeline.length === 0) {
-      listEl.innerHTML = `<div style="color:var(--color-chrome); font-size:13px; text-align:center; padding:16px;">NO PROGRESSION LOGGED</div>`;
+      listEl.innerHTML = `<div class="t-empty">NO UPGRADES LOGGED</div>`;
       return;
     }
 
@@ -305,10 +296,10 @@ export class EndRunModal {
         const s = sec % 60;
         const timeFormatted = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
         return `
-          <div style="display:flex; gap:12px; padding:6px 12px; border-bottom:1px solid rgba(255,255,255,0.08); font-family:var(--font-telemetry); font-size:12px;">
-            <span style="color:var(--color-amber); width:46px;">${timeFormatted}</span>
-            <span style="color:var(--color-cyan); width:50px;">LV ${t.level}</span>
-            <span style="color:#fff;">${t.choiceTitle}</span>
+          <div class="t-row" style="justify-content:flex-start;">
+            <span class="t-muted" style="width:46px;">${timeFormatted}</span>
+            <span class="t-red" style="width:50px;">LV ${t.level}</span>
+            <span>${t.choiceTitle}</span>
           </div>
         `;
       })
@@ -321,7 +312,7 @@ export class EndRunModal {
 
     const history = this.saveManager?.getRunHistory() ?? [];
     if (history.length === 0) {
-      listEl.innerHTML = `<div style="color:var(--color-chrome); font-size:13px; text-align:center; padding:20px;">NO PRIOR MISSIONS IN TECH-COM LOGS</div>`;
+      listEl.innerHTML = `<div class="t-empty">NO PRIOR MISSIONS</div>`;
       return;
     }
 
@@ -337,19 +328,17 @@ export class EndRunModal {
         const isVic = r.outcome === 'victory';
 
         return `
-          <div style="margin-bottom:10px; background:rgba(0,0,0,0.55); border:1px solid ${isVic ? 'rgba(0,229,255,0.3)' : 'rgba(255,34,68,0.3)'}; border-radius:4px; padding:8px 12px; font-family:var(--font-telemetry); font-size:12px;">
+          <div class="t-panel" style="margin-bottom:8px; font-size:12px;">
             <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
-              <span style="font-weight:bold; color:${isVic ? 'var(--color-cyan)' : 'var(--color-red)'};">
-                #${history.length - i} // ${isVic ? 'VICTORY' : 'TERMINATED'}
-              </span>
-              <span style="color:var(--color-amber);">${timeFormatted}</span>
+              <span class="${isVic ? '' : 't-red'}">#${history.length - i} ${isVic ? 'VICTORY' : 'TERMINATED'}</span>
+              <span>${timeFormatted}</span>
             </div>
-            <div style="color:var(--color-chrome); display:flex; justify-content:space-between; flex-wrap:wrap; gap:6px;">
+            <div class="t-muted" style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:6px;">
               <span>${loadoutName}</span>
-              <span>LV ${r.levelReached} &bull; ${r.kills} KILLS &bull; +${r.scrapEarned} ALLOY</span>
+              <span>LV ${r.levelReached} · ${r.kills} KILLS · +${r.scrapEarned} SCRAP</span>
             </div>
-            <div style="color:rgba(255,255,255,0.7); margin-top:4px; font-size:11px;">
-              TOP WEAPON: <span style="color:var(--color-cyan)">${topWeaponName}</span> (${r.topWeapon?.damage.toLocaleString() ?? 0} DMG)
+            <div class="t-muted" style="margin-top:4px; font-size:11px;">
+              TOP WEAPON: <span style="color:var(--t-text);">${topWeaponName}</span> (${r.topWeapon?.damage.toLocaleString() ?? 0} DMG)
             </div>
           </div>
         `;

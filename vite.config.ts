@@ -70,8 +70,8 @@ export default defineConfig({
         short_name: 'T-Survivors',
         description:
           'Survive the 2029 AD Future War as Kyle Reese against Skynet Hunter-Killers and T-800 Endoskeletons.',
-        theme_color: '#050d1a',
-        background_color: '#050d1a',
+        theme_color: '#0a0303',
+        background_color: '#0a0303',
         display: 'standalone',
         orientation: 'landscape',
         start_url: './',
@@ -95,6 +95,14 @@ export default defineConfig({
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2,ttf,otf,mp3}'],
         runtimeCaching: [
+          {
+            urlPattern: /\.glb$/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'terminator-models-cache',
+              expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 30 }
+            }
+          },
           {
             urlPattern: /\.wav$/i,
             handler: 'CacheFirst',

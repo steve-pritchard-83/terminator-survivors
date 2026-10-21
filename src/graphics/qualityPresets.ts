@@ -80,12 +80,17 @@ export function getQualityProfile(preset: QualityPreset): QualityProfile {
   return QUALITY_PROFILES[preset] ?? QUALITY_PROFILES.high;
 }
 
-export function detectPresetFromFps(avgFps: number, deviceRatio = 1): QualityPreset {
+const PRESET_ORDER: QualityPreset[] = ['low', 'medium', 'high', 'ultra'];
+
+/** Picks a preset from the opening seconds' frame rate, never above the device's ceiling. */
+export function detectPresetFromFps(avgFps: number, deviceRatio = 1, ceiling: QualityPreset = 'ultra'): QualityPreset {
+  let preset: QualityPreset;
   if (avgFps >= 58) {
-    return deviceRatio >= 2 ? 'ultra' : 'high';
+    preset = deviceRatio >= 2 ? 'ultra' : 'high';
   } else if (avgFps >= 45) {
-    return 'medium';
+    preset = 'medium';
   } else {
-    return 'low';
+    preset = 'low';
   }
+  return PRESET_ORDER[Math.min(PRESET_ORDER.indexOf(preset), PRESET_ORDER.indexOf(ceiling))];
 }

@@ -12,7 +12,7 @@ import {
 import { globalEvents } from '../core/EventBus';
 import { globalRNG } from '../core/RNG';
 import type { EnemyArchetypeId } from '../core/types';
-import { ELITE_AFFIXES, type EliteAffix } from '../data/enemies';
+import { ELITE_AFFIXES, ENEMY_CONFIGS, type EliteAffix } from '../data/enemies';
 
 export class WaveDirector {
   private readonly runState: RunState;
@@ -82,7 +82,7 @@ export class WaveDirector {
     const boss = this.enemySystem.spawnEnemy(archetype, bx, bz, 1.25, 1.2);
     globalEvents.emit('boss:spawned', {
       archetype,
-      name: bannerText ?? archetype.toUpperCase(),
+      name: bannerText ?? (ENEMY_CONFIGS[archetype]?.name ?? archetype).toUpperCase(),
       maxHp: boss?.maxHp ?? 1000
     });
   }

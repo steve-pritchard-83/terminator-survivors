@@ -151,7 +151,7 @@ export class ErrorReporter {
       ">
         <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
           <div style="width:14px; height:14px; background:#ff2233; box-shadow:0 0 10px #ff2233; border-radius:50%; animation: pulse 1s infinite alternate;"></div>
-          <h2 id="fault-title" style="margin:0; font-family:'Orbitron', sans-serif; font-size:1.4rem; letter-spacing:2px; color:#ff3344;">
+          <h2 id="fault-title" style="margin:0; font-family:'Share Tech Mono', monospace; font-size:1.4rem; letter-spacing:2px; color:#ff3344;">
             SYSTEM FAULT // RUNTIME EXCEPTION
           </h2>
         </div>
@@ -180,7 +180,7 @@ export class ErrorReporter {
             color: #fff;
             border: none;
             padding: 10px 18px;
-            font-family: 'Orbitron', sans-serif;
+            font-family: 'Share Tech Mono', monospace;
             font-size: 0.88rem;
             letter-spacing: 1px;
             font-weight: 700;
@@ -192,7 +192,7 @@ export class ErrorReporter {
             color: #70d8ff;
             border: 1px solid #00e5ff;
             padding: 10px 18px;
-            font-family: 'Orbitron', sans-serif;
+            font-family: 'Share Tech Mono', monospace;
             font-size: 0.88rem;
             letter-spacing: 1px;
             border-radius: 3px;
@@ -203,7 +203,7 @@ export class ErrorReporter {
             color: #778899;
             border: 1px solid #334455;
             padding: 10px 18px;
-            font-family: 'Orbitron', sans-serif;
+            font-family: 'Share Tech Mono', monospace;
             font-size: 0.88rem;
             border-radius: 3px;
             cursor: pointer;

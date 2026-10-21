@@ -7,7 +7,7 @@ import type { ParticleSystem } from './ParticleSystem';
 import type { KyleReeseMesh } from '../graphics/meshes/KyleReeseMesh';
 import { ALL_WEAPONS } from '../data/weapons';
 import { globalEvents } from '../core/EventBus';
-import { globalRNG } from '../core/RNG';
+import { globalRNG, vfxRNG } from '../core/RNG';
 import { disposeObject3D } from '../graphics/dispose';
 import { InstancedPool, type PoolableUser } from '../graphics/InstancedPool';
 import {
@@ -18,6 +18,11 @@ import {
   type SpawnProjectileParams,
   createWeaponPatternRegistry
 } from './weapons';
+import { buildBoltGeometry, createBoltMaterial } from '../graphics/PlasmaBolts';
+import { PALETTE } from '../data/artDirection';
+import { AUTO_AIM_RANGE } from '../data/balance';
+import { ProceduralTextures } from '../graphics/ProceduralTextures';
+import { buildFlameGeometry } from '../graphics/EnvironmentDetail';
 
 export type { ProjectileMeshCategory };
 
@@ -126,15 +131,34 @@ export class WeaponSystem {
   private readonly orbitalTargetsScratch: SpatialEntity[] = [];
 
   // Reusable geometries & materials
-  private readonly plasmaBoltGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.7, 8);
-  private readonly heavyPlasmaGeo = new THREE.CylinderGeometry(0.16, 0.16, 1.4, 8);
-  private readonly pelletGeo = new THREE.SphereGeometry(0.06, 6, 6);
+  // Resistance plasma: pink-violet streaks with white-hot cores; buckshot: short hot tracers
+  private readonly plasmaBoltGeo = buildBoltGeometry(1.7, 0.035, 0.11, PALETTE.plasmaResistanceCore, PALETTE.plasmaResistance);
+  private readonly heavyPlasmaGeo = buildBoltGeometry(2.4, 0.07, 0.22, PALETTE.plasmaResistanceCore, PALETTE.plasmaResistance);
+  private readonly pelletGeo = buildBoltGeometry(0.55, 0.025, 0.06, 0xfff2d0, PALETTE.fire);
   private readonly bombGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.32, 8);
 
-  private readonly plasmaMat = new THREE.MeshBasicMaterial({ color: 0xd400ff });
-  private readonly heavyPlasmaMat = new THREE.MeshBasicMaterial({ color: 0xff00cc });
-  private readonly buckshotMat = new THREE.MeshBasicMaterial({ color: 0xffcc00 });
+  private readonly plasmaMat = createBoltMaterial(2.6);
+  private readonly heavyPlasmaMat = createBoltMaterial(3.2);
+  private readonly buckshotMat = createBoltMaterial(2.2);
   private readonly bombMat = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.8 });
+  private readonly fireZoneGlowGeo = new THREE.PlaneGeometry(2.3, 2.3).rotateX(-Math.PI / 2);
+  private readonly fireZoneGlowMat = new THREE.MeshBasicMaterial({
+    map: typeof document !== 'undefined' ? ProceduralTextures.getSoftGlowSprite() : null,
+    color: new THREE.Color(PALETTE.fire).multiplyScalar(1.6),
+    transparent: true,
+    opacity: 0.85,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false
+  });
+  private readonly fireZoneFlameGeo = buildFlameGeometry();
+  private readonly fireZoneFlameMat = new THREE.MeshBasicMaterial({
+    vertexColors: true,
+    transparent: true,
+    opacity: 0.75,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+    side: THREE.DoubleSide
+  });
 
   constructor(
     runState: RunState,
@@ -153,9 +177,6 @@ export class WeaponSystem {
     this.patterns = registry;
     this.orbitersPattern = orbiters;
 
-    this.plasmaBoltGeo.rotateX(Math.PI / 2);
-    this.heavyPlasmaGeo.rotateX(Math.PI / 2);
-
     this.plasmaBoltGeo.userData = { shared: true };
     this.heavyPlasmaGeo.userData = { shared: true };
     this.pelletGeo.userData = { shared: true };
@@ -165,6 +186,9 @@ export class WeaponSystem {
     this.heavyPlasmaMat.userData = { shared: true };
     this.buckshotMat.userData = { shared: true };
     this.bombMat.userData = { shared: true };
+    for (const shared of [this.fireZoneGlowGeo, this.fireZoneGlowMat, this.fireZoneFlameGeo, this.fireZoneFlameMat]) {
+      shared.userData = { shared: true };
+    }
 
     this.pools = {
       pellet: new InstancedPool<Projectile>(this.pelletGeo, this.buckshotMat, 512, this.group),
@@ -215,6 +239,12 @@ export class WeaponSystem {
     const px = this.runState.playerPos.x;
     const pz = this.runState.playerPos.z;
 
+    // Auto-aim target, found once per tick: weapons fire at it and the player turns to face it
+    const nearest = this.runState.autoAimEnabled
+      ? (this.grid.findNearest(px, pz, AUTO_AIM_RANGE, (e) => e.type === 'enemy') as ActiveEnemy | null)
+      : null;
+    this.runState.autoAimAngle = nearest ? Math.atan2(nearest.x - px, nearest.z - pz) : null;
+
     // 1. Process weapon cooldowns & firing triggers
     for (const [wId, slot] of this.runState.weapons.entries()) {
       slot.cooldownTimer -= dt;
@@ -264,17 +294,8 @@ export class WeaponSystem {
     _enemies: ActiveEnemy[],
     aimAngle: number | null
   ): void {
-    // Find nearest target for auto-targeted weapons (or fallback when mouse aim is not active)
-    const nearest = this.runState.autoAimEnabled
-      ? (this.grid.findNearest(px, pz, 28, (e) => e.type === 'enemy') as ActiveEnemy | null)
-      : null;
-
-    let targetAngle = this.runState.playerFacing;
-    if (aimAngle !== null) {
-      targetAngle = aimAngle;
-    } else if (nearest) {
-      targetAngle = Math.atan2(nearest.x - px, nearest.z - pz);
-    }
+    // Manual aim wins; otherwise the auto-aim target; otherwise straight ahead
+    const targetAngle = aimAngle ?? this.runState.autoAimAngle ?? this.runState.playerFacing;
 
     const def = ALL_WEAPONS[wId as WeaponId];
     if (def?.pattern) {
@@ -295,7 +316,7 @@ export class WeaponSystem {
     const ringGeo = new THREE.RingGeometry(0.85, 1.0, 32);
     ringGeo.rotateX(-Math.PI / 2);
     const ringMat = new THREE.MeshBasicMaterial({
-      color: isSupernova ? 0x80ffff : 0x00e5ff,
+      color: isSupernova ? 0xe6f2ff : 0xb4d6ff,
       transparent: true,
       opacity: 0.9,
       side: THREE.DoubleSide,
@@ -334,7 +355,7 @@ export class WeaponSystem {
     // Outer plasma glow
     const outerGeo = new THREE.CylinderGeometry(radius * 0.9, radius * 0.9, 28, 12);
     const outerMat = new THREE.MeshBasicMaterial({
-      color: 0x00d4ff,
+      color: 0xa8c8ff,
       transparent: true,
       opacity: 0.65,
       blending: THREE.AdditiveBlending,
@@ -347,7 +368,7 @@ export class WeaponSystem {
     const groundGeo = new THREE.RingGeometry(radius * 0.4, radius * 1.15, 24);
     groundGeo.rotateX(-Math.PI / 2);
     const groundMat = new THREE.MeshBasicMaterial({
-      color: 0x00e5ff,
+      color: 0xbcd6ff,
       transparent: true,
       opacity: 0.85,
       side: THREE.DoubleSide,
@@ -497,33 +518,20 @@ export class WeaponSystem {
     knockback = 0,
     weaponId?: WeaponId
   ): void {
-    const outerRingGeo = new THREE.RingGeometry(radius * 0.65, radius, 28);
-    outerRingGeo.rotateX(-Math.PI / 2);
-    const outerMat = new THREE.MeshBasicMaterial({
-      color: 0xff5500,
-      transparent: true,
-      opacity: 0.65,
-      blending: THREE.AdditiveBlending,
-      side: THREE.DoubleSide,
-      depthWrite: false
-    });
-    const mesh = new THREE.Mesh(outerRingGeo, outerMat);
+    // Burning patch: a soft ember glow on the ground with flame tongues around it (all shared resources)
+    const mesh = new THREE.Mesh(this.fireZoneGlowGeo, this.fireZoneGlowMat);
     mesh.position.set(x, 0.06, z);
-
-    // Inner molten core ring
-    const innerGeo = new THREE.CircleGeometry(radius * 0.72, 24);
-    innerGeo.rotateX(-Math.PI / 2);
-    const innerMat = new THREE.MeshBasicMaterial({
-      color: 0xffaa00,
-      transparent: true,
-      opacity: 0.28,
-      blending: THREE.AdditiveBlending,
-      side: THREE.DoubleSide,
-      depthWrite: false
-    });
-    const innerMesh = new THREE.Mesh(innerGeo, innerMat);
-    innerMesh.position.y = 0.01;
-    mesh.add(innerMesh);
+    mesh.scale.set(radius, 1, radius);
+    const flames = Math.max(3, Math.round(radius * 2));
+    for (let f = 0; f < flames; f++) {
+      const a = (f / flames) * Math.PI * 2 + vfxRNG.next() * 0.6;
+      const r = 0.25 + vfxRNG.next() * 0.45;
+      const flame = new THREE.Mesh(this.fireZoneFlameGeo, this.fireZoneFlameMat);
+      flame.position.set(Math.cos(a) * r, 0, Math.sin(a) * r);
+      // The parent is scaled by the radius on x/z only, so undo that for the flame's width
+      flame.scale.set(0.45 / radius, 0.3 + vfxRNG.next() * 0.35, 0.45 / radius);
+      mesh.add(flame);
+    }
 
     this.group.add(mesh);
 
@@ -640,7 +648,7 @@ export class WeaponSystem {
       // Flickering flame pulse & rotation
       const flicker = 0.94 + Math.sin(gz.life * 18 + i) * 0.06;
       gz.mesh.scale.set(flicker, 1, flicker);
-      gz.mesh.rotation.y += dt * 1.4;
+      gz.mesh.rotation.y += dt * 0.3;
 
       if (gz.tickTimer >= 0.25) {
         gz.tickTimer = 0;

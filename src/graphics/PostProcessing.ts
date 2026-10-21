@@ -4,14 +4,28 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { globalEvents } from '../core/EventBus';
+import { GRADE } from '../data/artDirection';
+import { IS_MOBILE, RENDER_BUDGET } from '../data/performance';
 
+/**
+ * Final pass. Rendering into the composer's target skips three's tone mapping and sRGB output,
+ * so this pass applies exposure, ACES and the sRGB curve itself, then grades the image like the
+ * films' night battles: steel-blue shadows, warm highlights, slightly desaturated, film grain,
+ * and vignette.
+ */
 export const CameronGradingShader = {
   uniforms: {
     tDiffuse: { value: null },
     uTime: { value: 0.0 },
+    uExposure: { value: 1.0 },
     uAberration: { value: 0.0012 },
     uDamageFlash: { value: 0.0 },
-    uLowHpPulse: { value: 0.0 }
+    uLowHpPulse: { value: 0.0 },
+    uGrain: { value: GRADE.grain },
+    uVignette: { value: GRADE.vignette },
+    uSaturation: { value: GRADE.saturation },
+    uShadowTint: { value: new THREE.Vector3(...GRADE.shadowTint) },
+    uHighlightTint: { value: new THREE.Vector3(...GRADE.highlightTint) }
   },
   vertexShader: `
     varying vec2 vUv;
@@ -23,13 +37,41 @@ export const CameronGradingShader = {
   fragmentShader: `
     uniform sampler2D tDiffuse;
     uniform float uTime;
+    uniform float uExposure;
     uniform float uAberration;
     uniform float uDamageFlash;
     uniform float uLowHpPulse;
+    uniform float uGrain;
+    uniform float uVignette;
+    uniform float uSaturation;
+    uniform vec3 uShadowTint;
+    uniform vec3 uHighlightTint;
     varying vec2 vUv;
 
     float rand(vec2 co) {
       return fract(sin(dot(co.xy, vec2(12.9898, 78.233))) * 43758.5453);
+    }
+
+    vec3 safe(vec3 c) {
+      // Guard against NaN / Inf from mobile half-float buffers
+      if (!(c.r >= 0.0 && c.r <= 64.0)) c.r = 0.0;
+      if (!(c.g >= 0.0 && c.g <= 64.0)) c.g = 0.0;
+      if (!(c.b >= 0.0 && c.b <= 64.0)) c.b = 0.0;
+      return c;
+    }
+
+    // ACES fitted (Stephen Hill), as used by three's ACESFilmicToneMapping
+    vec3 aces(vec3 color) {
+      const mat3 inputM = mat3(0.59719, 0.07600, 0.02840, 0.35458, 0.90834, 0.13383, 0.04823, 0.01566, 0.83777);
+      const mat3 outputM = mat3(1.60475, -0.10208, -0.00327, -0.53108, 1.10813, -0.07276, -0.07367, -0.00605, 1.07602);
+      color = inputM * color;
+      vec3 a = color * (color + 0.0245786) - 0.000090537;
+      vec3 b = color * (0.983729 * color + 0.4329510) + 0.238081;
+      return clamp(outputM * (a / b), 0.0, 1.0);
+    }
+
+    vec3 toSrgb(vec3 c) {
+      return mix(c * 12.92, 1.055 * pow(c, vec3(1.0 / 2.4)) - 0.055, step(0.0031308, c));
     }
 
     void main() {
@@ -37,30 +79,27 @@ export const CameronGradingShader = {
       float dist = length(dir);
       vec2 offset = dir * uAberration * (0.5 + dist);
 
-      float r = texture2D(tDiffuse, vUv + offset).r;
-      float g = texture2D(tDiffuse, vUv).g;
-      float b = texture2D(tDiffuse, vUv - offset).b;
-      vec3 col = vec3(r, g, b);
+      vec3 col = safe(vec3(
+        texture2D(tDiffuse, vUv + offset).r,
+        texture2D(tDiffuse, vUv).g,
+        texture2D(tDiffuse, vUv - offset).b
+      ));
 
-      // Guard against NaN / Inf values from mobile GPU half-float buffers
-      if (!(col.r >= 0.0 && col.r <= 16.0)) col.r = 0.0;
-      if (!(col.g >= 0.0 && col.g <= 16.0)) col.g = 0.0;
-      if (!(col.b >= 0.0 && col.b <= 16.0)) col.b = 0.0;
-      col = clamp(col, vec3(0.0), vec3(4.0));
+      col = toSrgb(aces(col * uExposure));
 
-      // Cold James Cameron 2029 Cobalt-Teal shadow lift & crisp silver highlight curve
-      col = pow(max(col, vec3(0.0001)), vec3(0.92)) * 1.06;
-      vec3 coldShadows = vec3(0.03, 0.08, 0.16);
-      float luma = clamp(dot(col, vec3(0.299, 0.587, 0.114)), 0.0, 1.0);
-      col = mix(col + coldShadows * (1.0 - luma) * 0.35, col * vec3(0.96, 1.02, 1.10), smoothstep(0.08, 0.75, luma));
+      // Grade in display space
+      float luma = dot(col, vec3(0.299, 0.587, 0.114));
+      col = mix(vec3(luma), col, uSaturation);
+      col += uShadowTint * (1.0 - smoothstep(0.0, 0.45, luma));
+      col *= mix(vec3(1.0), uHighlightTint, smoothstep(0.4, 0.95, luma));
+      col = mix(col, col * col * (3.0 - 2.0 * col), 0.25);
 
-      // Subtle 35mm film grain & moonlit slate-blue fog haze at outer screen edges
-      float grain = (rand(vUv + fract(uTime)) - 0.5) * 0.016;
-      vec3 edgeFogColor = vec3(0.09, 0.16, 0.25);
-      float edgeFogFactor = smoothstep(0.44, 0.90, dist) * 0.34;
-      col = mix(col + grain, edgeFogColor, edgeFogFactor);
-      float vignette = smoothstep(0.98, 0.42, dist);
-      col *= mix(0.84, 1.0, vignette);
+      // Film grain, strongest in the mid-tones
+      float grain = (rand(vUv * 1.37 + fract(uTime * 0.71)) - 0.5) * uGrain;
+      col += grain * (1.0 - abs(luma - 0.4) * 1.4);
+
+      float vignette = smoothstep(0.95, 0.35, dist);
+      col *= mix(1.0 - uVignette, 1.0, vignette);
 
       // Crimson optical damage flash
       col = mix(col, vec3(0.95, 0.08, 0.08), clamp(uDamageFlash, 0.0, 0.65));
@@ -70,6 +109,33 @@ export const CameronGradingShader = {
       col = mix(col, vec3(0.85, 0.02, 0.02), clamp(lowHpVignette, 0.0, 0.75));
 
       gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
+    }
+  `
+};
+
+/**
+ * Runs before bloom. A single NaN or Inf pixel (e.g. an overflowing specular highlight in a
+ * half-float buffer) would otherwise be smeared by the bloom blur into a huge black block.
+ */
+export const SanitizeHdrShader = {
+  uniforms: { tDiffuse: { value: null } },
+  vertexShader: `
+    varying vec2 vUv;
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `,
+  fragmentShader: `
+    uniform sampler2D tDiffuse;
+    varying vec2 vUv;
+    void main() {
+      vec3 c = texture2D(tDiffuse, vUv).rgb;
+      // NaN fails every comparison, so it becomes 0; +Inf passes and is clamped to bright
+      if (!(c.r >= 0.0)) c.r = 0.0;
+      if (!(c.g >= 0.0)) c.g = 0.0;
+      if (!(c.b >= 0.0)) c.b = 0.0;
+      gl_FragColor = vec4(min(c, vec3(32.0)), 1.0);
     }
   `
 };
@@ -92,11 +158,7 @@ export function isSoftwareOrAutomatedRenderer(renderer: THREE.WebGLRenderer): bo
 }
 
 export function isMobileGpuDevice(): boolean {
-  if (typeof navigator === 'undefined') return false;
-  if (/iPhone|iPad|iPod|Android|Mobile/i.test(navigator.userAgent)) return true;
-  if (typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)')?.matches)
-    return true;
-  return false;
+  return IS_MOBILE;
 }
 
 export class PostProcessingManager {
@@ -150,13 +212,15 @@ export class PostProcessingManager {
 
     const renderPass = new RenderPass(scene, camera);
     this.composer.addPass(renderPass);
+    // Only half-float buffers can hold NaN/Inf; the 8-bit buffers used on phones cannot
+    if (!(this.useFastPath || isMobile)) this.composer.addPass(new ShaderPass(SanitizeHdrShader));
 
-    // High threshold (1.35) ensures ONLY high-emissive lasers, plasma bolts, and red optics bloom
+    // Threshold is in linear HDR: only plasma, fire, optics and searchlights bloom, never the ground
     this.bloomPass = new UnrealBloomPass(
       new THREE.Vector2(Math.max(1, size.x), Math.max(1, size.y)),
-      0.42, // controlled strength (no nuclear blobs)
-      0.28, // tight halo radius
-      1.35 // strict HDR threshold so skulls/cars/ground never bloom
+      GRADE.bloomStrength,
+      GRADE.bloomRadius,
+      GRADE.bloomThreshold
     );
     if (!this.useFastPath) {
       this.composer.addPass(this.bloomPass);
@@ -174,7 +238,7 @@ export class PostProcessingManager {
   public setSize(width: number, height: number): void {
     if (this.useFastPath) return;
     this.composer.setSize(width, height);
-    this.bloomPass.resolution.set(width, height);
+    this.bloomPass.resolution.set(width * RENDER_BUDGET.bloomScale, height * RENDER_BUDGET.bloomScale);
   }
 
   public setBloomEnabled(enabled: boolean): void {
@@ -209,6 +273,7 @@ export class PostProcessingManager {
     }
 
     this.gradingPass.uniforms.uTime.value = timeSeconds;
+    this.gradingPass.uniforms.uExposure.value = this.renderer.toneMappingExposure;
     this.gradingPass.uniforms.uDamageFlash.value = this.damageFlash;
     this.gradingPass.uniforms.uAberration.value = this.currentAberration;
     this.gradingPass.uniforms.uLowHpPulse.value = this.lowHpIntensity;

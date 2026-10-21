@@ -15,3 +15,4 @@ test-results/
 
 # Raw sound libraries being sorted live in subfolders of public/audio/effects; only flat files there ship
 public/audio/effects/*/
+

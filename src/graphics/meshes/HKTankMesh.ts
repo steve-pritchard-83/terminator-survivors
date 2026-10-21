@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { VolumetricSearchlight } from '../VolumetricSearchlight';
 import { disposeObject3D } from '../dispose';
 import { buildTankGlow, buildTankLower, buildTankTurret } from './HKTankGeometry';
+import { ModelLibrary } from '../ModelLibrary';
 
 export class HKTankMesh {
   public readonly group = new THREE.Group();
@@ -9,6 +10,8 @@ export class HKTankMesh {
   private readonly leftSearchlight: VolumetricSearchlight;
   private readonly rightSearchlight: VolumetricSearchlight;
   private readonly telegraphLine: THREE.Line;
+  /** Height of the ground below the searchlights, in their space */
+  private readonly searchlightGround: number;
 
   constructor() {
     const scale = 2.2;
@@ -24,23 +27,35 @@ export class HKTankMesh {
     // Emissive scanner, sensor lenses and plasma coils
     const glowMat = new THREE.MeshBasicMaterial({ color: 0xffffff, vertexColors: true });
 
-    // 1. Lower hull and caterpillar tracks
-    const lower = new THREE.Mesh(buildTankLower(), metalMat);
-    this.group.add(lower);
-
-    // 2. Neck tower, hammerhead command pod and twin plasma cannons (all in turret space)
+    // 1-2. Hull and tracks, plus the turret that turns to track the player: the sculpted model
+    // when it has loaded, otherwise the procedural stand-in
     this.turretGroup = new THREE.Group();
-    this.turretGroup.position.set(0, 1.2, 0);
-    this.turretGroup.add(new THREE.Mesh(buildTankTurret(), metalMat));
-    this.turretGroup.add(new THREE.Mesh(buildTankGlow(), glowMat));
+    const hullModel = ModelLibrary.get('hk_tank_hull');
+    const turretModel = ModelLibrary.get('hk_tank_turret');
+    // Searchlight mounts (turret space, before the 2.2x group scale)
+    let lightY = 1.55;
+    let lightZ = 1.6;
+    if (hullModel && turretModel) {
+      this.group.add(hullModel);
+      this.turretGroup.add(turretModel);
+      lightY = 2.4;
+      lightZ = 2.4;
+      this.searchlightGround = -lightY;
+    } else {
+      this.group.add(new THREE.Mesh(buildTankLower(), metalMat));
+      this.turretGroup.position.set(0, 1.2, 0);
+      this.turretGroup.add(new THREE.Mesh(buildTankTurret(), metalMat));
+      this.turretGroup.add(new THREE.Mesh(buildTankGlow(), glowMat));
+      this.searchlightGround = -1.4;
+    }
 
-    // 4. Dual Volumetric Searchlights (sized in local space before 2.2x parent scale)
+    // 4. Dual Volumetric Searchlights
     this.leftSearchlight = new VolumetricSearchlight(6.5, 1.6);
-    this.leftSearchlight.group.position.set(-1.2, 1.55, 1.6);
+    this.leftSearchlight.group.position.set(-1.0, lightY, lightZ);
     this.leftSearchlight.group.rotation.x = -0.15;
 
     this.rightSearchlight = new VolumetricSearchlight(6.5, 1.6);
-    this.rightSearchlight.group.position.set(1.2, 1.55, 1.6);
+    this.rightSearchlight.group.position.set(1.0, lightY, lightZ);
     this.rightSearchlight.group.rotation.x = -0.15;
 
     this.turretGroup.add(this.leftSearchlight.group, this.rightSearchlight.group);
@@ -51,7 +66,7 @@ export class HKTankMesh {
       new THREE.Vector3(0, 0.1, 24)
     ]);
     const telegraphMat = new THREE.LineBasicMaterial({
-      color: 0xff1e8e,
+      color: 0xff1a0a,
       linewidth: 3,
       transparent: true,
       opacity: 0
@@ -81,8 +96,8 @@ export class HKTankMesh {
     this.leftSearchlight.group.rotation.y = sweep - 0.12;
     this.rightSearchlight.group.rotation.y = sweep + 0.12;
 
-    this.leftSearchlight.update(timeSeconds, alertLevel, -1.4);
-    this.rightSearchlight.update(timeSeconds, alertLevel, -1.4);
+    this.leftSearchlight.update(timeSeconds, alertLevel, this.searchlightGround);
+    this.rightSearchlight.update(timeSeconds, alertLevel, this.searchlightGround);
 
     // Telegraph line opacity when charging plasma cannon
     (this.telegraphLine.material as THREE.LineBasicMaterial).opacity =

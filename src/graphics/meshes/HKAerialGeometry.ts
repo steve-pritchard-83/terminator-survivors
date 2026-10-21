@@ -12,7 +12,7 @@ const HULL_DARK = 0x242a31;
 const HULL_LIGHT = 0x5d6670;
 const FAN = 0x14171b;
 const RED = 0xff1a1a;
-const THRUST = 0x69e6ff;
+const THRUST = 0x3a2a24; // dark exhaust ducts: the HK reads by its searchlights, not glowing engines
 
 /** Fuselage, wings, canopy, chin cannon mount (static, hull space). */
 export function buildAerialHull(): THREE.BufferGeometry {

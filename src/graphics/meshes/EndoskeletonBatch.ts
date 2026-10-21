@@ -6,6 +6,9 @@ import type { ActiveEnemy } from '../../core/types';
 import { ProceduralTextures } from '../ProceduralTextures';
 import { ELITE_AFFIXES } from '../../data/enemies';
 import { DEATH_ANIMATION_SECONDS } from '../../data/balance';
+import { ENDO_VISUAL_SCALE, PALETTE } from '../../data/artDirection';
+import type { EndoModel } from '../EndoModel';
+import { ModelLibrary } from '../ModelLibrary';
 
 export class EndoskeletonBatch {
   public readonly group = new THREE.Group();
@@ -23,6 +26,11 @@ export class EndoskeletonBatch {
   private readonly legQuat = new THREE.Quaternion();
   private readonly swingQuat = new THREE.Quaternion();
   private readonly hipOffset = new THREE.Vector3();
+  // Hip joint height of the current body (procedural stand-in, or the sculpted model once applied)
+  private hipHeight = 0.68;
+  private readonly chassisMat: THREE.MeshStandardMaterial;
+  // Rifle carried by the sculpted model (the procedural chassis has its rifle built in)
+  private rifleInstancedMesh: THREE.InstancedMesh | null = null;
   private readonly zeroMatrix = new THREE.Matrix4().makeScale(0, 0, 0);
   private lastTime = 0;
   private readonly deadColor = new THREE.Color(0x3a3d42);
@@ -54,7 +62,7 @@ export class EndoskeletonBatch {
     const leftLegGeo = buildEndoLeg(-0.15);
     const rightLegGeo = buildEndoLeg(0.15);
 
-    const chassisMat = new THREE.MeshStandardMaterial({
+    const chassisMat = (this.chassisMat = new THREE.MeshStandardMaterial({
       color: 0xffffff,
       vertexColors: true,
       emissive: 0x000000,
@@ -64,7 +72,7 @@ export class EndoskeletonBatch {
       envMapIntensity: 1.5,
       normalMap: ProceduralTextures.getBrushedMetalNormal(),
       roughnessMap: ProceduralTextures.getBrushedMetalRoughness()
-    });
+    }));
 
     this.chassisInstancedMesh = new THREE.InstancedMesh(chassisGeo, chassisMat, maxCount);
     this.chassisInstancedMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
@@ -84,8 +92,8 @@ export class EndoskeletonBatch {
     const opticsMat = new THREE.MeshStandardMaterial({
       color: 0xffffff,
       vertexColors: true,
-      emissive: 0xff0000,
-      emissiveIntensity: 1.5,
+      emissive: PALETTE.skynetRed,
+      emissiveIntensity: 4,
       roughness: 0.2,
       metalness: 0.1
     });
@@ -286,9 +294,9 @@ export class EndoskeletonBatch {
   /** Keeps a destroyed enemy on screen for a short collapse animation instead of removing it instantly. */
   public addCorpse(enemy: ActiveEnemy, playerX: number, playerZ: number): void {
     if (!this.handles(enemy.archetype) || this.corpses.length >= 48) return;
-    let scale = 1.0;
-    if (enemy.archetype === 't600_rusted') scale = 1.25;
-    else if (enemy.archetype === 't700_scout') scale = 0.94;
+    let scale = ENDO_VISUAL_SCALE;
+    if (enemy.archetype === 't600_rusted') scale *= 1.25;
+    else if (enemy.archetype === 't700_scout') scale *= 0.94;
     if (enemy.isElite) scale *= enemy.scale ?? 1.4;
     this.corpses.push({
       x: enemy.x,
@@ -349,11 +357,12 @@ export class EndoskeletonBatch {
       this.dummy.scale.setScalar(corpse.scale);
       this.dummy.updateMatrix();
       this.chassisInstancedMesh.setMatrixAt(activeIndex, this.dummy.matrix);
+      this.rifleInstancedMesh?.setMatrixAt(activeIndex, this.dummy.matrix);
       const eyesOn = p < 0.3 && Math.sin(corpse.age * 70) > 0;
       this.opticsInstancedMesh.setMatrixAt(activeIndex, eyesOn ? this.dummy.matrix : this.zeroMatrix);
 
       // Legs hang off the hips, which move as the body tips over
-      this.hipOffset.set(0, 0.68 * corpse.scale, 0).applyQuaternion(this.dummy.quaternion);
+      this.hipOffset.set(0, this.hipHeight * corpse.scale, 0).applyQuaternion(this.dummy.quaternion);
       this.legDummy.position.set(
         corpse.x + this.hipOffset.x,
         this.dummy.position.y + this.hipOffset.y,
@@ -442,9 +451,9 @@ export class EndoskeletonBatch {
       if (activeIndex >= this.maxCount) continue;
 
       // Scale variation for T-600 heavy vs T-700 runner
-      let scale = 1.0;
-      if (enemy.archetype === 't600_rusted') scale = 1.25;
-      else if (enemy.archetype === 't700_scout') scale = 0.94;
+      let scale = ENDO_VISUAL_SCALE;
+      if (enemy.archetype === 't600_rusted') scale *= 1.25;
+      else if (enemy.archetype === 't700_scout') scale *= 0.94;
       if (enemy.isElite) scale *= (enemy.scale ?? 1.4);
 
       // Animatronic mechanical gait & stride
@@ -473,10 +482,11 @@ export class EndoskeletonBatch {
       this.dummy.updateMatrix();
 
       this.chassisInstancedMesh.setMatrixAt(activeIndex, this.dummy.matrix);
+      this.rifleInstancedMesh?.setMatrixAt(activeIndex, this.dummy.matrix);
       this.opticsInstancedMesh.setMatrixAt(activeIndex, this.dummy.matrix);
 
       // Left Leg articulated matrix
-      this.legDummy.position.set(posX, bobY + 0.68 * scale, posZ);
+      this.legDummy.position.set(posX, bobY + this.hipHeight * scale, posZ);
       this.legDummy.rotation.set(legStride + pitchX * 0.4, facingAngle, rollZ);
       this.legDummy.scale.set(scale, scale, scale);
       this.legDummy.updateMatrix();
@@ -514,6 +524,10 @@ export class EndoskeletonBatch {
     this.leftLegInstancedMesh.count = activeIndex;
     this.rightLegInstancedMesh.count = activeIndex;
     this.opticsInstancedMesh.count = activeIndex;
+    if (this.rifleInstancedMesh) {
+      this.rifleInstancedMesh.count = activeIndex;
+      this.rifleInstancedMesh.instanceMatrix.needsUpdate = true;
+    }
 
     this.chassisInstancedMesh.instanceMatrix.needsUpdate = true;
     this.leftLegInstancedMesh.instanceMatrix.needsUpdate = true;
@@ -537,6 +551,60 @@ export class EndoskeletonBatch {
     if (this.crabChassisInstancedMesh.instanceColor) {
       this.crabChassisInstancedMesh.instanceColor.needsUpdate = true;
     }
+  }
+
+  /**
+   * Swaps the procedural endoskeleton for the sculpted T-800 (all walking archetypes share it;
+   * the per-instance tint still tells the T-600 and T-700 apart). Called once the model has loaded.
+   */
+  public applySculptedModel(
+    model: EndoModel,
+    rifle?: { geometry: THREE.BufferGeometry; material: THREE.Material } | null
+  ): void {
+    if (this.rifleInstancedMesh) return;
+    const swap = (mesh: THREE.InstancedMesh, geometry: THREE.BufferGeometry, material?: THREE.Material) => {
+      mesh.geometry.dispose();
+      mesh.geometry = geometry;
+      if (material) mesh.material = material;
+    };
+    swap(this.chassisInstancedMesh, model.chassis, model.material);
+    swap(this.leftLegInstancedMesh, model.leftLeg, model.material);
+    swap(this.rightLegInstancedMesh, model.rightLeg, model.material);
+    swap(this.opticsInstancedMesh, model.eyes);
+    this.hipHeight = model.hipHeight;
+    // The sculpted rifle sits with its pistol grip in the right hand
+    let rifleGeo = model.rifle;
+    if (rifle) {
+      const grip = ModelLibrary.gripPoint(rifle.geometry);
+      rifleGeo = rifle.geometry.clone().translate(
+        model.rifleGrip.x - grip.x,
+        model.rifleGrip.y - grip.y,
+        model.rifleGrip.z - grip.z
+      );
+    }
+    this.rifleInstancedMesh = new THREE.InstancedMesh(rifleGeo, rifle?.material ?? this.chassisMat, this.maxCount);
+    this.rifleInstancedMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    this.rifleInstancedMesh.frustumCulled = false;
+    this.rifleInstancedMesh.count = 0;
+    this.group.add(this.rifleInstancedMesh);
+  }
+
+  /** Swaps the procedural crab drone for the sculpted spider drone, with two eye beads on its front. */
+  public applyCrabModel(crab: { geometry: THREE.BufferGeometry; material: THREE.Material }): void {
+    this.crabChassisInstancedMesh.geometry.dispose();
+    this.crabChassisInstancedMesh.geometry = crab.geometry;
+    this.crabChassisInstancedMesh.material = crab.material;
+    crab.geometry.computeBoundingBox();
+    const box = crab.geometry.boundingBox!;
+    // Eyes on the front of the body sphere, which sits above the middle of the leg spread
+    const centre = box.getCenter(new THREE.Vector3());
+    const y = box.min.y + (box.max.y - box.min.y) * 0.62;
+    const z = centre.z + (box.max.z - centre.z) * 0.22;
+    this.crabOpticsInstancedMesh.geometry.dispose();
+    this.crabOpticsInstancedMesh.geometry = mergeParts([
+      bakePart(new THREE.SphereGeometry(0.025, 8, 8), centre.x - 0.05, y, z, 0, 0, 0, 0xff2020),
+      bakePart(new THREE.SphereGeometry(0.025, 8, 8), centre.x + 0.05, y, z, 0, 0, 0, 0xff2020)
+    ]);
   }
 
   public dispose(): void {

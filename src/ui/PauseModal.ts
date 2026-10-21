@@ -5,7 +5,7 @@ import type { GamepadManager } from '../input/GamepadManager';
 import { BASE_WEAPONS, EVOLVED_WEAPONS, PASSIVES } from '../data/weapons';
 import type { BaseWeaponId, WeaponId } from '../core/types';
 import { ModalA11y } from './A11yHelper';
-import { icon, iconLabel, passiveIcon, weaponIcon } from './icons';
+import { iconLabel, passiveIcon, weaponIcon } from './icons';
 
 export class PauseModal {
   public readonly container: HTMLElement;
@@ -38,66 +38,51 @@ export class PauseModal {
     this.container.setAttribute('data-testid', 'pause-modal');
     this.container.setAttribute('role', 'dialog');
     this.container.setAttribute('aria-modal', 'true');
-    this.container.setAttribute('aria-label', 'Mission Paused');
+    this.container.setAttribute('aria-label', 'Paused');
     this.container.style.display = 'none';
 
     this.container.innerHTML = `
-      <div class="t800-modal-box" style="max-width: 680px; max-height: 88vh; overflow-y: auto;">
-        <div class="t800-header">${icon('pause')}<span class="gi-label">MISSION PAUSED</span></div>
-        <div class="t800-ticker" style="margin-bottom:14px;">TACTICAL TELEMETRY // OVERRIDE MODE ACTIVE</div>
+      <div class="t800-modal-box">
+        <div class="t800-header">PAUSED</div>
 
-        <div style="margin-bottom:16px; border-bottom:1px solid rgba(77,210,255,0.25); padding-bottom:12px;">
-          <div style="font-family:var(--font-display); font-size:12px; color:var(--color-cyan); margin-bottom:6px; letter-spacing:1px;">
-            EQUIPPED OPERATIVE ARSENAL
+        <div class="t-section-label">LOADOUT</div>
+        <div id="pause-arsenal-list" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:0 16px;"></div>
+
+        <div class="t-section-label">EVOLUTIONS</div>
+        <div id="pause-recipes-list" style="max-height:160px; overflow-y:auto; padding-right:4px;"></div>
+
+        <div class="t-section-label">OPTIONS</div>
+        <div style="display:flex; flex-direction:column; gap:2px;">
+          <div class="pause-setting-row" id="pause-row-0">
+            <label for="pause-slider-master">MASTER</label>
+            <input type="range" min="0" max="100" id="pause-slider-master" aria-label="Master Volume" />
           </div>
-          <div id="pause-arsenal-list" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:6px; margin-bottom:12px;"></div>
-
-          <div style="font-family:var(--font-display); font-size:12px; color:var(--color-amber); margin-bottom:6px; letter-spacing:1px;">
-            EVOLUTION RECIPES & PROTOCOLS
+          <div class="pause-setting-row" id="pause-row-1">
+            <label for="pause-slider-sfx">SFX</label>
+            <input type="range" min="0" max="100" id="pause-slider-sfx" aria-label="SFX Volume" />
           </div>
-          <div id="pause-recipes-list" style="display:flex; flex-direction:column; gap:5px; max-height:160px; overflow-y:auto; padding-right:4px;"></div>
-        </div>
-
-        <div style="display:flex; flex-direction:column; gap:14px; margin-bottom:20px; font-family:var(--font-telemetry);">
-          <!-- Master Volume -->
-          <div class="pause-setting-row" id="pause-row-0" style="display:flex; justify-content:space-between; align-items:center; padding:4px 8px; border-radius:3px; transition:background 0.15s ease;">
-            <label for="pause-slider-master" style="color:var(--color-chrome); font-size:14px; letter-spacing:1px;">MASTER AUDIO</label>
-            <input type="range" min="0" max="100" id="pause-slider-master" aria-label="Master Volume" style="width:160px; accent-color:var(--color-cyan); cursor:pointer;" />
+          <div class="pause-setting-row" id="pause-row-2">
+            <label for="pause-slider-music">MUSIC</label>
+            <input type="range" min="0" max="100" id="pause-slider-music" aria-label="Music Volume" />
           </div>
-
-          <!-- SFX Volume -->
-          <div class="pause-setting-row" id="pause-row-1" style="display:flex; justify-content:space-between; align-items:center; padding:4px 8px; border-radius:3px; transition:background 0.15s ease;">
-            <label for="pause-slider-sfx" style="color:var(--color-chrome); font-size:14px; letter-spacing:1px;">SFX WEAPONS</label>
-            <input type="range" min="0" max="100" id="pause-slider-sfx" aria-label="SFX Weapons Volume" style="width:160px; accent-color:var(--color-red); cursor:pointer;" />
+          <div class="pause-setting-row" id="pause-row-3">
+            <label for="pause-toggle-crt">SCANLINES</label>
+            <input type="checkbox" id="pause-toggle-crt" aria-label="Scanlines" />
           </div>
-
-          <!-- Music Volume -->
-          <div class="pause-setting-row" id="pause-row-2" style="display:flex; justify-content:space-between; align-items:center; padding:4px 8px; border-radius:3px; transition:background 0.15s ease;">
-            <label for="pause-slider-music" style="color:var(--color-chrome); font-size:14px; letter-spacing:1px;">SYNTHWAVE BGM</label>
-            <input type="range" min="0" max="100" id="pause-slider-music" aria-label="Music Volume" style="width:160px; accent-color:var(--color-amber); cursor:pointer;" />
-          </div>
-
-          <!-- CRT Scanlines -->
-          <div class="pause-setting-row" id="pause-row-3" style="display:flex; justify-content:space-between; align-items:center; padding:4px 8px; border-radius:3px; transition:background 0.15s ease;">
-            <label for="pause-toggle-crt" style="color:var(--color-chrome); font-size:14px; letter-spacing:1px;">CRT SCANLINE EMULATION</label>
-            <input type="checkbox" id="pause-toggle-crt" aria-label="CRT Scanline Emulation" style="width:20px; height:20px; accent-color:var(--color-cyan); cursor:pointer;" />
-          </div>
-
-          <!-- Auto-Aim -->
-          <div class="pause-setting-row" id="pause-row-4" style="display:flex; justify-content:space-between; align-items:center; padding:4px 8px; border-radius:3px; transition:background 0.15s ease;">
-            <label for="pause-toggle-autoaim" style="color:var(--color-chrome); font-size:14px; letter-spacing:1px;">TARGET LOCK AUTO-AIM</label>
-            <input type="checkbox" id="pause-toggle-autoaim" aria-label="Target Lock Auto-Aim" style="width:20px; height:20px; accent-color:var(--color-cyan); cursor:pointer;" />
+          <div class="pause-setting-row" id="pause-row-4">
+            <label for="pause-toggle-autoaim">AUTO-AIM</label>
+            <input type="checkbox" id="pause-toggle-autoaim" aria-label="Auto-Aim" />
           </div>
         </div>
 
-        <div style="display:flex; gap:12px; justify-content:center; margin-top:8px;">
-          <button class="btn-primary" data-testid="btn-pause-resume" id="btn-pause-resume" aria-label="Resume Mission" style="flex:1;">${iconLabel('resume', 'RESUME MISSION')}</button>
-          <button class="btn-secondary" id="btn-pause-settings" aria-label="All Settings" style="flex:1;">${iconLabel('settings', 'ALL SETTINGS')}</button>
-          <button class="btn-secondary" data-testid="btn-pause-abort" id="btn-pause-abort" aria-label="Abort Mission" style="flex:1; border-color:var(--color-red); color:var(--color-red);">${iconLabel('exit', 'ABORT MISSION')}</button>
+        <div class="btn-row">
+          <button class="btn-primary" data-testid="btn-pause-resume" id="btn-pause-resume" aria-label="Resume">${iconLabel('resume', 'RESUME')}</button>
+          <button class="btn-secondary" id="btn-pause-settings" aria-label="Settings">${iconLabel('settings', 'SETTINGS')}</button>
+          <button class="btn-secondary" data-testid="btn-pause-abort" id="btn-pause-abort" aria-label="Abort Mission">${iconLabel('exit', 'ABORT')}</button>
         </div>
 
-        <div id="pause-controller-hint" style="font-family:var(--font-telemetry); font-size:12px; color:var(--color-cyan); margin-top:14px; text-align:center; display:none;">
-          [D-PAD / ARROWS] NAVIGATE / ADJUST &nbsp;//&nbsp; [ENTER / A] TOGGLE &nbsp;//&nbsp; [START / ESC / B] RESUME
+        <div class="t-hint" id="pause-controller-hint" style="display:none;">
+          [D-PAD / ARROWS] NAVIGATE / ADJUST &nbsp; [A / ENTER] TOGGLE &nbsp; [B / START] RESUME
         </div>
       </div>
     `;
@@ -268,40 +253,29 @@ export class PauseModal {
     const passiveEntries = Array.from(runState.passives.entries());
 
     if (weaponEntries.length === 0 && passiveEntries.length === 0) {
-      arsenalList.innerHTML = '<div style="font-size:12px; color:#888;">NO EQUIPMENT FIELDED</div>';
+      arsenalList.innerHTML = '<div class="t-muted" style="font-size:12px;">NOTHING EQUIPPED</div>';
     } else {
+      const addItem = (iconSvg: string, name: string, badge: string): void => {
+        const item = document.createElement('div');
+        item.className = 't-row';
+        item.innerHTML = `
+          <span style="display:flex; align-items:center; gap:6px;"><span class="t-red">${iconSvg}</span>${name}</span>
+          <span class="t-muted">${badge}</span>
+        `;
+        arsenalList.appendChild(item);
+      };
+
       for (const [wId, slot] of weaponEntries) {
         const baseDef = BASE_WEAPONS[wId as BaseWeaponId];
         const evolvedDef = EVOLVED_WEAPONS[wId as keyof typeof EVOLVED_WEAPONS];
         const name = slot.evolved ? (evolvedDef?.name ?? wId) : (baseDef?.name ?? wId);
-        const color = slot.evolved ? '#ff0055' : (baseDef?.iconColor ?? '#4dd2ff');
-        const badge = slot.evolved ? 'EVOLVED' : `LV ${slot.level}/8`;
-
-        const item = document.createElement('div');
-        item.style.cssText = 'background:rgba(15,25,35,0.7); border:1px solid rgba(77,210,255,0.25); border-radius:3px; padding:6px 10px; display:flex; justify-content:space-between; align-items:center;';
-        item.innerHTML = `
-          <div style="font-size:12px; color:#fff; display:flex; align-items:center; gap:6px;">
-            ${weaponIcon(wId as WeaponId, { size: 20, color })}
-            ${name}
-          </div>
-          <div style="font-family:var(--font-telemetry); font-size:11px; color:${slot.evolved ? '#00ff88' : 'var(--color-cyan)'}; font-weight:bold;">${badge}</div>
-        `;
-        arsenalList.appendChild(item);
+        addItem(weaponIcon(wId as WeaponId, { size: 16 }), name, slot.evolved ? 'EVOLVED' : `LV ${slot.level}/8`);
       }
 
       for (const [pId, lv] of passiveEntries) {
         const def = PASSIVES[pId];
         if (!def) continue;
-        const item = document.createElement('div');
-        item.style.cssText = 'background:rgba(15,25,35,0.7); border:1px solid rgba(255,170,0,0.25); border-radius:3px; padding:6px 10px; display:flex; justify-content:space-between; align-items:center;';
-        item.innerHTML = `
-          <div style="font-size:12px; color:#fff; display:flex; align-items:center; gap:6px;">
-            ${passiveIcon(pId, { size: 20, color: def.iconColor })}
-            ${def.name}
-          </div>
-          <div style="font-family:var(--font-telemetry); font-size:11px; color:var(--color-amber); font-weight:bold;">LV ${lv}/${def.maxLevel}</div>
-        `;
-        arsenalList.appendChild(item);
+        addItem(passiveIcon(pId, { size: 16 }), def.name, `LV ${lv}/${def.maxLevel}`);
       }
     }
 
@@ -319,35 +293,27 @@ export class PauseModal {
       const isReady = weaponLv >= 8 && passiveLv >= 1 && !isEvolved;
 
       const row = document.createElement('div');
-      row.style.cssText = `
-        background: ${isReady ? 'rgba(0,255,136,0.1)' : 'rgba(10,20,30,0.5)'};
-        border: 1px solid ${isReady ? 'rgba(0,255,136,0.5)' : 'rgba(255,255,255,0.1)'};
-        border-radius: 3px;
-        padding: 5px 10px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        font-size: 11px;
-      `;
+      row.className = 't-row';
+      row.style.fontSize = '11px';
 
-      let statusBadge = '<span style="color:#777;">UNACQUIRED</span>';
+      let statusBadge = '<span class="t-muted">—</span>';
       if (isEvolved) {
-        statusBadge = '<span style="color:#00ff88; font-weight:bold;">✓ EVOLVED</span>';
+        statusBadge = '<span>EVOLVED</span>';
       } else if (isReady) {
-        statusBadge = `<span style="color:#00e5ff; font-weight:bold;">${icon('evolution')} SYNTHESIS READY</span>`;
+        statusBadge = '<span class="t-tag t-tag-on">READY</span>';
       } else if (weaponLv > 0 || passiveLv > 0) {
-        statusBadge = `<span style="color:var(--color-amber);">W: ${weaponLv}/8 · P: ${passiveLv}/1</span>`;
+        statusBadge = `<span class="t-muted">W ${weaponLv}/8 · P ${passiveLv}/1</span>`;
       }
 
       row.innerHTML = `
-        <div style="display:flex; align-items:center; gap:6px; color:#ddd;">
-          <span style="color:${weaponLv > 0 ? '#fff' : '#888'}; font-weight:${weaponLv > 0 ? 'bold' : 'normal'};">${bDef.name}</span>
-          <span style="color:#555;">+</span>
-          <span style="color:${passiveLv > 0 ? '#fff' : '#888'}; font-weight:${passiveLv > 0 ? 'bold' : 'normal'};">${pDef.name}</span>
-          <span style="color:var(--color-cyan);">➔</span>
-          <span style="color:#ff6688; font-weight:bold;">${eDef.name}</span>
-        </div>
-        <div style="font-family:var(--font-telemetry); font-size:10px;">${statusBadge}</div>
+        <span>
+          <span class="${weaponLv > 0 ? '' : 't-muted'}">${bDef.name}</span>
+          <span class="t-muted">+</span>
+          <span class="${passiveLv > 0 ? '' : 't-muted'}">${pDef.name}</span>
+          <span class="t-muted">→</span>
+          <span class="t-red">${eDef.name}</span>
+        </span>
+        ${statusBadge}
       `;
       recipesList.appendChild(row);
     }
@@ -355,19 +321,7 @@ export class PauseModal {
 
   public updateRowHighlight(): void {
     this.rows.forEach((r, i) => {
-      if (i === this.selectedRowIndex) {
-        r.classList.add('controller-selected');
-        if (i < 5) {
-          r.style.background = 'rgba(77, 210, 255, 0.15)';
-          r.style.border = '1px solid var(--color-cyan)';
-        }
-      } else {
-        r.classList.remove('controller-selected');
-        if (i < 5) {
-          r.style.background = 'transparent';
-          r.style.border = '1px solid transparent';
-        }
-      }
+      r.classList.toggle('controller-selected', i === this.selectedRowIndex);
     });
   }
 

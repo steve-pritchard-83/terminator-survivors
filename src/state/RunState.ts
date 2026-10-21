@@ -68,6 +68,8 @@ export class RunState {
   public playerPos = { x: 0, z: 0 };
   public playerFacing = 0; // radians
   public playerMoveAngle = 0; // radians
+  /** Direction to the auto-aim target (nearest enemy in range), or null when there is none. Set by WeaponSystem. */
+  public autoAimAngle: number | null = null;
   public isMoving = false;
   public abilityCooldownTimer = 0;
   public abilityActiveDuration = 0;
@@ -142,6 +144,7 @@ export class RunState {
     this.levelUpTimeline = [];
     this.playerPos = { x: 0, z: 0 };
     this.playerFacing = 0;
+    this.autoAimAngle = null;
     this.playerMoveAngle = 0;
     this.isMoving = false;
     this.abilityCooldownTimer = 0;
@@ -367,7 +370,7 @@ export class RunState {
             kind: 'weapon',
             id: wId,
             title: def.name,
-            subtitle: `${def.codeName} // LV ${nextLv}`,
+            subtitle: `LV ${nextLv}`,
             currentLevel: slot.level,
             nextLevel: nextLv,
             description: nextStats?.description ?? `Upgrade to Level ${nextLv}`,
@@ -389,7 +392,7 @@ export class RunState {
           kind: 'passive',
           id: pId,
           title: def.name,
-          subtitle: `${def.codeName} // LV ${nextLv}`,
+          subtitle: `LV ${nextLv}`,
           currentLevel: lv,
           nextLevel: nextLv,
           description: def.descriptionPerLevel,
@@ -408,7 +411,7 @@ export class RunState {
             kind: 'weapon',
             id: wId,
             title: def.name,
-            subtitle: `${def.codeName} // NEW WEAPON`,
+            subtitle: 'NEW',
             currentLevel: 0,
             nextLevel: 1,
             description: def.levels[0].description,
@@ -430,7 +433,7 @@ export class RunState {
             kind: 'passive',
             id: pId,
             title: def.name,
-            subtitle: `${def.codeName} // NEW SALVAGE`,
+            subtitle: 'NEW',
             currentLevel: 0,
             nextLevel: 1,
             description: def.descriptionPerLevel,
@@ -461,7 +464,7 @@ export class RunState {
           kind: 'heal',
           id: 'medkit',
           title: 'Tech-Com Field Medkit',
-          subtitle: 'RESISTANCE AID',
+          subtitle: 'FIELD AID',
           currentLevel: 0,
           nextLevel: 1,
           description: 'Restores 40 HP immediately.',
@@ -472,7 +475,7 @@ export class RunState {
           kind: 'scrap',
           id: 'scrap_cache',
           title: 'Skynet Alloy Scrap Cache',
-          subtitle: 'BUNKER SALVAGE',
+          subtitle: 'SALVAGE',
           currentLevel: 0,
           nextLevel: 1,
           description: 'Awards +50 Alloy Scrap for Bunker upgrades.',

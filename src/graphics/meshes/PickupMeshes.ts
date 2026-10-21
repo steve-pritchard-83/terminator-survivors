@@ -42,66 +42,71 @@ export class PickupMeshFactory {
   public static readonly chevronGeo = markShared(new THREE.BoxGeometry(0.5, 0.08, 0.82));
   public static readonly screenGeo = markShared(new THREE.BoxGeometry(0.8, 0.24, 1.02));
 
-  // Tier 1 XP: Vibrant Neon Emerald Green
+  // XP drops are salvaged Skynet power cells: one cold cyan, higher tiers simply burn brighter.
+  // (Material names are kept from the old gem tiers.)
+  // Tier 1
   public static readonly emeraldMat = markShared(
     new THREE.MeshStandardMaterial({
-      color: 0x00ff66,
+      color: 0xc8f2ff,
       vertexColors: true,
-      emissive: 0x00dd55,
-      emissiveIntensity: 1.55,
-      metalness: 0.2,
+      emissive: 0x5fd4ff,
+      emissiveIntensity: 1.2,
+      metalness: 0.3,
       roughness: 0.25
     })
   );
   public static readonly emeraldBeamMat = markShared(
     new THREE.MeshBasicMaterial({
-      color: 0x00ff66,
+      color: 0x8fdcff,
+      visible: false, // no loot beams: the cells glow on their own
       transparent: true,
-      opacity: 0.32,
+      opacity: 0.08,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
       side: THREE.DoubleSide
     })
   );
 
-  // Tier 2 XP (xp >= 5): Vibrant Solar Gold
+  // Tier 2 (xp >= 5)
   public static readonly goldMat = markShared(
     new THREE.MeshStandardMaterial({
-      color: 0xffc400,
+      color: 0xc8f2ff,
       vertexColors: true,
-      emissive: 0xff9900,
-      emissiveIntensity: 1.65,
-      metalness: 0.25,
-      roughness: 0.22
+      emissive: 0x5fd4ff,
+      emissiveIntensity: 2.2,
+      metalness: 0.3,
+      roughness: 0.25
     })
   );
   public static readonly goldBeamMat = markShared(
     new THREE.MeshBasicMaterial({
-      color: 0xffc400,
+      color: 0x8fdcff,
+      visible: false, // no loot beams: the cells glow on their own
       transparent: true,
-      opacity: 0.38,
+      opacity: 0.12,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
       side: THREE.DoubleSide
     })
   );
 
-  // Tier 3 XP (xp >= 20): High-energy Neon Magenta-Ruby
+  // Tier 3 (xp >= 20)
   public static readonly rubyMat = markShared(
     new THREE.MeshStandardMaterial({
-      color: 0xff0066,
+      color: 0xc8f2ff,
       vertexColors: true,
-      emissive: 0xff0055,
-      emissiveIntensity: 1.8,
-      metalness: 0.25,
-      roughness: 0.2
+      emissive: 0x5fd4ff,
+      emissiveIntensity: 3.6,
+      metalness: 0.3,
+      roughness: 0.25
     })
   );
   public static readonly rubyBeamMat = markShared(
     new THREE.MeshBasicMaterial({
-      color: 0xff0066,
+      color: 0x8fdcff,
+      visible: false, // no loot beams: the cells glow on their own
       transparent: true,
-      opacity: 0.44,
+      opacity: 0.16,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
       side: THREE.DoubleSide

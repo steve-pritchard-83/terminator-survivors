@@ -16,7 +16,12 @@ import type { LoadoutId, RunConfig, UpgradeChoice, WeaponId, ActiveEnemy, RunHis
 import { globalEvents } from './EventBus';
 import { globalRNG } from './RNG';
 import { AchievementTracker } from '../state/AchievementTracker';
-import { DEFEAT_MOVIE_LEAD_IN_MS, FOOTSTEP_INTERVAL_SECONDS, HIT_STOP_GLOBAL_COOLDOWN } from '../data/balance';
+import {
+  DEFEAT_MOVIE_LEAD_IN_MS,
+  FOOTSTEP_INTERVAL_SECONDS,
+  HIT_STOP_GLOBAL_COOLDOWN,
+  PLAYER_HIT_SHAKE
+} from '../data/balance';
 
 export interface RunControllerHost {
   readonly runState: RunState;
@@ -114,7 +119,7 @@ export class RunController {
       }),
       globalEvents.on('player:damaged', () => {
         this.host.sceneManager.postProcessing.triggerDamageFlash();
-        this.host.sceneManager.addScreenShake(0.42);
+        this.host.sceneManager.addScreenShake(PLAYER_HIT_SHAKE);
       }),
       globalEvents.on('enemy:damaged', ({ x, z, damage, isCrit, enemyId }) => {
         if (this.host.runState.mode !== 'playing') return;
@@ -391,7 +396,6 @@ export class RunController {
     alloyBonus = 0
   ): void {
     this.host.runState.mode = 'vault';
-    this.host.sceneManager.addScreenShake(0.35);
     if (evolvedWeapon) this.host.audioEngine.playEvolution();
     this.host.uiManager.vaultModal.show(upgradesAwarded, evolvedWeapon, alloyBonus, () => {
       this.host.audioEngine.playUpgradeApplied();
@@ -496,15 +500,12 @@ export class RunController {
       }
       this.host.audioEngine.playGlassBreak();
       this.host.audioEngine.playFireDeploy();
-      this.host.sceneManager.addScreenShake(0.3);
     } else if (loadoutId === 'reprogrammed_t800') {
       this.host.runState.invulnerabilityTimer = 5.0;
       this.host.audioEngine.playServo();
-      this.host.sceneManager.addScreenShake(0.5);
     } else if (loadoutId === 'reese_1984' || loadoutId === 'john_connor') {
       if (loadoutId === 'john_connor') this.host.audioEngine.playRadioClick();
       else this.host.audioEngine.playMagOut();
-      this.host.sceneManager.addScreenShake(0.25);
     }
   }
 

@@ -120,11 +120,28 @@ export class ProceduralTextures {
         ctx.fillStyle = g;
         ctx.fillRect((fx - fw) * width, fy * height - 4, fw * 2 * width, 8);
       }
+
+      // Fires along one stretch of the horizon: chrome picks up warm reflections on one side, cold on the other
+      const fires: Array<[number, number, number]> = [
+        [0.52, 70, 0.9],
+        [0.6, 110, 1.0],
+        [0.7, 80, 0.8],
+        [0.84, 60, 0.6]
+      ];
+      for (const [fx, radius, alpha] of fires) {
+        const g = ctx.createRadialGradient(fx * width, height * 0.5, 0, fx * width, height * 0.5, radius);
+        g.addColorStop(0, `rgba(255,150,60,${alpha})`);
+        g.addColorStop(0.5, `rgba(200,70,20,${alpha * 0.5})`);
+        g.addColorStop(1, 'rgba(120,30,10,0)');
+        ctx.fillStyle = g;
+        ctx.fillRect(fx * width - radius, height * 0.5 - radius, radius * 2, radius * 2);
+      }
       ctx.globalCompositeOperation = 'source-over';
     }
 
     const tex = new THREE.CanvasTexture(canvas);
     tex.mapping = THREE.EquirectangularReflectionMapping;
+    tex.colorSpace = THREE.SRGBColorSpace;
     this.envMap = tex;
     return tex;
   }
@@ -138,35 +155,65 @@ export class ProceduralTextures {
     const ctx = this.get2DContext(canvas);
 
     if (ctx) {
-      // Moonlit scorched slate-ash battlefield base (#1e2b3c)
-      ctx.fillStyle = '#1e2b3c';
+      // Neutral dark ash; the moonlight supplies the blue and the fires the orange
+      ctx.fillStyle = '#26241f';
       ctx.fillRect(0, 0, size, size);
 
-      // Multi-scale ash dust & soil grain
+      // Fine ash grain
       const imgData = ctx.getImageData(0, 0, size, size);
       const data = imgData.data;
       for (let i = 0; i < data.length; i += 4) {
-        const noise = (Math.random() - 0.5) * 28;
-        data[i] = Math.max(16, Math.min(72, 30 + noise * 0.8));
-        data[i + 1] = Math.max(26, Math.min(90, 43 + noise * 0.9));
-        data[i + 2] = Math.max(38, Math.min(115, 60 + noise * 1.0));
+        const noise = (Math.random() - 0.5) * 22;
+        data[i] = Math.max(14, Math.min(70, 38 + noise));
+        data[i + 1] = Math.max(13, Math.min(66, 36 + noise));
+        data[i + 2] = Math.max(12, Math.min(60, 32 + noise));
       }
       ctx.putImageData(imgData, 0, 0);
+
+      // Large light and dark patches so the ground never reads as one flat tone
+      for (let b = 0; b < 26; b++) {
+        const bx = Math.random() * size;
+        const by = Math.random() * size;
+        const br = 90 + Math.random() * 200;
+        const light = b % 3 === 0;
+        const grad = ctx.createRadialGradient(bx, by, 0, bx, by, br);
+        grad.addColorStop(0, light ? 'rgba(92, 86, 76, 0.22)' : 'rgba(6, 6, 6, 0.32)');
+        grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(bx - br, by - br, br * 2, br * 2);
+      }
+
+      // Dusty foot and vehicle paths: pale meandering bands
+      ctx.lineCap = 'round';
+      for (let pth = 0; pth < 2; pth++) {
+        ctx.strokeStyle = 'rgba(110, 102, 90, 0.16)';
+        ctx.lineWidth = 46 + pth * 20;
+        ctx.beginPath();
+        let px = pth === 0 ? 0 : Math.random() * size;
+        let py = pth === 0 ? Math.random() * size : 0;
+        ctx.moveTo(px, py);
+        for (let j = 0; j < 8; j++) {
+          px += pth === 0 ? size / 7 : (Math.random() - 0.5) * 140;
+          py += pth === 0 ? (Math.random() - 0.5) * 140 : size / 7;
+          ctx.lineTo(px, py);
+        }
+        ctx.stroke();
+      }
 
       // Heavy HK-Tank tracks carved into the ash earth
       for (let t = 0; t < 2; t++) {
         const trackX = t === 0 ? size * 0.28 : size * 0.72;
         for (const ox of [-34, 34]) {
           const grad = ctx.createLinearGradient(trackX + ox - 14, 0, trackX + ox + 14, 0);
-          grad.addColorStop(0, 'rgba(12, 17, 24, 0.1)');
-          grad.addColorStop(0.3, 'rgba(10, 15, 22, 0.42)');
-          grad.addColorStop(0.7, 'rgba(8, 12, 18, 0.42)');
-          grad.addColorStop(1, 'rgba(12, 17, 24, 0.1)');
+          grad.addColorStop(0, 'rgba(10, 10, 10, 0.1)');
+          grad.addColorStop(0.3, 'rgba(8, 8, 8, 0.42)');
+          grad.addColorStop(0.7, 'rgba(6, 6, 6, 0.42)');
+          grad.addColorStop(1, 'rgba(10, 10, 10, 0.1)');
           ctx.fillStyle = grad;
           ctx.fillRect(trackX + ox - 14, 0, 28, size);
 
           // Transverse tread chevrons / cleats
-          ctx.fillStyle = 'rgba(6, 9, 14, 0.48)';
+          ctx.fillStyle = 'rgba(4, 4, 4, 0.48)';
           for (let y = 0; y < size; y += 18) {
             ctx.fillRect(trackX + ox - 12, y, 24, 5);
           }
@@ -179,17 +226,17 @@ export class ProceduralTextures {
         const cy = Math.random() * size;
         const cr = 24 + Math.random() * 52;
         const grad = ctx.createRadialGradient(cx, cy, cr * 0.08, cx, cy, cr);
-        grad.addColorStop(0, 'rgba(8, 11, 16, 0.65)');
-        grad.addColorStop(0.45, 'rgba(18, 25, 36, 0.45)');
-        grad.addColorStop(0.75, 'rgba(38, 52, 72, 0.22)');
-        grad.addColorStop(1, 'rgba(30, 43, 60, 0)');
+        grad.addColorStop(0, 'rgba(5, 5, 5, 0.7)');
+        grad.addColorStop(0.45, 'rgba(14, 13, 12, 0.5)');
+        grad.addColorStop(0.75, 'rgba(70, 64, 56, 0.18)');
+        grad.addColorStop(1, 'rgba(70, 64, 56, 0)');
         ctx.fillStyle = grad;
         ctx.beginPath();
         ctx.arc(cx, cy, cr, 0, Math.PI * 2);
         ctx.fill();
 
         // Radiating scorch cracks from crater rims
-        ctx.strokeStyle = 'rgba(8, 12, 18, 0.35)';
+        ctx.strokeStyle = 'rgba(6, 6, 6, 0.35)';
         ctx.lineWidth = 1.2;
         for (let r = 0; r < 4; r++) {
           const a = Math.random() * Math.PI * 2;
@@ -201,7 +248,7 @@ export class ProceduralTextures {
       }
 
       // Cracked tectonic fault lines & asphalt fractures
-      ctx.strokeStyle = 'rgba(10, 16, 24, 0.52)';
+      ctx.strokeStyle = 'rgba(8, 8, 8, 0.5)';
       ctx.lineWidth = 2.0;
       for (let i = 0; i < 24; i++) {
         ctx.beginPath();
@@ -217,7 +264,7 @@ export class ProceduralTextures {
       }
 
       // Weathered concrete gravel, pulverized ceramic, and bone dust
-      ctx.fillStyle = 'rgba(110, 130, 155, 0.35)';
+      ctx.fillStyle = 'rgba(140, 132, 118, 0.3)';
       for (let i = 0; i < 180; i++) {
         const bx = Math.random() * size;
         const by = Math.random() * size;
@@ -231,7 +278,8 @@ export class ProceduralTextures {
     const tex = new THREE.CanvasTexture(canvas);
     tex.wrapS = THREE.RepeatWrapping;
     tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(5, 5);
+    tex.repeat.set(3, 3);
+    tex.colorSpace = THREE.SRGBColorSpace;
     this.groundAlbedo = tex;
     return tex;
   }

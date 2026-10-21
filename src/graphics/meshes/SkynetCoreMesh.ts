@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { disposeObject3D } from '../dispose';
+import { ModelLibrary } from '../ModelLibrary';
 
 export class SkynetCoreMesh {
   public readonly group = new THREE.Group();
@@ -103,6 +104,7 @@ export class SkynetCoreMesh {
       metalness: 0.85,
       roughness: 0.35
     });
+    const pylons: THREE.Mesh[] = [];
     for (let i = 0; i < 4; i++) {
       const angle = (i * Math.PI) / 2 + Math.PI / 4;
       const px = Math.cos(angle) * 4.2;
@@ -114,6 +116,21 @@ export class SkynetCoreMesh {
       pylon.rotation.z = Math.cos(angle) * 0.15;
       pylon.rotation.x = Math.sin(angle) * 0.15;
       this.group.add(pylon);
+      pylons.push(pylon);
+    }
+
+    // Sculpted reactor: it replaces the floating sphere, shield, beam and pylons; one gyroscope
+    // ring and the core light stay, wrapped around the reactor's sphere
+    const model = ModelLibrary.get('skynet_core');
+    if (model) {
+      for (const part of [this.singularity, this.wireframeShield, this.energyBeam, this.ringMid, this.ringInner, ...pylons]) {
+        this.group.remove(part);
+        disposeObject3D(part);
+      }
+      this.group.add(model);
+      this.ringOuter.position.y = 3.0;
+      this.ringOuter.scale.setScalar(1.3);
+      this.coreLight.position.y = 3.0;
     }
   }
 

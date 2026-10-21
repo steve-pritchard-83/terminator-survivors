@@ -206,12 +206,8 @@ export function buildEndoLeg(side: number): THREE.BufferGeometry {
 /** Glowing red optics and the plasma chamber strip (emissive). */
 export function buildEndoOptics(): THREE.BufferGeometry {
   return mergeParts([
-    bakePart(new THREE.SphereGeometry(0.024, 10, 8), -0.072, 1.7, 0.135, 0, 0, 0, 0xff0000),
-    bakePart(new THREE.SphereGeometry(0.024, 10, 8), 0.072, 1.7, 0.135, 0, 0, 0, 0xff0000),
-    // Faint glow bars inside the sockets so the eyes read from far away
-    bakePart(new THREE.BoxGeometry(0.04, 0.012, 0.012), -0.072, 1.7, 0.158, 0, 0, 0, 0xff3030),
-    bakePart(new THREE.BoxGeometry(0.04, 0.012, 0.012), 0.072, 1.7, 0.158, 0, 0, 0, 0xff3030),
-    // M-25 plasma chamber strip
-    bakePart(new THREE.BoxGeometry(0.098, 0.035, 0.2), 0.18, 1.065, 0.46, 0, -0.08, 0, 0xd400ff)
+    // Oversized for the top-down camera; they are the only glowing part, so they carry the read
+    bakePart(new THREE.SphereGeometry(0.036, 10, 8), -0.072, 1.7, 0.14, 0, 0, 0, 0xff0000),
+    bakePart(new THREE.SphereGeometry(0.036, 10, 8), 0.072, 1.7, 0.14, 0, 0, 0, 0xff0000)
   ]);
 }

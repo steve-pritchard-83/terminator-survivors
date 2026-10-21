@@ -236,7 +236,7 @@ export const BASE_WEAPONS: Record<BaseWeaponId, WeaponDefinition> = {
     evolvesInto: 'phased_plasma_assault',
     iconColor: '#00b4d8',
     pattern: 'StraightShot',
-    patternParams: { projectileVisual: 'plasma', flashColor: 0x00b4d8, parallelOffset: 0, jitterAngle: 0.08, projectileRadius: 0.3, sfx: 'rifle' },
+    patternParams: { projectileVisual: 'plasma', flashColor: 0xd04cff, parallelOffset: 0, jitterAngle: 0.08, projectileRadius: 0.3, sfx: 'rifle' },
     knockback: 7,
     levels: buildWeaponLevels(
       { damage: 22, cooldown: 0.85, area: 1.0, speed: 32, amount: 3, duration: 0.9, pierce: 2 },
@@ -540,7 +540,7 @@ export const EVOLVED_WEAPONS: Record<EvolvedWeaponId, WeaponDefinition> = {
     evolvesFrom: 'm16_carbine',
     iconColor: '#38bdf8',
     pattern: 'StraightShot',
-    patternParams: { projectileVisual: 'heavy_plasma', flashColor: 0x38bdf8, parallelOffset: 0.1, jitterAngle: 0.05, projectileRadius: 0.45, sfx: 'plasma_heavy' },
+    patternParams: { projectileVisual: 'heavy_plasma', flashColor: 0xd04cff, parallelOffset: 0.1, jitterAngle: 0.05, projectileRadius: 0.45, sfx: 'plasma_heavy' },
     knockback: 12,
     levels: [
       {

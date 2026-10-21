@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { disposeObject3D } from '../dispose';
+import { ModelLibrary } from '../ModelLibrary';
 
 export class T1000Mesh {
   public readonly group = new THREE.Group();
@@ -8,6 +9,8 @@ export class T1000Mesh {
   private readonly rightBlade: THREE.Mesh;
   private readonly puddleMesh: THREE.Mesh;
   private readonly liquidMat: THREE.MeshStandardMaterial;
+  // The sculpted figure has its blades built in, so slashing is a whole-body lunge
+  private readonly sculpted: boolean;
 
   constructor() {
     // Polished mirror chrome: it reflects the night sky and fires, so contrast does the work
@@ -82,9 +85,22 @@ export class T1000Mesh {
     const pool = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.62, 0.05, 20), mat);
     pool.position.y = 0.025;
 
-    this.bodyGroup.add(
-      torso, legL, legR, head, nose, brow, chin, shoulderL, shoulderR, arm(-1), arm(1), this.leftBlade, this.rightBlade, pool
-    );
+    const model = ModelLibrary.get('t1000');
+    this.sculpted = model !== null;
+    if (model) {
+      // Same mirror chrome as the puddle, so the figure and its liquid form match
+      model.traverse((o) => {
+        if ((o as THREE.Mesh).isMesh) (o as THREE.Mesh).material = mat;
+      });
+      this.bodyGroup.add(model);
+      for (const unused of [torso, legL, legR, head, nose, brow, chin, shoulderL, shoulderR, this.leftBlade, this.rightBlade, pool]) {
+        unused.geometry.dispose();
+      }
+    } else {
+      this.bodyGroup.add(
+        torso, legL, legR, head, nose, brow, chin, shoulderL, shoulderR, arm(-1), arm(1), this.leftBlade, this.rightBlade, pool
+      );
+    }
     this.group.add(this.bodyGroup);
 
     // 2. Mercury Puddle (flattened disc for puddle state)
@@ -109,6 +125,13 @@ export class T1000Mesh {
 
     // Subtle fluid ripple
     this.bodyGroup.position.y = Math.sin(timeSeconds * 6) * 0.04;
+
+    if (this.sculpted) {
+      // Lunge forward and twist through the slash
+      this.bodyGroup.rotation.x = isSlashing ? 0.28 : 0;
+      this.bodyGroup.rotation.y = isSlashing ? Math.sin(timeSeconds * 14) * 0.35 : 0;
+      return;
+    }
 
     if (isSlashing) {
       this.leftBlade.scale.set(1.4, 1.4, 1.8);

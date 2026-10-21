@@ -48,9 +48,9 @@ export class EndVideo {
     this.video.style.cssText = 'width:100%; height:100%; object-fit:contain; background:#000;';
 
     this.skipHint = document.createElement('div');
-    this.skipHint.textContent = 'TAP / ENTER / A  //  SKIP';
+    this.skipHint.textContent = 'TAP / ENTER / A TO SKIP';
     this.skipHint.style.cssText =
-      'position:absolute; right:18px; bottom:14px; font-family:var(--font-telemetry, monospace); font-size:12px; letter-spacing:2px; color:rgba(255,255,255,0.65); opacity:0; transition:opacity 0.4s; pointer-events:none;';
+      'position:absolute; right:18px; bottom:14px; font-family:var(--font-mono, monospace); font-size:12px; letter-spacing:2px; color:rgba(242,233,228,0.65); opacity:0; transition:opacity 0.4s; pointer-events:none;';
 
     this.container.append(this.video, this.skipHint);
     root.appendChild(this.container);
