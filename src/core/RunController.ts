@@ -54,11 +54,6 @@ export class RunController {
   }
 
   private setupEvents(): void {
-    const onBlur = () => {
-      if (this.host.runState.mode === 'playing') {
-        this.pauseGame();
-      }
-    };
     const onVisibility = () => {
       if (document.hidden && this.host.runState.mode === 'playing') {
         this.pauseGame();
@@ -71,7 +66,6 @@ export class RunController {
     };
 
     if (typeof window !== 'undefined') {
-      window.addEventListener('blur', onBlur);
       window.addEventListener('gamepaddisconnected', onGamepadDisconnect);
     }
     if (typeof document !== 'undefined') {
@@ -81,7 +75,6 @@ export class RunController {
     this.unbinds.push(
       () => {
         if (typeof window !== 'undefined') {
-          window.removeEventListener('blur', onBlur);
           window.removeEventListener('gamepaddisconnected', onGamepadDisconnect);
         }
         if (typeof document !== 'undefined') {

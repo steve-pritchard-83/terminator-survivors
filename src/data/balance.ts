@@ -38,6 +38,15 @@ export const EXPLOSION_SMOKE_END = 6.0;
 /** Seconds the Tank mortar impact circle is shown before it lands (the charge itself lasts 3 s). */
 export const TANK_MORTAR_WARNING_SECONDS = 1.5;
 
+// Phones and small screens: camera is closer (the arena was too small to read) and the scene is
+// brighter (mobile screens and outdoor light made it too dark).
+export const VIEW_PROFILES = {
+  desktop: { cameraZoom: 1.0, exposure: 1.2, hemiIntensity: 1.25, ambientIntensity: 1.05 },
+  compact: { cameraZoom: 0.7, exposure: 1.7, hemiIntensity: 1.8, ambientIntensity: 1.6 }
+};
+/** Screens at or below this width (CSS px) use the compact profile, as do coarse-pointer devices. */
+export const COMPACT_VIEW_MAX_WIDTH = 960;
+
 // Seconds a destroyed endoskeleton or crab drone stays on screen collapsing before it is removed.
 export const DEATH_ANIMATION_SECONDS = 0.6;
 

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import { SHAKE_EVENT_CAP, SHAKE_TRAUMA_CAP } from '../data/balance';
-import { PostProcessingManager } from './PostProcessing';
+import { COMPACT_VIEW_MAX_WIDTH, SHAKE_EVENT_CAP, SHAKE_TRAUMA_CAP, VIEW_PROFILES } from '../data/balance';
+import { PostProcessingManager, isMobileGpuDevice } from './PostProcessing';
 import { ProceduralTextures } from './ProceduralTextures';
 import { DynamicLightingManager } from './DynamicLightingManager';
 import { AtmosphereSystem } from './AtmosphereSystem';
@@ -21,6 +21,7 @@ export class SceneManager {
   private initialSampleTimer = 0;
   private hasAutoDetectedQuality = false;
 
+  private readonly baseCameraOffset = new THREE.Vector3(0, 17.5, 12.5);
   private readonly cameraOffset = new THREE.Vector3(0, 17.5, 12.5);
   private currentCameraTarget = new THREE.Vector3(0, 0, 0);
   private readonly tempTarget = new THREE.Vector3();
@@ -138,6 +139,17 @@ export class SceneManager {
     this.atmosphere = new AtmosphereSystem(this.scene);
 
     window.addEventListener('resize', this.onResize);
+    this.applyViewProfile();
+  }
+
+  /** Phones and small screens get a closer camera and a brighter scene. */
+  private applyViewProfile(): void {
+    const compact = isMobileGpuDevice() || window.innerWidth <= COMPACT_VIEW_MAX_WIDTH;
+    const p = compact ? VIEW_PROFILES.compact : VIEW_PROFILES.desktop;
+    this.cameraOffset.copy(this.baseCameraOffset).multiplyScalar(p.cameraZoom);
+    this.renderer.toneMappingExposure = p.exposure;
+    this.hemiLight.intensity = p.hemiIntensity;
+    this.ambientLight.intensity = p.ambientIntensity;
   }
 
   public onResize = (): void => {
@@ -147,6 +159,7 @@ export class SceneManager {
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(width, height);
     this.postProcessing.setSize(width, height);
+    this.applyViewProfile();
   };
 
   public updateCamera(targetX: number, targetZ: number, dt: number): void {

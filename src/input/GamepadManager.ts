@@ -47,6 +47,8 @@ export class GamepadManager {
   private isConnected = false;
 
   private pauseRequested = false;
+  private menuIndex: number = XBOX_BUTTON.MENU;
+  private viewIndex: number = XBOX_BUTTON.VIEW;
 
   // Repeat timer for menu navigation
   private navRepeatTimer = 0;
@@ -197,6 +199,12 @@ export class GamepadManager {
       return;
     }
 
+    // Menu / View button positions: standard-mapped pads use 9 / 8; Xbox pads that report a
+    // non-standard (raw XInput) layout use 7 / 6, where 8 and 9 are the stick clicks.
+    const standardMapping = gp.mapping === 'standard';
+    this.menuIndex = standardMapping || !this.isXboxId(gp.id) ? XBOX_BUTTON.MENU : 7;
+    this.viewIndex = standardMapping || !this.isXboxId(gp.id) ? XBOX_BUTTON.VIEW : 6;
+
     // Save previous button states for edge detection
     this.lastButtons = [...this.currentButtons];
 
@@ -232,8 +240,8 @@ export class GamepadManager {
       this.onAbilityCallback?.();
     }
 
-    // Pause is fixed to the Start / Menu button
-    const pausePressed = this.isButtonJustPressed(XBOX_BUTTON.MENU);
+    // Pause is fixed to the Menu (three-line) button. The Guide / Xbox button never pauses.
+    const pausePressed = this.isButtonJustPressed(this.menuIndex);
 
     if (pausePressed) {
       this.pauseRequested = true;
@@ -394,12 +402,12 @@ export class GamepadManager {
     return (
       this.isButtonJustPressed(XBOX_BUTTON.A) ||
       this.isButtonJustPressed(XBOX_BUTTON.RT) ||
-      this.isButtonJustPressed(XBOX_BUTTON.MENU)
+      this.isButtonJustPressed(this.menuIndex)
     );
   }
 
   public isMenuCancelPressed(): boolean {
-    return this.isButtonJustPressed(XBOX_BUTTON.B) || this.isButtonJustPressed(XBOX_BUTTON.VIEW);
+    return this.isButtonJustPressed(XBOX_BUTTON.B) || this.isButtonJustPressed(this.viewIndex);
   }
 
   /**
