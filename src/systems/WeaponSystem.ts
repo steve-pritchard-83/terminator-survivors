@@ -23,6 +23,7 @@ import { PALETTE } from '../data/artDirection';
 import { AUTO_AIM_RANGE } from '../data/balance';
 import { ProceduralTextures } from '../graphics/ProceduralTextures';
 import { buildFlameGeometry } from '../graphics/EnvironmentDetail';
+import { BOSS_MIN_FIGHT_SECONDS } from '../data/balance';
 
 export type { ProjectileMeshCategory };
 
@@ -97,6 +98,8 @@ const WEAPON_RECOIL_SCALES: Record<string, number> = {
 export class WeaponSystem {
   public readonly group = new THREE.Group();
   private readonly runState: RunState;
+  /** Off only while the debug API deals damage */
+  public bossCapEnabled = true;
   private readonly grid: SpatialHashGrid;
   private readonly audio: AudioEngine;
   private readonly particles: ParticleSystem;
@@ -415,6 +418,19 @@ export class WeaponSystem {
 
     if (enemy.affix === 'Armored' && enemy.armorStripMultiplier >= 1.0) {
       finalDamage = Math.max(1, Math.round(finalDamage * 0.5));
+    }
+
+    // Bosses lose health no faster than their minimum fight length allows
+    const minFight = enemy.isBoss && this.bossCapEnabled ? BOSS_MIN_FIGHT_SECONDS[enemy.archetype] : undefined;
+    if (minFight) {
+      const state = (enemy.state = enemy.state ?? {});
+      const now = this.runState.timeSeconds;
+      const rate = enemy.maxHp / minFight;
+      const budget = Math.min(rate * 2, (state.damageBudget ?? rate) + (now - (state.damageBudgetTime ?? now)) * rate);
+      state.damageBudgetTime = now;
+      finalDamage = Math.max(0, Math.min(finalDamage, Math.floor(budget)));
+      state.damageBudget = budget - finalDamage;
+      if (finalDamage <= 0) return false;
     }
 
     enemy.hp -= finalDamage;

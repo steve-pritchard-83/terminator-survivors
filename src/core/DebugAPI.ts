@@ -228,7 +228,13 @@ export class DebugAPI {
           }
         }
         if (!targetEntity || !this.host.weaponSystem) return false;
-        return this.host.weaponSystem.applyDamageToTarget(targetEntity, amount, 0, undefined, undefined, crit);
+        // Debug damage skips the boss fight-length cap so tests can end a fight at once
+        this.host.weaponSystem.bossCapEnabled = false;
+        try {
+          return this.host.weaponSystem.applyDamageToTarget(targetEntity, amount, 0, undefined, undefined, crit);
+        } finally {
+          this.host.weaponSystem.bossCapEnabled = true;
+        }
       },
 
       killAllEnemies: () => {

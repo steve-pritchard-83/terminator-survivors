@@ -21,6 +21,8 @@ export interface ActivePickup extends SpatialEntity, PoolableUser {
   attractTime: number;
   popVx?: number;
   popVz?: number;
+  /** Elite vaults pay no scrap */
+  noScrap?: boolean;
 }
 
 export class PickupSystem {
@@ -109,7 +111,7 @@ export class PickupSystem {
           // From mid-run, elites sometimes carry a data vault (a second route to evolutions)
           const isElite = enemy.isElite || enemy.state?.isElite;
           if (isElite && this.runState.timeSeconds >= ELITE_VAULT.fromSeconds && globalRNG.chance(ELITE_VAULT.chance)) {
-            this.spawnBossVault(x, z);
+            this.spawnBossVault(x, z, true);
           }
           // Guaranteed crate drop for elites; otherwise 7% chance on normal kills
           if (enemy.isElite || enemy.state?.isElite) {
@@ -269,7 +271,7 @@ export class PickupSystem {
     });
   }
 
-  public spawnBossVault(x: number, z: number): void {
+  public spawnBossVault(x: number, z: number, fromElite = false): void {
     const mesh = PickupMeshFactory.createBossVault();
     mesh.position.set(x, 0, z);
     this.group.add(mesh);
@@ -278,6 +280,7 @@ export class PickupSystem {
       id: this.nextPickupId++,
       type: 'pickup',
       kind: 'vault',
+      noScrap: fromElite,
       poolIndex: 0,
       rotationY: 0,
       x,
@@ -449,8 +452,8 @@ export class PickupSystem {
       // Boss Data Vault
       this.audio.playVaultJackpot();
       const evolvedWeapon = this.runState.checkAndEvolveWeapon();
-      const alloyBonus = SCRAP_DROP.vault;
-      this.runState.addScrap(alloyBonus);
+      const alloyBonus = p.noScrap ? 0 : SCRAP_DROP.vault;
+      if (alloyBonus > 0) this.runState.addScrap(alloyBonus);
 
       globalEvents.emit('vault:opened', {
         upgradesAwarded: evolvedWeapon ? 1 : 3,

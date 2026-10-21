@@ -16,13 +16,13 @@ import { globalRNG } from '../core/RNG';
 import { StateMachine, GAME_MODE_TRANSITIONS } from '../core/StateMachine';
 import { globalEvents } from '../core/EventBus';
 import { threatMultipliers } from '../data/waves';
-import { MAX_REVIVAL_CHANCE, REVIVE_INVULNERABILITY_SECONDS, UPGRADE_OFFERS } from '../data/balance';
+import { MAX_REVIVAL_CHANCE, REVIVE_INVULNERABILITY_SECONDS, SCRAP_DROP, UPGRADE_OFFERS } from '../data/balance';
 
 export function getXpForNextLevel(level: number): number {
   if (level <= 2) {
     return Math.floor(10 + 8 * level + 2.5 * Math.pow(level, 1.65));
   }
-  return Math.floor(14 + 6.5 * level + 1.55 * Math.pow(level, 1.48));
+  return Math.floor(14 + 6.5 * level + 1.55 * Math.pow(level, 1.62));
 }
 
 export function computeMitigatedDamage(rawDamage: number, armor: number): number {
@@ -489,7 +489,7 @@ export class RunState {
           subtitle: 'SALVAGE',
           currentLevel: 0,
           nextLevel: 1,
-          description: 'Awards +50 Alloy Scrap for Bunker upgrades.',
+          description: `Awards +${SCRAP_DROP.levelUpCache} Alloy Scrap for Requisition upgrades.`,
           accentColor: '#ffd700'
         });
       }
@@ -526,7 +526,7 @@ export class RunState {
     } else if (choice.kind === 'heal') {
       this.heal(40);
     } else if (choice.kind === 'scrap') {
-      this.addScrap(50);
+      this.addScrap(SCRAP_DROP.levelUpCache);
     }
   }
 

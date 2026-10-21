@@ -97,4 +97,15 @@ export const ELITE_VAULT = { fromSeconds: 300, chance: 0.1 };
 export const OPENING_GRACE = { seconds: 90, damageScale: 0.55 };
 
 // Alloy scrap sources in a run. A win (about 2-3k) should fund a few Requisition upgrades, not the whole list.
-export const SCRAP_DROP = { killChance: 0.1, killAmount: 2, crate: 15, vault: 120, boss: 40 };
+// Elite vaults pay no scrap (they are an evolution route, not a scrap source).
+export const SCRAP_DROP = { killChance: 0.05, killAmount: 2, crate: 8, vault: 120, boss: 40, levelUpCache: 25 };
+
+// Shortest a boss fight can be, in seconds: damage against a boss is capped to a steady rate, so its
+// phases always play out however strong the build (weaker builds still take longer).
+export const BOSS_MIN_FIGHT_SECONDS: Record<string, number> = {
+  infiltrator_csm101: 40,
+  hk_tank_goliath: 45,
+  hk_aerial_squadron_leader: 45,
+  t1000_prototype: 45,
+  skynet_tde_core: 75
+};

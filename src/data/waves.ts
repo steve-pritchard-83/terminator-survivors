@@ -145,8 +145,8 @@ export const WAVE_TIMELINE: WaveMinuteEntry[] = buildWaveTimeline();
 // Fodder arrives in packs that grow through the run, so the horde actually fills the screen.
 export const PACK_SPAWN = {
   archetypes: new Set<EnemyArchetypeId>(['skynet_crab_drone', 't600_rusted', 't800_endoskeleton']),
-  perMinute: 0.6,
-  max: 6,
+  perMinute: 0.9,
+  max: 7,
   spread: 2.2
 };
 
