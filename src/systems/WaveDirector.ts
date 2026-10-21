@@ -130,9 +130,9 @@ export class WaveDirector {
     }
 
     // Fodder comes as a pack (one of them may be an elite); heavies and emplacements come alone
-    const minute = this.runState.timeSeconds / 60;
-    const packSize = PACK_SPAWN.archetypes.has(chosenArchetype)
-      ? Math.min(PACK_SPAWN.max, 1 + Math.floor(minute * PACK_SPAWN.perMinute), Math.max(1, room))
+    const packMinutes = Math.max(0, this.runState.timeSeconds - PACK_SPAWN.startSeconds) / 60;
+    const packSize = PACK_SPAWN.archetypes.has(chosenArchetype) && packMinutes > 0
+      ? Math.min(PACK_SPAWN.max, 1 + Math.floor(packMinutes * PACK_SPAWN.perMinute), Math.max(1, room))
       : 1;
     for (let i = 0; i < packSize; i++) {
       const isElite = eliteChance > 0 && globalRNG.chance(eliteChance / packSize);

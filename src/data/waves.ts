@@ -142,8 +142,10 @@ export function buildWaveTimeline(params: BuildWaveTimelineParams = {}): WaveMin
 
 export const WAVE_TIMELINE: WaveMinuteEntry[] = buildWaveTimeline();
 
-// Fodder arrives in packs that grow through the run, so the horde actually fills the screen.
+// Fodder arrives in packs that grow through the run, so the horde actually fills the screen. Packs start
+// after the opening, so the lone starting rifle can build early levels first.
 export const PACK_SPAWN = {
+  startSeconds: 90,
   archetypes: new Set<EnemyArchetypeId>(['skynet_crab_drone', 't600_rusted', 't800_endoskeleton']),
   perMinute: 0.9,
   max: 7,
