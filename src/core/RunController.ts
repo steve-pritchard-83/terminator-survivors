@@ -96,6 +96,10 @@ export class RunController {
       globalEvents.on('camera:shake', ({ trauma }) => {
         this.host.sceneManager.addScreenShake(trauma);
       }),
+      globalEvents.on('wave:minute', ({ minute }) => {
+        // Start fetching the victory movie well before it is needed
+        if (minute >= 8) this.host.uiManager.victoryVideo.prepare();
+      }),
       globalEvents.on('achievement:unlocked', () => {
         this.host.audioEngine.playAchievement();
       }),
@@ -183,7 +187,8 @@ export class RunController {
     if (this.host.runState.mode === 'gameover' || this.host.runState.mode === 'victory') return;
     this.host.runState.mode = victory ? 'victory' : 'gameover';
     this.host.audioEngine.stopMusic();
-    this.host.audioEngine.playRunEnd(victory);
+    // A win plays the victory movie (with its own audio); the jingle only plays if the movie can't
+    if (!victory) this.host.audioEngine.playRunEnd(false);
 
     const finalScrap = this.host.runState.alloyScrapEarned;
 
@@ -248,21 +253,33 @@ export class RunController {
     this.host.uiManager.vaultModal.hide();
     this.host.uiManager.hudView.damageNumbers.clear();
     this.host.uiManager.hudView.hide();
-    this.host.uiManager.endRunModal.show(
-      victory,
-      this.host.runState.timeSeconds,
-      this.host.runState.kills,
-      this.host.runState.level,
-      finalScrap,
-      this.host.runState.seed,
-      () => {
-        this.host.audioEngine.playHudScanClose();
-        this.host.runState.mode = 'title';
-        this.host.uiManager.titleScreen.show();
-      },
-      runRecord,
-      defeatReason
-    );
+    const showSummary = (): void => {
+      this.host.uiManager.endRunModal.show(
+        victory,
+        this.host.runState.timeSeconds,
+        this.host.runState.kills,
+        this.host.runState.level,
+        finalScrap,
+        this.host.runState.seed,
+        () => {
+          this.host.audioEngine.playHudScanClose();
+          this.host.runState.mode = 'title';
+          this.host.uiManager.titleScreen.show();
+        },
+        runRecord,
+        defeatReason
+      );
+    };
+
+    if (victory) {
+      // Victory movie first; if it cannot play, fall back to the jingle and go straight to the results
+      this.host.uiManager.victoryVideo.play((played) => {
+        if (!played) this.host.audioEngine.playRunEnd(true);
+        showSummary();
+      });
+    } else {
+      showSummary();
+    }
   }
 
   public togglePause(): void {

@@ -78,3 +78,26 @@ test('Every enemy and boss type runs without runtime errors', async ({ page }) =
   expect(state?.activeEnemies).toBeGreaterThan(0);
   expect(errors).toEqual([]);
 });
+
+// The victory movie plays over the results. It can be skipped after a short lock; the results
+// (MISSION ACCOMPLISHED) must follow either way.
+test('Defeating the final boss plays the victory movie, which can be skipped to the results', async ({ page }) => {
+  await page.goto('/');
+  await page.getByTestId('btn-start-run').click();
+  await expect(page.getByTestId('hud-container')).toBeVisible();
+
+  await page.evaluate(() => {
+    const api = window.__GAME_DEBUG__!;
+    api.setGodMode(true);
+    api.spawnBoss('skynet_tde_core');
+  });
+  await page.waitForTimeout(400);
+  await page.evaluate(() => window.__GAME_DEBUG__!.damageEnemy('boss', 1e9));
+
+  await expect(page.getByTestId('victory-video')).toBeVisible({ timeout: 5000 });
+  // Skipping is locked for the first 1.5 s so button-mashing at the win does not skip it
+  await page.waitForTimeout(1800);
+  await page.keyboard.press('Enter');
+  await expect(page.getByTestId('victory-video')).toBeHidden();
+  await expect(page.locator('#end-title')).toContainText('MISSION ACCOMPLISHED', { timeout: 5000 });
+});

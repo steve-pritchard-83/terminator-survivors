@@ -7,6 +7,7 @@ import { TitleScreen } from './TitleScreen';
 import { LevelUpModal } from './LevelUpModal';
 import { VaultJackpotModal } from './VaultJackpotModal';
 import { EndRunModal } from './EndRunModal';
+import { VictoryVideo } from './VictoryVideo';
 import { PauseModal } from './PauseModal';
 import type { SettingsPanel } from './SettingsPanel';
 import type { RunConfig } from '../core/types';
@@ -17,6 +18,7 @@ export class UIManager {
   public readonly levelUpModal: LevelUpModal;
   public readonly vaultModal: VaultJackpotModal;
   public readonly endRunModal: EndRunModal;
+  public readonly victoryVideo: VictoryVideo;
   public readonly pauseModal: PauseModal;
   public settingsPanel: SettingsPanel | null = null;
   private readonly root: HTMLElement;
@@ -36,6 +38,7 @@ export class UIManager {
     this.audioEngine = audioEngine;
     this.hudView = new HUDView(root);
     this.endRunModal = new EndRunModal(root, saveManager, audioEngine);
+    this.victoryVideo = new VictoryVideo(root, saveManager);
     this.titleScreen = new TitleScreen(
       root,
       saveManager,
@@ -134,6 +137,9 @@ export class UIManager {
 
   public updateGamepad(gp: import('../input/GamepadManager').GamepadManager, dt: number): void {
     if (!gp.hasActiveController) return;
+
+    // Victory movie takes the whole screen
+    if (this.victoryVideo.handleGamepad(gp)) return;
 
     // 0. Settings Panel
     if (this.settingsPanel?.handleGamepadMenuNavigation(gp, dt)) return;
