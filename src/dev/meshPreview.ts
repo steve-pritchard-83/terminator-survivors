@@ -108,7 +108,12 @@ if (which === 'glb') {
     armorStripMultiplier: 1, attackCooldown: 0, chargeTimer: 0, searchlightAngle: 0, searchlightAlertTimer: 0,
     phaseState: 0, state: {}
   } as unknown as ActiveEnemy;
-  batch.updateBatch([fake], 0.4, 0, 6);
+  // ?walk=<seconds> walks it forward (+z) at 1.6 m/s first, to see the stride; it ends back at the origin
+  const walkFor = Number(params.get('walk') ?? 0);
+  for (let t = 0; t <= walkFor; t += 1 / 60) {
+    fake.z = (t - walkFor) * 1.6;
+    batch.updateBatch([fake], 0.4 + t, 0, fake.z + 6);
+  }
   const ground = new THREE.Mesh(
     new THREE.PlaneGeometry(30, 30),
     new THREE.MeshStandardMaterial({ color: 0x1b2430, roughness: 1 })

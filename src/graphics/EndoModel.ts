@@ -12,8 +12,15 @@ export interface EndoModel {
   /** Body, arms and head; origin on the ground between the feet, facing +z */
   chassis: THREE.BufferGeometry;
   /** Each leg with its origin at the hip joint height */
+  /** Thighs, with their origin at the hip joint height */
   leftLeg: THREE.BufferGeometry;
   rightLeg: THREE.BufferGeometry;
+  /** Shins and feet, each with its origin at the knee, so the knees can bend */
+  leftShin: THREE.BufferGeometry;
+  rightShin: THREE.BufferGeometry;
+  /** Knee joint positions relative to the hip origin (0, hipHeight, 0) */
+  kneeL: THREE.Vector3;
+  kneeR: THREE.Vector3;
   material: THREE.Material;
   /** Height of the hip joints above the ground */
   hipHeight: number;
@@ -119,6 +126,11 @@ function bakeWalker(scene: THREE.Object3D, mesh: THREE.SkinnedMesh, rig: Humanoi
   const outTan = tan ? new Float32Array(count * 4) : null;
   const legL = new Float32Array(count);
   const legR = new Float32Array(count);
+  // Thigh-bone share of each vertex's leg weight, to cut the leg at the knee
+  const thighL = new Float32Array(count);
+  const thighR = new Float32Array(count);
+  const thighLId = mesh.skeleton.bones.indexOf(rig.thighL as THREE.Bone);
+  const thighRId = mesh.skeleton.bones.indexOf(rig.thighR as THREE.Bone);
   const boneIds = (list: Array<THREE.Object3D | undefined>) =>
     new Set(list.map((b) => (b ? mesh.skeleton.bones.indexOf(b as THREE.Bone) : -1)).filter((i) => i >= 0));
   const leftIds = boneIds([rig.thighL, rig.shinL, rig.footL, rig.toeL]);
@@ -141,6 +153,8 @@ function bakeWalker(scene: THREE.Object3D, mesh: THREE.SkinnedMesh, rig: Humanoi
       for (let e = 0; e < 16; e++) blend.elements[e] += boneM.elements[e] * w;
       if (leftIds.has(bi)) legL[i] += w;
       if (rightIds.has(bi)) legR[i] += w;
+      if (bi === thighLId) thighL[i] += w;
+      if (bi === thighRId) thighR[i] += w;
     }
     skinM.multiplyMatrices(mesh.matrixWorld, mesh.bindMatrixInverse).multiply(blend).multiply(mesh.bindMatrix);
     p.fromBufferAttribute(pos, i).applyMatrix4(skinM);
@@ -168,8 +182,13 @@ function bakeWalker(scene: THREE.Object3D, mesh: THREE.SkinnedMesh, rig: Humanoi
     outPos[i * 3 + 2] = (outPos[i * 3 + 2] - hip.z) * scale;
   }
   const hipHeight = (hip.y - minY) * scale;
-  const rightHand = rig.handR.getWorldPosition(new THREE.Vector3());
-  rightHand.set((rightHand.x - hip.x) * scale, (rightHand.y - minY) * scale, (rightHand.z - hip.z) * scale);
+  const toModel = (bone: THREE.Object3D) => {
+    const w = bone.getWorldPosition(new THREE.Vector3());
+    return w.set((w.x - hip.x) * scale, (w.y - minY) * scale, (w.z - hip.z) * scale);
+  };
+  const rightHand = toModel(rig.handR);
+  const kneeLAt = toModel(rig.shinL);
+  const kneeRAt = toModel(rig.shinR);
 
   // 4. Split triangles into body and legs by skin weight
   const index = src.getIndex();
@@ -177,11 +196,17 @@ function bakeWalker(scene: THREE.Object3D, mesh: THREE.SkinnedMesh, rig: Humanoi
   const body: number[] = [];
   const left: number[] = [];
   const right: number[] = [];
+  const leftShin: number[] = [];
+  const rightShin: number[] = [];
+  const avg = (a: Float32Array, ids: number[]) => (a[ids[0]] + a[ids[1]] + a[ids[2]]) / 3;
   for (let t = 0; t < triCount; t++) {
     const ids = [0, 1, 2].map((k) => (index ? index.getX(t * 3 + k) : t * 3 + k));
-    const l = (legL[ids[0]] + legL[ids[1]] + legL[ids[2]]) / 3;
-    const r = (legR[ids[0]] + legR[ids[1]] + legR[ids[2]]) / 3;
-    (l > 0.5 ? left : r > 0.5 ? right : body).push(...ids);
+    const l = avg(legL, ids);
+    const r = avg(legR, ids);
+    // Leg triangles mostly bound to the thigh bone stay with the thigh; the rest belong to the shin
+    if (l > 0.5) (avg(thighL, ids) > l * 0.5 ? left : leftShin).push(...ids);
+    else if (r > 0.5) (avg(thighR, ids) > r * 0.5 ? right : rightShin).push(...ids);
+    else body.push(...ids);
   }
   const base = new THREE.BufferGeometry();
   base.setAttribute('position', new THREE.BufferAttribute(outPos, 3));
@@ -189,13 +214,14 @@ function bakeWalker(scene: THREE.Object3D, mesh: THREE.SkinnedMesh, rig: Humanoi
   if (outTan) base.setAttribute('tangent', new THREE.BufferAttribute(outTan, 4));
   const uv = src.getAttribute('uv');
   if (uv) base.setAttribute('uv', uv);
-  const part = (indices: number[], dropY = 0): THREE.BufferGeometry => {
+  const part = (indices: number[], origin = new THREE.Vector3()): THREE.BufferGeometry => {
     const g = base.clone();
     g.setIndex(indices);
-    if (dropY) g.translate(0, -dropY, 0);
+    g.translate(-origin.x, -origin.y, -origin.z);
     g.computeBoundingSphere();
     return g;
   };
+  const hipOrigin = new THREE.Vector3(0, hipHeight, 0);
 
   // 5. Eyes: two beads in the sockets, found as the front of the face just below the brow
   const top = ENDO_HEIGHT;
@@ -218,8 +244,12 @@ function bakeWalker(scene: THREE.Object3D, mesh: THREE.SkinnedMesh, rig: Humanoi
   const material = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material;
   return {
     chassis: part(body),
-    leftLeg: part(left, hipHeight),
-    rightLeg: part(right, hipHeight),
+    leftLeg: part(left, hipOrigin),
+    rightLeg: part(right, hipOrigin),
+    leftShin: part(leftShin, kneeLAt),
+    rightShin: part(rightShin, kneeRAt),
+    kneeL: kneeLAt.clone().sub(hipOrigin),
+    kneeR: kneeRAt.clone().sub(hipOrigin),
     material,
     hipHeight,
     eyes,
@@ -240,10 +270,21 @@ export function createEndoPreview(
   const group = new THREE.Group();
   const mat = (model.material as THREE.MeshStandardMaterial).clone();
   mat.color.setHex(tint);
+  // Thigh at the hip, shin hanging from the knee (named so a walker can swing them)
   const leftLeg = new THREE.Mesh(model.leftLeg, mat);
   const rightLeg = new THREE.Mesh(model.rightLeg, mat);
+  leftLeg.name = 'thighL';
+  rightLeg.name = 'thighR';
   leftLeg.position.y = model.hipHeight;
   rightLeg.position.y = model.hipHeight;
+  const leftShin = new THREE.Mesh(model.leftShin, mat);
+  const rightShin = new THREE.Mesh(model.rightShin, mat);
+  leftShin.name = 'shinL';
+  rightShin.name = 'shinR';
+  leftShin.position.copy(model.kneeL);
+  rightShin.position.copy(model.kneeR);
+  leftLeg.add(leftShin);
+  rightLeg.add(rightShin);
   const eyeMat = new THREE.MeshBasicMaterial({ vertexColors: true });
   eyeMat.color.setScalar(4);
   const rifleMat = new THREE.MeshStandardMaterial({ vertexColors: true, metalness: 0.8, roughness: 0.4 });
@@ -261,6 +302,8 @@ export function createEndoPreview(
 
 /** Flags the baked geometry (and source material) as shared so disposing a preview never frees it. */
 export function markEndoShared(model: EndoModel): void {
-  for (const g of [model.chassis, model.leftLeg, model.rightLeg, model.eyes, model.rifle]) g.userData.shared = true;
+  for (const g of [model.chassis, model.leftLeg, model.rightLeg, model.leftShin, model.rightShin, model.eyes, model.rifle]) {
+    g.userData.shared = true;
+  }
   model.material.userData.shared = true;
 }

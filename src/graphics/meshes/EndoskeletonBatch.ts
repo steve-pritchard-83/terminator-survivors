@@ -10,11 +10,17 @@ import { ENDO_VISUAL_SCALE, PALETTE } from '../../data/artDirection';
 import type { EndoModel } from '../EndoModel';
 import { ModelLibrary } from '../ModelLibrary';
 
-/** One walking body drawn with instancing: chassis, two swinging legs, glowing eyes, held weapon. */
+/** One walking body drawn with instancing: chassis, two jointed legs, glowing eyes, held weapon. */
 interface WalkerSet {
   chassis: THREE.InstancedMesh;
+  /** Thighs (the whole leg for the procedural stand-in) */
   leftLeg: THREE.InstancedMesh;
   rightLeg: THREE.InstancedMesh;
+  /** Shins hanging from the knees; null when the legs are one piece */
+  leftShin: THREE.InstancedMesh | null;
+  rightShin: THREE.InstancedMesh | null;
+  kneeL: THREE.Vector3;
+  kneeR: THREE.Vector3;
   optics: THREE.InstancedMesh;
   weapon: THREE.InstancedMesh | null;
   hipHeight: number;
@@ -38,6 +44,12 @@ export class EndoskeletonBatch {
   private readonly legQuat = new THREE.Quaternion();
   private readonly swingQuat = new THREE.Quaternion();
   private readonly hipOffset = new THREE.Vector3();
+  private readonly hipPos = new THREE.Vector3();
+  private readonly kneePos = new THREE.Vector3();
+  private readonly shinQuat = new THREE.Quaternion();
+  // Walk cycle per enemy, advanced by the ground it actually covers so feet don't skate
+  private readonly gaits = new Map<number, { x: number; z: number; phase: number; amp: number; stamp: number; moved: number }>();
+  private gaitStamp = 0;
   private readonly chassisMat: THREE.MeshStandardMaterial;
   // Rifle carried by the sculpted model (the procedural chassis has its rifle built in)
   private rifleInstancedMesh: THREE.InstancedMesh | null = null;
@@ -46,6 +58,7 @@ export class EndoskeletonBatch {
   private t600Set: WalkerSet | null = null;
   private readonly zeroMatrix = new THREE.Matrix4().makeScale(0, 0, 0);
   private lastTime = 0;
+  private lastGaitTime = 0;
   private readonly deadColor = new THREE.Color(0x3a3d42);
   private readonly xAxis = new THREE.Vector3(1, 0, 0);
   private readonly corpses: Array<{
@@ -288,11 +301,17 @@ export class EndoskeletonBatch {
       chassis: this.chassisInstancedMesh,
       leftLeg: this.leftLegInstancedMesh,
       rightLeg: this.rightLegInstancedMesh,
+      leftShin: null,
+      rightShin: null,
+      kneeL: new THREE.Vector3(),
+      kneeR: new THREE.Vector3(),
       optics: this.opticsInstancedMesh,
       weapon: null,
       hipHeight: 0.68, // procedural stand-in; the sculpted model sets its own
       index: 0
     };
+    // Pitch and roll about the body's own axes after it turns to face its target
+    this.dummy.rotation.order = 'YXZ';
 
     this.group.add(
       this.chassisInstancedMesh,
@@ -357,7 +376,6 @@ export class EndoskeletonBatch {
         if (crabIndex >= this.maxCount) continue;
         // Hops, flips onto its back and its optics die
         const hop = Math.sin(p * Math.PI) * 0.3;
-        this.dummy.rotation.order = 'XYZ';
         this.dummy.position.set(corpse.x, hop, corpse.z);
         this.dummy.rotation.set(0, corpse.facing, Math.PI * ease);
         this.dummy.scale.setScalar(corpse.scale);
@@ -374,7 +392,6 @@ export class EndoskeletonBatch {
       if (set.index >= this.maxCount) continue;
       // Falls backward about its feet, knees buckling; eyes flicker then go dark
       const phase = corpse.age * 7.5;
-      this.dummy.rotation.order = 'YXZ';
       this.dummy.position.set(corpse.x, -0.06 * ease, corpse.z);
       this.dummy.rotation.set(-1.45 * ease, corpse.facing, 0.15 * Math.sin(phase) * (1 - ease));
       this.dummy.scale.setScalar(corpse.scale);
@@ -384,34 +401,15 @@ export class EndoskeletonBatch {
       const eyesOn = p < 0.3 && Math.sin(corpse.age * 70) > 0;
       set.optics.setMatrixAt(set.index, eyesOn ? this.dummy.matrix : this.zeroMatrix);
 
-      // Legs hang off the hips, which move as the body tips over
-      this.hipOffset.set(0, set.hipHeight * corpse.scale, 0).applyQuaternion(this.dummy.quaternion);
-      this.legDummy.position.set(
-        corpse.x + this.hipOffset.x,
-        this.dummy.position.y + this.hipOffset.y,
-        corpse.z + this.hipOffset.z
-      );
-      this.legDummy.scale.setScalar(corpse.scale);
-      this.swingQuat.setFromAxisAngle(this.xAxis, 0.7 * ease);
-      this.legQuat.copy(this.dummy.quaternion).multiply(this.swingQuat);
-      this.legDummy.quaternion.copy(this.legQuat);
-      this.legDummy.updateMatrix();
-      set.leftLeg.setMatrixAt(set.index, this.legDummy.matrix);
-      this.swingQuat.setFromAxisAngle(this.xAxis, -0.35 * ease);
-      this.legQuat.copy(this.dummy.quaternion).multiply(this.swingQuat);
-      this.legDummy.quaternion.copy(this.legQuat);
-      this.legDummy.updateMatrix();
-      set.rightLeg.setMatrixAt(set.index, this.legDummy.matrix);
+      // Legs hang off the hips as the body tips over, one kicking up, both knees buckling
+      this.writeLegs(set, corpse.scale, -0.7 * ease, 0.9 * ease, 0.35 * ease, 0.5 * ease);
 
       // Fades from chrome to scorched grey
       this.dummyColor.setHex(this.tintFor(corpse.archetype)).lerp(this.deadColor, p);
-      set.chassis.setColorAt(set.index, this.dummyColor);
-      set.leftLeg.setColorAt(set.index, this.dummyColor);
-      set.rightLeg.setColorAt(set.index, this.dummyColor);
+      this.colorSet(set);
       set.index++;
     }
 
-    this.dummy.rotation.order = 'XYZ';
     return crabIndex;
   }
 
@@ -427,7 +425,60 @@ export class EndoskeletonBatch {
     return 0xffffff;
   }
 
+  /** Tracks how far an enemy moved since last frame and how strongly it is walking (0 standing, 1 striding). */
+  private gaitFor(enemy: ActiveEnemy, dt: number) {
+    let g = this.gaits.get(enemy.id);
+    if (!g) {
+      g = { x: enemy.x, z: enemy.z, phase: enemy.id * 1.3, amp: 1, stamp: 0, moved: 0 };
+      this.gaits.set(enemy.id, g);
+    }
+    // Ignore teleports (spawns, wraps) so the legs don't spin
+    const moved = Math.min(Math.hypot(enemy.x - g.x, enemy.z - g.z), 0.5);
+    g.x = enemy.x;
+    g.z = enemy.z;
+    g.moved = moved;
+    g.stamp = this.gaitStamp;
+    const target = dt > 0 ? Math.min(1, moved / dt / 0.8) : g.amp;
+    g.amp += (target - g.amp) * Math.min(1, dt * 6);
+    return g;
+  }
+
+  /** Thighs from the hips of the body in this.dummy, shins from the knees. Angles are radians; negative thigh = forward. */
+  private writeLegs(set: WalkerSet, scale: number, thighL: number, kneeL: number, thighR: number, kneeR: number): void {
+    this.hipOffset.set(0, set.hipHeight * scale, 0).applyQuaternion(this.dummy.quaternion);
+    this.hipPos.copy(this.dummy.position).add(this.hipOffset);
+    this.legDummy.scale.setScalar(scale);
+    const leg = (thighMesh: THREE.InstancedMesh, shinMesh: THREE.InstancedMesh | null, knee: THREE.Vector3, thigh: number, bend: number) => {
+      this.swingQuat.setFromAxisAngle(this.xAxis, thigh);
+      this.legQuat.copy(this.dummy.quaternion).multiply(this.swingQuat);
+      this.legDummy.position.copy(this.hipPos);
+      this.legDummy.quaternion.copy(this.legQuat);
+      this.legDummy.updateMatrix();
+      thighMesh.setMatrixAt(set.index, this.legDummy.matrix);
+      if (!shinMesh) return;
+      this.kneePos.copy(knee).multiplyScalar(scale).applyQuaternion(this.legQuat).add(this.hipPos);
+      this.swingQuat.setFromAxisAngle(this.xAxis, bend);
+      this.shinQuat.copy(this.legQuat).multiply(this.swingQuat);
+      this.legDummy.position.copy(this.kneePos);
+      this.legDummy.quaternion.copy(this.shinQuat);
+      this.legDummy.updateMatrix();
+      shinMesh.setMatrixAt(set.index, this.legDummy.matrix);
+    };
+    leg(set.leftLeg, set.leftShin, set.kneeL, thighL, kneeL);
+    leg(set.rightLeg, set.rightShin, set.kneeR, thighR, kneeR);
+  }
+
+  /** Writes this.dummyColor to every tinted part of the current instance. */
+  private colorSet(set: WalkerSet): void {
+    for (const mesh of [set.chassis, set.leftLeg, set.rightLeg, set.leftShin, set.rightShin]) {
+      mesh?.setColorAt(set.index, this.dummyColor);
+    }
+  }
+
   public updateBatch(enemies: ActiveEnemy[], timeSeconds: number, playerX = 0, playerZ = 0): void {
+    const dt = Math.max(0, Math.min(0.1, timeSeconds - this.lastGaitTime));
+    this.lastGaitTime = timeSeconds;
+    this.gaitStamp++;
     let crabIndex = 0;
     this.mainSet.index = 0;
     if (this.t600Set) this.t600Set.index = 0;
@@ -438,13 +489,15 @@ export class EndoskeletonBatch {
 
       if (enemy.archetype === 'skynet_crab_drone') {
         if (crabIndex >= this.maxCount) continue;
-        const scuttleBob = Math.abs(Math.sin(timeSeconds * 18 + enemy.id)) * 0.045;
-        const scuttleTilt = Math.sin(timeSeconds * 18 + enemy.id) * 0.09;
+        // Six legs keep the body level: a fast, shallow skitter rather than a rock
+        const scuttle = timeSeconds * 26 + enemy.id;
+        const scuttleBob = Math.abs(Math.sin(scuttle)) * 0.018;
+        const scuttleTilt = Math.sin(scuttle * 0.5) * 0.025;
 
         const eliteScale = enemy.isElite ? (enemy.scale ?? 1.4) : 1.0;
         const crabY = scuttleBob;
         let crabTilt = scuttleTilt;
-        let crabPitch = 0;
+        let crabPitch = 0.04 + Math.sin(scuttle) * 0.015;
         let crabX = enemy.x;
         let crabZ = enemy.z;
 
@@ -493,22 +546,34 @@ export class EndoskeletonBatch {
       else if (enemy.archetype === 't700_scout') scale *= 0.94;
       if (enemy.isElite) scale *= (enemy.scale ?? 1.4);
 
-      // Animatronic mechanical gait & stride
-      const phase = timeSeconds * 7.5 + enemy.id * 1.3;
-      let bobY = Math.abs(Math.sin(phase)) * 0.06;
-      let rollZ = Math.sin(phase) * 0.055;
-      let legStride = Math.sin(phase) * 0.52;
-      let pitchX = 0;
+      // Heavy, deliberate stride: one step per ~0.8 m of ground covered, settling still when stopped
+      const g = this.gaitFor(enemy, dt);
+      const strideLength = 1.6 * scale;
+      g.phase += (g.moved / strideLength) * Math.PI * 2;
+      const p = g.phase;
+      const amp = g.amp;
+      let thighL = -Math.sin(p) * 0.5 * amp;
+      let thighR = -thighL;
+      // Knee folds while a leg swings through, nearly straight while it carries the weight
+      let kneeL = (0.1 + 0.7 * Math.pow(Math.max(0, Math.cos(p)), 1.4)) * amp;
+      let kneeR = (0.1 + 0.7 * Math.pow(Math.max(0, -Math.cos(p)), 1.4)) * amp;
+      // Hips drop as the legs open so the planted foot stays on the ground; the weight shifts over it
+      let bobY = -(1 - Math.cos(thighL)) * set.hipHeight * scale - 0.012 * amp * scale;
+      let rollZ = Math.sin(p) * 0.02 * amp;
+      let pitchX = 0.07 * amp; // leans into the walk
       let posX = enemy.x;
       let posZ = enemy.z;
 
-      // Stagger backward on hit
+      // Stagger backward on hit, knees giving a little
       if (enemy.hitFlashTimer > 0) {
         const stagger = Math.min(1.0, enemy.hitFlashTimer / 0.15);
-        pitchX = -0.22 * stagger;
-        rollZ += ((enemy.id % 2 === 0 ? 1 : -1) * 0.12) * stagger;
+        pitchX -= 0.25 * stagger;
+        rollZ += ((enemy.id % 2 === 0 ? 1 : -1) * 0.08) * stagger;
         bobY -= 0.04 * stagger;
-        legStride *= (1 - stagger * 0.5);
+        thighL = thighL * (1 - stagger * 0.5) - 0.15 * stagger;
+        thighR = thighR * (1 - stagger * 0.5) - 0.15 * stagger;
+        kneeL += 0.3 * stagger;
+        kneeR += 0.3 * stagger;
         posX -= Math.sin(facingAngle) * 0.12 * stagger;
         posZ -= Math.cos(facingAngle) * 0.12 * stagger;
       }
@@ -521,18 +586,10 @@ export class EndoskeletonBatch {
       set.chassis.setMatrixAt(set.index, this.dummy.matrix);
       set.weapon?.setMatrixAt(set.index, this.dummy.matrix);
       set.optics.setMatrixAt(set.index, this.dummy.matrix);
-
-      // Left Leg articulated matrix
-      this.legDummy.position.set(posX, bobY + set.hipHeight * scale, posZ);
-      this.legDummy.rotation.set(legStride + pitchX * 0.4, facingAngle, rollZ);
-      this.legDummy.scale.set(scale, scale, scale);
-      this.legDummy.updateMatrix();
-      set.leftLeg.setMatrixAt(set.index, this.legDummy.matrix);
-
-      // Right Leg articulated matrix
-      this.legDummy.rotation.set(-legStride + pitchX * 0.4, facingAngle, rollZ);
-      this.legDummy.updateMatrix();
-      set.rightLeg.setMatrixAt(set.index, this.legDummy.matrix);
+      // Legs stay upright under the lean so the feet land flat
+      this.dummy.rotation.set(pitchX * 0.3, facingAngle, rollZ);
+      this.dummy.updateMatrix();
+      this.writeLegs(set, scale, thighL, kneeL, thighR, kneeR);
 
       // Color tint & hit flash
       if (enemy.hitFlashTimer > 0) {
@@ -542,12 +599,13 @@ export class EndoskeletonBatch {
       } else {
         this.dummyColor.setHex(this.tintFor(enemy.archetype));
       }
-      set.chassis.setColorAt(set.index, this.dummyColor);
-      set.leftLeg.setColorAt(set.index, this.dummyColor);
-      set.rightLeg.setColorAt(set.index, this.dummyColor);
+      this.colorSet(set);
 
       set.index++;
     }
+
+    // Forget the walk cycles of enemies that are gone
+    for (const [id, g] of this.gaits) if (g.stamp !== this.gaitStamp) this.gaits.delete(id);
 
     crabIndex = this.renderCorpses(timeSeconds, crabIndex);
     this.finishSet(this.mainSet);
@@ -563,7 +621,7 @@ export class EndoskeletonBatch {
   }
 
   private finishSet(set: WalkerSet): void {
-    for (const mesh of [set.chassis, set.leftLeg, set.rightLeg, set.optics, set.weapon]) {
+    for (const mesh of [set.chassis, set.leftLeg, set.rightLeg, set.leftShin, set.rightShin, set.optics, set.weapon]) {
       if (!mesh) continue;
       mesh.count = set.index;
       mesh.instanceMatrix.needsUpdate = true;
@@ -590,6 +648,10 @@ export class EndoskeletonBatch {
     swap(this.rightLegInstancedMesh, model.rightLeg, model.material);
     swap(this.opticsInstancedMesh, model.eyes);
     this.mainSet.hipHeight = model.hipHeight;
+    this.mainSet.leftShin = this.addInstanced(model.leftShin, model.material);
+    this.mainSet.rightShin = this.addInstanced(model.rightShin, model.material);
+    this.mainSet.kneeL.copy(model.kneeL);
+    this.mainSet.kneeR.copy(model.kneeR);
     // The sculpted rifle sits with its pistol grip in the right hand
     let rifleGeo = model.rifle;
     if (rifle) {
@@ -620,23 +682,29 @@ export class EndoskeletonBatch {
         material: rifle.material
       };
     }
-    const make = (geometry: THREE.BufferGeometry, material: THREE.Material) => {
-      const mesh = new THREE.InstancedMesh(geometry, material, this.maxCount);
-      mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-      mesh.frustumCulled = false;
-      mesh.count = 0;
-      this.group.add(mesh);
-      return mesh;
-    };
+    const make = (geometry: THREE.BufferGeometry, material: THREE.Material) => this.addInstanced(geometry, material);
     this.t600Set = {
       chassis: make(model.chassis, model.material),
       leftLeg: make(model.leftLeg, model.material),
       rightLeg: make(model.rightLeg, model.material),
+      leftShin: make(model.leftShin, model.material),
+      rightShin: make(model.rightShin, model.material),
+      kneeL: model.kneeL.clone(),
+      kneeR: model.kneeR.clone(),
       optics: make(model.eyes, this.opticsInstancedMesh.material as THREE.Material),
       weapon: weapon ? make(weapon.geometry, weapon.material) : null,
       hipHeight: model.hipHeight,
       index: 0
     };
+  }
+
+  private addInstanced(geometry: THREE.BufferGeometry, material: THREE.Material): THREE.InstancedMesh {
+    const mesh = new THREE.InstancedMesh(geometry, material, this.maxCount);
+    mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    mesh.frustumCulled = false;
+    mesh.count = 0;
+    this.group.add(mesh);
+    return mesh;
   }
 
   /** Swaps the procedural crab drone for the sculpted spider drone, with two eye beads on its front. */

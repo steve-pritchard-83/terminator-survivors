@@ -64,3 +64,15 @@ export const GRADE = {
   highlightTint: [1.06, 0.98, 0.9] as const,
   saturation: 0.86
 };
+
+/** Soft contact shadow under every enemy, so machines read against the ground in a crowd. */
+export const ENEMY_SHADOW = {
+  opacity: 0.85,
+  /** Shadow radius as a multiple of the enemy's collision radius */
+  radiusScale: 1.5,
+  minRadius: 0.45,
+  /** Fliers cast a wider, softer patch */
+  flyingScale: 1.3,
+  segments: 10,
+  maxCount: 650
+};

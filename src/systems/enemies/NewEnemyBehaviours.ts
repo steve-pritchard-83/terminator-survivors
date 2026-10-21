@@ -393,6 +393,7 @@ export class T600MinigunnerBehaviour implements EnemyBehaviour {
     const distToPlayer = Math.hypot(px - enemy.x, pz - enemy.z);
     const facing = Math.atan2(px - enemy.x, pz - enemy.z);
 
+    mesh.walk(Math.hypot(enemy.x - mesh.group.position.x, enemy.z - mesh.group.position.z), dt);
     mesh.group.position.set(enemy.x, 0, enemy.z);
     mesh.group.rotation.y = facing;
 

@@ -250,6 +250,10 @@ export class PlasmaTurretMesh {
 
 export class T600MinigunnerMesh {
   public readonly group = new THREE.Group();
+  private body: THREE.Object3D | null = null;
+  private joints: THREE.Object3D[] = [];
+  private phase = 0;
+  private amp = 0;
 
   constructor() {
     const t600 = ModelLibrary.getT600();
@@ -259,6 +263,9 @@ export class T600MinigunnerMesh {
       const body = createEndoPreview(t600, 0xe0d4c4, weapon);
       body.scale.setScalar(1.15);
       this.group.add(body);
+      this.body = body;
+      const joints = ['thighL', 'shinL', 'thighR', 'shinR'].map((n) => body.getObjectByName(n));
+      if (joints.every(Boolean)) this.joints = joints as THREE.Object3D[];
       return;
     }
     const rustedIron = 0x4e463e;
@@ -293,6 +300,23 @@ export class T600MinigunnerMesh {
 
     const mesh = new THREE.Mesh(geom, mat);
     this.group.add(mesh);
+  }
+
+  /** Same heavy stride as the instanced walkers, driven by the distance moved this frame. */
+  public walk(moved: number, dt: number): void {
+    if (!this.body || this.joints.length === 0 || dt <= 0) return;
+    const target = Math.min(1, moved / dt / 0.8);
+    this.amp += (target - this.amp) * Math.min(1, dt * 6);
+    this.phase += (Math.min(moved, 0.5) / (1.6 * 1.15)) * Math.PI * 2;
+    const p = this.phase;
+    const [thighL, shinL, thighR, shinR] = this.joints;
+    thighL.rotation.x = -Math.sin(p) * 0.5 * this.amp;
+    thighR.rotation.x = Math.sin(p) * 0.5 * this.amp;
+    shinL.rotation.x = (0.1 + 0.7 * Math.pow(Math.max(0, Math.cos(p)), 1.4)) * this.amp;
+    shinR.rotation.x = (0.1 + 0.7 * Math.pow(Math.max(0, -Math.cos(p)), 1.4)) * this.amp;
+    // Hips drop as the legs open so the planted foot stays down
+    this.body.position.y = -(1 - Math.cos(thighL.rotation.x)) * thighL.position.y * 1.15 - 0.012 * this.amp;
+    this.body.rotation.x = 0.06 * this.amp;
   }
 
   public dispose(): void {

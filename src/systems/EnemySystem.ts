@@ -21,7 +21,8 @@ import {
 import { type EnemyBehaviour, type EnemyContext, createEnemyBehaviourRegistry } from './enemies';
 import type { IEnvironment } from '../graphics/environments';
 import { ENDO_STEP } from '../data/balance';
-import { PALETTE } from '../data/artDirection';
+import { ENEMY_SHADOW, PALETTE } from '../data/artDirection';
+import { ProceduralTextures } from '../graphics/ProceduralTextures';
 import { buildBoltGeometry, createBoltMaterial } from '../graphics/PlasmaBolts';
 
 export interface EnemyProjectile extends PoolableUser {
@@ -51,6 +52,9 @@ export class EnemySystem {
   // Skynet plasma: red streaks with hot cores, distinct from the Resistance's pink-violet
   private readonly enemyPlasmaGeo = buildBoltGeometry(1.5, 0.04, 0.12, PALETTE.plasmaSkynetCore, PALETTE.plasmaSkynet);
   private readonly enemyPlasmaMat = createBoltMaterial(2.6);
+  // One instanced low-poly disc per enemy: a soft dark contact patch on the ground
+  private readonly shadowMesh: THREE.InstancedMesh;
+  private readonly shadowDummy = new THREE.Object3D();
 
   constructor(
     runState: RunState,
@@ -65,6 +69,20 @@ export class EnemySystem {
     this.enemyPlasmaGeo.userData = { shared: true }; this.enemyPlasmaMat.userData = { shared: true };
     this.eliteAuraGeo.userData = { shared: true };
     this.enemyPool = new InstancedPool<EnemyProjectile>(this.enemyPlasmaGeo, this.enemyPlasmaMat, 256, this.group);
+    const shadowGeo = new THREE.CircleGeometry(1, ENEMY_SHADOW.segments).rotateX(-Math.PI / 2);
+    const shadowMat = new THREE.MeshBasicMaterial({
+      color: 0x000000,
+      map: ProceduralTextures.getSoftGlowSprite(),
+      transparent: true,
+      opacity: ENEMY_SHADOW.opacity,
+      depthWrite: false
+    });
+    this.shadowMesh = new THREE.InstancedMesh(shadowGeo, shadowMat, ENEMY_SHADOW.maxCount);
+    this.shadowMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    this.shadowMesh.frustumCulled = false;
+    this.shadowMesh.renderOrder = -1;
+    this.shadowMesh.count = 0;
+    this.group.add(this.shadowMesh);
 
     this.context = {
       runState: this.runState, audio: this.audio, particles: this.particles,
@@ -268,6 +286,22 @@ export class EnemySystem {
     }
 
     this.endoBatch.updateBatch(this.activeEnemies, timeSeconds, px, pz);
+    this.updateShadows();
+  }
+
+  private updateShadows(): void {
+    const count = Math.min(this.activeEnemies.length, ENEMY_SHADOW.maxCount);
+    for (let i = 0; i < count; i++) {
+      const enemy = this.activeEnemies[i];
+      let r = Math.max(ENEMY_SHADOW.minRadius, enemy.radius * ENEMY_SHADOW.radiusScale) * (enemy.scale ?? 1);
+      if (enemy.isFlying) r *= ENEMY_SHADOW.flyingScale;
+      this.shadowDummy.position.set(enemy.x, 0.03, enemy.z);
+      this.shadowDummy.scale.set(r, 1, r);
+      this.shadowDummy.updateMatrix();
+      this.shadowMesh.setMatrixAt(i, this.shadowDummy.matrix);
+    }
+    this.shadowMesh.count = count;
+    this.shadowMesh.instanceMatrix.needsUpdate = true;
   }
 
   public relocateEnemy(enemy: ActiveEnemy, px: number, pz: number): void {
@@ -343,10 +377,12 @@ export class EnemySystem {
     for (const b of Object.values(this.behaviours)) b.clear?.();
     this.endoBatch.clearCorpses();
     this.endoBatch.updateBatch([], 0, 0, 0);
+    this.shadowMesh.count = 0;
+    const keep = (c: THREE.Object3D) => c === this.enemyPool.mesh || c === this.shadowMesh;
     for (let i = this.group.children.length - 1; i >= 0; i--) {
-      if (this.group.children[i] !== this.enemyPool.mesh) this.group.remove(this.group.children[i]);
+      if (!keep(this.group.children[i])) this.group.remove(this.group.children[i]);
     }
-    if (this.group.children.some((c) => c !== this.enemyPool.mesh)) {
+    if (this.group.children.some((c) => !keep(c))) {
       throw new Error('EnemySystem.clear() failed: non-pool children remain');
     }
   }
