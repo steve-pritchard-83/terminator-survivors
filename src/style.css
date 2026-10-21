@@ -206,6 +206,8 @@ select {
   height: 70%;
   z-index: 20;
   touch-action: none;
+  /* The HUD root lets taps through to the game; the joystick zone has to catch them */
+  pointer-events: auto;
 }
 
 .joystick-base {
