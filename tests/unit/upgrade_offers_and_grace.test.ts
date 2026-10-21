@@ -30,11 +30,22 @@ describe('level-up offers', () => {
       globalRNG.setSeed(seed);
       const rs = new RunState();
       rs.initRun('reese_2029', {});
+      for (const id of ['ithaca_37', 'pipe_bomb'] as const) rs.weapons.set(id, { id, level: 1, evolved: false, cooldownTimer: 0 });
       if (rs.generateUpgradeChoices().some((c) => c.subtitle !== 'NEW')) withOwned++;
     }
-    // The starting rifle is the one owned item among about 20 new ones: a uniform draw of three would
-    // include it about 14% of the time
-    expect(withOwned / runs).toBeGreaterThan(0.25);
+    // Three owned weapons among about 21 choices: a uniform draw of three includes one about 39% of the time
+    expect(withOwned / runs).toBeGreaterThan(0.55);
+  });
+
+  it('always offers a new weapon while the arsenal is small', () => {
+    for (let seed = 1; seed <= 50; seed++) {
+      globalRNG.setSeed(seed);
+      const rs = new RunState();
+      rs.initRun('reese_2029', {});
+      rs.passives.set('might_shells', 1);
+      rs.passives.set('blast_radius', 1);
+      expect(rs.generateUpgradeChoices().some((c) => c.kind === 'weapon' && c.subtitle === 'NEW')).toBe(true);
+    }
   });
 });
 

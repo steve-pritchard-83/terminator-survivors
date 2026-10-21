@@ -456,6 +456,14 @@ export class RunState {
         shuffled.push(pool.splice(i, 1)[0]);
       }
     }
+    // A small arsenal always gets a new weapon offered, so a run cannot stall on passives alone
+    if (this.weapons.size < UPGRADE_OFFERS.newWeaponUntil && !shuffled.some((c) => c.kind === 'weapon' && c.subtitle === 'NEW')) {
+      const newWeapons = pool.filter((c) => c.kind === 'weapon' && c.subtitle === 'NEW');
+      if (newWeapons.length > 0 && shuffled.length < count) {
+        const pick = newWeapons[globalRNG.int(0, newWeapons.length - 1)];
+        shuffled.push(pool.splice(pool.indexOf(pick), 1)[0]);
+      }
+    }
     const weightOf = (c: UpgradeChoice) => (c.subtitle === 'NEW' ? 1 : UPGRADE_OFFERS.ownedWeight);
     while (pool.length > 0 && shuffled.length < count) {
       const total = pool.reduce((sum, c) => sum + weightOf(c), 0);
@@ -466,6 +474,12 @@ export class RunState {
         idx++;
       }
       shuffled.push(pool.splice(idx, 1)[0]);
+    }
+
+    // Guaranteed picks go in first; shuffle so they are not always the top card
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = globalRNG.int(0, i);
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
     }
 
     // If pool exhausted (all items maxed), offer Medkit or Scrap

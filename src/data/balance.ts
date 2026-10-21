@@ -88,7 +88,8 @@ export const T1000_TUNING = {
 
 // Level-up offers: owned items are this many times likelier than new ones, and a weapon at this level
 // always gets its missing evolution passive offered.
-export const UPGRADE_OFFERS = { ownedWeight: 3, guaranteePassiveAtLevel: 6 };
+// While the arsenal is smaller than newWeaponUntil, every offer includes a new weapon.
+export const UPGRADE_OFFERS = { ownedWeight: 3, guaranteePassiveAtLevel: 6, newWeaponUntil: 3 };
 
 // From this run time on, elites sometimes drop a data vault, so evolutions are not tied to boss kills.
 export const ELITE_VAULT = { fromSeconds: 300, chance: 0.1 };
