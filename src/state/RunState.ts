@@ -10,12 +10,12 @@ import type {
   UpgradeChoice,
   WeaponId
 } from '../core/types';
-import { ALL_WEAPONS, BASE_WEAPONS, PASSIVES, canEvolveWeapon } from '../data/weapons';
+import { ALL_WEAPONS, BASE_WEAPONS, EVOLVED_WEAPONS, PASSIVES, canEvolveWeapon } from '../data/weapons';
 import { LOADOUTS, META_UPGRADES } from '../data/upgrades';
 import { globalRNG } from '../core/RNG';
 import { StateMachine, GAME_MODE_TRANSITIONS } from '../core/StateMachine';
 import { globalEvents } from '../core/EventBus';
-import { MAX_REVIVAL_CHANCE, REVIVE_INVULNERABILITY_SECONDS } from '../data/balance';
+import { MAX_REVIVAL_CHANCE, REVIVE_INVULNERABILITY_SECONDS, UPGRADE_OFFERS } from '../data/balance';
 
 export function getXpForNextLevel(level: number): number {
   if (level <= 2) {
@@ -424,16 +424,44 @@ export class RunState {
       }
     }
 
-    // Filter out banished items
-    const filteredChoices = choices;
+    // Passives that would complete an evolution for a weapon the player is levelling
+    const evolutionPassives = new Map<string, BaseWeaponId>();
+    for (const [wId, slot] of this.weapons.entries()) {
+      const def = BASE_WEAPONS[wId as BaseWeaponId];
+      if (!def || slot.evolved || !def.pairedPassive || this.passives.has(def.pairedPassive)) continue;
+      evolutionPassives.set(def.pairedPassive, wId as BaseWeaponId);
+    }
+    for (const c of choices) {
+      const forWeapon = c.kind === 'passive' ? evolutionPassives.get(c.id) : undefined;
+      if (forWeapon) {
+        c.synergyHint = `COMPLETES EVOLUTION: ${EVOLVED_WEAPONS[BASE_WEAPONS[forWeapon].evolvesInto!]?.name ?? ''}`;
+      } else if (c.kind === 'weapon' && c.nextLevel === 8) {
+        const def = BASE_WEAPONS[c.id as BaseWeaponId];
+        if (def?.pairedPassive && this.passives.has(def.pairedPassive)) c.synergyHint = 'EVOLUTION READY AT THE NEXT DATA VAULT';
+      }
+    }
 
-    // Shuffle and pick 3 (or 4 if luck high)
+    // Pick 3 (or 4 with high luck). A weapon close to evolving always gets its missing passive offered;
+    // otherwise owned items are favoured so builds can focus.
     const count = this.computedStats.luckMultiplier >= 1.3 ? 4 : 3;
     const shuffled: UpgradeChoice[] = [];
-    const pool = [...filteredChoices];
-
+    const pool = [...choices];
+    for (let i = pool.length - 1; i >= 0 && shuffled.length < count; i--) {
+      const c = pool[i];
+      const forWeapon = c.kind === 'passive' ? evolutionPassives.get(c.id) : undefined;
+      if (forWeapon && (this.weapons.get(forWeapon)?.level ?? 0) >= UPGRADE_OFFERS.guaranteePassiveAtLevel) {
+        shuffled.push(pool.splice(i, 1)[0]);
+      }
+    }
+    const weightOf = (c: UpgradeChoice) => (c.subtitle === 'NEW' ? 1 : UPGRADE_OFFERS.ownedWeight);
     while (pool.length > 0 && shuffled.length < count) {
-      const idx = globalRNG.int(0, pool.length - 1);
+      const total = pool.reduce((sum, c) => sum + weightOf(c), 0);
+      let roll = globalRNG.range(0, total);
+      let idx = 0;
+      while (idx < pool.length - 1 && roll >= weightOf(pool[idx])) {
+        roll -= weightOf(pool[idx]);
+        idx++;
+      }
       shuffled.push(pool.splice(idx, 1)[0]);
     }
 

@@ -85,3 +85,16 @@ export const T1000_TUNING = {
   puddleDurationSeconds: 1.5,
   regenFractionPerSecond: 0.01
 };
+
+// Level-up offers: owned items are this many times likelier than new ones, and a weapon at this level
+// always gets its missing evolution passive offered.
+export const UPGRADE_OFFERS = { ownedWeight: 3, guaranteePassiveAtLevel: 6 };
+
+// From this run time on, elites sometimes drop a data vault, so evolutions are not tied to boss kills.
+export const ELITE_VAULT = { fromSeconds: 300, chance: 0.1 };
+
+// The opening is gentler: player damage is scaled down for the first stretch of a run.
+export const OPENING_GRACE = { seconds: 90, damageScale: 0.55 };
+
+// Alloy scrap sources in a run. A win (about 2-3k) should fund a few Requisition upgrades, not the whole list.
+export const SCRAP_DROP = { killChance: 0.1, killAmount: 2, crate: 15, vault: 120, boss: 40 };

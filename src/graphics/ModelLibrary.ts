@@ -63,10 +63,13 @@ const SPECS: Record<string, ModelSpec> = {
   hk_aerial: { url: './models/hk_aerial.glb', fit: { axis: 'z', size: 6.7 }, grounded: false, metal: MACHINE_METAL },
   // The wreck keeps its own rust textures
   burnt_car: { url: './models/burnt_car.glb', fit: { axis: 'z', size: 4.4 }, grounded: true },
+  // Faces -x in the source (three legs down each side along z; the long front pair reach forward), so it turns to walk head-first;
+  // the leg span then lies along x
   crab_drone: {
     url: './models/crab_drone.glb',
-    fit: { axis: 'z', size: 1.3 },
+    fit: { axis: 'x', size: 1.3 },
     grounded: true,
+    rotateY: Math.PI / 2,
     metal: { metalness: 0.9, roughness: 0.35 }
   },
   // Faces -x in the source

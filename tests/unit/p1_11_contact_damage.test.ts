@@ -9,6 +9,8 @@ import { EnemySystem } from '../../src/systems/EnemySystem';
 function setupSystem() {
   const runState = new RunState();
   runState.initRun('reese_2029', {});
+  // Past the opening grace period, so hits land at full damage
+  runState.timeSeconds = 120;
   const grid = new SpatialHashGrid(4.0);
   const audio = new AudioEngine();
   const particles = new ParticleSystem();

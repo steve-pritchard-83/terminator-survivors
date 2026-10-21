@@ -5,6 +5,7 @@ import {
   EMPLACEMENT_SPAWN_MAX_DIST,
   EMPLACEMENT_SPAWN_MIN_DIST,
   LEASH_EXEMPT_ARCHETYPES,
+  PACK_SPAWN,
   RUN_DURATION_MINUTES,
   WAVE_TIMELINE
 } from '../data/waves';
@@ -66,7 +67,7 @@ export class WaveDirector {
     this.spawnTimer += dt;
     if (this.spawnTimer >= spawnInterval && this.enemySystem.activeEnemies.length < enemyCap) {
       this.spawnTimer = 0;
-      this.spawnPerimeterEnemy(entry.pool, hpMultiplier, damageMultiplier, eliteChance);
+      this.spawnPerimeterEnemy(entry.pool, hpMultiplier, damageMultiplier, eliteChance, enemyCap - this.enemySystem.activeEnemies.length);
     }
   }
 
@@ -90,7 +91,8 @@ export class WaveDirector {
     pool: Array<{ archetype: EnemyArchetypeId; weight: number }>,
     hpMult: number,
     dmgMult: number,
-    eliteChance = 0
+    eliteChance = 0,
+    room = 1
   ): void {
     if (pool.length === 0) return;
 
@@ -124,9 +126,17 @@ export class WaveDirector {
       sz = pz + Math.cos(angle) * dist;
     }
 
-    const isElite = eliteChance > 0 && globalRNG.chance(eliteChance);
-    const affix = isElite ? (globalRNG.pick(Object.keys(ELITE_AFFIXES) as EliteAffix[])) : undefined;
-
-    this.enemySystem.spawnEnemy(chosenArchetype, sx, sz, hpMult, dmgMult, affix);
+    // Fodder comes as a pack (one of them may be an elite); heavies and emplacements come alone
+    const minute = this.runState.timeSeconds / 60;
+    const packSize = PACK_SPAWN.archetypes.has(chosenArchetype)
+      ? Math.min(PACK_SPAWN.max, 1 + Math.floor(minute * PACK_SPAWN.perMinute), Math.max(1, room))
+      : 1;
+    for (let i = 0; i < packSize; i++) {
+      const isElite = eliteChance > 0 && globalRNG.chance(eliteChance / packSize);
+      const affix = isElite ? (globalRNG.pick(Object.keys(ELITE_AFFIXES) as EliteAffix[])) : undefined;
+      const ox = i === 0 ? 0 : globalRNG.range(-PACK_SPAWN.spread, PACK_SPAWN.spread);
+      const oz = i === 0 ? 0 : globalRNG.range(-PACK_SPAWN.spread, PACK_SPAWN.spread);
+      this.enemySystem.spawnEnemy(chosenArchetype, sx + ox, sz + oz, hpMult, dmgMult, affix);
+    }
   }
 }

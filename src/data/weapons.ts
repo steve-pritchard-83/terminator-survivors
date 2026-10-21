@@ -53,25 +53,53 @@ export function formatWeaponStatDiff(
   return diffs.join(' · ');
 }
 
+/**
+ * A named perk a weapon gains at a level (and keeps): multipliers for damage, cooldown, area, speed and
+ * duration, extra projectiles and pierce. Gives each weapon its own character on top of the shared curve.
+ */
+export interface WeaponSignature {
+  name: string;
+  text: string;
+  damage?: number;
+  cooldown?: number;
+  area?: number;
+  speed?: number;
+  duration?: number;
+  amount?: number;
+  pierce?: number;
+}
+
 export function buildWeaponLevels(
   base: Omit<WeaponLevelStats, 'level' | 'description'>,
   descs: string[],
-  amountNoun = 'PROJECTILE'
+  amountNoun = 'PROJECTILE',
+  signatures: Partial<Record<4 | 8, WeaponSignature>> = {}
 ): WeaponLevelStats[] {
   const levels: WeaponLevelStats[] = [];
+  const perks = { damage: 1, cooldown: 1, area: 1, speed: 1, duration: 1, amount: 0, pierce: 0 };
 
   for (let idx = 0; idx < 8; idx++) {
     const lv = idx + 1;
     const mult = 1 + idx * 0.22;
+    const sig = signatures[lv as 4 | 8];
+    if (sig) {
+      perks.damage *= sig.damage ?? 1;
+      perks.cooldown *= sig.cooldown ?? 1;
+      perks.area *= sig.area ?? 1;
+      perks.speed *= sig.speed ?? 1;
+      perks.duration *= sig.duration ?? 1;
+      perks.amount += sig.amount ?? 0;
+      perks.pierce += sig.pierce ?? 0;
+    }
     const stats: Omit<WeaponLevelStats, 'description'> = {
       level: lv,
-      damage: Math.round(base.damage * mult),
-      cooldown: Number((base.cooldown * Math.pow(0.94, idx)).toFixed(2)),
-      area: Number((base.area * (1 + idx * 0.08)).toFixed(2)),
-      speed: Number((base.speed * (1 + idx * 0.06)).toFixed(2)),
-      amount: base.amount + (lv >= 3 ? 1 : 0) + (lv >= 6 ? 1 : 0) + (lv === 8 ? 1 : 0),
-      duration: Number((base.duration * (1 + idx * 0.08)).toFixed(2)),
-      pierce: base.pierce + Math.floor(idx / 2)
+      damage: Math.round(base.damage * mult * perks.damage),
+      cooldown: Number((base.cooldown * Math.pow(0.94, idx) * perks.cooldown).toFixed(2)),
+      area: Number((base.area * (1 + idx * 0.08) * perks.area).toFixed(2)),
+      speed: Number((base.speed * (1 + idx * 0.06) * perks.speed).toFixed(2)),
+      amount: base.amount + (lv >= 3 ? 1 : 0) + (lv >= 6 ? 1 : 0) + (lv === 8 ? 1 : 0) + perks.amount,
+      duration: Number((base.duration * (1 + idx * 0.08) * perks.duration).toFixed(2)),
+      pierce: base.pierce + Math.floor(idx / 2) + perks.pierce
     };
 
     let description: string;
@@ -79,6 +107,7 @@ export function buildWeaponLevels(
       description = descs[0] ?? `Level 1 Tech-Com issue.`;
     } else {
       description = formatWeaponStatDiff(stats, levels[idx - 1], amountNoun);
+      if (sig) description = `★ ${sig.name}: ${sig.text} · ${description}`;
     }
 
     levels.push({
@@ -89,6 +118,54 @@ export function buildWeaponLevels(
 
   return levels;
 }
+
+/** Signature perks at levels 4 and 8 (see buildWeaponLevels). */
+const SIGNATURES: Record<BaseWeaponId, Partial<Record<4 | 8, WeaponSignature>>> = {
+  ithaca_37: {
+    4: { name: 'Slug Load', text: 'Pellets punch through the front rank', pierce: 2 },
+    8: { name: 'Dragon\'s Breath', text: 'A wider, denser cone', amount: 3 }
+  },
+  pipe_bomb: {
+    4: { name: 'Shrapnel Casing', text: 'Bigger blasts', area: 1.25 },
+    8: { name: 'Cluster Charge', text: 'Two more bombs per throw', amount: 2 }
+  },
+  m25_plasma: {
+    4: { name: 'Overcharged Cell', text: 'Hotter bolts', damage: 1.3 },
+    8: { name: 'Phase Lance', text: 'Faster bolts that pass through lines', pierce: 4, speed: 1.3 }
+  },
+  seeker_drone: {
+    4: { name: 'Wide Orbit', text: 'Drones sweep a larger ring', area: 1.3 },
+    8: { name: 'Swarm Protocol', text: 'Two more drones', amount: 2 }
+  },
+  emp_emitter: {
+    4: { name: 'Capacitor Dump', text: 'Wider pulses', area: 1.3 },
+    8: { name: 'Rapid Discharge', text: 'Pulses come far faster', cooldown: 0.7 }
+  },
+  laser_designator: {
+    4: { name: 'Hard Lock', text: 'Heavier strikes', damage: 1.35 },
+    8: { name: 'Fire Mission', text: 'Two more strikes per call', amount: 2 }
+  },
+  rpg_launcher: {
+    4: { name: 'HEAT Round', text: 'Harder-hitting warheads', damage: 1.3 },
+    8: { name: 'Thermobaric', text: 'Much larger blasts', area: 1.4 }
+  },
+  molotov: {
+    4: { name: 'Napalm Mix', text: 'Fires burn longer', duration: 1.5 },
+    8: { name: 'Wildfire', text: 'More flasks, wider pools', amount: 2, area: 1.2 }
+  },
+  resistance_k9: {
+    4: { name: 'Trained Handler', text: 'Faster bites', cooldown: 0.8 },
+    8: { name: 'Alpha', text: 'Savage bites', damage: 1.4 }
+  },
+  reprogrammed_t800: {
+    4: { name: 'Combat Chip', text: 'Harder hits', damage: 1.3 },
+    8: { name: 'Mission Override', text: 'Relentless attack rate', cooldown: 0.75 }
+  },
+  coltan_knife: {
+    4: { name: 'Serrated Edge', text: 'Longer reach', area: 1.25 },
+    8: { name: 'Whirlwind', text: 'An extra sweep, cutting deeper', amount: 1, damage: 1.2 }
+  }
+};
 
 export const BASE_WEAPONS: Record<BaseWeaponId, WeaponDefinition> = {
   ithaca_37: {
@@ -105,7 +182,8 @@ export const BASE_WEAPONS: Record<BaseWeaponId, WeaponDefinition> = {
     levels: buildWeaponLevels(
       { damage: 24, cooldown: 1.15, area: 1.0, speed: 22, amount: 5, duration: 0.45, pierce: 2 },
       ['Fires a 5-pellet buckshot spread with heavy knockback.'],
-      'PELLET'
+      'PELLET',
+      SIGNATURES.ithaca_37
     )
   },
   pipe_bomb: {
@@ -122,7 +200,8 @@ export const BASE_WEAPONS: Record<BaseWeaponId, WeaponDefinition> = {
     levels: buildWeaponLevels(
       { damage: 45, cooldown: 2.4, area: 1.35, speed: 12, amount: 1, duration: 1.2, pierce: 99 },
       ['Lobs a homemade fuse pipe bomb detonating in a fiery explosion.'],
-      'BOMB'
+      'BOMB',
+      SIGNATURES.pipe_bomb
     )
   },
   m25_plasma: {
@@ -139,7 +218,8 @@ export const BASE_WEAPONS: Record<BaseWeaponId, WeaponDefinition> = {
     levels: buildWeaponLevels(
       { damage: 30, cooldown: 0.75, area: 1.0, speed: 28, amount: 1, duration: 1.2, pierce: 1 },
       ['Fires high-velocity violet phased plasma bolts at nearest machine.'],
-      'BOLT'
+      'BOLT',
+      SIGNATURES.m25_plasma
     )
   },
   seeker_drone: {
@@ -156,7 +236,8 @@ export const BASE_WEAPONS: Record<BaseWeaponId, WeaponDefinition> = {
     levels: buildWeaponLevels(
       { damage: 18, cooldown: 3.2, area: 1.1, speed: 4.2, amount: 2, duration: 2.6, pierce: 99 },
       ['Two captured micro-drones orbit Kyle, slicing through approaching machines.'],
-      'DRONE'
+      'DRONE',
+      SIGNATURES.seeker_drone
     )
   },
   emp_emitter: {
@@ -173,7 +254,8 @@ export const BASE_WEAPONS: Record<BaseWeaponId, WeaponDefinition> = {
     levels: buildWeaponLevels(
       { damage: 14, cooldown: 1.45, area: 1.25, speed: 1.0, amount: 1, duration: 0.35, pierce: 99 },
       ['Emits an expanding electromagnetic ring that damages and slows machines.'],
-      'PULSE'
+      'PULSE',
+      SIGNATURES.emp_emitter
     )
   },
   laser_designator: {
@@ -190,7 +272,8 @@ export const BASE_WEAPONS: Record<BaseWeaponId, WeaponDefinition> = {
     levels: buildWeaponLevels(
       { damage: 60, cooldown: 2.8, area: 1.1, speed: 40, amount: 1, duration: 0.5, pierce: 99 },
       ['Paints heavy targets with a red laser, calling down Resistance artillery.'],
-      'STRIKE'
+      'STRIKE',
+      SIGNATURES.laser_designator
     )
   },
   rpg_launcher: {
@@ -207,7 +290,8 @@ export const BASE_WEAPONS: Record<BaseWeaponId, WeaponDefinition> = {
     levels: buildWeaponLevels(
       { damage: 75, cooldown: 3.2, area: 1.5, speed: 18, amount: 1, duration: 1.0, pierce: 99 },
       ['Fires a high-impact shaped charge rocket detonating in a massive explosion.'],
-      'BOMB'
+      'BOMB',
+      SIGNATURES.rpg_launcher
     )
   },
   molotov: {
@@ -224,7 +308,8 @@ export const BASE_WEAPONS: Record<BaseWeaponId, WeaponDefinition> = {
     levels: buildWeaponLevels(
       { damage: 20, cooldown: 2.8, area: 1.2, speed: 12, amount: 3, duration: 3.5, pierce: 99 },
       ['Hurls an incendiary cocktail creating a burning lane of fire.'],
-      'CANISTER'
+      'CANISTER',
+      SIGNATURES.molotov
     )
   },
   resistance_k9: {
@@ -241,7 +326,8 @@ export const BASE_WEAPONS: Record<BaseWeaponId, WeaponDefinition> = {
     levels: buildWeaponLevels(
       { damage: 35, cooldown: 0.5, area: 1.0, speed: 10.5, amount: 1, duration: 1.0, pierce: 1 },
       ['Loyal scout dog that bites machines, revealing Infiltrators and T-1000s.'],
-      'PROJECTILE'
+      'PROJECTILE',
+      SIGNATURES.resistance_k9
     )
   },
   reprogrammed_t800: {
@@ -258,7 +344,8 @@ export const BASE_WEAPONS: Record<BaseWeaponId, WeaponDefinition> = {
     levels: buildWeaponLevels(
       { damage: 40, cooldown: 0.65, area: 1.0, speed: 28, amount: 1, duration: 1.0, pierce: 2 },
       ['Captured Terminator reprogrammed to protect Reese with plasma suppressive fire.'],
-      'BOLT'
+      'BOLT',
+      SIGNATURES.reprogrammed_t800
     )
   },
   coltan_knife: {
@@ -275,7 +362,8 @@ export const BASE_WEAPONS: Record<BaseWeaponId, WeaponDefinition> = {
     levels: buildWeaponLevels(
       { damage: 55, cooldown: 1.1, area: 1.2, speed: 1.0, amount: 1, duration: 0.16, pierce: 99 },
       ['Slashes an arc with a heavy coltan blade, severing endoskeleton joints.'],
-      'PROJECTILE'
+      'PROJECTILE',
+      SIGNATURES.coltan_knife
     )
   }
 };
@@ -319,7 +407,7 @@ export const EVOLVED_WEAPONS: Record<EvolvedWeaponId, WeaponDefinition> = {
     levels: [
       {
         level: 1,
-        damage: 140,
+        damage: 351,
         cooldown: 1.6,
         area: 2.4,
         speed: 14,
@@ -344,7 +432,7 @@ export const EVOLVED_WEAPONS: Record<EvolvedWeaponId, WeaponDefinition> = {
     levels: [
       {
         level: 1,
-        damage: 88,
+        damage: 134,
         cooldown: 0.22,
         area: 1.25,
         speed: 34,
@@ -394,7 +482,7 @@ export const EVOLVED_WEAPONS: Record<EvolvedWeaponId, WeaponDefinition> = {
     levels: [
       {
         level: 1,
-        damage: 45,
+        damage: 311,
         cooldown: 0.95,
         area: 2.6,
         speed: 1.0,
@@ -419,7 +507,7 @@ export const EVOLVED_WEAPONS: Record<EvolvedWeaponId, WeaponDefinition> = {
     levels: [
       {
         level: 1,
-        damage: 185,
+        damage: 612,
         cooldown: 1.8,
         area: 2.0,
         speed: 45,
@@ -444,7 +532,7 @@ export const EVOLVED_WEAPONS: Record<EvolvedWeaponId, WeaponDefinition> = {
     levels: [
       {
         level: 1,
-        damage: 220,
+        damage: 716,
         cooldown: 2.0,
         area: 2.8,
         speed: 22,
@@ -468,7 +556,7 @@ export const EVOLVED_WEAPONS: Record<EvolvedWeaponId, WeaponDefinition> = {
     levels: [
       {
         level: 1,
-        damage: 60,
+        damage: 101,
         cooldown: 1.8,
         area: 1.8,
         speed: 14,
@@ -492,7 +580,7 @@ export const EVOLVED_WEAPONS: Record<EvolvedWeaponId, WeaponDefinition> = {
     levels: [
       {
         level: 1,
-        damage: 105,
+        damage: 306,
         cooldown: 0.32,
         area: 1.4,
         speed: 12.5,
@@ -516,7 +604,7 @@ export const EVOLVED_WEAPONS: Record<EvolvedWeaponId, WeaponDefinition> = {
     levels: [
       {
         level: 1,
-        damage: 125,
+        damage: 347,
         cooldown: 0.28,
         area: 1.5,
         speed: 34,
@@ -540,7 +628,7 @@ export const EVOLVED_WEAPONS: Record<EvolvedWeaponId, WeaponDefinition> = {
     levels: [
       {
         level: 1,
-        damage: 160,
+        damage: 1331,
         cooldown: 0.75,
         area: 1.8,
         speed: 1.0,

@@ -19,7 +19,7 @@ import {
 } from '../data/waves';
 import { type EnemyBehaviour, type EnemyContext, createEnemyBehaviourRegistry } from './enemies';
 import type { IEnvironment } from '../graphics/environments';
-import { ENDO_STEP } from '../data/balance';
+import { ENDO_STEP, OPENING_GRACE } from '../data/balance';
 import { ENEMY_SHADOW, PALETTE } from '../data/artDirection';
 import { ProceduralTextures } from '../graphics/ProceduralTextures';
 import { buildBoltGeometry, createBoltMaterial } from '../graphics/PlasmaBolts';
@@ -304,7 +304,9 @@ export class EnemySystem {
   }
 
   private applyPlayerDamage(rawDamage: number): void {
-    const dmgDealt = this.runState.takeDamage(rawDamage);
+    // Gentler opening while the player finds their feet
+    const scale = this.runState.timeSeconds < OPENING_GRACE.seconds ? OPENING_GRACE.damageScale : 1;
+    const dmgDealt = this.runState.takeDamage(rawDamage * scale);
     if (dmgDealt > 0) {
       this.audio.playPlayerHit();
       globalEvents.emit('player:damaged', { currentHp: this.runState.hp, maxHp: this.runState.maxHp, damage: dmgDealt });

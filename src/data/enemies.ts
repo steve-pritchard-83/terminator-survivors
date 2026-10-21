@@ -20,7 +20,7 @@ export const ENEMY_CONFIGS: Record<EnemyArchetypeId, EnemyStatsConfig> = {
   skynet_crab_drone: {
     archetype: 'skynet_crab_drone',
     name: 'Skynet Recon Scuttler',
-    maxHp: 18,
+    maxHp: 16,
     speed: 4.8,
     damage: 8,
     radius: 0.5,
@@ -33,7 +33,7 @@ export const ENEMY_CONFIGS: Record<EnemyArchetypeId, EnemyStatsConfig> = {
   t600_rusted: {
     archetype: 't600_rusted',
     name: 'Series 600 Heavy Walker',
-    maxHp: 60,
+    maxHp: 54,
     speed: 2.3,
     damage: 16,
     radius: 0.8,
@@ -46,7 +46,7 @@ export const ENEMY_CONFIGS: Record<EnemyArchetypeId, EnemyStatsConfig> = {
   t800_endoskeleton: {
     archetype: 't800_endoskeleton',
     name: 'Cyberdyne Series 800 Model 101',
-    maxHp: 88,
+    maxHp: 80,
     speed: 3.0,
     damage: 22,
     radius: 0.75,
@@ -72,7 +72,7 @@ export const ENEMY_CONFIGS: Record<EnemyArchetypeId, EnemyStatsConfig> = {
   infiltrator_csm101: {
     archetype: 'infiltrator_csm101',
     name: 'Infiltrator Unit CSM-101',
-    maxHp: 950,
+    maxHp: 570,
     speed: 3.2,
     damage: 32,
     radius: 1.2,
@@ -124,7 +124,7 @@ export const ENEMY_CONFIGS: Record<EnemyArchetypeId, EnemyStatsConfig> = {
   skynet_tde_core: {
     archetype: 'skynet_tde_core',
     name: 'Skynet Time Displacement Core',
-    maxHp: 8500,
+    maxHp: 30000,
     speed: 1.3,
     damage: 70,
     radius: 3.5,

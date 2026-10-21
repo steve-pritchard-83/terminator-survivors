@@ -16,7 +16,7 @@ export const RUN_DURATION_MINUTES = 10;
 export const ENEMY_LEASH_DISTANCE = 40;
 
 // While a boss is alive, regular waves are thinned so telegraphs and the player stay readable.
-export const BOSS_FIGHT_SPAWN = { enemyCapMultiplier: 0.4, intervalMultiplier: 1.8 };
+export const BOSS_FIGHT_SPAWN = { enemyCapMultiplier: 0.6, intervalMultiplier: 1.4 };
 
 // Stationary emplacements are never relocated by the leash; they despawn silently once left far behind.
 export const LEASH_EXEMPT_ARCHETYPES: ReadonlySet<string> = new Set(['plasma_turret']);
@@ -141,3 +141,11 @@ export function buildWaveTimeline(params: BuildWaveTimelineParams = {}): WaveMin
 }
 
 export const WAVE_TIMELINE: WaveMinuteEntry[] = buildWaveTimeline();
+
+// Fodder arrives in packs that grow through the run, so the horde actually fills the screen.
+export const PACK_SPAWN = {
+  archetypes: new Set<EnemyArchetypeId>(['skynet_crab_drone', 't600_rusted', 't800_endoskeleton']),
+  perMinute: 0.6,
+  max: 6,
+  spread: 2.2
+};

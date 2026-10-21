@@ -8,6 +8,7 @@ import { PickupMeshFactory, type GemTier, getGemTier } from '../graphics/meshes/
 import { globalEvents } from '../core/EventBus';
 import { globalRNG } from '../core/RNG';
 import type { ParticleSystem } from './ParticleSystem';
+import { ELITE_VAULT, SCRAP_DROP } from '../data/balance';
 
 export interface ActivePickup extends SpatialEntity, PoolableUser {
   mesh?: THREE.Object3D;
@@ -99,12 +100,16 @@ export class PickupSystem {
       globalEvents.on('enemy:killed', ({ enemy, x, z, xp }) => {
         if (enemy.isBoss) {
           this.spawnBossVault(x, z);
-          this.runState.addScrap(75);
+          this.runState.addScrap(SCRAP_DROP.boss);
         } else {
           this.spawnDataCore(x, z, xp);
-          // 25% chance to award alloy scrap on normal enemy kills
-          if (globalRNG.chance(0.25)) {
-            this.runState.addScrap(2);
+          if (globalRNG.chance(SCRAP_DROP.killChance)) {
+            this.runState.addScrap(SCRAP_DROP.killAmount);
+          }
+          // From mid-run, elites sometimes carry a data vault (a second route to evolutions)
+          const isElite = enemy.isElite || enemy.state?.isElite;
+          if (isElite && this.runState.timeSeconds >= ELITE_VAULT.fromSeconds && globalRNG.chance(ELITE_VAULT.chance)) {
+            this.spawnBossVault(x, z);
           }
           // Guaranteed crate drop for elites; otherwise 7% chance on normal kills
           if (enemy.isElite || enemy.state?.isElite) {
@@ -420,7 +425,7 @@ export class PickupSystem {
           color: 'var(--color-green)'
         });
       } else if (roll < 0.7) {
-        const gained = this.runState.addScrap(45);
+        const gained = this.runState.addScrap(SCRAP_DROP.crate);
         this.audio.playLoot('scrap');
         globalEvents.emit('pickup:reward', {
           x: p.x,
@@ -444,7 +449,7 @@ export class PickupSystem {
       // Boss Data Vault
       this.audio.playVaultJackpot();
       const evolvedWeapon = this.runState.checkAndEvolveWeapon();
-      const alloyBonus = 220;
+      const alloyBonus = SCRAP_DROP.vault;
       this.runState.addScrap(alloyBonus);
 
       globalEvents.emit('vault:opened', {
