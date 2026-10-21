@@ -1,0 +1,13 @@
+{
+  "recommendations": [
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "eamodio.gitlens",
+    "github.vscode-github-actions",
+    "anthropic.claude-code",
+    "ms-playwright.playwright",
+    "vitest.explorer",
+    "usernamehw.errorlens",
+    "sukumo28.wav-preview"
+  ]
+}
