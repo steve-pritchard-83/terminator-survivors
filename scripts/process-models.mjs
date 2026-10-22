@@ -63,6 +63,101 @@ function stripGround(doc, height) {
 }
 
 /**
+ * Turns a hilly scanned terrain tile into a flat one the game can walk on: drops triangles with
+ * stray vertices outside the ground's footprint, subtracts the smoothed ground height from every
+ * vertex (so props keep their height above the ground), and centres the tile on the origin.
+ */
+function flattenTerrain(doc, groundMeshName) {
+  const meshes = doc.getRoot().listMeshes();
+  const groundPrim = meshes.find((m) => m.getName() === groundMeshName).listPrimitives()[0];
+  const gp = groundPrim.getAttribute('POSITION');
+  const [minX, minY, minZ] = gp.getMin([]);
+  const [maxX, , maxZ] = gp.getMax([]);
+  const cells = 48;
+  const sum = new Float64Array(cells * cells);
+  const count = new Float64Array(cells * cells);
+  const cellOf = (x, z) => [
+    Math.min(cells - 1, Math.max(0, Math.floor(((x - minX) / (maxX - minX)) * cells))),
+    Math.min(cells - 1, Math.max(0, Math.floor(((z - minZ) / (maxZ - minZ)) * cells)))
+  ];
+  const v = [];
+  for (let i = 0; i < gp.getCount(); i++) {
+    gp.getElement(i, v);
+    const [cx, cz] = cellOf(v[0], v[2]);
+    sum[cz * cells + cx] += v[1];
+    count[cz * cells + cx]++;
+  }
+  // Average per cell, fill gaps from neighbours, then blur twice so only the hills are removed
+  let h = new Float64Array(cells * cells);
+  for (let i = 0; i < h.length; i++) h[i] = count[i] ? sum[i] / count[i] : NaN;
+  for (let pass = 0; pass < cells && h.some(Number.isNaN); pass++) {
+    const next = h.slice();
+    for (let z = 0; z < cells; z++) for (let x = 0; x < cells; x++) {
+      if (!Number.isNaN(h[z * cells + x])) continue;
+      let s = 0;
+      let n = 0;
+      for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const val = h[(z + dz) * cells + (x + dx)];
+        if (x + dx >= 0 && x + dx < cells && z + dz >= 0 && z + dz < cells && !Number.isNaN(val)) { s += val; n++; }
+      }
+      if (n) next[z * cells + x] = s / n;
+    }
+    h = next;
+  }
+  for (let pass = 0; pass < 2; pass++) {
+    const next = new Float64Array(h.length);
+    for (let z = 0; z < cells; z++) for (let x = 0; x < cells; x++) {
+      let s = 0;
+      let n = 0;
+      for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) {
+        const xx = x + dx;
+        const zz = z + dz;
+        if (xx >= 0 && xx < cells && zz >= 0 && zz < cells) { s += h[zz * cells + xx]; n++; }
+      }
+      next[z * cells + x] = s / n;
+    }
+    h = next;
+  }
+  const heightAt = (x, z) => {
+    const fx = Math.min(cells - 1.001, Math.max(0, ((x - minX) / (maxX - minX)) * cells - 0.5));
+    const fz = Math.min(cells - 1.001, Math.max(0, ((z - minZ) / (maxZ - minZ)) * cells - 0.5));
+    const x0 = Math.floor(fx);
+    const z0 = Math.floor(fz);
+    const tx = fx - x0;
+    const tz = fz - z0;
+    const at = (xx, zz) => h[zz * cells + xx];
+    return (at(x0, z0) * (1 - tx) + at(x0 + 1, z0) * tx) * (1 - tz) + (at(x0, z0 + 1) * (1 - tx) + at(x0 + 1, z0 + 1) * tx) * tz;
+  };
+  const cx = (minX + maxX) / 2;
+  const cz = (minZ + maxZ) / 2;
+  const inside = (p) => p[0] > minX - 1 && p[0] < maxX + 1 && p[2] > minZ - 1 && p[2] < maxZ + 1 && p[1] > minY - 1;
+  for (const m of meshes) {
+    for (const prim of m.listPrimitives()) {
+      const pos = prim.getAttribute('POSITION');
+      const idx = prim.getIndices();
+      if (idx) {
+        const keep = [];
+        for (let t = 0; t < idx.getCount(); t += 3) {
+          let ok = true;
+          for (let k = 0; k < 3; k++) if (!inside(pos.getElement(idx.getScalar(t + k), v))) ok = false;
+          if (ok) keep.push(idx.getScalar(t), idx.getScalar(t + 1), idx.getScalar(t + 2));
+        }
+        idx.setArray(new Uint32Array(keep));
+        compactPrimitive(prim);
+      }
+      const p = prim.getAttribute('POSITION');
+      // The ground's border skirt dips well below the surface; flattened, it would cut a trench between tiles
+      const isGround = prim === groundPrim;
+      for (let i = 0; i < p.getCount(); i++) {
+        p.getElement(i, v);
+        const y = v[1] - heightAt(v[0], v[2]);
+        p.setElement(i, [v[0] - cx, isGround ? Math.min(0.4, Math.max(-0.3, y)) : y, v[2] - cz]);
+      }
+    }
+  }
+}
+
+/**
  * Topology-blind reduction for models made of thousands of small separate parts (bolts, links,
  * panels), which the regular simplifier must preserve. Fine for things that are small on screen.
  */
@@ -94,6 +189,7 @@ function sloppyTo(doc, targetTris) {
  *   ground                      strip a ground patch this thick (source units)
  *   retint(material)            adjust material colours
  *   mobileTris                  triangle budget for the phone variant (default: same as desktop)
+ *   prepare(doc)                custom clean-up after transforms are baked (world space, y up)
  */
 async function processModel(source, outName, opts = {}) {
   if (only && only !== outName) return;
@@ -111,6 +207,7 @@ async function processModel(source, outName, opts = {}) {
     for (const node of doc.getRoot().listNodes()) if (node.getMesh()) clearNodeTransform(node);
   }
   if (opts.ground) stripGround(doc, opts.ground);
+  if (opts.prepare) opts.prepare(doc);
   if (opts.retint) for (const m of doc.getRoot().listMaterials()) opts.retint(m);
 
   await MeshoptSimplifier.ready;
@@ -210,3 +307,13 @@ await processModel('turret.glb', 'turret.glb');
 await processModel('k9.glb', 'k9.glb', { tris: 4000, mobileTris: 2000 });
 await processModel('seeker.glb', 'seeker.glb', { tris: 2500, mobileTris: 1200 });
 await processModel('xp.glb', 'xp.glb');
+
+// Landscape tile (ash and bone field): fog shells dropped, hills baked flat, tiled at load time
+await processModel('apocalyptic_ground.glb', 'ground.glb', {
+  keep: (name) => !/Fog/.test(name),
+  prepare: (doc) => flattenTerrain(doc, 'BonesAndGround_Ground_0'),
+  // Laid 16 times per ground chunk, so each copy stays light
+  tris: 9000,
+  error: 0.01,
+  mobileTris: 4000
+});

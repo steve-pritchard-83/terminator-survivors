@@ -1026,6 +1026,8 @@ function renderMedia(): void {
   mediaEl.innerHTML = `
     <h3>Background music (raw file)</h3>
     <audio controls preload="metadata" src="./audio/backgroundmusic.mp3"></audio>
+    <h3>Boss music (raw file; plays while a boss is alive)</h3>
+    <audio controls preload="metadata" src="./audio/boss.mp3"></audio>
     <h3>Battle ambience loop (raw file)</h3>
     <audio controls preload="metadata" src="./audio/effects/amb_battle_loop.mp3"></audio>
     <h3>Victory movie</h3>

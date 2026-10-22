@@ -71,3 +71,21 @@ export const ENEMY_SHADOW = {
   segments: 10,
   maxCount: 650
 };
+
+/** The sculpted ash-and-bone landscape tile laid on every ground chunk */
+export const GROUND_TILE = {
+  /** Tile width in world units; the 75-unit ground chunk holds an even number of them (the bones' size follows) */
+  size: 18.75,
+  /** Squashes the bone piles so units read clearly over them (1 keeps the sculpted height) */
+  heightScale: 0.6,
+  /** Multiplies the tile's own colours: cool, dim ash so the machines stay the brightest things */
+  tint: 0xa9adb3,
+  /** Replaces the source's glossy roughness map (it glitters white under the moonlight) */
+  roughness: 0.93,
+  envMapIntensity: 0.15,
+  normalScale: 0.6,
+  /** The flat ash plane sits this far below the tile, showing only through the gaps under the bone piles */
+  underlayDepth: 0.35,
+  /** Scattered instanced skulls kept on top of the tile (fraction of the full carpet) */
+  skullCarpet: 0.4
+};

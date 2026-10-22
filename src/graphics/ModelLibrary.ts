@@ -5,6 +5,7 @@ import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js
 import { bakeAutoRigged, bakeEndoModel, markEndoShared, type EndoModel } from './EndoModel';
 import { autoRigHumanoid, type AutoRigged } from './AutoRig';
 import { RENDER_BUDGET } from '../data/performance';
+import { GROUND_TILE } from '../data/artDirection';
 
 /** Phones load the light variants (name.m.glb: fewer triangles, 512 px textures). */
 const variant = (url: string): string => url.replace(/\.glb$/, `${RENDER_BUDGET.modelSuffix}.glb`);
@@ -31,7 +32,8 @@ export type ModelName =
   | 'turret_gun'
   | 'k9'
   | 'seeker'
-  | 'xp';
+  | 'xp'
+  | 'ground';
 
 interface ModelSpec {
   url: string;
@@ -47,6 +49,8 @@ interface ModelSpec {
   grey?: number;
   /** true: sits on y = 0; false: centred on y = 0 */
   grounded: boolean;
+  /** Keep the source's own height (already level with y = 0), ignoring `grounded` */
+  keepHeight?: boolean;
   /** Split into a hull and a turret above this fraction of the height */
   turretSplit?: { hull: ModelName; turret: ModelName; fraction: number };
 }
@@ -87,7 +91,9 @@ const SPECS: Record<string, ModelSpec> = {
   // Faces +x in the source
   k9: { url: './models/k9.glb', fit: { axis: 'z', size: 1.2 }, grounded: true, rotateY: -Math.PI / 2 },
   seeker: { url: './models/seeker.glb', fit: { axis: 'x', size: 0.8 }, grounded: false },
-  xp: { url: './models/xp.glb', fit: { axis: 'y', size: 0.5 }, grounded: false }
+  xp: { url: './models/xp.glb', fit: { axis: 'y', size: 0.5 }, grounded: false },
+  // Ash and bone landscape tile, one per ground chunk (hills baked flat by process-models)
+  ground: { url: './models/ground.glb', fit: { axis: 'x', size: GROUND_TILE.size }, grounded: false, keepHeight: true }
 };
 const skinnedNames = new Set(Object.entries(SPECS).filter(([, s]) => s.skinned).map(([n]) => n));
 
@@ -182,7 +188,7 @@ function normalise(scene: THREE.Object3D, spec: ModelSpec): THREE.Group {
   const centre = box.getCenter(new THREE.Vector3());
   scene.position.x -= centre.x;
   scene.position.z -= centre.z;
-  scene.position.y -= spec.grounded ? box.min.y : centre.y;
+  if (!spec.keepHeight) scene.position.y -= spec.grounded ? box.min.y : centre.y;
   wrapper.updateMatrixWorld(true);
   return wrapper;
 }

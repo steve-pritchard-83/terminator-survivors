@@ -63,7 +63,8 @@ export default defineConfig({
         'icons/icon-maskable-512.png',
         'fonts/terminator-real-nfi.ttf',
         'fonts/terminator-real-nfi.otf',
-        'audio/backgroundmusic.mp3'
+        'audio/backgroundmusic.mp3',
+        'audio/boss.mp3'
       ],
       manifest: {
         name: 'Terminator Survivors: Los Angeles 2029 AD',

@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { ProceduralTextures } from './ProceduralTextures';
 import { ModelLibrary } from './ModelLibrary';
 import { RENDER_BUDGET } from '../data/performance';
+import { GROUND_TILE } from '../data/artDirection';
 import { bakePart, mergeParts } from './meshes/geometryUtils';
 import type { IEnvironment } from './environments/IEnvironment';
 import { disposeObject3D } from './dispose';
@@ -29,6 +30,9 @@ interface Chunk {
   x: number;
   z: number;
   group: THREE.Group;
+  ground: THREE.Mesh;
+  /** Sculpted landscape tiles (row-major, `tilesPerSide` squared), once the model has loaded */
+  tiles: THREE.Object3D[];
 }
 
 export class Environment2029 implements IEnvironment {
@@ -69,6 +73,7 @@ export class Environment2029 implements IEnvironment {
   private fireLightsEnabled = true;
   private lastPlayerX = 0;
   private lastPlayerZ = 0;
+  private groundTileActive = false;
 
   constructor() {
     this.groundGeo = new THREE.PlaneGeometry(this.chunkSize, this.chunkSize, 24, 24);
@@ -502,7 +507,7 @@ export class Environment2029 implements IEnvironment {
         chunkGroup.add(ground);
         chunkGroup.position.set(cx * this.chunkSize, 0, cz * this.chunkSize);
         this.group.add(chunkGroup);
-        this.chunks.push({ x: cx, z: cz, group: chunkGroup });
+        this.chunks.push({ x: cx, z: cz, group: chunkGroup, ground, tiles: [] });
       }
     }
 
@@ -518,6 +523,54 @@ export class Environment2029 implements IEnvironment {
     (this.carInstancedMesh.material as THREE.Material).dispose();
     this.carInstancedMesh.geometry = car.geometry;
     this.carInstancedMesh.material = car.material;
+    this.applyGroundTile();
+  }
+
+  /** Replaces the flat procedural ground with the sculpted ash-and-bone tile on every chunk. */
+  private applyGroundTile(): void {
+    const tile = ModelLibrary.get('ground');
+    if (!tile) return;
+    tile.traverse((o) => {
+      const mat = (o as THREE.Mesh).material as THREE.MeshStandardMaterial | undefined;
+      if (!mat?.isMeshStandardMaterial || mat.userData.groundTinted) return;
+      mat.color.multiply(new THREE.Color(GROUND_TILE.tint));
+      mat.roughnessMap = null;
+      mat.metalnessMap = null;
+      mat.roughness = GROUND_TILE.roughness;
+      mat.metalness = 0;
+      mat.envMapIntensity = GROUND_TILE.envMapIntensity;
+      mat.normalScale.setScalar(GROUND_TILE.normalScale);
+      mat.needsUpdate = true;
+      mat.userData.groundTinted = true;
+    });
+    const perSide = Math.round(this.chunkSize / GROUND_TILE.size);
+    for (const c of this.chunks) {
+      // The flat ash plane stays underneath, filling the gaps the tile leaves under its bone piles
+      c.ground.position.y = -GROUND_TILE.underlayDepth;
+      for (let i = 0; i < perSide * perSide; i++) {
+        const t = tile.clone(true);
+        t.position.set(
+          ((i % perSide) + 0.5 - perSide / 2) * GROUND_TILE.size,
+          0,
+          (Math.floor(i / perSide) + 0.5 - perSide / 2) * GROUND_TILE.size
+        );
+        c.group.add(t);
+        c.tiles.push(t);
+      }
+      this.mirrorTiles(c);
+    }
+    this.groundTileActive = true;
+    this.repopulateProps(0, 0);
+  }
+
+  /** Neighbouring tiles are mirror images, so their edges always meet without a seam. */
+  private mirrorTiles(c: Chunk): void {
+    const perSide = Math.round(this.chunkSize / GROUND_TILE.size);
+    c.tiles.forEach((t, i) => {
+      const gx = c.x * perSide + (i % perSide);
+      const gz = c.z * perSide + Math.floor(i / perSide);
+      t.scale.set(gx % 2 === 0 ? 1 : -1, GROUND_TILE.heightScale, gz % 2 === 0 ? 1 : -1);
+    });
   }
 
   private repopulateProps(_centerChunkX: number, _centerChunkZ: number): void {
@@ -579,7 +632,8 @@ export class Environment2029 implements IEnvironment {
           placeBone(pcx + (rng(salt) - 0.5) * 3.2, pcz + (rng(salt + 6) - 0.5) * 3.2, salt);
         }
       }
-      for (let s = 0; s < Math.round(110 * RENDER_BUDGET.groundClutter); s++) {
+      const carpet = this.groundTileActive ? GROUND_TILE.skullCarpet : 1;
+      for (let s = 0; s < Math.round(110 * RENDER_BUDGET.groundClutter * carpet); s++) {
         const sx = originX + (rng(s * 3 + 1) - 0.5) * (this.chunkSize - 6);
         const sz = originZ + (rng(s * 5 + 2) - 0.5) * (this.chunkSize - 6);
         placeSkull(sx, sz, -0.01 + rng(s * 7) * 0.03, 0.95 + rng(s * 19) * 0.4, s * 13);
@@ -758,6 +812,7 @@ export class Environment2029 implements IEnvironment {
     }
 
     if (needsRepopulate) {
+      if (this.groundTileActive) for (const c of this.chunks) this.mirrorTiles(c);
       this.repopulateProps(curChunkX, curChunkZ);
     }
   }

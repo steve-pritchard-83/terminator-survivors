@@ -164,7 +164,6 @@ export class AudioEngine {
   private bossGain: GainNode | null = null;
   private calmFilter: BiquadFilterNode | null = null;
   private combatFilter: BiquadFilterNode | null = null;
-  private bossFilter: BiquadFilterNode | null = null;
 
   private calmLevel = 1.0;
   private combatLevel = 0.15;
@@ -174,6 +173,8 @@ export class AudioEngine {
   private musicSource: AudioBufferSourceNode | null = null;
   private musicBuffer: AudioBuffer | null = null;
   private musicAudioElement: HTMLAudioElement | null = null;
+  /** Boss fights get their own track, streamed (not decoded into memory) into the boss layer */
+  private bossMusic: HTMLAudioElement | null = null;
   private readonly sfxBuffers = new Map<string, AudioBuffer[]>();
   private readonly voiceSlots = new Map<string, VoiceSlot[]>();
 
@@ -249,14 +250,8 @@ export class AudioEngine {
         this.combatFilter.type = 'peaking';
         this.combatFilter.frequency.value = 2200;
         this.combatFilter.gain.value = 3.5;
-
-        this.bossFilter = this.ctx.createBiquadFilter();
-        this.bossFilter.type = 'highpass';
-        this.bossFilter.frequency.value = 400;
-
         this.calmFilter.connect(this.calmGain);
         this.combatFilter.connect(this.combatGain);
-        this.bossFilter.connect(this.bossGain);
       }
 
       this.calmGain.connect(this.musicGain);
@@ -481,20 +476,35 @@ export class AudioEngine {
     source.buffer = this.musicBuffer;
     source.loop = true;
 
-    if (this.calmFilter && this.combatFilter && this.bossFilter) {
+    // The boss layer plays the boss track instead (ensureBossMusic)
+    if (this.calmFilter && this.combatFilter) {
       source.connect(this.calmFilter);
       source.connect(this.combatFilter);
-      source.connect(this.bossFilter);
-    } else if (this.calmGain && this.combatGain && this.bossGain) {
+    } else if (this.calmGain && this.combatGain) {
       source.connect(this.calmGain);
       source.connect(this.combatGain);
-      source.connect(this.bossGain);
     } else {
       source.connect(this.musicGain);
     }
 
     source.start(0);
     this.musicSource = source;
+  }
+
+  /** Creates the streamed boss track and routes it into the boss layer (once). */
+  private ensureBossMusic(): HTMLAudioElement | null {
+    if (this.bossMusic) return this.bossMusic;
+    if (!this.ctx || !this.bossGain || typeof Audio === 'undefined') return null;
+    try {
+      const el = new Audio('./audio/boss.mp3');
+      el.loop = true;
+      el.preload = 'auto';
+      this.ctx.createMediaElementSource(el).connect(this.bossGain);
+      this.bossMusic = el;
+    } catch {
+      // No boss track: boss fights keep the combat layer
+    }
+    return this.bossMusic;
   }
 
   public stopMusic(): void {
@@ -508,6 +518,7 @@ export class AudioEngine {
     if (this.musicAudioElement) {
       this.musicAudioElement.pause();
     }
+    this.bossMusic?.pause();
     this.intensityLayer = 'calm';
     this.calmLevel = 1.0;
     this.combatLevel = 0.15;
@@ -536,11 +547,21 @@ export class AudioEngine {
     let targetCombat = 0.15;
     let targetBoss = 0.0;
 
-    if (hasBoss) {
+    const bossTrack = hasBoss && this.musicSource ? this.ensureBossMusic() : this.bossMusic;
+    if (hasBoss && bossTrack) {
+      // Crossfade to the boss track, restarting it for each new fight
+      this.intensityLayer = 'boss';
+      targetCalm = 0.0;
+      targetCombat = 0.0;
+      targetBoss = 0.95;
+      if (bossTrack.paused) {
+        if (this.bossLevel < 0.02) bossTrack.currentTime = 0;
+        bossTrack.play().catch(() => {});
+      }
+    } else if (hasBoss) {
       this.intensityLayer = 'boss';
       targetCalm = 0.05;
-      targetCombat = 0.35;
-      targetBoss = 0.95;
+      targetCombat = 0.95;
     } else if (enemyCount >= 20) {
       this.intensityLayer = 'combat';
       targetCalm = 0.15;
@@ -568,6 +589,7 @@ export class AudioEngine {
     if (this.calmGain) this.calmGain.gain.value = this.calmLevel;
     if (this.combatGain) this.combatGain.gain.value = this.combatLevel;
     if (this.bossGain) this.bossGain.gain.value = this.bossLevel;
+    if (!hasBoss && bossTrack && !bossTrack.paused && this.bossLevel < 0.01) bossTrack.pause();
   }
 
   public setMasterVolume(v: number): void {
