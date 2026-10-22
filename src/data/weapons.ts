@@ -216,7 +216,7 @@ export const BASE_WEAPONS: Record<BaseWeaponId, WeaponDefinition> = {
     patternParams: { projectileVisual: 'plasma', flashColor: 0xd400ff, parallelOffset: 0.12, projectileRadius: 0.35, sfx: 'plasma_light' },
     knockback: 6,
     levels: buildWeaponLevels(
-      { damage: 30, cooldown: 0.75, area: 1.0, speed: 28, amount: 1, duration: 1.2, pierce: 1 },
+      { damage: 30, cooldown: 0.6, area: 1.0, speed: 28, amount: 1, duration: 1.2, pierce: 1 },
       ['Fires high-velocity violet phased plasma bolts at nearest machine.'],
       'BOLT',
       SIGNATURES.m25_plasma
@@ -432,7 +432,7 @@ export const EVOLVED_WEAPONS: Record<EvolvedWeaponId, WeaponDefinition> = {
     levels: [
       {
         level: 1,
-        damage: 134,
+        damage: 170,
         cooldown: 0.22,
         area: 1.25,
         speed: 34,
@@ -749,12 +749,15 @@ export const PASSIVES: Record<PassiveId, PassiveDefinition> = {
   }
 };
 
+/** A base weapon at this level evolves (with its paired passive) when the next data vault opens */
+export const EVOLUTION_LEVEL = 7;
+
 export function canEvolveWeapon(
   weaponId: WeaponId,
   weaponLevel: number,
   activePassives: Map<PassiveId, number>
 ): EvolvedWeaponId | null {
-  if (weaponLevel < 8) return null;
+  if (weaponLevel < EVOLUTION_LEVEL) return null;
   const baseDef = BASE_WEAPONS[weaponId as BaseWeaponId];
   if (!baseDef || !baseDef.pairedPassive || !baseDef.evolvesInto) return null;
   const passiveLevel = activePassives.get(baseDef.pairedPassive) ?? 0;

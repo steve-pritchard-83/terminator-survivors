@@ -31,6 +31,12 @@ export const ENEMY_RELOCATE_MAX_DIST = 28;
 
 const HEAVY_INFANTRY_FIRST_MINUTE = 3;
 
+// The first minutes spawn more slowly, so the lone starting rifle kills faster than machines arrive
+export const EARLY_SPAWN_EASE = { untilMinute: 2, intervalScale: 1.3 };
+
+// Bosses arrive this far from the player, tougher than the wave's own scaling
+export const BOSS_SPAWN = { distance: 24, hpMultiplier: 1.25, damageMultiplier: 1.2 };
+
 export interface BuildWaveTimelineParams {
   bossOrder?: Record<number, { boss: EnemyArchetypeId; alertBanner: string }>;
   poolWeights?: Partial<Record<EnemyArchetypeId, number>>;
@@ -39,7 +45,8 @@ export interface BuildWaveTimelineParams {
 export function buildWaveTimeline(params: BuildWaveTimelineParams = {}): WaveMinuteEntry[] {
   return Array.from({ length: RUN_DURATION_MINUTES + 1 }, (_, minute) => {
     // Gentle at the start: the T-600 that fills the early waves is slow and tough, so it needs room to be killed
-    const spawnInterval = Math.max(0.14, Number((1.05 * Math.pow(0.82, minute)).toFixed(3)));
+    const ease = minute < EARLY_SPAWN_EASE.untilMinute ? EARLY_SPAWN_EASE.intervalScale : 1;
+    const spawnInterval = Math.max(0.14, Number((1.05 * ease * Math.pow(0.82, minute)).toFixed(3)));
     const minEnemies = Math.min(320, Math.floor(24 + minute * 28));
     const hpMultiplier = Number((1 + minute * 0.32 + Math.pow(minute, 1.35) * 0.08).toFixed(2));
     const damageMultiplier = Number((1 + minute * 0.14).toFixed(2));

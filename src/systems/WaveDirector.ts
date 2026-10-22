@@ -2,6 +2,7 @@ import type { RunState } from '../state/RunState';
 import type { EnemySystem } from './EnemySystem';
 import {
   BOSS_FIGHT_SPAWN,
+  BOSS_SPAWN,
   EMPLACEMENT_SPAWN_MAX_DIST,
   EMPLACEMENT_SPAWN_MIN_DIST,
   LEASH_EXEMPT_ARCHETYPES,
@@ -77,12 +78,12 @@ export class WaveDirector {
     const px = this.runState.playerPos.x;
     const pz = this.runState.playerPos.z;
     const angle = globalRNG.range(0, Math.PI * 2);
-    const dist = 24;
+    const dist = BOSS_SPAWN.distance;
     const bx = px + Math.cos(angle) * dist;
     const bz = pz + Math.sin(angle) * dist;
 
     const threat = threatMultipliers(this.runState.threat);
-    const boss = this.enemySystem.spawnEnemy(archetype, bx, bz, 1.25 * threat.hp, 1.2 * threat.damage);
+    const boss = this.enemySystem.spawnEnemy(archetype, bx, bz, BOSS_SPAWN.hpMultiplier * threat.hp, BOSS_SPAWN.damageMultiplier * threat.damage);
     globalEvents.emit('boss:spawned', {
       archetype,
       name: bannerText ?? (ENEMY_CONFIGS[archetype]?.name ?? archetype).toUpperCase(),

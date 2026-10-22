@@ -2,7 +2,7 @@ import type { SaveManager } from '../state/SaveManager';
 import type { AudioEngine } from '../audio/AudioEngine';
 import type { RunState } from '../state/RunState';
 import type { GamepadManager } from '../input/GamepadManager';
-import { BASE_WEAPONS, EVOLVED_WEAPONS, PASSIVES } from '../data/weapons';
+import { BASE_WEAPONS, EVOLUTION_LEVEL, EVOLVED_WEAPONS, PASSIVES } from '../data/weapons';
 import type { BaseWeaponId, WeaponId } from '../core/types';
 import { ModalA11y } from './A11yHelper';
 import { iconLabel, passiveIcon, weaponIcon } from './icons';
@@ -290,7 +290,7 @@ export class PauseModal {
       const weaponLv = weaponSlot?.level ?? 0;
       const isEvolved = weaponSlot?.evolved ?? false;
       const passiveLv = runState.passives.get(bDef.pairedPassive) ?? 0;
-      const isReady = weaponLv >= 8 && passiveLv >= 1 && !isEvolved;
+      const isReady = weaponLv >= EVOLUTION_LEVEL && passiveLv >= 1 && !isEvolved;
 
       const row = document.createElement('div');
       row.className = 't-row';

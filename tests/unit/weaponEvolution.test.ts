@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { BASE_WEAPONS, EVOLVED_WEAPONS, canEvolveWeapon } from '../../src/data/weapons';
+import { BASE_WEAPONS, EVOLUTION_LEVEL, EVOLVED_WEAPONS, canEvolveWeapon } from '../../src/data/weapons';
 import type { BaseWeaponId, PassiveId } from '../../src/core/types';
 
 describe('Weapon Progression and Evolutions', () => {
@@ -34,9 +34,9 @@ describe('Weapon Progression and Evolutions', () => {
     }
   });
 
-  it('rejects evolution if weapon level is below 8', () => {
+  it('rejects evolution below the evolution level', () => {
     const passives = new Map<PassiveId, number>([['might_shells', 1]]);
-    expect(canEvolveWeapon('ithaca_37', 7, passives)).toBeNull();
+    expect(canEvolveWeapon('ithaca_37', EVOLUTION_LEVEL - 1, passives)).toBeNull();
   });
 
   it('rejects evolution if paired passive is absent or level 0', () => {
@@ -47,11 +47,11 @@ describe('Weapon Progression and Evolutions', () => {
     expect(canEvolveWeapon('ithaca_37', 8, zeroPassives)).toBeNull();
   });
 
-  it('successfully evolves all 11 weapons when weapon is Level 8 and passive Level >= 1', () => {
+  it('evolves all 11 weapons at the evolution level with the passive', () => {
     for (const wId of baseWeaponIds) {
       const baseDef = BASE_WEAPONS[wId];
       const passives = new Map<PassiveId, number>([[baseDef.pairedPassive!, 1]]);
-      const evolvedId = canEvolveWeapon(wId, 8, passives);
+      const evolvedId = canEvolveWeapon(wId, EVOLUTION_LEVEL, passives);
       expect(evolvedId).toBe(baseDef.evolvesInto);
     }
   });

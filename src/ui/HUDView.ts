@@ -4,7 +4,7 @@ import { DamageNumbers } from './DamageNumbers';
 import { globalEvents } from '../core/EventBus';
 import { icon, passiveIcon, weaponIcon } from './icons';
 import { IS_MOBILE } from '../data/performance';
-import { BASE_WEAPONS, PASSIVES } from '../data/weapons';
+import { BASE_WEAPONS, EVOLUTION_LEVEL, PASSIVES } from '../data/weapons';
 import type { BaseWeaponId } from '../core/types';
 
 /**
@@ -174,7 +174,7 @@ export class HUDView {
       `<span class="hudm-pips">${Array.from({ length: max }, (_, i) => `<i class="${i < level ? 'on' : ''}"></i>`).join('')}</span>`;
     const weaponCells = weapons.map((w) => {
       const def = BASE_WEAPONS[w.id as BaseWeaponId];
-      const ready = !w.evolved && w.level >= 8 && Boolean(def?.pairedPassive && runState.passives.has(def.pairedPassive));
+      const ready = !w.evolved && w.level >= EVOLUTION_LEVEL && Boolean(def?.pairedPassive && runState.passives.has(def.pairedPassive));
       if (ready) this.onEvolutionReady?.();
       const cls = w.evolved ? ' is-evolved' : ready ? ' is-ready' : '';
       return `<div class="hudm-slot${cls}">${weaponIcon(w.id, { size: 20 })}${w.evolved ? '' : pips(w.level, 8)}</div>`;

@@ -10,7 +10,7 @@ import type {
   UpgradeChoice,
   WeaponId
 } from '../core/types';
-import { ALL_WEAPONS, BASE_WEAPONS, EVOLVED_WEAPONS, PASSIVES, canEvolveWeapon } from '../data/weapons';
+import { ALL_WEAPONS, BASE_WEAPONS, EVOLUTION_LEVEL, EVOLVED_WEAPONS, PASSIVES, canEvolveWeapon } from '../data/weapons';
 import { LOADOUTS, META_UPGRADES } from '../data/upgrades';
 import { globalRNG } from '../core/RNG';
 import { StateMachine, GAME_MODE_TRANSITIONS } from '../core/StateMachine';
@@ -440,7 +440,7 @@ export class RunState {
       const forWeapon = c.kind === 'passive' ? evolutionPassives.get(c.id) : undefined;
       if (forWeapon) {
         c.synergyHint = `COMPLETES EVOLUTION: ${EVOLVED_WEAPONS[BASE_WEAPONS[forWeapon].evolvesInto!]?.name ?? ''}`;
-      } else if (c.kind === 'weapon' && c.nextLevel === 8) {
+      } else if (c.kind === 'weapon' && c.nextLevel === EVOLUTION_LEVEL) {
         const def = BASE_WEAPONS[c.id as BaseWeaponId];
         if (def?.pairedPassive && this.passives.has(def.pairedPassive)) c.synergyHint = 'EVOLUTION READY AT THE NEXT DATA VAULT';
       }
@@ -548,7 +548,7 @@ export class RunState {
 
   public checkAndEvolveWeapon(): EvolvedWeaponId | null {
     for (const [wId, slot] of this.weapons.entries()) {
-      if (!slot.evolved && slot.level >= 8) {
+      if (!slot.evolved && slot.level >= EVOLUTION_LEVEL) {
         const evoId = canEvolveWeapon(wId, slot.level, this.passives);
         if (evoId) {
           this.weapons.delete(wId);
