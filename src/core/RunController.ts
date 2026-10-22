@@ -15,6 +15,7 @@ import type { GameLoop } from './GameLoop';
 import type { LoadoutId, RunConfig, UpgradeChoice, WeaponId, ActiveEnemy, RunHistoryRecord } from './types';
 import { globalEvents } from './EventBus';
 import { globalRNG } from './RNG';
+import { dailyKey, dailySeed } from './daily';
 import { AchievementTracker } from '../state/AchievementTracker';
 import {
   DEFEAT_MOVIE_LEAD_IN_MS,
@@ -164,6 +165,13 @@ export class RunController {
 
   public startRunWith(config: RunConfig): void {
     const loadoutId = config.loadoutId ?? this.host.saveManager.getData().selectedLoadout ?? 'reese_2029';
+    if (config.daily) {
+      // Same waves for everyone today, always at standard threat
+      const key = dailyKey();
+      this.startRun(loadoutId, dailySeed(key), 0);
+      this.host.runState.daily = key;
+      return;
+    }
     const seed = config.seed;
     this.startRun(loadoutId, seed, config.threat ?? this.host.saveManager.getData().selectedThreat ?? 0);
   }
@@ -182,6 +190,7 @@ export class RunController {
       this.host.saveManager.getUnlockedWeapons()
     );
     this.host.runState.threat = threat;
+    this.host.runState.daily = null;
     this.achievementTracker.setRunState(this.host.runState);
     this.host.runState.autoAimEnabled = this.host.saveManager.getData().settings.autoAim;
 
@@ -213,7 +222,10 @@ export class RunController {
     // The end-of-run movie has its own audio; the jingle only plays if the movie can't
 
     const finalScrap = this.host.runState.alloyScrapEarned;
-    if (victory) this.host.saveManager.recordThreatVictory(this.host.runState.threat);
+    if (victory && !this.host.runState.daily) this.host.saveManager.recordThreatVictory(this.host.runState.threat);
+    if (this.host.runState.daily) {
+      this.host.saveManager.recordDaily(this.host.runState.daily, this.host.runState.timeSeconds, this.host.runState.kills, victory);
+    }
 
     this.host.saveManager.addRunResults(
       this.host.runState.kills,

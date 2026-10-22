@@ -50,6 +50,8 @@ export class RunState {
   public seed = 0;
   /** Threat level of this run (0 = standard) */
   public threat = 0;
+  /** Date key when this is the daily operation, else null */
+  public daily: string | null = null;
   public hp = 100;
   public maxHp = 100;
   public kills = 0;

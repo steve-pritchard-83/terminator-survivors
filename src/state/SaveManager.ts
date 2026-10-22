@@ -285,7 +285,16 @@ export class SaveManager {
       runHistory: runHistory.slice(0, 20),
       tipsSeen: Array.isArray(current.tipsSeen) ? current.tipsSeen.filter((t: unknown) => typeof t === 'string') : [],
       threatUnlocked,
-      selectedThreat: Math.max(0, Math.min(threatUnlocked, Math.floor(Number(current.selectedThreat) || 0)))
+      selectedThreat: Math.max(0, Math.min(threatUnlocked, Math.floor(Number(current.selectedThreat) || 0))),
+      daily:
+        current.daily && typeof current.daily.date === 'string'
+          ? {
+              date: current.daily.date,
+              bestSeconds: Math.max(0, Number(current.daily.bestSeconds) || 0),
+              bestKills: Math.max(0, Math.floor(Number(current.daily.bestKills) || 0)),
+              won: current.daily.won === true
+            }
+          : undefined
     };
   }
 
@@ -564,6 +573,18 @@ export class SaveManager {
       this.data.threatUnlocked = unlocked + 1;
       this.save();
     }
+  }
+
+  /** Keeps the best daily-operation result for the given day (a new day starts afresh). */
+  public recordDaily(date: string, seconds: number, kills: number, won: boolean): void {
+    const prev = this.data.daily?.date === date ? this.data.daily : undefined;
+    this.data.daily = {
+      date,
+      bestSeconds: Math.max(prev?.bestSeconds ?? 0, seconds),
+      bestKills: Math.max(prev?.bestKills ?? 0, Math.floor(kills)),
+      won: (prev?.won ?? false) || won
+    };
+    this.save();
   }
 
   public selectThreat(threat: number): void {

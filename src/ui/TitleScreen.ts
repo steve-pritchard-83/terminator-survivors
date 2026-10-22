@@ -10,6 +10,7 @@ import { iconLabel } from './icons';
 import { APP_VERSION, BUILD_HASH } from '../core/version';
 import { ModelLibrary } from '../graphics/ModelLibrary';
 import { threatRules } from '../data/waves';
+import { dailyKey } from '../core/daily';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -26,6 +27,7 @@ export class TitleScreen {
   private readonly bunkerBtn: HTMLElement;
   private readonly historyBtn: HTMLElement;
   private threatBtn!: HTMLElement;
+  private dailyBtn!: HTMLButtonElement;
   private readonly settingsBtn: HTMLElement;
   private readonly saveManager: SaveManager;
   private readonly audioEngine: AudioEngine;
@@ -67,6 +69,7 @@ export class TitleScreen {
           <button class="btn-primary" data-testid="btn-start-run" id="btn-start-run" aria-label="Deploy">
             ${iconLabel('play', 'DEPLOY')}
           </button>
+          <button class="btn-secondary" data-testid="btn-daily" id="btn-daily" aria-label="Daily operation"></button>
           <button class="btn-secondary" data-testid="btn-threat" id="btn-threat" aria-label="Threat level" style="display:none;"></button>
           <button class="btn-secondary" data-testid="btn-bunker-shop" id="btn-bunker-shop" aria-label="Requisition">
             ${iconLabel('shop', 'REQUISITION')}
@@ -136,9 +139,12 @@ export class TitleScreen {
     const startButton = this.startBtn as HTMLButtonElement;
     startButton.disabled = true;
     startButton.innerHTML = iconLabel('play', 'LOADING');
+    this.dailyBtn = this.container.querySelector('#btn-daily')!;
+    this.dailyBtn.disabled = true;
     void ModelLibrary.preload().then(() => {
       startButton.disabled = false;
       startButton.innerHTML = iconLabel('play', 'DEPLOY');
+      this.dailyBtn.disabled = false;
     });
     this.bunkerBtn = this.container.querySelector('#btn-bunker-shop')!;
     this.historyBtn = this.container.querySelector('#btn-history')!;
@@ -186,6 +192,14 @@ export class TitleScreen {
       this.hide();
       this.onStartRun({});
     });
+
+    // Daily operation: today's seed, best result shown on the button
+    this.dailyBtn.addEventListener('click', () => {
+      this.tryLockMobileLandscape();
+      this.hide();
+      this.onStartRun({ daily: true });
+    });
+    this.renderDaily();
 
     // Threat level for the next run, cycling through the levels unlocked by winning
     this.threatBtn = this.container.querySelector('#btn-threat')!;
@@ -374,6 +388,19 @@ export class TitleScreen {
     }
   }
 
+  /** "DAILY" with today's best time, once there is one. */
+  private renderDaily(): void {
+    const daily = this.saveManager.getData().daily;
+    const today = dailyKey();
+    let label = 'DAILY';
+    if (daily?.date === today && daily.bestSeconds > 0) {
+      const s = Math.floor(daily.bestSeconds);
+      label = `DAILY · ${daily.won ? 'WON' : 'BEST'} ${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`;
+    }
+    this.dailyBtn.innerHTML = iconLabel('timer', label);
+    this.dailyBtn.title = "Today's operation: the same waves for everyone, standard threat";
+  }
+
   /** The threat button only appears once a win has unlocked threat level 1. */
   private renderThreat(): void {
     const data = this.saveManager.getData();
@@ -392,6 +419,7 @@ export class TitleScreen {
 
   public show(): void {
     this.renderThreat();
+    this.renderDaily();
     this.container.style.display = 'flex';
     this.selectedBtnIndex = 0;
     this.updateTitleButtonHighlight();
@@ -415,7 +443,7 @@ export class TitleScreen {
 
   private getActiveTitleButtons(): HTMLElement[] {
     // Only buttons on screen (the threat and install buttons appear when relevant)
-    return [this.startBtn, this.threatBtn, this.bunkerBtn, this.historyBtn, this.settingsBtn, this.installBtn].filter(
+    return [this.startBtn, this.dailyBtn, this.threatBtn, this.bunkerBtn, this.historyBtn, this.settingsBtn, this.installBtn].filter(
       (b) => b && b.style.display !== 'none'
     );
   }

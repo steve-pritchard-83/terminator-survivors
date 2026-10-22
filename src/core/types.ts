@@ -296,6 +296,15 @@ export interface MetaSaveData {
   /** Highest threat level unlocked (0 = none yet) and the one chosen for the next run */
   threatUnlocked?: number;
   selectedThreat?: number;
+  /** Best result in today's daily operation (reset when the day changes) */
+  daily?: DailyRecord;
+}
+
+export interface DailyRecord {
+  date: string;
+  bestSeconds: number;
+  bestKills: number;
+  won: boolean;
 }
 
 export interface RunHistoryRecord {
@@ -350,6 +359,8 @@ export interface RunConfig {
   loadoutId?: LoadoutId;
   seed?: number;
   threat?: number;
+  /** The daily operation: today's seed at standard threat, best result recorded */
+  daily?: boolean;
 }
 
 export interface GameDebugAPI {
