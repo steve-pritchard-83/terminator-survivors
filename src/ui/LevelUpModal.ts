@@ -126,7 +126,10 @@ export class LevelUpModal {
         `${choice.title}: ${choice.subtitle}. ${choice.description}`
       );
 
-      const isStatDiff = choice.description.includes(' · ');
+      const summary = this.summary(choice.description);
+      const isStatDiff = summary.includes(' · ');
+      // Only an evolution hint helps the choice; the rest of the synergy text is left for the Pause screen
+      const hint = choice.synergyHint && /EVOLUTION/.test(choice.synergyHint) ? choice.synergyHint : '';
       card.innerHTML = `
         <div class="upgrade-card-icon">${this.choiceIcon(choice)}</div>
         <div class="upgrade-card-info">
@@ -134,8 +137,8 @@ export class LevelUpModal {
             <div class="upgrade-card-title">${choice.title}</div>
             <div class="upgrade-card-sub">${choice.subtitle}</div>
           </div>
-          <div class="upgrade-card-desc${isStatDiff ? ' upgrade-card-stats' : ''}">${choice.description}</div>
-          ${choice.synergyHint ? `<div class="upgrade-card-desc">${choice.synergyHint}</div>` : ''}
+          <div class="upgrade-card-desc${isStatDiff ? ' upgrade-card-stats' : ''}">${summary}</div>
+          ${hint ? `<div class="upgrade-card-desc">${hint}</div>` : ''}
         </div>
       `;
 
@@ -154,6 +157,18 @@ export class LevelUpModal {
 
     this.updateCardHighlight();
     this.a11y.activate(this.cards[0]);
+  }
+
+  /**
+   * The one line a card needs for a decision: a signature perk by name and effect, otherwise the three
+   * biggest stat changes (damage, projectiles, cooldown come first), otherwise the item's own description.
+   */
+  private summary(description: string): string {
+    if (description.startsWith('★')) {
+      const i = description.indexOf(' · ');
+      return i > 0 ? description.slice(0, i) : description;
+    }
+    return description.includes(' · ') ? description.split(' · ').slice(0, 3).join(' · ') : description;
   }
 
   private choiceIcon(choice: UpgradeChoice): string {
