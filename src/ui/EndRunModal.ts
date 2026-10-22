@@ -197,11 +197,20 @@ export class EndRunModal {
       this.loreEl.textContent = LORE.defeatText;
     }
 
+    // The weapon that carried the run, so the next build has a starting point
+    const damage = Object.entries(details?.weaponDamageBreakdown ?? {});
+    const total = damage.reduce((sum, [, d]) => sum + d, 0);
+    const [topId, topDamage] = damage.sort((a, b) => b[1] - a[1])[0] ?? [];
+    const topLine = topId && total > 0
+      ? `<div><span class="t-muted">TOP WEAPON:</span> ${ALL_WEAPONS[topId as WeaponId]?.name ?? topId} · ${Math.round((topDamage / total) * 100)}%</div>`
+      : '';
+
     this.statsEl.innerHTML = `
       <div><span class="t-muted">TIME:</span> ${timeFormatted}</div>
       <div><span class="t-muted">KILLS:</span> ${kills}</div>
       <div><span class="t-muted">LEVEL:</span> ${level}</div>
       <div><span class="t-muted">SCRAP:</span> +${scrap}</div>
+      ${topLine}
       ${seed !== undefined ? `<div class="t-muted" style="font-size:11px;">MISSION SEED: ${seed}</div>` : ''}
     `;
 

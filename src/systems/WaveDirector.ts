@@ -10,6 +10,7 @@ import {
   RUN_DURATION_MINUTES,
   SUPPLY_DROP,
   threatMultipliers,
+  threatRules,
   WAVE_TIMELINE
 } from '../data/waves';
 import { globalEvents } from '../core/EventBus';
@@ -70,7 +71,7 @@ export class WaveDirector {
     const threat = threatMultipliers(this.runState.threat);
     const hpMultiplier = entry.hpMultiplier * threat.hp;
     const damageMultiplier = entry.damageMultiplier * threat.damage;
-    const eliteChance = entry.eliteChance;
+    const eliteChance = entry.eliteChance + threatRules(this.runState.threat).eliteBonus;
 
     // Normal wave spawns, thinned out while a boss is alive so the fight stays readable
     const bossAlive = this.enemySystem.activeEnemies.some((e) => e.isBoss);
@@ -92,7 +93,14 @@ export class WaveDirector {
     const bz = pz + Math.sin(angle) * dist;
 
     const threat = threatMultipliers(this.runState.threat);
-    const boss = this.enemySystem.spawnEnemy(archetype, bx, bz, BOSS_SPAWN.hpMultiplier * threat.hp, BOSS_SPAWN.damageMultiplier * threat.damage);
+    const rules = threatRules(this.runState.threat);
+    const boss = this.enemySystem.spawnEnemy(
+      archetype,
+      bx,
+      bz,
+      BOSS_SPAWN.hpMultiplier * threat.hp * rules.bossHp,
+      BOSS_SPAWN.damageMultiplier * threat.damage
+    );
     globalEvents.emit('boss:spawned', {
       archetype,
       name: bannerText ?? (ENEMY_CONFIGS[archetype]?.name ?? archetype).toUpperCase(),
@@ -162,7 +170,8 @@ export class WaveDirector {
 
     // Fodder comes as a pack (one of them may be an elite); heavies and emplacements come alone
     const packMinutes = Math.max(0, this.runState.timeSeconds - PACK_SPAWN.startSeconds) / 60;
-    const packMax = PACK_SPAWN.max[chosenArchetype];
+    const rules = threatRules(this.runState.threat);
+    const packMax = PACK_SPAWN.max[chosenArchetype] ? PACK_SPAWN.max[chosenArchetype]! + rules.packBonus : undefined;
     const packSize = packMax && packMinutes > 0
       ? Math.min(packMax, 1 + Math.floor(packMinutes * PACK_SPAWN.perMinute), Math.max(1, room))
       : 1;
@@ -171,7 +180,8 @@ export class WaveDirector {
       const affix = isElite ? (globalRNG.pick(Object.keys(ELITE_AFFIXES) as EliteAffix[])) : undefined;
       const ox = i === 0 ? 0 : globalRNG.range(-PACK_SPAWN.spread, PACK_SPAWN.spread);
       const oz = i === 0 ? 0 : globalRNG.range(-PACK_SPAWN.spread, PACK_SPAWN.spread);
-      this.enemySystem.spawnEnemy(chosenArchetype, sx + ox, sz + oz, hpMult, dmgMult, affix);
+      const enemy = this.enemySystem.spawnEnemy(chosenArchetype, sx + ox, sz + oz, hpMult, dmgMult, affix);
+      enemy.speed *= rules.speed;
     }
   }
 }

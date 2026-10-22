@@ -181,3 +181,33 @@ export const threatMultipliers = (threat: number) => ({
   damage: 1 + threat * THREAT_STEP.damage,
   scrap: 1 + threat * THREAT_STEP.scrap
 });
+
+// Each threat level also adds one rule that changes how the run plays; rules stack with the levels below.
+export interface ThreatRule {
+  label: string;
+  eliteBonus?: number;
+  speed?: number;
+  packBonus?: number;
+  noMedkits?: boolean;
+  bossHp?: number;
+}
+export const THREAT_RULES: ThreatRule[] = [
+  { label: 'ELITES FROM THE START', eliteBonus: 0.08 },
+  { label: 'FASTER MACHINES', speed: 1.12 },
+  { label: 'BIGGER PACKS', packBonus: 2 },
+  { label: 'NO MEDKITS IN CRATES', noMedkits: true },
+  { label: 'TOUGHER BOSSES', bossHp: 1.3 }
+];
+
+/** The rules in force at a threat level (all levels up to it, combined). */
+export function threatRules(threat: number): Required<Omit<ThreatRule, 'label'>> & { labels: string[] } {
+  const active = THREAT_RULES.slice(0, Math.max(0, Math.min(MAX_THREAT, threat)));
+  return {
+    labels: active.map((r) => r.label),
+    eliteBonus: active.reduce((s, r) => s + (r.eliteBonus ?? 0), 0),
+    speed: active.reduce((s, r) => s * (r.speed ?? 1), 1),
+    packBonus: active.reduce((s, r) => s + (r.packBonus ?? 0), 0),
+    noMedkits: active.some((r) => r.noMedkits),
+    bossHp: active.reduce((s, r) => s * (r.bossHp ?? 1), 1)
+  };
+}

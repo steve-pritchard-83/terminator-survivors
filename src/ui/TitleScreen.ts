@@ -9,7 +9,7 @@ import { ModalA11y } from './A11yHelper';
 import { iconLabel } from './icons';
 import { APP_VERSION, BUILD_HASH } from '../core/version';
 import { ModelLibrary } from '../graphics/ModelLibrary';
-import { threatMultipliers } from '../data/waves';
+import { threatRules } from '../data/waves';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -380,12 +380,14 @@ export class TitleScreen {
     const unlocked = data.threatUnlocked ?? 0;
     const threat = data.selectedThreat ?? 0;
     this.threatBtn.style.display = unlocked > 0 ? '' : 'none';
-    const m = threatMultipliers(threat);
-    this.threatBtn.innerHTML = iconLabel(
-      'boss',
-      threat === 0 ? 'THREAT: STANDARD' : `THREAT ${threat} · +${Math.round((m.hp - 1) * 100)}% HP · +${Math.round((m.scrap - 1) * 100)}% SCRAP`
+    // The newest rule names the level; tougher machines and more scrap come with every level
+    const rules = threatRules(threat).labels;
+    this.threatBtn.innerHTML = iconLabel('boss', threat === 0 ? 'THREAT: STANDARD' : `THREAT ${threat} · ${rules[rules.length - 1]}`);
+    this.threatBtn.title = rules.join(' · ');
+    this.threatBtn.setAttribute(
+      'aria-label',
+      `Threat level ${threat} of ${unlocked}${rules.length ? ': ' + rules.join(', ').toLowerCase() : ''}. Press to change.`
     );
-    this.threatBtn.setAttribute('aria-label', `Threat level ${threat} of ${unlocked}. Press to change.`);
   }
 
   public show(): void {

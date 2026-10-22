@@ -1,8 +1,22 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { SaveManager } from '../../src/state/SaveManager';
-import { MAX_THREAT, threatMultipliers } from '../../src/data/waves';
+import { MAX_THREAT, THREAT_RULES, threatMultipliers, threatRules } from '../../src/data/waves';
 
 describe('threat levels', () => {
+  it('add one rule per level, stacking with the levels below', () => {
+    expect(THREAT_RULES).toHaveLength(MAX_THREAT);
+    expect(threatRules(0).labels).toEqual([]);
+    expect(threatRules(0).speed).toBe(1);
+    expect(threatRules(1).eliteBonus).toBeGreaterThan(0);
+    const top = threatRules(MAX_THREAT);
+    expect(top.labels).toHaveLength(MAX_THREAT);
+    expect(top.speed).toBeGreaterThan(1);
+    expect(top.packBonus).toBeGreaterThan(0);
+    expect(top.noMedkits).toBe(true);
+    expect(top.bossHp).toBeGreaterThan(1);
+    expect(threatRules(99).labels).toEqual(top.labels);
+  });
+
   beforeEach(() => localStorage.clear());
 
   it('unlock one at a time by winning at the highest level reached', () => {

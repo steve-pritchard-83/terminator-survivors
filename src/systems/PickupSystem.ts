@@ -9,6 +9,7 @@ import { globalEvents } from '../core/EventBus';
 import { globalRNG } from '../core/RNG';
 import type { ParticleSystem } from './ParticleSystem';
 import { ELITE_VAULT, SCRAP_DROP } from '../data/balance';
+import { threatRules } from '../data/waves';
 
 export interface ActivePickup extends SpatialEntity, PoolableUser {
   mesh?: THREE.Object3D;
@@ -421,7 +422,7 @@ export class PickupSystem {
       this.audio.playCrateBreak();
       // Random crate rewards: Heal, EMP blast, or Alloy Scrap
       const roll = globalRNG.next();
-      if (roll < 0.4) {
+      if (roll < 0.4 && !threatRules(this.runState.threat).noMedkits) {
         this.runState.heal(35);
         this.audio.playLoot('heal');
         globalEvents.emit('pickup:reward', {
