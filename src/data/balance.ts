@@ -46,7 +46,7 @@ export const PLAYER_HIT_SHAKE = 0.18;
 export const AUTO_AIM_RANGE = 28;
 // Auto-aim locks onto a visible boss within `range` metres, unless a machine is closer than `selfDefence`:
 // otherwise aimed weapons spend the fight on the fodder screening it.
-export const BOSS_FOCUS = { range: 14, selfDefence: 3.5 };
+export const BOSS_FOCUS = { range: 14, selfDefence: 2 };
 export const TANK_RUMBLE = { radius: 14, intervalSeconds: 0.55, trauma: 0.08 };
 export const EXPLOSION_VISUAL_SCALE_CAP = 1.4;
 export const EXPLOSION_SMOKE_END = 6.0;
@@ -97,7 +97,7 @@ export const UPGRADE_OFFERS = { ownedWeight: 3, guaranteePassiveAtLevel: 5, newW
 export const ELITE_VAULT = { fromSeconds: 180, chance: 0.15 };
 
 // The opening is gentler: player damage is scaled down for the first stretch of a run.
-export const OPENING_GRACE = { seconds: 90, damageScale: 0.55 };
+export const OPENING_GRACE = { seconds: 120, damageScale: 0.55 };
 
 // Alloy scrap sources in a run. A win (about 2-3k) should fund a few Requisition upgrades, not the whole list.
 // Elite vaults pay no scrap (they are an evolution route, not a scrap source).

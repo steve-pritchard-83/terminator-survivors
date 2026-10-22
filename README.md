@@ -33,12 +33,12 @@ Available anywhere on desktop and mobile, with full progressive web app (PWA) of
 - **Cinematic Post-Processing**: Unreal bloom, cobalt-blue colour grading, film grain (desktop), and a faint steel CRT scanline overlay. The interface is neutral steel; red is kept for health, bosses and damage.
 - **Faithful Typography & Audio**:
   - Incorporates the authentic `Terminator Real NFI` font alongside Share Tech Mono for the interface.
-  - Looped background music (`backgroundmusic.mp3`) played through a gapless Web Audio loop graph.
+  - Looped background music (`backgroundmusic.mp3`) played through a gapless Web Audio loop graph, crossfading to a boss track (`boss.mp3`) during boss fights.
   - Audio engine playing about 170 trimmed WAV effects (listed in `SFX_WAV_MANIFEST`) with spatial panning and voice limits, plus synthesised warning cues before boss attacks.
 
 ### 2. Survivor Combat & Arsenal (11 Weapons, 10 Passives, 11 Evolutions)
 
-- **Weapons** (each evolves into a superweapon once it reaches level 8 alongside its paired passive and a boss data vault is opened):
+- **Weapons** (each evolves into a superweapon once it reaches level 7 alongside its paired passive and a data vault is opened):
   - **Westinghouse M-25 Plasma Rifle** (starting weapon) → M95A1 Heavy
   - **Ithaca 37 Shotgun** → Trench Sweeper Auto-12
   - **Thermite Pipe Bomb** → Thermite Bunker Buster
@@ -60,7 +60,9 @@ Available anywhere on desktop and mobile, with full progressive web app (PWA) of
 - **Specialists**: Moto-Terminator flankers and T-1 tracked chassis (from minute 3), plasma turrets, and Hunter-Killer Aerial gunships with searchlights.
 - **Elites**: any fodder can spawn as an Armored, Overclocked or Self-Destruct elite.
 - **Bosses**: Infiltrator CSM-101 (2:00), Hunter-Killer Tank Goliath (4:00), HK-Aerial Command (6:00), T-1000 (8:00) and the Skynet Time Displacement Core (10:00). Each has a minimum fight length so its phases always play out.
-- **Threat levels**: winning unlocks the next of five harder levels (tougher machines, more scrap).
+- **Threat levels**: winning unlocks the next of five harder levels (tougher machines, more scrap, and one extra rule each: elites from the start, faster machines, bigger packs, no medkits, tougher bosses).
+- **Supply drops**: at 3:20, 5:20 and 7:20 a guarded data vault lands nearby; arrows at the screen edge point to vaults and off-screen bosses.
+- **Daily operation**: the same waves for everyone each day, with the day's best result kept.
 
 ### 4. Controller, Mobile Native & PWA First
 
