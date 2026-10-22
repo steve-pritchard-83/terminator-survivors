@@ -27,7 +27,6 @@ export class SettingsPanel {
   private flashSlider!: HTMLInputElement;
   private reducedMotionCheckbox!: HTMLInputElement;
   private damageNumbersSelect!: HTMLSelectElement;
-  private crtCheckbox!: HTMLInputElement;
   private qualityPresetSelect!: HTMLSelectElement;
   private autoAimCheckbox!: HTMLInputElement;
   private showFpsCheckbox!: HTMLInputElement;
@@ -170,10 +169,6 @@ export class SettingsPanel {
             </select>
           </div>
           <div class="settings-row">
-            <label for="setting-crt">SCANLINES</label>
-            <input type="checkbox" id="setting-crt" aria-label="Scanlines" />
-          </div>
-          <div class="settings-row">
             <label for="setting-quality">QUALITY</label>
             <select id="setting-quality" aria-label="Graphics Quality Preset">
               <option value="low">LOW</option>
@@ -193,7 +188,7 @@ export class SettingsPanel {
           <div class="settings-row">
             <div>
               <label for="setting-reduced-motion">REDUCED MOTION</label>
-              <div class="t-muted" style="font-size:10px;">NO SHAKE, HIT-STOP OR SCANLINES</div>
+              <div class="t-muted" style="font-size:10px;">NO SHAKE OR HIT-STOP</div>
             </div>
             <input type="checkbox" id="setting-reduced-motion" aria-label="Reduced Motion" />
           </div>
@@ -256,7 +251,6 @@ export class SettingsPanel {
     this.flashSlider = this.container.querySelector('#setting-flash')!;
     this.reducedMotionCheckbox = this.container.querySelector('#setting-reduced-motion')!;
     this.damageNumbersSelect = this.container.querySelector('#setting-damage-numbers')!;
-    this.crtCheckbox = this.container.querySelector('#setting-crt')!;
     this.qualityPresetSelect = this.container.querySelector('#setting-quality')!;
     this.autoAimCheckbox = this.container.querySelector('#setting-autoaim')!;
     this.showFpsCheckbox = this.container.querySelector('#setting-fps')!;
@@ -298,7 +292,6 @@ export class SettingsPanel {
       this.shakeSlider,
       this.flashSlider,
       this.damageNumbersSelect,
-      this.crtCheckbox,
       this.qualityPresetSelect,
       this.autoAimCheckbox,
       this.reducedMotionCheckbox,
@@ -334,7 +327,6 @@ export class SettingsPanel {
     this.reducedMotionCheckbox.addEventListener('change', () => {
       if (this.reducedMotionCheckbox.checked) {
         this.shakeSlider.value = '0';
-        this.crtCheckbox.checked = false;
         updateLabels();
       }
     });
@@ -409,7 +401,6 @@ export class SettingsPanel {
     this.flashSlider.value = s.flashIntensity.toString();
     this.reducedMotionCheckbox.checked = s.reducedMotion;
     this.damageNumbersSelect.value = s.damageNumbers;
-    this.crtCheckbox.checked = s.crtScanlines;
     this.autoAimCheckbox.checked = s.autoAim;
     this.qualityPresetSelect.value = s.qualityPreset || 'high';
     this.showFpsCheckbox.checked = s.showFps;
@@ -433,7 +424,6 @@ export class SettingsPanel {
     this.flashSlider.value = '100';
     this.reducedMotionCheckbox.checked = isReduced;
     this.damageNumbersSelect.value = 'all';
-    this.crtCheckbox.checked = !isReduced;
     this.qualityPresetSelect.value = 'high';
     this.autoAimCheckbox.checked = true;
     this.showFpsCheckbox.checked = false;
@@ -450,7 +440,6 @@ export class SettingsPanel {
       flashIntensity: parseInt(this.flashSlider.value, 10),
       reducedMotion: this.reducedMotionCheckbox.checked,
       damageNumbers: this.damageNumbersSelect.value as DamageNumberSetting,
-      crtScanlines: this.crtCheckbox.checked,
       qualityPreset: (this.qualityPresetSelect.value as QualityPreset) || 'high',
       autoAim: this.autoAimCheckbox.checked,
       showFps: this.showFpsCheckbox.checked,

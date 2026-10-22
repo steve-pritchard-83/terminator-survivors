@@ -31,8 +31,44 @@ interface Chunk {
   z: number;
   group: THREE.Group;
   ground: THREE.Mesh;
-  /** Sculpted landscape tiles (row-major, `tilesPerSide` squared), once the model has loaded */
-  tiles: THREE.Object3D[];
+}
+
+function createBonePatchMaterial(source: THREE.MeshStandardMaterial): THREE.MeshStandardMaterial {
+  const mat = source.clone();
+  mat.roughnessMap = null;
+  mat.metalnessMap = null;
+  mat.roughness = GROUND_TILE.roughness;
+  mat.metalness = 0;
+  mat.envMapIntensity = GROUND_TILE.envMapIntensity;
+  mat.normalScale.setScalar(GROUND_TILE.normalScale);
+  // The flattest bones lie on the ground plane itself: always draw them over it
+  mat.polygonOffset = true;
+  mat.polygonOffsetFactor = -2;
+  mat.polygonOffsetUnits = -4;
+  mat.onBeforeCompile = (shader) => {
+    shader.uniforms.uPatchRadius = { value: GROUND_TILE.size / 2 };
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nuniform float uPatchRadius;')
+      .replace(
+        '#include <begin_vertex>',
+        `#include <begin_vertex>
+        vec2 patchOrigin = vec2(instanceMatrix[3][0], instanceMatrix[3][2]);
+        float patchAngle = atan(transformed.z, transformed.x);
+        float wobble = 0.16 * sin(patchAngle * 3.0 + patchOrigin.x * 0.37) + 0.1 * sin(patchAngle * 5.0 + patchOrigin.y * 0.53)
+          + 0.06 * sin(patchAngle * 9.0 + patchOrigin.x * 0.11 + patchOrigin.y * 0.7);
+        float patchR = length(transformed.xz) / uPatchRadius;
+        float patchEdge = smoothstep(${GROUND_TILE.edgeInner.toFixed(2)} + wobble, ${GROUND_TILE.edgeOuter.toFixed(2)} + wobble, patchR);
+        transformed.y = transformed.y * (1.0 - patchEdge) - patchEdge * 0.4;`
+      );
+    shader.fragmentShader = shader.fragmentShader.replace(
+      '#include <map_fragment>',
+      `#include <map_fragment>
+      float boneLuma = dot(diffuseColor.rgb, vec3(0.299, 0.587, 0.114));
+      diffuseColor.rgb = mix(diffuseColor.rgb, vec3(boneLuma), ${GROUND_TILE.boneDesaturate.toFixed(2)}) * ${GROUND_TILE.boneBrightness.toFixed(2)};`
+    );
+  };
+  mat.customProgramCacheKey = () => 'bone-patch';
+  return mat;
 }
 
 export class Environment2029 implements IEnvironment {
@@ -74,6 +110,8 @@ export class Environment2029 implements IEnvironment {
   private lastPlayerX = 0;
   private lastPlayerZ = 0;
   private groundTileActive = false;
+  /** Sculpted bone patches, one batch per ground chunk (so batches off screen are skipped), once the model has loaded */
+  private readonly bonePatches: THREE.InstancedMesh[] = [];
 
   constructor() {
     this.groundGeo = new THREE.PlaneGeometry(this.chunkSize, this.chunkSize, 24, 24);
@@ -507,7 +545,7 @@ export class Environment2029 implements IEnvironment {
         chunkGroup.add(ground);
         chunkGroup.position.set(cx * this.chunkSize, 0, cz * this.chunkSize);
         this.group.add(chunkGroup);
-        this.chunks.push({ x: cx, z: cz, group: chunkGroup, ground, tiles: [] });
+        this.chunks.push({ x: cx, z: cz, group: chunkGroup, ground });
       }
     }
 
@@ -526,51 +564,87 @@ export class Environment2029 implements IEnvironment {
     this.applyGroundTile();
   }
 
-  /** Replaces the flat procedural ground with the sculpted ash-and-bone tile on every chunk. */
+  /**
+   * Brings in the sculpted ash-and-bone field: its dirt becomes fine detail on the ash ground, and its bones
+   * are scattered as small patches whose edges sink into the ash.
+   */
   private applyGroundTile(): void {
     const tile = ModelLibrary.get('ground');
     if (!tile) return;
+    tile.updateMatrixWorld(true);
+    const bones: THREE.Mesh[] = [];
+    const dirt: THREE.MeshStandardMaterial[] = [];
     tile.traverse((o) => {
-      const mat = (o as THREE.Mesh).material as THREE.MeshStandardMaterial | undefined;
-      if (!mat?.isMeshStandardMaterial || mat.userData.groundTinted) return;
-      mat.color.multiply(new THREE.Color(GROUND_TILE.tint));
-      mat.roughnessMap = null;
-      mat.metalnessMap = null;
-      mat.roughness = GROUND_TILE.roughness;
-      mat.metalness = 0;
-      mat.envMapIntensity = GROUND_TILE.envMapIntensity;
-      mat.normalScale.setScalar(GROUND_TILE.normalScale);
-      mat.needsUpdate = true;
-      mat.userData.groundTinted = true;
+      const mesh = o as THREE.Mesh;
+      if (!mesh.isMesh) return;
+      const mat = mesh.material as THREE.MeshStandardMaterial;
+      if (mat.name === 'Bones') bones.push(mesh);
+      else dirt.push(mat);
     });
-    const perSide = Math.round(this.chunkSize / GROUND_TILE.size);
-    for (const c of this.chunks) {
-      // The flat ash plane stays underneath, filling the gaps the tile leaves under its bone piles
-      c.ground.position.y = -GROUND_TILE.underlayDepth;
-      for (let i = 0; i < perSide * perSide; i++) {
-        const t = tile.clone(true);
-        t.position.set(
-          ((i % perSide) + 0.5 - perSide / 2) * GROUND_TILE.size,
-          0,
-          (Math.floor(i / perSide) + 0.5 - perSide / 2) * GROUND_TILE.size
-        );
-        c.group.add(t);
-        c.tiles.push(t);
+    if (dirt[0]) this.addGroundDetail(dirt[0]);
+    if (bones[0]) {
+      const geometry = bones[0].geometry.clone().applyMatrix4(bones[0].matrixWorld);
+      geometry.scale(1, GROUND_TILE.heightScale, 1);
+      geometry.userData.shared = true;
+      const material = createBonePatchMaterial(bones[0].material as THREE.MeshStandardMaterial);
+      for (let i = 0; i < this.chunks.length; i++) {
+        const batch = new THREE.InstancedMesh(geometry, material, RENDER_BUDGET.boneClusters * GROUND_TILE.clusterMax);
+        batch.count = 0;
+        this.group.add(batch);
+        this.bonePatches.push(batch);
       }
-      this.mirrorTiles(c);
     }
     this.groundTileActive = true;
     this.repopulateProps(0, 0);
   }
 
-  /** Neighbouring tiles are mirror images, so their edges always meet without a seam. */
-  private mirrorTiles(c: Chunk): void {
-    const perSide = Math.round(this.chunkSize / GROUND_TILE.size);
-    c.tiles.forEach((t, i) => {
-      const gx = c.x * perSide + (i % perSide);
-      const gz = c.z * perSide + Math.floor(i / perSide);
-      t.scale.set(gx % 2 === 0 ? 1 : -1, GROUND_TILE.heightScale, gz % 2 === 0 ? 1 : -1);
-    });
+  /** The dirt's own texture, repeated finely (mirrored, so it has no seams), marks and roughens the ash ground. */
+  private addGroundDetail(dirt: THREE.MeshStandardMaterial): void {
+    const repeat = (tex: THREE.Texture | null): THREE.Texture | null => {
+      if (!tex) return null;
+      const t = tex.clone();
+      t.wrapS = t.wrapT = THREE.MirroredRepeatWrapping;
+      t.repeat.set(GROUND_TILE.detailRepeat, GROUND_TILE.detailRepeat);
+      t.needsUpdate = true;
+      return t;
+    };
+    const detail = repeat(dirt.map);
+    const normal = repeat(dirt.normalMap);
+    const mat = this.groundMat;
+    if (normal) {
+      // Replaces the coarse procedural bump with the dirt's finer relief
+      mat.normalMap = normal;
+      mat.normalScale.setScalar(GROUND_TILE.detailNormalScale);
+      mat.bumpMap = null;
+    }
+    if (detail) {
+      mat.onBeforeCompile = (shader) => {
+        shader.uniforms.uDetail = { value: detail };
+        shader.uniforms.uDetailRepeat = { value: GROUND_TILE.detailRepeat };
+        shader.uniforms.uDetailSaturation = { value: GROUND_TILE.detailSaturation };
+        shader.uniforms.uDetailGain = { value: GROUND_TILE.detailGain };
+        shader.uniforms.uMacroScale = { value: GROUND_TILE.macroScale };
+        shader.fragmentShader = shader.fragmentShader
+          .replace(
+            '#include <common>',
+            '#include <common>\nuniform sampler2D uDetail;\nuniform float uDetailRepeat;\nuniform float uDetailSaturation;\nuniform float uDetailGain;\nuniform float uMacroScale;'
+          )
+          .replace(
+            '#include <map_fragment>',
+            `#include <map_fragment>
+            // The dirt texture, repeated finely with mirroring (no seams) and muted toward grey, becomes the
+            // ground's colour; a wide second sample of it adds broad light and dark areas
+            vec2 detailUv = abs(mod(vMapUv * uDetailRepeat + 1.0, 2.0) - 1.0);
+            vec2 macroUv = abs(mod(vMapUv * uDetailRepeat * uMacroScale + 1.0, 2.0) - 1.0);
+            vec3 dirt = texture2D(uDetail, detailUv).rgb;
+            float dirtLuma = dot(dirt, vec3(0.299, 0.587, 0.114));
+            float macro = clamp(dot(texture2D(uDetail, macroUv).rgb, vec3(0.299, 0.587, 0.114)) * 5.0, 0.6, 1.3);
+            diffuseColor.rgb = mix(vec3(dirtLuma), dirt, uDetailSaturation) * uDetailGain * macro;`
+          );
+      };
+      mat.customProgramCacheKey = () => 'ground-detail';
+    }
+    mat.needsUpdate = true;
   }
 
   private repopulateProps(_centerChunkX: number, _centerChunkZ: number): void {
@@ -638,6 +712,31 @@ export class Environment2029 implements IEnvironment {
         const sz = originZ + (rng(s * 5 + 2) - 0.5) * (this.chunkSize - 6);
         placeSkull(sx, sz, -0.01 + rng(s * 7) * 0.03, 0.95 + rng(s * 19) * 0.4, s * 13);
         if (s % 2 === 0) placeBone(sx + 0.6, sz - 0.4, s * 29);
+      }
+
+      // Bone fields: clusters of sculpted patches, turned and sized at random
+      const batch = this.bonePatches[i];
+      if (batch) {
+        let patchIdx = 0;
+        for (let k = 0; k < RENDER_BUDGET.boneClusters; k++) {
+          const salt = 3000 + k * 41;
+          const cx = originX + (rng(salt) - 0.5) * (this.chunkSize - GROUND_TILE.size);
+          const cz = originZ + (rng(salt + 1) - 0.5) * (this.chunkSize - GROUND_TILE.size);
+          const parts = GROUND_TILE.clusterMin + Math.floor(rng(salt + 2) * (GROUND_TILE.clusterMax - GROUND_TILE.clusterMin + 1));
+          for (let j = 0; j < parts; j++) {
+            const a = rng(salt + 3 + j) * Math.PI * 2;
+            const r = j === 0 ? 0 : GROUND_TILE.clusterSpread * (0.6 + rng(salt + 7 + j) * 0.5);
+            const s = 0.8 + rng(salt + 11 + j) * 0.5;
+            dummy.position.set(cx + Math.cos(a) * r, 0, cz + Math.sin(a) * r);
+            dummy.rotation.set(0, rng(salt + 15 + j) * Math.PI * 2, 0);
+            dummy.scale.set(s, 1, s);
+            dummy.updateMatrix();
+            batch.setMatrixAt(patchIdx++, dummy.matrix);
+          }
+        }
+        batch.count = patchIdx;
+        batch.instanceMatrix.needsUpdate = true;
+        batch.computeBoundingSphere();
       }
 
       // Hand-placed feel: each chunk has a few sites where wrecks, ruins and rubble gather,
@@ -812,7 +911,6 @@ export class Environment2029 implements IEnvironment {
     }
 
     if (needsRepopulate) {
-      if (this.groundTileActive) for (const c of this.chunks) this.mirrorTiles(c);
       this.repopulateProps(curChunkX, curChunkZ);
     }
   }

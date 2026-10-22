@@ -108,10 +108,7 @@ export class Game implements RunControllerHost, InputRouterHost, DebugAPIHost {
     this.interactiveEnv = new InteractiveEnvironmentSystem(this.runState, this.grid, this.sceneManager.scene, this.audioEngine, this.particles, this.pickupSystem, this.enemySystem);
     this.sceneManager.scene.add(this.playerSystem.group, this.weaponSystem.group, this.enemySystem.group, this.pickupSystem.group);
 
-    // 4. UI Layer & CRT Overlay
-    const crtOverlay = document.createElement('div');
-    crtOverlay.className = 'crt-overlay';
-    appContainer.appendChild(crtOverlay);
+    // 4. UI Layer
 
     this.uiManager = new UIManager(
       appContainer,

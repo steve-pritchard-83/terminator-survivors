@@ -12,7 +12,6 @@ export class PauseModal {
   private readonly masterSlider: HTMLInputElement;
   private readonly sfxSlider: HTMLInputElement;
   private readonly musicSlider: HTMLInputElement;
-  private readonly crtCheckbox: HTMLInputElement;
   private readonly autoAimCheckbox: HTMLInputElement;
   private readonly resumeBtn: HTMLButtonElement;
   private readonly settingsBtn: HTMLButtonElement;
@@ -66,10 +65,6 @@ export class PauseModal {
             <input type="range" min="0" max="100" id="pause-slider-music" aria-label="Music Volume" />
           </div>
           <div class="pause-setting-row" id="pause-row-3">
-            <label for="pause-toggle-crt">SCANLINES</label>
-            <input type="checkbox" id="pause-toggle-crt" aria-label="Scanlines" />
-          </div>
-          <div class="pause-setting-row" id="pause-row-4">
             <label for="pause-toggle-autoaim">AUTO-AIM</label>
             <input type="checkbox" id="pause-toggle-autoaim" aria-label="Auto-Aim" />
           </div>
@@ -92,7 +87,6 @@ export class PauseModal {
     this.masterSlider = this.container.querySelector('#pause-slider-master')!;
     this.sfxSlider = this.container.querySelector('#pause-slider-sfx')!;
     this.musicSlider = this.container.querySelector('#pause-slider-music')!;
-    this.crtCheckbox = this.container.querySelector('#pause-toggle-crt')!;
     this.autoAimCheckbox = this.container.querySelector('#pause-toggle-autoaim')!;
     this.resumeBtn = this.container.querySelector('#btn-pause-resume')!;
     this.settingsBtn = this.container.querySelector('#btn-pause-settings')!;
@@ -103,7 +97,6 @@ export class PauseModal {
       this.container.querySelector('#pause-row-1')!,
       this.container.querySelector('#pause-row-2')!,
       this.container.querySelector('#pause-row-3')!,
-      this.container.querySelector('#pause-row-4')!,
       this.resumeBtn,
       this.settingsBtn,
       this.abortBtn
@@ -132,24 +125,19 @@ export class PauseModal {
       },
       onConfirm: () => {
         if (this.selectedRowIndex === 3) {
-          this.crtCheckbox.checked = !this.crtCheckbox.checked;
-          this.crtCheckbox.dispatchEvent(new Event('change'));
-          return true;
-        }
-        if (this.selectedRowIndex === 4) {
           this.autoAimCheckbox.checked = !this.autoAimCheckbox.checked;
           this.autoAimCheckbox.dispatchEvent(new Event('change'));
           return true;
         }
-        if (this.selectedRowIndex === 5) {
+        if (this.selectedRowIndex === 4) {
           this.resumeBtn.click();
           return true;
         }
-        if (this.selectedRowIndex === 6) {
+        if (this.selectedRowIndex === 5) {
           this.settingsBtn.click();
           return true;
         }
-        if (this.selectedRowIndex === 7) {
+        if (this.selectedRowIndex === 6) {
           this.abortBtn.click();
           return true;
         }
@@ -185,17 +173,6 @@ export class PauseModal {
       this.saveManager.save();
     });
 
-    this.crtCheckbox.addEventListener('change', () => {
-      const enabled = this.crtCheckbox.checked;
-      const crtEl = document.querySelector('.crt-overlay') as HTMLElement | null;
-      if (crtEl) {
-        crtEl.style.display = enabled ? 'block' : 'none';
-      }
-      const data = this.saveManager.getData();
-      data.settings.crtScanlines = enabled;
-      this.saveManager.save();
-    });
-
     this.autoAimCheckbox.addEventListener('change', () => {
       const enabled = this.autoAimCheckbox.checked;
       this.getRunState().autoAimEnabled = enabled;
@@ -228,12 +205,11 @@ export class PauseModal {
     this.masterSlider.value = Math.round(settings.masterVolume * 100).toString();
     this.sfxSlider.value = Math.round(settings.sfxVolume * 100).toString();
     this.musicSlider.value = Math.round(settings.musicVolume * 100).toString();
-    this.crtCheckbox.checked = settings.crtScanlines;
     this.autoAimCheckbox.checked = this.getRunState().autoAimEnabled;
 
     this.renderArsenalAndRecipes();
 
-    this.selectedRowIndex = 5; // Default focus on Resume Mission
+    this.selectedRowIndex = 4; // Default focus on Resume Mission
     this.container.style.display = 'flex';
     this.updateRowHighlight();
     this.a11y.activate(this.resumeBtn);
@@ -369,28 +345,22 @@ export class PauseModal {
     // Confirm button (A)
     if (gp.isMenuConfirmPressed()) {
       if (this.selectedRowIndex === 3) {
-        this.crtCheckbox.checked = !this.crtCheckbox.checked;
-        this.crtCheckbox.dispatchEvent(new Event('change'));
-        gp.playRumble(45, 0.15, 0.35);
-        return true;
-      }
-      if (this.selectedRowIndex === 4) {
         this.autoAimCheckbox.checked = !this.autoAimCheckbox.checked;
         this.autoAimCheckbox.dispatchEvent(new Event('change'));
         gp.playRumble(45, 0.15, 0.35);
         return true;
       }
-      if (this.selectedRowIndex === 5) {
+      if (this.selectedRowIndex === 4) {
         gp.playRumble(60, 0.25, 0.4);
         this.resumeBtn.click();
         return true;
       }
-      if (this.selectedRowIndex === 6) {
+      if (this.selectedRowIndex === 5) {
         gp.playRumble(60, 0.25, 0.4);
         this.settingsBtn.click();
         return true;
       }
-      if (this.selectedRowIndex === 7) {
+      if (this.selectedRowIndex === 6) {
         gp.playRumble(60, 0.25, 0.4);
         this.abortBtn.click();
         return true;

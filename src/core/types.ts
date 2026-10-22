@@ -245,7 +245,6 @@ export interface GameSettings {
   flashIntensity: number;
   reducedMotion: boolean;
   damageNumbers: DamageNumberSetting;
-  crtScanlines: boolean;
   autoAim: boolean;
   showFps: boolean;
   colorBlindMode: ColorBlindMode;

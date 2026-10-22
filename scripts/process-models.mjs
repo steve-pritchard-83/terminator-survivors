@@ -308,12 +308,12 @@ await processModel('k9.glb', 'k9.glb', { tris: 4000, mobileTris: 2000 });
 await processModel('seeker.glb', 'seeker.glb', { tris: 2500, mobileTris: 1200 });
 await processModel('xp.glb', 'xp.glb');
 
-// Landscape tile (ash and bone field): fog shells dropped, hills baked flat, tiled at load time
+// Ash and bone field: fog shells dropped, hills baked flat. The bones are drawn as many small instanced
+// patches (so each copy stays light); the dirt's textures become the ground's fine detail.
 await processModel('apocalyptic_ground.glb', 'ground.glb', {
   keep: (name) => !/Fog/.test(name),
   prepare: (doc) => flattenTerrain(doc, 'BonesAndGround_Ground_0'),
-  // Laid 16 times per ground chunk, so each copy stays light
-  tris: 9000,
+  tris: 12000,
   error: 0.01,
-  mobileTris: 4000
+  mobileTris: 4500
 });

@@ -107,15 +107,6 @@ select {
   min-height: 36px;
 }
 
-/* CRT scanline overlay (game-wide, toggled in settings) */
-.crt-overlay {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.07) 0 1px, transparent 1px 3px);
-  z-index: 99;
-}
-
 #canvas-container {
   position: absolute;
   inset: 0;
@@ -246,10 +237,7 @@ select {
 .modal-backdrop {
   position: absolute;
   inset: 0;
-  /* The one scanline treatment for full-screen modals */
-  background:
-    repeating-linear-gradient(0deg, rgba(205, 215, 222, 0.03) 0 1px, transparent 1px 3px),
-    rgba(5, 1, 1, 0.86);
+  background: rgba(5, 1, 1, 0.86);
   z-index: 80;
   display: flex;
   flex-direction: column;

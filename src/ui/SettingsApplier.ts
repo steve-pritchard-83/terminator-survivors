@@ -11,12 +11,6 @@ export class SettingsApplier {
 
     if (typeof document === 'undefined') return;
 
-    // CRT Scanlines overlay
-    const crtEl = document.querySelector('.crt-overlay') as HTMLElement | null;
-    if (crtEl) {
-      crtEl.style.display = settings.reducedMotion ? 'none' : settings.crtScanlines ? 'block' : 'none';
-    }
-
     // Colorblind mode: set both data attribute and body class
     document.body.setAttribute('data-colorblind', settings.colorBlindMode);
     document.body.classList.remove('deuteranopia', 'protanopia', 'tritanopia');

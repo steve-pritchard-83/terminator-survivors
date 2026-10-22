@@ -30,7 +30,7 @@ Available anywhere on desktop and mobile, with full progressive web app (PWA) of
 ### 1. Authentic Cameron Future War Aesthetic
 
 - **Sculpted 3D Models**: Built in `Three.js` from supplied models (T-800, T-600, HK Aerial and Tank, T-1000, Infiltrator, Skynet core, K-9, turret and more) with metal materials, instanced crowds with jointed walk cycles, volumetric searchlight cones, procedural blast craters, ruins and miles of human skull fields.
-- **Cinematic Post-Processing**: Unreal bloom, cobalt-blue colour grading, film grain (desktop), and a faint steel CRT scanline overlay. The interface is neutral steel; red is kept for health, bosses and damage.
+- **Cinematic Post-Processing**: Unreal bloom, cobalt-blue colour grading, and film grain (desktop). The interface is neutral steel; red is kept for health, bosses and damage.
 - **Faithful Typography & Audio**:
   - Incorporates the authentic `Terminator Real NFI` font alongside Share Tech Mono for the interface.
   - Looped background music (`backgroundmusic.mp3`) played through a gapless Web Audio loop graph, crossfading to a boss track (`boss.mp3`) during boss fights.
