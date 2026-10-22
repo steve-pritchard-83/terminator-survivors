@@ -598,52 +598,61 @@ export class Environment2029 implements IEnvironment {
     this.repopulateProps(0, 0);
   }
 
-  /** The dirt's own texture, repeated finely (mirrored, so it has no seams), marks and roughens the ash ground. */
+  /**
+   * The dirt's own texture becomes the ground's colour, laid in world space without visible repetition:
+   * two copies at random offsets are blended under a smooth noise mask (after Inigo Quilez's texture
+   * variation), and broad light and dark areas come from low-frequency noise. The procedural bump stays.
+   */
   private addGroundDetail(dirt: THREE.MeshStandardMaterial): void {
-    const repeat = (tex: THREE.Texture | null): THREE.Texture | null => {
-      if (!tex) return null;
-      const t = tex.clone();
-      t.wrapS = t.wrapT = THREE.MirroredRepeatWrapping;
-      t.repeat.set(GROUND_TILE.detailRepeat, GROUND_TILE.detailRepeat);
-      t.needsUpdate = true;
-      return t;
-    };
-    const detail = repeat(dirt.map);
-    const normal = repeat(dirt.normalMap);
+    if (!dirt.map) return;
+    const detail = dirt.map.clone();
+    detail.wrapS = detail.wrapT = THREE.MirroredRepeatWrapping;
+    detail.needsUpdate = true;
     const mat = this.groundMat;
-    if (normal) {
-      // Replaces the coarse procedural bump with the dirt's finer relief
-      mat.normalMap = normal;
-      mat.normalScale.setScalar(GROUND_TILE.detailNormalScale);
-      mat.bumpMap = null;
-    }
-    if (detail) {
-      mat.onBeforeCompile = (shader) => {
-        shader.uniforms.uDetail = { value: detail };
-        shader.uniforms.uDetailRepeat = { value: GROUND_TILE.detailRepeat };
-        shader.uniforms.uDetailSaturation = { value: GROUND_TILE.detailSaturation };
-        shader.uniforms.uDetailGain = { value: GROUND_TILE.detailGain };
-        shader.uniforms.uMacroScale = { value: GROUND_TILE.macroScale };
-        shader.fragmentShader = shader.fragmentShader
-          .replace(
-            '#include <common>',
-            '#include <common>\nuniform sampler2D uDetail;\nuniform float uDetailRepeat;\nuniform float uDetailSaturation;\nuniform float uDetailGain;\nuniform float uMacroScale;'
-          )
-          .replace(
-            '#include <map_fragment>',
-            `#include <map_fragment>
-            // The dirt texture, repeated finely with mirroring (no seams) and muted toward grey, becomes the
-            // ground's colour; a wide second sample of it adds broad light and dark areas
-            vec2 detailUv = abs(mod(vMapUv * uDetailRepeat + 1.0, 2.0) - 1.0);
-            vec2 macroUv = abs(mod(vMapUv * uDetailRepeat * uMacroScale + 1.0, 2.0) - 1.0);
-            vec3 dirt = texture2D(uDetail, detailUv).rgb;
-            float dirtLuma = dot(dirt, vec3(0.299, 0.587, 0.114));
-            float macro = clamp(dot(texture2D(uDetail, macroUv).rgb, vec3(0.299, 0.587, 0.114)) * 5.0, 0.6, 1.3);
-            diffuseColor.rgb = mix(vec3(dirtLuma), dirt, uDetailSaturation) * uDetailGain * macro;`
-          );
-      };
-      mat.customProgramCacheKey = () => 'ground-detail';
-    }
+    mat.onBeforeCompile = (shader) => {
+      shader.uniforms.uDetail = { value: detail };
+      shader.vertexShader = shader.vertexShader
+        .replace('#include <common>', '#include <common>\nvarying vec2 vGroundXZ;')
+        .replace('#include <begin_vertex>', '#include <begin_vertex>\nvGroundXZ = (modelMatrix * vec4(position, 1.0)).xz;');
+      shader.fragmentShader = shader.fragmentShader
+        .replace(
+          '#include <common>',
+          `#include <common>
+          uniform sampler2D uDetail;
+          varying vec2 vGroundXZ;
+          float groundHash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+          float groundNoise(vec2 p) {
+            vec2 i = floor(p);
+            vec2 f = fract(p);
+            vec2 u = f * f * (3.0 - 2.0 * f);
+            return mix(mix(groundHash(i), groundHash(i + vec2(1.0, 0.0)), u.x), mix(groundHash(i + vec2(0.0, 1.0)), groundHash(i + vec2(1.0, 1.0)), u.x), u.y);
+          }
+          vec3 dirtNoTile(vec2 uv) {
+            float k = groundNoise(uv * 0.6) * 8.0;
+            float i = floor(k);
+            float f = fract(k);
+            vec2 offA = sin(vec2(3.0, 7.0) * i);
+            vec2 offB = sin(vec2(3.0, 7.0) * (i + 1.0));
+            vec2 ddx = dFdx(uv);
+            vec2 ddy = dFdy(uv);
+            vec3 a = textureGrad(uDetail, uv + offA, ddx, ddy).rgb;
+            vec3 b = textureGrad(uDetail, uv + offB, ddx, ddy).rgb;
+            return mix(a, b, smoothstep(0.2, 0.8, f - 0.1 * dot(a - b, vec3(1.0))));
+          }`
+        )
+        .replace(
+          '#include <map_fragment>',
+          `#include <map_fragment>
+          vec3 dirt = dirtNoTile(vGroundXZ / ${GROUND_TILE.detailTileMetres.toFixed(2)});
+          dirt = mix(vec3(0.18, 0.15, 0.12), dirt, ${GROUND_TILE.detailContrast.toFixed(2)});
+          float dirtLuma = dot(dirt, vec3(0.299, 0.587, 0.114));
+          vec2 macroP = vGroundXZ * ${GROUND_TILE.macroFrequency.toFixed(3)};
+          float macro = groundNoise(macroP) * 0.65 + groundNoise(macroP * 2.7 + 17.0) * 0.35;
+          diffuseColor.rgb = mix(vec3(dirtLuma), dirt, ${GROUND_TILE.detailSaturation.toFixed(2)}) * ${GROUND_TILE.detailGain.toFixed(2)}
+            * mix(${GROUND_TILE.macroDark.toFixed(2)}, ${GROUND_TILE.macroLight.toFixed(2)}, macro);`
+        );
+    };
+    mat.customProgramCacheKey = () => 'ground-detail';
     mat.needsUpdate = true;
   }
 

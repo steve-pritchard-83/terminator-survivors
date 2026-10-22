@@ -45,7 +45,7 @@ export const RENDER_BUDGET = IS_MOBILE
       /** Film grain reads as noise on a small high-density screen */
       grain: 0,
       /** Clusters of sculpted bone patches per ground chunk */
-      boneClusters: 14
+      boneClusters: 10
     }
   : {
       flashLights: 8,
@@ -64,5 +64,5 @@ export const RENDER_BUDGET = IS_MOBILE
       shadowMax: 650,
       shadowOpacity: 0.8,
       grain: GRADE.grain,
-      boneClusters: 24
+      boneClusters: 16
     };

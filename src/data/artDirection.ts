@@ -72,35 +72,37 @@ export const ENEMY_SHADOW = {
   maxCount: 650
 };
 
-/** The sculpted ash-and-bone field: its bones as scattered patches, its dirt as the ground's fine detail */
+/** The sculpted ash-and-bone field: its bones as scattered patches, its dirt as the ground's colour */
 export const GROUND_TILE = {
   /** Width of one bone patch in metres (sets the bones' size: skulls come out about 0.4 m) */
   size: 6,
-  /** Bone pile height (1 keeps the sculpted proportions; at patch size the piles are very flat, so they are raised) */
-  heightScale: 3.5,
+  /** Bone pile height (1 keeps the sculpted proportions; a little extra so the piles catch the light) */
+  heightScale: 2,
   /** Each cluster is a few patches this far apart, so the bone fields have irregular outlines */
-  clusterMin: 2,
-  clusterMax: 5,
+  clusterMin: 1,
+  clusterMax: 3,
   clusterSpread: 3.2,
-  /** Patch edge: bones are full height inside this fraction of the radius and sunk into the ash past the outer one */
-  edgeInner: 0.45,
-  edgeOuter: 0.95,
-  /** Bones read as pale bone against the darker dirt: their colour is muted toward grey by this much, then brightened */
-  boneDesaturate: 0.55,
-  boneBrightness: 1.9,
+  /** Patch edge: bones are full height inside this fraction of the radius and sunk into the ground past the outer one */
+  edgeInner: 0.42,
+  edgeOuter: 0.9,
+  /** Bones read as weathered bone against the darker dirt: their colour is muted toward grey by this much, then brightened */
+  boneDesaturate: 0.65,
+  boneBrightness: 1.6,
   /** Replaces the source's glossy roughness map (it glitters white under the moonlight) */
   roughness: 0.93,
   envMapIntensity: 0.15,
   normalScale: 0.6,
-  /** The dirt texture repeats this many times across a 75 m ground chunk (mirrored, so no seams) */
-  detailRepeat: 14,
+  /** One repeat of the dirt texture covers this many metres (laid without visible repetition) */
+  detailTileMetres: 5,
   /** The ground takes the dirt's colour, muted toward grey (0 = grey, 1 = the texture's own brown) and brightened */
-  detailSaturation: 0.5,
-  detailGain: 2.0,
-  /** A second, wider sample of the dirt gives broad light and dark areas: its repeat as a fraction of the fine one */
-  macroScale: 0.21,
-  /** Surface relief of the dirt's normal map */
-  detailNormalScale: 0.9,
+  detailSaturation: 0.45,
+  detailGain: 1.9,
+  /** How much of the dirt's light and dark mottling shows (1 = all of it; less reads calmer on small screens) */
+  detailContrast: 0.7,
+  /** Broad light and dark areas over the ground: how large (cycles per metre) and how dark or light they get */
+  macroFrequency: 0.045,
+  macroDark: 0.62,
+  macroLight: 1.2,
   /** Scattered loose skulls (fraction of the full carpet); skulls mostly gather in the bone patches now */
   skullCarpet: 0.25
 };

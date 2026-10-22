@@ -315,5 +315,5 @@ await processModel('apocalyptic_ground.glb', 'ground.glb', {
   prepare: (doc) => flattenTerrain(doc, 'BonesAndGround_Ground_0'),
   tris: 12000,
   error: 0.01,
-  mobileTris: 4500
+  mobileTris: 7000
 });

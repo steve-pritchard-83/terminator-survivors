@@ -199,24 +199,26 @@ export class PostProcessingManager {
     renderer.getSize(size);
     const pixelRatio = renderer.getPixelRatio();
 
-    // Use UnsignedByteType on mobile GPUs to prevent HalfFloatType NaN bloom blackouts when HK bosses spawn
+    // Phones render in HDR too (without multisampling): an 8-bit buffer clips every colour channel at 1
+    // before tone mapping, so bright plasma lost its colour and read white. NaN and Inf from half floats
+    // are cleared by the sanitize pass below before bloom can smear them.
     const renderTarget = new THREE.WebGLRenderTarget(
       Math.max(1, Math.floor(size.x * pixelRatio)),
       Math.max(1, Math.floor(size.y * pixelRatio)),
-      this.useFastPath || isMobile
+      this.useFastPath
         ? { type: THREE.UnsignedByteType, samples: 0 }
-        : { type: THREE.HalfFloatType, samples: 4 }
+        : { type: THREE.HalfFloatType, samples: isMobile ? 0 : 4 }
     );
     // 8 bits of linear light crush a night scene into its bottom few levels; stored sRGB-encoded
     // (and decoded on read) the dark tones keep their detail
-    if (this.useFastPath || isMobile) renderTarget.texture.colorSpace = THREE.SRGBColorSpace;
+    if (this.useFastPath) renderTarget.texture.colorSpace = THREE.SRGBColorSpace;
 
     this.composer = new EffectComposer(renderer, renderTarget);
 
     const renderPass = new RenderPass(scene, camera);
     this.composer.addPass(renderPass);
-    // Only half-float buffers can hold NaN/Inf; the 8-bit buffers used on phones cannot
-    if (!(this.useFastPath || isMobile)) this.composer.addPass(new ShaderPass(SanitizeHdrShader));
+    // Only half-float buffers can hold NaN/Inf
+    if (!this.useFastPath) this.composer.addPass(new ShaderPass(SanitizeHdrShader));
 
     // Threshold is in linear HDR: only plasma, fire, optics and searchlights bloom, never the ground
     this.bloomPass = new UnrealBloomPass(
