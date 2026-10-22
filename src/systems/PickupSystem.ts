@@ -125,6 +125,9 @@ export class PickupSystem {
         }
       }),
 
+      // A supply drop lands as a data vault (no scrap, like an elite's)
+      globalEvents.on('supply:drop', ({ x, z }) => this.spawnBossVault(x, z, true)),
+
       // Listen for weapons destroying supply crates
       globalEvents.on('crate:destroyed', ({ crateId }) => {
         const idx = this.pickups.findIndex((p) => p.id === crateId && p.kind === 'crate');

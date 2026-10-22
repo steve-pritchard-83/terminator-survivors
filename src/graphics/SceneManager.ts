@@ -248,6 +248,29 @@ export class SceneManager {
     return count > 0 ? sum / count : 14;
   }
 
+  /**
+   * Where to draw an arrow for an off-screen point (at enemy height): a spot `inset` pixels inside the
+   * screen edge in the point's direction, and the arrow's angle (radians, screen space). Null when on screen.
+   */
+  public getEdgePointer(x: number, z: number, inset: number): { x: number; y: number; angle: number } | null {
+    if (typeof window === 'undefined') return null;
+    this.screenScratch.set(x, 0.9, z).project(this.camera);
+    let nx = this.screenScratch.x;
+    let ny = this.screenScratch.y;
+    const behind = this.screenScratch.z > 1;
+    if (!behind && Math.abs(nx) <= 1 && Math.abs(ny) <= 1) return null;
+    if (behind) {
+      nx = -nx;
+      ny = -ny;
+    }
+    const w = window.innerWidth || 1;
+    const h = window.innerHeight || 1;
+    const dx = (nx * w) / 2;
+    const dy = (-ny * h) / 2;
+    const s = Math.min((w / 2 - inset) / Math.max(1e-6, Math.abs(dx)), (h / 2 - inset) / Math.max(1e-6, Math.abs(dy)));
+    return { x: w / 2 + dx * s, y: h / 2 + dy * s, angle: Math.atan2(dy, dx) };
+  }
+
   public worldToScreen(
     worldX: number,
     worldY: number,

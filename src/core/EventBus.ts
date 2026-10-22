@@ -14,6 +14,7 @@ export type GameEventMap = {
   'wave:minute': { minute: number };
   'boss:spawned': { archetype: string; name: string; maxHp: number };
   'boss:defeated': { archetype: string; x: number; z: number };
+  'supply:drop': { x: number; z: number };
   'levelup:triggered': { level: number; choices: UpgradeChoice[] };
   'vault:opened': { upgradesAwarded: number; evolvedWeapon?: WeaponId; alloyBonus: number };
   'weapon:evolved': { from: WeaponId; to: WeaponId; name: string };

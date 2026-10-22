@@ -20,7 +20,7 @@ import {
 } from './weapons';
 import { buildBoltGeometry, createBoltMaterial } from '../graphics/PlasmaBolts';
 import { PALETTE } from '../data/artDirection';
-import { AUTO_AIM_RANGE } from '../data/balance';
+import { AUTO_AIM_RANGE, BOSS_FOCUS } from '../data/balance';
 import { ProceduralTextures } from '../graphics/ProceduralTextures';
 import { buildFlameGeometry } from '../graphics/EnvironmentDetail';
 import { BOSS_MIN_FIGHT_SECONDS } from '../data/balance';
@@ -244,9 +244,13 @@ export class WeaponSystem {
     const pz = this.runState.playerPos.z;
 
     // Auto-aim target, found once per tick: weapons fire at it and the player turns to face it
-    const nearest = this.runState.autoAimEnabled
+    let nearest = this.runState.autoAimEnabled
       ? (this.grid.findNearest(px, pz, AUTO_AIM_RANGE, (e) => e.type === 'enemy' && this.fireContext.isVisible(e.x, e.z)) as ActiveEnemy | null)
       : null;
+    if (nearest && !nearest.isBoss && Math.hypot(nearest.x - px, nearest.z - pz) > BOSS_FOCUS.selfDefence) {
+      const boss = enemies.find((e) => e.isBoss && e.hp > 0);
+      if (boss && Math.hypot(boss.x - px, boss.z - pz) <= BOSS_FOCUS.range && this.fireContext.isVisible(boss.x, boss.z)) nearest = boss;
+    }
     this.runState.autoAimAngle = nearest ? Math.atan2(nearest.x - px, nearest.z - pz) : null;
 
     // 1. Process weapon cooldowns & firing triggers

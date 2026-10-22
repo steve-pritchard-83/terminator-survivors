@@ -32,6 +32,7 @@ export class HUDView {
   private readonly buildEl: HTMLElement;
   private lastBuildKey = '';
   private readonly tipEl: HTMLElement;
+  private readonly pointers: Record<'boss' | 'vault', HTMLElement>;
   private tipTimer: number | null = null;
   /** Called the first time any weapon is ready to evolve in a run */
   public onEvolutionReady: (() => void) | null = null;
@@ -72,6 +73,9 @@ export class HUDView {
         ${icon('bossAlert')}<span id="hud-boss-warning-text"></span>
       </div>
 
+      <div class="hudm-pointer is-boss" id="hud-ptr-boss" aria-hidden="true"></div>
+      <div class="hudm-pointer is-vault" id="hud-ptr-vault" aria-hidden="true"></div>
+
       <div class="hud-floating-text-layer" id="floating-text-layer" data-testid="floating-text-layer"></div>
 
       <div class="hudm-bottom">
@@ -110,6 +114,7 @@ export class HUDView {
     this.fpsCounterEl = q('#hud-fps-counter');
     this.buildEl = q('#hud-build');
     this.tipEl = q('#hud-tip');
+    this.pointers = { boss: q('#hud-ptr-boss'), vault: q('#hud-ptr-vault') };
     this.damageNumbers = new DamageNumbers(this.floatingTextLayer);
 
     this.unsubs.push(
@@ -247,6 +252,17 @@ export class HUDView {
     } else {
       this.bossBar.style.display = 'none';
     }
+  }
+
+  /** Edge arrow toward an off-screen boss or data vault (null hides it). */
+  public setPointer(kind: 'boss' | 'vault', at: { x: number; y: number; angle: number } | null): void {
+    const el = this.pointers[kind];
+    if (!at) {
+      el.style.display = 'none';
+      return;
+    }
+    el.style.display = 'block';
+    el.style.transform = `translate(${at.x}px, ${at.y}px) translate(-50%, -50%) rotate(${at.angle}rad)`;
   }
 
   public triggerBossWarning(bossName: string): void {

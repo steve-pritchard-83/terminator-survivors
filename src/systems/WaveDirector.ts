@@ -8,6 +8,7 @@ import {
   LEASH_EXEMPT_ARCHETYPES,
   PACK_SPAWN,
   RUN_DURATION_MINUTES,
+  SUPPLY_DROP,
   threatMultipliers,
   WAVE_TIMELINE
 } from '../data/waves';
@@ -23,6 +24,7 @@ export class WaveDirector {
   private spawnTimer = 0;
   private currentMinute = -1;
   private spawnedBossesThisRun = new Set<string>();
+  private dropsMade = 0;
 
   constructor(runState: RunState, enemySystem: EnemySystem) {
     this.runState = runState;
@@ -33,6 +35,7 @@ export class WaveDirector {
     this.spawnTimer = 0;
     this.currentMinute = -1;
     this.spawnedBossesThisRun.clear();
+    this.dropsMade = 0;
   }
 
   public update(dt: number): void {
@@ -57,6 +60,12 @@ export class WaveDirector {
     }
 
     if (!entry) return;
+
+    const nextDrop = SUPPLY_DROP.atSeconds[this.dropsMade];
+    if (nextDrop !== undefined && this.runState.timeSeconds >= nextDrop) {
+      this.dropsMade++;
+      this.dropSupplies(entry.hpMultiplier, entry.damageMultiplier);
+    }
 
     const threat = threatMultipliers(this.runState.threat);
     const hpMultiplier = entry.hpMultiplier * threat.hp;
@@ -89,6 +98,27 @@ export class WaveDirector {
       name: bannerText ?? (ENEMY_CONFIGS[archetype]?.name ?? archetype).toUpperCase(),
       maxHp: boss?.maxHp ?? 1000
     });
+  }
+
+  /** A guarded data vault some way off (the pickup system places the vault, the HUD points to it). */
+  private dropSupplies(hpMult: number, dmgMult: number): void {
+    const angle = globalRNG.range(0, Math.PI * 2);
+    const x = this.runState.playerPos.x + Math.sin(angle) * SUPPLY_DROP.distance;
+    const z = this.runState.playerPos.z + Math.cos(angle) * SUPPLY_DROP.distance;
+    const threat = threatMultipliers(this.runState.threat);
+    for (let i = 0; i < SUPPLY_DROP.guards; i++) {
+      const a = (i / SUPPLY_DROP.guards) * Math.PI * 2;
+      const affix = globalRNG.pick(Object.keys(ELITE_AFFIXES) as EliteAffix[]);
+      this.enemySystem.spawnEnemy(
+        SUPPLY_DROP.guardArchetype,
+        x + Math.sin(a) * SUPPLY_DROP.guardSpread,
+        z + Math.cos(a) * SUPPLY_DROP.guardSpread,
+        hpMult * threat.hp,
+        dmgMult * threat.damage,
+        affix
+      );
+    }
+    globalEvents.emit('supply:drop', { x, z });
   }
 
   private spawnPerimeterEnemy(

@@ -1387,3 +1387,23 @@ select.controller-selected {
 .hudm-tip.is-visible {
   opacity: 1;
 }
+
+/* Edge arrows toward an off-screen boss (red: danger) or data vault (steel) */
+.hudm-pointer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: none;
+  width: 22px;
+  height: 22px;
+  pointer-events: none;
+  clip-path: polygon(100% 50%, 0 0, 28% 50%, 0 100%);
+  filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.8));
+}
+.hudm-pointer.is-boss {
+  background: var(--t-red);
+}
+.hudm-pointer.is-vault {
+  background: var(--t-accent);
+  animation: t-blink 0.9s ease-in-out infinite alternate;
+}

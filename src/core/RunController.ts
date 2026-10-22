@@ -99,6 +99,10 @@ export class RunController {
       globalEvents.on('enemy:killed', ({ enemy }) => {
         this.handleEnemyKilled(enemy);
       }),
+      globalEvents.on('supply:drop', () => {
+        this.host.audioEngine.playSearchlightAlert();
+        this.host.uiManager.hudView.showTip('SUPPLY DROP: FOLLOW THE MARKER', 5);
+      }),
       globalEvents.on('camera:shake', ({ trauma }) => {
         this.host.sceneManager.addScreenShake(trauma);
       }),
@@ -462,6 +466,27 @@ export class RunController {
     this.host.sceneManager.addScreenShake(0.35);
   }
 
+  /** Arrows at the screen edge toward an off-screen boss and the nearest data vault. */
+  private updatePointers(): void {
+    const hud = this.host.uiManager.hudView;
+    const scene = this.host.sceneManager;
+    const inset = 34;
+    const boss = this.host.enemySystem.activeEnemies.find((e) => e.isBoss);
+    hud.setPointer('boss', boss ? scene.getEdgePointer(boss.x, boss.z, inset) : null);
+    const { x: px, z: pz } = this.host.runState.playerPos;
+    let vault: { x: number; z: number } | null = null;
+    let best = Infinity;
+    for (const p of this.host.pickupSystem.pickups) {
+      if (p.kind !== 'vault') continue;
+      const d = (p.x - px) ** 2 + (p.z - pz) ** 2;
+      if (d < best) {
+        best = d;
+        vault = p;
+      }
+    }
+    hud.setPointer('vault', vault ? scene.getEdgePointer(vault.x, vault.z, inset) : null);
+  }
+
   public update(dt: number): void {
     if (this.hitStopCooldownTimer > 0) {
       this.hitStopCooldownTimer = Math.max(0, this.hitStopCooldownTimer - dt);
@@ -480,6 +505,7 @@ export class RunController {
     }
 
     this.host.uiManager.hudView.update(this.host.runState, this.activeBoss, this.host.gameLoop.fps);
+    this.updatePointers();
 
     if (this.host.runState.mode === 'playing') {
       this.host.audioEngine.updateMusicIntensity(

@@ -162,6 +162,16 @@ export const PACK_SPAWN = {
   spread: 2.2
 };
 
+// Between bosses a data vault is dropped some way off, guarded by elites: a detour that pays an
+// evolution (or three upgrades). An arrow at the screen edge points to it.
+export const SUPPLY_DROP = {
+  atSeconds: [200, 320, 440],
+  distance: 18,
+  guards: 4,
+  guardArchetype: 't800_endoskeleton' as EnemyArchetypeId,
+  guardSpread: 3.5
+};
+
 // Threat levels: unlocked one at a time by winning at the highest one reached. Each step makes the
 // machines tougher and pays more scrap.
 export const MAX_THREAT = 5;
