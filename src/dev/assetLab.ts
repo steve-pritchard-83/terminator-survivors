@@ -14,6 +14,7 @@ import { SkynetCoreMesh } from '../graphics/meshes/SkynetCoreMesh';
 import { T1MinigunMesh, MotoTerminatorMesh, PlasmaTurretMesh } from '../graphics/meshes/NewEnemyMeshes';
 import { createDogMesh, createReprogrammedT800Mesh } from '../graphics/meshes/AllyMeshes';
 import { Environment2029 } from '../graphics/Environment2029';
+import { createEndoPreview } from '../graphics/EndoModel';
 import { ParticleSystem } from '../systems/ParticleSystem';
 import { CircleTelegraph, ConeTelegraph, LineTelegraph } from '../graphics/Telegraphs';
 import { VolumetricSearchlight } from '../graphics/VolumetricSearchlight';
@@ -175,8 +176,6 @@ function walkerSubject(archetype: EnemyArchetypeId): Subject {
   const rifle = ModelLibrary.getMeshData('plasma_rifle');
   const endo = ModelLibrary.getEndo();
   if (endo) batch.applySculptedModel(endo, rifle);
-  const crab = ModelLibrary.getMeshData('crab_drone');
-  if (crab) batch.applyCrabModel(crab);
   const t600 = ModelLibrary.getT600();
   if (t600) batch.applyT600Model(t600, rifle);
   const root = new THREE.Group();
@@ -186,8 +185,8 @@ function walkerSubject(archetype: EnemyArchetypeId): Subject {
   let deadFor = 0;
   return {
     object: root,
-    distance: archetype === 'skynet_crab_drone' ? 2.6 : 4.2,
-    target: new THREE.Vector3(0, archetype === 'skynet_crab_drone' ? 0.3 : 1.0, 0),
+    distance: 4.2,
+    target: new THREE.Vector3(0, 1.0, 0),
     controls: [
       { kind: 'slider', key: 'speed', label: 'Walk speed', min: 0, max: 8, step: 0.1, value: ENEMY_CONFIGS[archetype].speed },
       { kind: 'toggle', key: 'elite', label: 'Elite (scaled, tinted)', value: false },
@@ -200,7 +199,7 @@ function walkerSubject(archetype: EnemyArchetypeId): Subject {
           if (deadFor > 0) return;
           batch.addCorpse(enemy, 0, enemy.z + 6);
           deadFor = DEATH_ANIMATION_SECONDS + 0.6;
-          audio.playEnemyDeath(archetype === 'skynet_crab_drone' ? 'small' : 'humanoid');
+          audio.playEnemyDeath('humanoid');
         }
       }
     ],
@@ -271,7 +270,6 @@ const entries: Entry[] = [
   // Walkers
   { id: 't800', label: 'T-800 Endoskeleton', group: 'Enemies', make: () => walkerSubject('t800_endoskeleton') },
   { id: 't600', label: 'T-600 Heavy Walker', group: 'Enemies', make: () => walkerSubject('t600_rusted') },
-  { id: 'crab', label: 'Crab drone', group: 'Enemies', make: () => walkerSubject('skynet_crab_drone') },
   {
     id: 't1',
     label: 'T-1 Tracked Chassis',
@@ -486,7 +484,7 @@ const entries: Entry[] = [
 
 // Every processed model file, raw (normalised as the game loads it)
 const RAW_MODELS: ModelName[] = [
-  'player', 'infiltrator', 't1000', 't600', 'crab_drone', 't1_tracked', 'moto', 'turret_base', 'turret_gun', 'hk_aerial',
+  'player', 'infiltrator', 't1000', 't600', 't1_tracked', 'moto', 'turret_base', 'turret_gun', 'hk_aerial',
   'hk_tank_hull', 'hk_tank_turret', 'skynet_core', 'k9', 'seeker', 'plasma_rifle', 'xp', 'burnt_car'
 ];
 for (const name of RAW_MODELS) {
@@ -650,13 +648,14 @@ const effectEntries: Entry[] = [
     label: 'Contact shadow',
     group: 'Effects',
     make() {
+      // A T-800 (collision radius 0.75), which is what the shadow is sized from in the game
       const root = new THREE.Group();
-      const crab = ModelLibrary.get('crab_drone');
-      if (crab) root.add(crab);
+      const endo = ModelLibrary.getEndo();
+      if (endo) root.add(createEndoPreview(endo));
       return {
         object: root,
-        distance: 3,
-        target: new THREE.Vector3(0, 0.3, 0),
+        distance: 4,
+        target: new THREE.Vector3(0, 0.9, 0),
         controls: [
           { kind: 'slider', key: 'opacity', label: 'Opacity', min: 0, max: 1, step: 0.05, value: ENEMY_SHADOW.opacity },
           { kind: 'slider', key: 'scale', label: 'Radius × collision', min: 0.5, max: 3, step: 0.05, value: ENEMY_SHADOW.radiusScale }
@@ -664,12 +663,11 @@ const effectEntries: Entry[] = [
         update(_dt, _t, p) {
           shadow.visible = true;
           (shadow.material as THREE.MeshBasicMaterial).opacity = Number(p.opacity);
-          // Crab collision radius is 0.5
-          const r = Math.max(ENEMY_SHADOW.minRadius, 0.5 * Number(p.scale));
+          const r = Math.max(ENEMY_SHADOW.minRadius, 0.75 * Number(p.scale));
           shadow.scale.set(r, 1, r);
         },
         info: () =>
-          `In game: ENEMY_SHADOW in src/data/artDirection.ts (opacity ${ENEMY_SHADOW.opacity}, radiusScale ${ENEMY_SHADOW.radiusScale}). Shown under a crab (collision radius 0.5).`
+          `In game: ENEMY_SHADOW in src/data/artDirection.ts (opacity ${ENEMY_SHADOW.opacity}, radiusScale ${ENEMY_SHADOW.radiusScale}). Shown under a T-800 (collision radius 0.75).`
       };
     }
   }
@@ -884,7 +882,6 @@ const ENGINE_EVENTS: Array<[string, () => void]> = [
   ['Liquid hit (T-1000)', () => audio.playEndoHit(undefined, undefined, undefined, undefined, true)],
   ['Crit crunch', () => audio.playCritCrunch()],
   ['Death: humanoid', () => audio.playEnemyDeath('humanoid')],
-  ['Death: small', () => audio.playEnemyDeath('small')],
   ['Death: machine', () => audio.playEnemyDeath('machine')],
   ['Death: boss', () => audio.playEnemyDeath('boss')],
   ['Explosion small', () => audio.playExplosion(0.5)],

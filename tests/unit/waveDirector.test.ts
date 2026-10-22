@@ -32,7 +32,7 @@ describe('Wave Timeline and Boss Director', () => {
   });
 
   // Imports the renderer and model loader on first use, which is slow while the whole suite runs in parallel
-  it('batches both skynet_crab_drone and t800_endoskeleton into InstancedMeshes facing the player', { timeout: 20000 }, async () => {
+  it('batches both t600_rusted and t800_endoskeleton into InstancedMeshes facing the player', { timeout: 20000 }, async () => {
     const { EndoskeletonBatch } = await import('../../src/graphics/meshes/EndoskeletonBatch');
     const batch = new EndoskeletonBatch(32);
     batch.updateBatch(
@@ -40,14 +40,14 @@ describe('Wave Timeline and Boss Director', () => {
         {
           id: 1,
           type: 'enemy',
-          archetype: 'skynet_crab_drone',
+          archetype: 't600_rusted',
           x: -5,
           z: -5,
-          radius: 0.5,
-          hp: 18,
-          maxHp: 18,
-          speed: 4.8,
-          damage: 8,
+          radius: 0.8,
+          hp: 44,
+          maxHp: 44,
+          speed: 2.7,
+          damage: 14,
           isBoss: false,
           isFlying: false,
           xpValue: 1,
@@ -86,9 +86,8 @@ describe('Wave Timeline and Boss Director', () => {
       20,
       20
     );
-    expect(batch.crabChassisInstancedMesh.count).toBe(1);
-    expect(batch.crabOpticsInstancedMesh.count).toBe(1);
-    expect(batch.chassisInstancedMesh.count).toBe(1);
-    expect(batch.opticsInstancedMesh.count).toBe(1);
+    // The T-800 draws in the main set; the T-600 draws in the main set too until its own body has loaded
+    expect(batch.chassisInstancedMesh.count).toBe(2);
+    expect(batch.opticsInstancedMesh.count).toBe(2);
   });
 });

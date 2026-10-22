@@ -90,13 +90,6 @@ export function createEnemyPreviewObject(archetype: EnemyArchetypeId): THREE.Obj
       break;
     }
 
-    case 'skynet_crab_drone': {
-      root.add(ModelLibrary.get('crab_drone') ?? createPlaceholder(0.9, 0.3, 0.8));
-      root.position.set(0, -0.3, 0);
-      root.scale.setScalar(1.6);
-      break;
-    }
-
     case 't600_rusted': {
       const t600 = ModelLibrary.getT600();
       root.add(t600 ? createEndoPreview(t600, 0xe0d4c4) : createPlaceholder(0.6, 1.9, 0.4));

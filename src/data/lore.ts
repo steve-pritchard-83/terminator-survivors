@@ -26,12 +26,6 @@ export const ENEMY_CODEX: Record<
   import('../core/types').EnemyArchetypeId,
   { name: string; designation: string; codex: string; threat: 'LOW' | 'MEDIUM' | 'HIGH' | 'EXTREME' | 'LETHAL' }
 > = {
-  skynet_crab_drone: {
-    name: 'Skynet Recon Scuttler',
-    designation: 'M-12 Autonomous Recon Quadruped',
-    codex: 'Mass-produced scouting scuttlers designed to clear rubble and crawl into human refuge tunnels. Light titanium carapace, fast skittering stride.',
-    threat: 'LOW'
-  },
   t600_rusted: {
     name: 'Series 600 Heavy Walker',
     designation: 'Cyberdyne Systems Series 600',

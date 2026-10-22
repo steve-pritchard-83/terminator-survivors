@@ -10,7 +10,7 @@ Updated 2026-10-21 after the declutter (variant pools capped at 3–4, cut weapo
 | --- | --- | --- |
 | `endoHit` | 4 metal/car hits | every hit on an enemy |
 | `endoDestroy` | 4 sparks/electrical | humanoid deaths |
-| `deathDrone`, `deathMachine`, `deathBoss` | 3, 4, 3 | small, large/flying, boss deaths |
+| `deathMachine`, `deathBoss` | 4, 3 | large/flying, boss deaths |
 | `explodeSmall`, `explodeMed`, `explodeLarge` | 3, 4, 4 | explosions picked by size |
 | `explodeDrum` | 3 | fuel drums |
 | `plasmaLight` | 4 | M-25 |
@@ -51,5 +51,5 @@ Updated 2026-10-21 after the declutter (variant pools capped at 3–4, cut weapo
 ## In the library but not wired (they need positional loops or new behaviour)
 
 - Loops: `Objects/S_AerialEngine*` and `S_DroneEngine` (flyover and drone hum), `Objects/TankContainers/S_TankMovement` (treads), `Ambient Part1/Fire` and `Objects/BarrelFire` (fire crackle for craters and wrecks), `Objects/S_LaserBeamLoop`.
-- `All/S_NearMiss*` (enemy bolts passing close), `Objects/SilverFish/SilverFishRun*` (crab drone skitter), `Objects/S_FuseBurning` (pipe-bomb fuse).
+- `All/S_NearMiss*` (enemy bolts passing close), `Objects/S_FuseBurning` (pipe-bomb fuse).
 - Voice folders (John Connor, Resistance soldiers, radio station lines) were skipped because their content can't be checked from file names.

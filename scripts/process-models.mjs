@@ -198,7 +198,6 @@ await processModel('T1_Tracked.glb', 't1_tracked.glb', {
 });
 
 // Instanced in large numbers: kept light
-await processModel('crab_drone.glb', 'crab_drone.glb', { tris: 4000, error: 0.05 });
 await processModel('burnt_car.glb', 'burnt_car.glb', { ground: 0.2, tris: 12000, error: 0.02, mobileTris: 6000 });
 await processModel('plasma_rifle.glb', 'plasma_rifle.glb');
 

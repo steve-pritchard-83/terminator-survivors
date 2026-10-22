@@ -17,29 +17,16 @@ export interface EnemyStatsConfig {
 }
 
 export const ENEMY_CONFIGS: Record<EnemyArchetypeId, EnemyStatsConfig> = {
-  skynet_crab_drone: {
-    archetype: 'skynet_crab_drone',
-    name: 'Skynet Recon Scuttler',
-    maxHp: 16,
-    speed: 4.8,
-    damage: 8,
-    radius: 0.5,
-    isBoss: false,
-    isFlying: false,
-    xpValue: 3,
-    color: 0x8a9ba8,
-    mass: 1.0
-  },
   t600_rusted: {
     archetype: 't600_rusted',
     name: 'Series 600 Heavy Walker',
-    maxHp: 54,
-    speed: 2.3,
-    damage: 16,
+    maxHp: 44,
+    speed: 2.7,
+    damage: 14,
     radius: 0.8,
     isBoss: false,
     isFlying: false,
-    xpValue: 7,
+    xpValue: 6,
     color: 0x4a4642,
     mass: 4.5
   },

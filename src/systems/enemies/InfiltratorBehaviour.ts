@@ -41,7 +41,7 @@ export class InfiltratorBehaviour implements EnemyBehaviour {
 
     const state = (enemy.state = enemy.state ?? {});
 
-    // Phase 3 trigger: burn skin away to chrome endoskeleton, speed boost, call 6 crab drones
+    // Phase 3 trigger: burn skin away to chrome endoskeleton, speed boost, call 4 T-600 walkers
     if (phase === 3 && !state.phase3Triggered) {
       state.phase3Triggered = 1;
       infiltrator.setPhase3Endoskeleton();
@@ -49,9 +49,9 @@ export class InfiltratorBehaviour implements EnemyBehaviour {
       ctx.audio.playSearchlightAlert();
       ctx.emit('camera:shake', { trauma: 0.5 });
       if (ctx.spawnEnemy) {
-        for (let i = 0; i < 6; i++) {
-          const angle = (i * Math.PI * 2) / 6;
-          ctx.spawnEnemy('skynet_crab_drone', enemy.x + Math.sin(angle) * 3.2, enemy.z + Math.cos(angle) * 3.2);
+        for (let i = 0; i < 4; i++) {
+          const angle = (i * Math.PI * 2) / 4;
+          ctx.spawnEnemy('t600_rusted', enemy.x + Math.sin(angle) * 3.2, enemy.z + Math.cos(angle) * 3.2);
         }
       }
     }

@@ -70,7 +70,7 @@ export const COMPACT_VIEW_MAX_WIDTH = 960;
 // Pause between the player dying and the defeat movie starting, so the death and its sound are seen first.
 export const DEFEAT_MOVIE_LEAD_IN_MS = 1400;
 
-// Seconds a destroyed endoskeleton or crab drone stays on screen collapsing before it is removed.
+// Seconds a destroyed endoskeleton stays on screen collapsing before it is removed.
 export const DEATH_ANIMATION_SECONDS = 0.6;
 
 // T-1000 boss tuning (softened after playtest: it was too hard)

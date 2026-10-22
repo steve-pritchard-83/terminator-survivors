@@ -39,7 +39,6 @@ export type PassiveId =
   | 'dog_tags';
 
 export type EnemyArchetypeId =
-  | 'skynet_crab_drone'
   | 't600_rusted'
   | 't800_endoskeleton'
   | 'hk_aerial_patrol'

@@ -38,7 +38,8 @@ export interface BuildWaveTimelineParams {
 
 export function buildWaveTimeline(params: BuildWaveTimelineParams = {}): WaveMinuteEntry[] {
   return Array.from({ length: RUN_DURATION_MINUTES + 1 }, (_, minute) => {
-    const spawnInterval = Math.max(0.14, Number((0.88 * Math.pow(0.84, minute)).toFixed(3)));
+    // Gentle at the start: the T-600 that fills the early waves is slow and tough, so it needs room to be killed
+    const spawnInterval = Math.max(0.14, Number((1.05 * Math.pow(0.82, minute)).toFixed(3)));
     const minEnemies = Math.min(320, Math.floor(24 + minute * 28));
     const hpMultiplier = Number((1 + minute * 0.32 + Math.pow(minute, 1.35) * 0.08).toFixed(2));
     const damageMultiplier = Number((1 + minute * 0.14).toFixed(2));
@@ -49,24 +50,23 @@ export function buildWaveTimeline(params: BuildWaveTimelineParams = {}): WaveMin
 
     if (minute < 2) {
       pool = [
-        { archetype: 'skynet_crab_drone', weight: 6 },
-        { archetype: 't600_rusted', weight: 3 }
+        { archetype: 't600_rusted', weight: 6 },
+        { archetype: 't800_endoskeleton', weight: 2 }
       ];
     } else if (minute < 4) {
       pool = [
-        { archetype: 'skynet_crab_drone', weight: 5 },
-        { archetype: 't600_rusted', weight: 4 },
-        { archetype: 't800_endoskeleton', weight: 2 },
+        { archetype: 't600_rusted', weight: 5 },
+        { archetype: 't800_endoskeleton', weight: 3 },
         { archetype: 'plasma_turret', weight: 2 },
-        { archetype: 't1_minigun_tracked', weight: 2 }
+        { archetype: 't1_minigun_tracked', weight: 2 },
+        { archetype: 'moto_terminator', weight: 2 }
       ];
     } else if (minute < 6) {
       pool = [
-        { archetype: 'skynet_crab_drone', weight: 3 },
         { archetype: 't800_endoskeleton', weight: 4 },
         { archetype: 't1_minigun_tracked', weight: 3 },
         { archetype: 'moto_terminator', weight: 3 },
-        { archetype: 't600_rusted', weight: 2 },
+        { archetype: 't600_rusted', weight: 3 },
         { archetype: 'hk_aerial_patrol', weight: 2 },
         { archetype: 'plasma_turret', weight: 2 }
       ];
@@ -75,24 +75,27 @@ export function buildWaveTimeline(params: BuildWaveTimelineParams = {}): WaveMin
         { archetype: 't800_endoskeleton', weight: 5 },
         { archetype: 'moto_terminator', weight: 4 },
         { archetype: 't1_minigun_tracked', weight: 3 },
-        { archetype: 't600_rusted', weight: 3 },
+        { archetype: 't600_rusted', weight: 4 },
         { archetype: 'hk_aerial_patrol', weight: 3 },
-        { archetype: 'plasma_turret', weight: 2 },
-        { archetype: 'skynet_crab_drone', weight: 2 }
+        { archetype: 'plasma_turret', weight: 2 }
       ];
     } else {
       pool = [
         { archetype: 't800_endoskeleton', weight: 6 },
         { archetype: 'moto_terminator', weight: 4 },
         { archetype: 't1_minigun_tracked', weight: 4 },
-        { archetype: 't600_rusted', weight: 3 },
+        { archetype: 't600_rusted', weight: 4 },
         { archetype: 'hk_aerial_patrol', weight: 4 },
         { archetype: 'plasma_turret', weight: 2 }
       ];
     }
 
-    // The T-1 starts at minute 3.
-    pool = pool.filter((p) => p.archetype !== 't1_minigun_tracked' || minute >= HEAVY_INFANTRY_FIRST_MINUTE);
+    // The T-800 joins at minute 1; the T-1 and the Moto-Terminator at minute 3.
+    pool = pool.filter((p) => {
+      if (p.archetype === 't800_endoskeleton') return minute >= 1;
+      if (p.archetype === 't1_minigun_tracked' || p.archetype === 'moto_terminator') return minute >= HEAVY_INFANTRY_FIRST_MINUTE;
+      return true;
+    });
 
     if (params.poolWeights) {
       pool = pool.map((p) => ({
@@ -146,9 +149,9 @@ export const WAVE_TIMELINE: WaveMinuteEntry[] = buildWaveTimeline();
 // after the opening, so the lone starting rifle can build early levels first.
 export const PACK_SPAWN = {
   startSeconds: 90,
-  archetypes: new Set<EnemyArchetypeId>(['skynet_crab_drone', 't600_rusted', 't800_endoskeleton']),
+  /** Largest pack per archetype; anything not listed spawns alone */
+  max: { t600_rusted: 7, t800_endoskeleton: 4 } as Partial<Record<EnemyArchetypeId, number>>,
   perMinute: 0.9,
-  max: 7,
   spread: 2.2
 };
 

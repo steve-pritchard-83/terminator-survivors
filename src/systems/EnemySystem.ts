@@ -314,11 +314,10 @@ export class EnemySystem {
     }
   }
 
-  /** Which death sound an enemy gets: bosses and machines explode, small drones crunch, humanoids collapse. */
-  private deathKind(enemy: ActiveEnemy): 'boss' | 'machine' | 'small' | 'humanoid' {
+  /** Which death sound an enemy gets: bosses and machines explode, humanoids collapse. */
+  private deathKind(enemy: ActiveEnemy): 'boss' | 'machine' | 'humanoid' {
     if (enemy.isBoss) return 'boss';
     if (enemy.isFlying || (enemy.mass ?? 0) >= 8) return 'machine';
-    if (enemy.radius < 0.5) return 'small';
     return 'humanoid';
   }
 

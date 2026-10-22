@@ -33,8 +33,6 @@ export class EndoskeletonBatch {
   public readonly leftLegInstancedMesh: THREE.InstancedMesh;
   public readonly rightLegInstancedMesh: THREE.InstancedMesh;
   public readonly opticsInstancedMesh: THREE.InstancedMesh;
-  public readonly crabChassisInstancedMesh: THREE.InstancedMesh;
-  public readonly crabOpticsInstancedMesh: THREE.InstancedMesh;
   private readonly maxCount: number;
 
   private readonly dummy = new THREE.Object3D();
@@ -65,7 +63,6 @@ export class EndoskeletonBatch {
     z: number;
     facing: number;
     id: number;
-    crab: boolean;
     scale: number;
     archetype: string;
     age: number;
@@ -123,21 +120,6 @@ export class EndoskeletonBatch {
     this.opticsInstancedMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     this.opticsInstancedMesh.frustumCulled = false;
 
-    // Crab drone placeholder until the sculpted spider drone loads
-    const crabGeo = mergeParts([bakePart(new THREE.BoxGeometry(0.8, 0.25, 0.7), 0, 0.3, 0, 0, 0, 0, steel)]);
-    this.crabChassisInstancedMesh = new THREE.InstancedMesh(crabGeo, chassisMat, maxCount);
-    this.crabChassisInstancedMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-    this.crabChassisInstancedMesh.frustumCulled = false;
-
-    const crabOpticsGeo = mergeParts([
-      bakePart(new THREE.BoxGeometry(0.22, 0.045, 0.06), 0, 0.32, 0.37, 0, 0, 0, 0xff0000),
-      bakePart(new THREE.SphereGeometry(0.03, 8, 8), -0.07, 0.32, 0.38, 0, 0, 0, 0xff4444),
-      bakePart(new THREE.SphereGeometry(0.03, 8, 8), 0.07, 0.32, 0.38, 0, 0, 0, 0xff4444)
-    ]);
-    this.crabOpticsInstancedMesh = new THREE.InstancedMesh(crabOpticsGeo, opticsMat, maxCount);
-    this.crabOpticsInstancedMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-    this.crabOpticsInstancedMesh.frustumCulled = false;
-
     this.mainSet = {
       chassis: this.chassisInstancedMesh,
       leftLeg: this.leftLegInstancedMesh,
@@ -158,16 +140,13 @@ export class EndoskeletonBatch {
       this.chassisInstancedMesh,
       this.leftLegInstancedMesh,
       this.rightLegInstancedMesh,
-      this.opticsInstancedMesh,
-      this.crabChassisInstancedMesh,
-      this.crabOpticsInstancedMesh
+      this.opticsInstancedMesh
     );
   }
 
   /** True for the archetypes this batch draws (and so can animate dying). */
   public handles(archetype: string): boolean {
     return (
-      archetype === 'skynet_crab_drone' ||
       archetype === 't800_endoskeleton' ||
       archetype === 't600_rusted'
     );
@@ -184,7 +163,6 @@ export class EndoskeletonBatch {
       z: enemy.z,
       facing: Math.atan2(playerX - enemy.x, playerZ - enemy.z),
       id: enemy.id,
-      crab: enemy.archetype === 'skynet_crab_drone',
       scale,
       archetype: enemy.archetype,
       age: 0
@@ -196,10 +174,9 @@ export class EndoskeletonBatch {
   }
 
   /** Draws the collapsing corpses after the live enemies (shares the instance buffers). */
-  private renderCorpses(timeSeconds: number, startCrab: number): number {
+  private renderCorpses(timeSeconds: number): void {
     const dt = Math.max(0, Math.min(0.1, timeSeconds - this.lastTime));
     this.lastTime = timeSeconds;
-    let crabIndex = startCrab;
 
     for (let c = this.corpses.length - 1; c >= 0; c--) {
       const corpse = this.corpses[c];
@@ -210,22 +187,6 @@ export class EndoskeletonBatch {
       }
       const p = corpse.age / DEATH_ANIMATION_SECONDS;
       const ease = 1 - (1 - p) * (1 - p);
-
-      if (corpse.crab) {
-        if (crabIndex >= this.maxCount) continue;
-        // Hops, flips onto its back and its optics die
-        const hop = Math.sin(p * Math.PI) * 0.3;
-        this.dummy.position.set(corpse.x, hop, corpse.z);
-        this.dummy.rotation.set(0, corpse.facing, Math.PI * ease);
-        this.dummy.scale.setScalar(corpse.scale);
-        this.dummy.updateMatrix();
-        this.crabChassisInstancedMesh.setMatrixAt(crabIndex, this.dummy.matrix);
-        this.crabOpticsInstancedMesh.setMatrixAt(crabIndex, p < 0.15 ? this.dummy.matrix : this.zeroMatrix);
-        this.dummyColor.setHex(0x9fb2c4).lerp(this.deadColor, p);
-        this.crabChassisInstancedMesh.setColorAt(crabIndex, this.dummyColor);
-        crabIndex++;
-        continue;
-      }
 
       const set = this.setFor(corpse.archetype);
       if (set.index >= this.maxCount) continue;
@@ -248,8 +209,6 @@ export class EndoskeletonBatch {
       this.colorSet(set);
       set.index++;
     }
-
-    return crabIndex;
   }
 
   /** The T-600s get their own body once the sculpted T-600 has loaded. */
@@ -317,55 +276,12 @@ export class EndoskeletonBatch {
     const dt = Math.max(0, Math.min(0.1, timeSeconds - this.lastGaitTime));
     this.lastGaitTime = timeSeconds;
     this.gaitStamp++;
-    let crabIndex = 0;
     this.mainSet.index = 0;
     if (this.t600Set) this.t600Set.index = 0;
 
     for (let i = 0; i < enemies.length; i++) {
       const enemy = enemies[i];
       const facingAngle = Math.atan2(playerX - enemy.x, playerZ - enemy.z);
-
-      if (enemy.archetype === 'skynet_crab_drone') {
-        if (crabIndex >= this.maxCount) continue;
-        // Six legs keep the body level: a fast, shallow skitter rather than a rock
-        const scuttle = timeSeconds * 26 + enemy.id;
-        const scuttleBob = Math.abs(Math.sin(scuttle)) * 0.018;
-        const scuttleTilt = Math.sin(scuttle * 0.5) * 0.025;
-
-        const eliteScale = enemy.isElite ? (enemy.scale ?? 1.4) : 1.0;
-        const crabY = scuttleBob;
-        let crabTilt = scuttleTilt;
-        let crabPitch = 0.04 + Math.sin(scuttle) * 0.015;
-        let crabX = enemy.x;
-        let crabZ = enemy.z;
-
-        if (enemy.hitFlashTimer > 0) {
-          const stagger = Math.min(1.0, enemy.hitFlashTimer / 0.15);
-          crabPitch = -0.18 * stagger;
-          crabTilt += (Math.sin(enemy.id * 10) > 0 ? 0.15 : -0.15) * stagger;
-          crabX -= Math.sin(facingAngle) * 0.08 * stagger;
-          crabZ -= Math.cos(facingAngle) * 0.08 * stagger;
-        }
-
-        this.dummy.position.set(crabX, crabY, crabZ);
-        this.dummy.rotation.set(crabPitch, facingAngle, crabTilt);
-        this.dummy.scale.set(eliteScale, eliteScale, eliteScale);
-        this.dummy.updateMatrix();
-
-        this.crabChassisInstancedMesh.setMatrixAt(crabIndex, this.dummy.matrix);
-        this.crabOpticsInstancedMesh.setMatrixAt(crabIndex, this.dummy.matrix);
-
-        if (enemy.hitFlashTimer > 0) {
-          this.dummyColor.setHex(0xffffff);
-        } else if (enemy.isElite && enemy.affix) {
-          this.dummyColor.setHex(ELITE_AFFIXES[enemy.affix]?.tintColor ?? 0xffab00);
-        } else {
-          this.dummyColor.setHex(0x9fb2c4);
-        }
-        this.crabChassisInstancedMesh.setColorAt(crabIndex, this.dummyColor);
-        crabIndex++;
-        continue;
-      }
 
       // Only render humanoid endoskeletons in the primary instanced batch
       if (
@@ -443,17 +359,10 @@ export class EndoskeletonBatch {
     // Forget the walk cycles of enemies that are gone
     for (const [id, g] of this.gaits) if (g.stamp !== this.gaitStamp) this.gaits.delete(id);
 
-    crabIndex = this.renderCorpses(timeSeconds, crabIndex);
+    this.renderCorpses(timeSeconds);
     this.finishSet(this.mainSet);
     if (this.t600Set) this.finishSet(this.t600Set);
 
-    this.crabChassisInstancedMesh.count = crabIndex;
-    this.crabOpticsInstancedMesh.count = crabIndex;
-    this.crabChassisInstancedMesh.instanceMatrix.needsUpdate = true;
-    this.crabOpticsInstancedMesh.instanceMatrix.needsUpdate = true;
-    if (this.crabChassisInstancedMesh.instanceColor) {
-      this.crabChassisInstancedMesh.instanceColor.needsUpdate = true;
-    }
   }
 
   private finishSet(set: WalkerSet): void {
@@ -541,24 +450,6 @@ export class EndoskeletonBatch {
     mesh.count = 0;
     this.group.add(mesh);
     return mesh;
-  }
-
-  /** Swaps the procedural crab drone for the sculpted spider drone, with two eye beads on its front. */
-  public applyCrabModel(crab: { geometry: THREE.BufferGeometry; material: THREE.Material }): void {
-    this.crabChassisInstancedMesh.geometry.dispose();
-    this.crabChassisInstancedMesh.geometry = crab.geometry;
-    this.crabChassisInstancedMesh.material = crab.material;
-    crab.geometry.computeBoundingBox();
-    const box = crab.geometry.boundingBox!;
-    // Eyes on the front of the body sphere, which sits above the middle of the leg spread
-    const centre = box.getCenter(new THREE.Vector3());
-    const y = box.min.y + (box.max.y - box.min.y) * 0.62;
-    const z = centre.z + (box.max.z - centre.z) * 0.22;
-    this.crabOpticsInstancedMesh.geometry.dispose();
-    this.crabOpticsInstancedMesh.geometry = mergeParts([
-      bakePart(new THREE.SphereGeometry(0.025, 8, 8), centre.x - 0.05, y, z, 0, 0, 0, 0xff2020),
-      bakePart(new THREE.SphereGeometry(0.025, 8, 8), centre.x + 0.05, y, z, 0, 0, 0, 0xff2020)
-    ]);
   }
 
   public dispose(): void {

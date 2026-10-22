@@ -20,7 +20,7 @@ import { ModelLibrary } from '../graphics/ModelLibrary';
 
 await ModelLibrary.preload();
 
-const BATCH_ARCHETYPES = ['t800_endoskeleton', 't600_rusted', 'skynet_crab_drone'];
+const BATCH_ARCHETYPES = ['t800_endoskeleton', 't600_rusted'];
 
 const params = new URLSearchParams(location.search);
 const which = params.get('m') ?? 'kyle';
@@ -97,8 +97,6 @@ if (which === 'glb') {
   const batch = new EndoskeletonBatch(4);
   const endo = ModelLibrary.getEndo();
   if (endo) batch.applySculptedModel(endo, ModelLibrary.getMeshData('plasma_rifle'));
-  const crab = ModelLibrary.getMeshData('crab_drone');
-  if (crab) batch.applyCrabModel(crab);
   const t600 = ModelLibrary.getT600();
   if (t600) batch.applyT600Model(t600, ModelLibrary.getMeshData('plasma_rifle'));
   scene.add(batch.group);

@@ -34,7 +34,6 @@ export const SFX_WAV_MANIFEST: Record<string, string[]> = {
   // Impacts, deaths and explosions
   endoHit: seq('hit_metal', 4),
   endoDestroy: seq('death_endo', 4),
-  deathDrone: seq('death_drone', 3),
   deathMachine: seq('death_machine', 4),
   deathBoss: seq('death_boss', 3),
   explodeSmall: seq('explode_small', 3),
@@ -120,7 +119,6 @@ export const CATEGORY_VOICE_LIMITS: Record<string, VoiceLimitConfig> = {
   endoHit: { maxVoices: 6, minRetriggerMs: 30 },
   playerHit: { maxVoices: 6, minRetriggerMs: 30 },
   endoDestroy: { maxVoices: 3, minRetriggerMs: 30 },
-  deathDrone: { maxVoices: 3, minRetriggerMs: 40 },
   deathMachine: { maxVoices: 2, minRetriggerMs: 80 },
   deathBoss: { maxVoices: 1, minRetriggerMs: 500 },
   explodeSmall: { maxVoices: 3, minRetriggerMs: 40 },
@@ -1002,9 +1000,9 @@ export class AudioEngine {
     this.playSample(kind === 'heal' ? 'lootHeal' : 'lootScrap', 0.6, 1.0, 0.04);
   }
 
-  /** Death sound by enemy kind: bosses and machines blow up, drones short out, humanoids spark and collapse. */
+  /** Death sound by enemy kind: bosses and machines blow up, humanoids spark and collapse. */
   public playEnemyDeath(
-    kind: 'boss' | 'machine' | 'small' | 'humanoid',
+    kind: 'boss' | 'machine' | 'humanoid',
     sourceX?: number,
     sourceZ?: number,
     playerX?: number,
@@ -1024,9 +1022,6 @@ export class AudioEngine {
         break;
       case 'machine':
         this.playSample('deathMachine', 0.6 * attenuation, 1.0, 0.08, pan);
-        break;
-      case 'small':
-        this.playSample('deathDrone', 0.45 * attenuation, 1.0, 0.1, pan);
         break;
       default:
         this.playEndoDestroy(sourceX, sourceZ, playerX, playerZ);

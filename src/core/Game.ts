@@ -79,8 +79,6 @@ export class Game implements RunControllerHost, InputRouterHost, DebugAPIHost {
       const rifle = ModelLibrary.getMeshData('plasma_rifle');
       const endo = ModelLibrary.getEndo();
       if (endo) this.endoBatch.applySculptedModel(endo, rifle);
-      const crab = ModelLibrary.getMeshData('crab_drone');
-      if (crab) this.endoBatch.applyCrabModel(crab);
       if (rifle) this.playerMesh.applyRifleModel(rifle);
       const t600 = ModelLibrary.getT600();
       if (t600) this.endoBatch.applyT600Model(t600, rifle);

@@ -52,7 +52,7 @@ test('Every enemy and boss type runs without runtime errors', async ({ page }) =
   await expect(page.getByTestId('hud-container')).toBeVisible();
 
   const archetypes = [
-    'skynet_crab_drone', 't600_rusted', 't800_endoskeleton', 'hk_aerial_patrol',
+    't600_rusted', 't800_endoskeleton', 'hk_aerial_patrol',
     't1_minigun_tracked', 'moto_terminator', 'plasma_turret'
   ];
   const bosses = [
