@@ -48,7 +48,7 @@ function wrapAngle(a: number): number {
 /**
  * The playable character: an articulated figure with a running gait, independent legs and torso
  * (legs follow the movement, torso follows the aim), and arms solved onto the rifle each frame.
- * Characters differ only by data (PLAYER_LOOKS), applied in applyLoadout.
+ * Kyle 2029 is the only character; his colours are data (PLAYER_LOOKS), applied in applyLoadout.
  */
 export class KyleReeseMesh {
   public readonly group = new THREE.Group();
@@ -62,7 +62,7 @@ export class KyleReeseMesh {
   private readonly legR: Leg;
   private readonly coatTails: THREE.Mesh[] = [];
   private readonly lamp = new THREE.Group();
-  // Sculpted Kyle 2029 (auto-rigged model) for that loadout, once loaded; the procedural figure otherwise
+  // Sculpted Kyle 2029 (auto-rigged model), once loaded; the built figure below until then
   private sculpted: {
     root: THREE.Group;
     anim: HumanoidAnimator;
@@ -74,7 +74,7 @@ export class KyleReeseMesh {
   private loadoutId: LoadoutId = 'reese_2029';
   private readonly holdR = new THREE.Vector3();
   private readonly holdL = new THREE.Vector3();
-  // Procedural rifle pieces, replaced by the sculpted rifle once it has loaded
+  // Built rifle pieces, replaced by the sculpted rifle once it has loaded
   private readonly rifleParts: THREE.Object3D[] = [];
   private readonly muzzleFlash: THREE.Mesh;
   private readonly muzzleFlashMat: THREE.MeshBasicMaterial;
@@ -425,7 +425,7 @@ export class KyleReeseMesh {
     this.rifleParts.push(chamber);
   }
 
-  /** Swaps the procedural rifle for the sculpted plasma rifle (1 m long, centred, facing +z). */
+  /** Swaps the built rifle for the sculpted plasma rifle (1 m long, centred, facing +z). */
   public applyRifleModel(rifle: { geometry: THREE.BufferGeometry; material: THREE.Material }): void {
     if (this.rifleParts.length === 0) return;
     for (const part of this.rifleParts) {
@@ -462,8 +462,8 @@ export class KyleReeseMesh {
   }
 
   /**
-   * Takes the auto-rigged player model (Kyle 2029) and the sculpted rifle. Used for that loadout;
-   * the other characters keep the procedural figure.
+   * Takes the auto-rigged player model (Kyle 2029) and the sculpted rifle, and shows them in place of the
+   * built figure.
    */
   public applyPlayerModel(player: AutoRigged, rifle: { geometry: THREE.BufferGeometry; material: THREE.Material }): void {
     if (this.sculpted) return;
@@ -483,7 +483,7 @@ export class KyleReeseMesh {
     this.applyLoadout(this.loadoutId);
   }
 
-  /** Shows the sculpted or the procedural figure and moves the muzzle flash and belt lamp onto it. */
+  /** Shows the sculpted or the built figure and moves the muzzle flash and belt lamp onto it. */
   private useSculpted(on: boolean): void {
     const s = this.sculpted;
     this.pelvis.visible = !on;

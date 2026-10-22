@@ -26,7 +26,7 @@ export interface EndoModel {
   hipHeight: number;
   /** Two glowing eye beads in the skull's sockets */
   eyes: THREE.BufferGeometry;
-  /** Plasma rifle held in the hands (simple stand-in until the sculpted rifle loads) */
+  /** Plasma rifle held in the hands (the model's own rifle, replaced by the shared sculpted rifle when it loads) */
   rifle: THREE.BufferGeometry;
   /** Where the right hand grips the rifle */
   rifleGrip: THREE.Vector3;
@@ -260,7 +260,7 @@ function bakeWalker(scene: THREE.Object3D, mesh: THREE.SkinnedMesh, rig: Humanoi
 
 /**
  * A standalone endoskeleton (codex previews): the baked pieces assembled as ordinary meshes.
- * `tint` recolours the chassis for the T-600 / T-700 variants; the geometry stays shared.
+ * `tint` recolours the chassis for the T-600 variant; the geometry stays shared.
  */
 export function createEndoPreview(
   model: EndoModel,

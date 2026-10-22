@@ -51,6 +51,7 @@ export type EnemyArchetypeId =
   | 'moto_terminator'
   | 'plasma_turret';
 
+/** Kyle 2029 is the only operative; the id stays because saves and startRunWith carry it. */
 export type LoadoutId = 'reese_2029';
 
 export type MetaUpgradeId =

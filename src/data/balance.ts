@@ -24,8 +24,7 @@ export const ENEMY_ATTACK_DAMAGE = {
   corePull: 14,
   t1ConeBolt: 12,
   motoDash: 20,
-  turretBolt: 22,
-  minigunnerBurst: 14
+  turretBolt: 22
 };
 
 // In-run ambience: looped battle bed plus a randomly timed distant explosion.

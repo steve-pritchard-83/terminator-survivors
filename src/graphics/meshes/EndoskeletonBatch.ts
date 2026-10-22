@@ -12,7 +12,7 @@ import { ModelLibrary } from '../ModelLibrary';
 /** One walking body drawn with instancing: chassis, two jointed legs, glowing eyes, held weapon. */
 interface WalkerSet {
   chassis: THREE.InstancedMesh;
-  /** Thighs (the whole leg for the procedural stand-in) */
+  /** Thighs (the whole leg for the placeholder body) */
   leftLeg: THREE.InstancedMesh;
   rightLeg: THREE.InstancedMesh;
   /** Shins hanging from the knees; null when the legs are one piece */
@@ -50,7 +50,7 @@ export class EndoskeletonBatch {
   private readonly chassisMat: THREE.MeshStandardMaterial;
   // Rifle carried by the sculpted model (the procedural chassis has its rifle built in)
   private rifleInstancedMesh: THREE.InstancedMesh | null = null;
-  // The T-800 / T-700 body (and the T-600 until it has its own), plus the sculpted T-600 once loaded
+  // The T-800 body (and the T-600 until it has its own), plus the sculpted T-600 once loaded
   private readonly mainSet: WalkerSet;
   private t600Set: WalkerSet | null = null;
   private readonly zeroMatrix = new THREE.Matrix4().makeScale(0, 0, 0);
@@ -130,7 +130,7 @@ export class EndoskeletonBatch {
       kneeR: new THREE.Vector3(),
       optics: this.opticsInstancedMesh,
       weapon: null,
-      hipHeight: 0.68, // procedural stand-in; the sculpted model sets its own
+      hipHeight: 0.68, // placeholder body; the sculpted model sets its own
       index: 0
     };
     // Pitch and roll about the body's own axes after it turns to face its target
@@ -293,7 +293,7 @@ export class EndoskeletonBatch {
       const set = this.setFor(enemy.archetype);
       if (set.index >= this.maxCount) continue;
 
-      // Scale variation for T-600 heavy vs T-700 runner
+      // The T-600 is the larger body
       let scale = ENDO_VISUAL_SCALE;
       if (enemy.archetype === 't600_rusted') scale *= 1.25;
       if (enemy.isElite) scale *= (enemy.scale ?? 1.4);
@@ -375,8 +375,8 @@ export class EndoskeletonBatch {
   }
 
   /**
-   * Swaps the procedural endoskeleton for the sculpted T-800 (all walking archetypes share it;
-   * the per-instance tint still tells the T-600 and T-700 apart). Called once the model has loaded.
+   * Swaps the placeholder body for the sculpted T-800 (the T-600 shares it until its own body loads, with a
+   * per-instance tint). Called once the model has loaded.
    */
   public applySculptedModel(
     model: EndoModel,

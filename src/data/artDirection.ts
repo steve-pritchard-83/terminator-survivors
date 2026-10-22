@@ -7,15 +7,11 @@ export const PALETTE = {
   sky: 0x05080d,
   fog: 0x111c28,
   moon: 0xa8c4e6,
-  moonRim: 0xd8e6ff,
-  shadowFill: 0x1c2a3a,
   // Fire
-  fireCore: 0xffd27a,
   fire: 0xff7a1e,
   ember: 0xff3b0a,
   fireBounce: 0x5a2e14,
   // Machines
-  chromeTint: 0xc9d2dc,
   skynetRed: 0xff1a0a,
   searchlight: 0xd6e8ff,
   // Plasma (Resistance pink-violet, Skynet red), cores are near-white
@@ -24,7 +20,6 @@ export const PALETTE = {
   plasmaSkynet: 0xff2440,
   plasmaSkynetCore: 0xffe0e0,
   // Pickups
-  xpCore: 0x5fd4ff,
   // Smoke and ash
   smoke: 0x2a3440,
   ash: 0x9a9690

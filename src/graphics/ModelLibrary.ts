@@ -11,8 +11,8 @@ const variant = (url: string): string => url.replace(/\.glb$/, `${RENDER_BUDGET.
 
 /**
  * Sculpted models (public/models, made by scripts/process-models.mjs). They load in the background
- * at startup; meshes fall back to their procedural geometry until a model is ready.
- * Every model is normalised to the local size its procedural stand-in had, facing +z.
+ * at startup; meshes show a placeholder shape until their model is ready (Deploy waits for them).
+ * Every model is normalised to a fixed size, facing +z.
  */
 export type ModelName =
   | 'hk_tank_hull'
@@ -240,7 +240,7 @@ export const ModelLibrary = {
         }
       })
       .catch(() => {
-        // Keep the procedural endoskeleton
+        // The T-800 stays a placeholder (Deploy then stays disabled)
       });
     loading = Promise.all([
       endo,

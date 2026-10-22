@@ -74,7 +74,7 @@ export class Game implements RunControllerHost, InputRouterHost, DebugAPIHost {
     appContainer.appendChild(canvasContainer);
 
     this.sceneManager = new SceneManager(canvasContainer);
-    // Sculpted models stream in; the procedural stand-ins are used until then
+    // Sculpted models stream in; placeholder shapes show until then (Deploy waits for the models)
     void ModelLibrary.preload().then(() => {
       const rifle = ModelLibrary.getMeshData('plasma_rifle');
       const endo = ModelLibrary.getEndo();

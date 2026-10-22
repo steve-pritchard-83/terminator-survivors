@@ -907,7 +907,7 @@ export class AudioEngine {
     else this.playSample('launchGrenade', 0.5, 1.0, 0.08);
   }
 
-  /** Whoosh of flammable liquid igniting on the ground (napalm, molotov, firestorm). */
+  /** Whoosh of flammable liquid igniting on the ground (molotov, firestorm lane). */
   public playFireDeploy(): void {
     this.playSample('fireWhoosh', 0.5, 1.0, 0.08);
   }

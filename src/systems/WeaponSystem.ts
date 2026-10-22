@@ -444,7 +444,7 @@ export class WeaponSystem {
     enemy.hitFlashTimer = isCrit ? 0.2 : 0.12;
 
     const sourceWeaponId = weaponId ?? this.currentFiringWeaponId;
-    // Fire (ground-zone weapons such as napalm) stops T-1000 regeneration
+    // Fire (ground-zone weapons such as the molotov) stops T-1000 regeneration
     if (sourceWeaponId && ALL_WEAPONS[sourceWeaponId]?.pattern === 'GroundZone') {
       enemy.state = enemy.state ?? {};
       enemy.state.burnTimer = 1.5;

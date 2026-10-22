@@ -1,7 +1,7 @@
 import type { LoadoutId } from '../core/types';
 
 /**
- * How Kyle looks in the field (the procedural stand-in shown until the sculpted model loads).
+ * How Kyle looks in the field: the colours of the built figure shown until the sculpted model loads.
  * Colours are hex; KyleReeseMesh.applyLoadout applies them.
  */
 export interface PlayerLook {

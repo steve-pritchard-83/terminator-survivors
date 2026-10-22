@@ -21,6 +21,7 @@ export interface LoadoutConfig {
   ability: LoadoutAbilityConfig;
 }
 
+/** The playable operative (a single entry; see LoadoutId). */
 export const LOADOUTS: Record<LoadoutId, LoadoutConfig> = {
   reese_2029: {
     id: 'reese_2029',

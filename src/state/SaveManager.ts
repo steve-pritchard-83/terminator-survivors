@@ -474,19 +474,10 @@ export class SaveManager {
     // Apply Reward
     if (def.reward.type === 'scrap' && typeof def.reward.amount === 'number') {
       this.data.alloyScrap += def.reward.amount;
-    } else if (def.reward.type === 'loadout' && def.reward.id) {
-      if (!this.data.unlockedLoadouts.includes(def.reward.id as LoadoutId)) {
-        this.data.unlockedLoadouts.push(def.reward.id as LoadoutId);
-      }
     } else if (def.reward.type === 'weapon' && def.reward.id) {
       if (!this.data.unlockedWeapons) this.data.unlockedWeapons = [...DEFAULT_UNLOCKED_WEAPONS];
       if (!this.data.unlockedWeapons.includes(def.reward.id as BaseWeaponId)) {
         this.data.unlockedWeapons.push(def.reward.id as BaseWeaponId);
-      }
-    } else if (def.reward.type === 'cosmetic' && def.reward.id) {
-      if (!this.data.unlockedCosmetics) this.data.unlockedCosmetics = [];
-      if (!this.data.unlockedCosmetics.includes(def.reward.id)) {
-        this.data.unlockedCosmetics.push(def.reward.id);
       }
     }
 

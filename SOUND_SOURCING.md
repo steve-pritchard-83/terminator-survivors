@@ -42,7 +42,7 @@ Updated 2026-10-21 after the declutter (variant pools capped at 3–4, cut weapo
 ## Still missing (checked against the library on 2026-10-21; nothing suitable there)
 
 - **K-9:** bark, growl, bite. The library has no animal sounds.
-- **Telegraph cues:** Tank mortar incoming whistle, searchlight lock-on tone, strafing run, Core spoke charge, T-1000 landing.
+- **Telegraph cues:** the mortar whistle and the Core charge are synthesised (`playTelegraph`); still missing are a searchlight lock-on tone, a strafing run and a T-1000 landing.
 - **Boss stingers** for the Infiltrator and T-1000, and phase-change cues.
 - **T-1000 liquid-metal** morph and flow sounds (only hits are covered).
 - **UI:** a distinct pause/resume pair, level-up card hover/select, reroll.

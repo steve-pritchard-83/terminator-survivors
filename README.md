@@ -29,12 +29,12 @@ Available anywhere on desktop and mobile, with full progressive web app (PWA) of
 
 ### 1. Authentic Cameron Future War Aesthetic
 
-- **Procedural PBR 3D Graphics**: Built from the ground up in `Three.js` with custom metallic chrome shaders, volumetric searchlight cones with soft edge falloff, red scanning lasers, destroyed rebar highway pillars, crushed car chassis, procedural blast craters, cracked asphalt slabs, and miles of human skull fields.
-- **Cinematic Post-Processing**: Unreal bloom, cobalt-blue color grading, film grain, and an authentic red CRT scanline overlay simulating Skynet terminal telemetries.
+- **Sculpted 3D Models**: Built in `Three.js` from supplied models (T-800, T-600, HK Aerial and Tank, T-1000, Infiltrator, Skynet core, K-9, turret and more) with metal materials, instanced crowds with jointed walk cycles, volumetric searchlight cones, procedural blast craters, ruins and miles of human skull fields.
+- **Cinematic Post-Processing**: Unreal bloom, cobalt-blue colour grading, film grain (desktop), and a faint steel CRT scanline overlay. The interface is neutral steel; red is kept for health, bosses and damage.
 - **Faithful Typography & Audio**:
-  - Incorporates the authentic `Terminator Real NFI` font alongside tactical Rajdhani and 6502 assembly telemetry fonts.
+  - Incorporates the authentic `Terminator Real NFI` font alongside Share Tech Mono for the interface.
   - Looped background music (`backgroundmusic.mp3`) played through a gapless Web Audio loop graph.
-  - Hybrid Audio Engine combining 56 preloaded `.wav` combat SFX (`S_PlasmaShot01.wav`, `S_Ithica01.wav`, `Shotgun_shot_spas.wav`, `S_LaserTank01.wav`, `plasma_explosion.wav`, `hk_heavy1a_m.wav`, and the iconic `terminated.wav` death sting) with procedural Web Audio API synthesis.
+  - Audio engine playing about 170 trimmed WAV effects (listed in `SFX_WAV_MANIFEST`) with spatial panning and voice limits, plus synthesised warning cues before boss attacks.
 
 ### 2. Survivor Combat & Arsenal (11 Weapons, 10 Passives, 11 Evolutions)
 
@@ -56,10 +56,11 @@ Available anywhere on desktop and mobile, with full progressive web app (PWA) of
 
 ### 3. Skynet Threat Matrix
 
-- **T-800 Cyberdyne Systems Model 101 Endoskeletons**: Dual-layer InstancedMesh rendering holding active chrome skeletons with glowing red optical sensors.
-- **Hunter-Killer Aerial**: Supersonic patrol units strafing the battlefield with crimson plasma beams.
-- **Hunter-Killer Goliath Tank**: Multi-track behemoths equipped with dual swivel turrets, ground artillery telegraphs, and twin sweeping volumetric searchlights.
-- **T-1000 Mimetic Polyalloy Prototype**: Advanced liquid metal boss with chrome polyalloy reflection shaders (puddle ambush, blade lunge and slash combo, and nanite regeneration that fire or EMP shuts off).
+- **Fodder**: Series 600 walkers (from the start, in growing packs) and T-800 endoskeletons (from minute 1), drawn as instanced crowds with jointed walk cycles and contact shadows.
+- **Specialists**: Moto-Terminator flankers and T-1 tracked chassis (from minute 3), plasma turrets, and Hunter-Killer Aerial gunships with searchlights.
+- **Elites**: any fodder can spawn as an Armored, Overclocked or Self-Destruct elite.
+- **Bosses**: Infiltrator CSM-101 (2:00), Hunter-Killer Tank Goliath (4:00), HK-Aerial Command (6:00), T-1000 (8:00) and the Skynet Time Displacement Core (10:00). Each has a minimum fight length so its phases always play out.
+- **Threat levels**: winning unlocks the next of five harder levels (tougher machines, more scrap).
 
 ### 4. Controller, Mobile Native & PWA First
 
@@ -85,7 +86,7 @@ Available anywhere on desktop and mobile, with full progressive web app (PWA) of
 | **Desktop Keyboard / Mouse** | Movement         | `W`, `A`, `S`, `D` or Arrow Keys                  |
 | **Desktop Keyboard / Mouse** | Aiming           | Mouse cursor position                             |
 | **Desktop Keyboard / Mouse** | Ability          | `E`                                               |
-| **Desktop Keyboard / Mouse** | Pause / Menu     | `Escape` or `P`                                   |
+| **Desktop Keyboard / Mouse** | Pause / Menu     | `Escape`                                          |
 | **Xbox / Standard Gamepad**  | Movement         | Left Thumbstick or D-Pad                          |
 | **Xbox / Standard Gamepad**  | 360° Aiming      | Right Thumbstick (retains angle on release)       |
 | **Xbox / Standard Gamepad**  | Ability          | `Button Y` / `Button X` / `RB`                    |
@@ -99,7 +100,7 @@ Available anywhere on desktop and mobile, with full progressive web app (PWA) of
 ## 🛠️ Tech Stack & Architecture
 
 - **Rendering Engine**: Three.js (WebGL 2.0 / PBR shaders / InstancedMesh)
-- **Audio System**: Web Audio API (procedural synthesis) + HTML5 Audio (gapless music streaming & 56 SFX)
+- **Audio System**: Web Audio API (procedural synthesis) + HTML5 Audio (gapless music streaming and the sound effects)
 - **Spatial Partitioning**: Custom 2D Spatial Hash Grid ($O(1)$ collision checks across hundreds of units)
 - **State Management**: Reactive deterministic game loop with fixed-timestep physics (60Hz) with interpolated player and camera rendering
 - **Input System**: Multi-device manager supporting Keyboard, Mouse, Virtual Touchscreen Joystick, and Standard Gamepad API with Dual-Rumble Haptics
@@ -117,8 +118,8 @@ Available anywhere on desktop and mobile, with full progressive web app (PWA) of
 
 ### Prerequisites
 
-- Node.js 18.0 or higher
-- npm 9.0 or higher
+- Node.js 22 (what CI uses) or newer
+- npm 10 or newer
 
 ### Installation
 

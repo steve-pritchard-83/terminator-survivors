@@ -9,7 +9,7 @@ export type AchievementCategory =
   | 'mastery';
 
 export interface AchievementReward {
-  type: 'loadout' | 'weapon' | 'scrap' | 'cosmetic' | 'upgrade';
+  type: 'weapon' | 'scrap';
   id?: string;
   amount?: number;
   description: string;

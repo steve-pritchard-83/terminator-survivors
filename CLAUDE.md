@@ -19,7 +19,7 @@
 - `src/input`: Keyboard, mouse, virtual touch joystick, and standard Gamepad API with dual-rumble haptics
 - `src/state`: RunState (in-run player stats & leveling math) and SaveManager (LocalStorage persistence)
 - `src/systems`: Core gameplay systems: EnemySystem, PlayerSystem, WeaponSystem, PickupSystem, ParticleSystem
-- `src/ui`: minimal HUD (health, XP, timer, boss bar/alert), icons (`src/ui/icons`: edit `iconMap.ts`, then `npm run build:icons`), Tactical CSM-101 HUD, TitleScreen, BunkerRequisition, LevelUpModal, VaultJackpotModal, PauseModal
+- `src/ui`: HUDView (health, XP, timer, build strip, boss bar/alert, first-run tips), TitleScreen (Deploy, Threat, Requisition, Archives, Settings), CodexModal (the Archives: machines, armory, achievements, run log), LevelUpModal, VaultJackpotModal, PauseModal, SettingsPanel, EndRunModal, EndVideo, icons (`src/ui/icons`: edit `iconMap.ts`, then `npm run build:icons`)
 
 ## 3. Debug API (`window.__GAME_DEBUG__`)
 
@@ -40,7 +40,7 @@ Exposed during gameplay on `window.__GAME_DEBUG__` for testing and Playwright sp
 - `damageEnemy(target, amount, crit)`: Deals damage to enemy/boss/drum through `WeaponSystem.applyDamageToTarget`
 - `killAllEnemies()`: Eliminates all active enemies via `damageEnemy`
 - `setPlayerHp(hp)`: Sets player current HP
-- `startRunWith(config)`: Launches run with custom `RunConfig` (`loadoutId`, `seed`)
+- `startRunWith(config)`: Launches run with custom `RunConfig` (`loadoutId`, `seed`, `threat`)
 - `getEnemies()`, `getViewReach()`, `isOnScreen(x, z)`: live enemy list, ground distance to the screen edge, and the on-screen test that limits player weapons to what is visible
 
 ## 4. Working Rules (keep it cheap)
@@ -55,3 +55,15 @@ Read only the files the task touches. Do not explore the repo or run the full te
 6. **Data over code:** balance numbers belong in `src/data/*.ts`.
 7. **Three.js:** dispose per-entity geometries/materials on removal, or use shared ones.
 8. **Randomness:** `globalRNG` for gameplay, `vfxRNG` for cosmetics; no `Math.random()` in `src/systems` or `src/state`.
+
+## 5. Conventions and gotchas (things the code will not tell you)
+
+- **One playable character.** Kyle 2029 is the only operative. `LoadoutId`, `LOADOUTS`, `unlockedLoadouts` and `selectedLoadout` still exist because saves and `startRunWith` use them; treat them as a single-entry list, not as a place to add characters.
+- **Removing content needs a save migration.** Old saves hold ids of things that no longer exist. `SaveManager.sanitizeAndMigrate` drops unknown weapons, upgrades and loadouts; bump `CURRENT_VERSION` and add a `migrations` step when scrap or unlocks must be refunded (see `REMOVED_UPGRADE_COSTS`). `tests/fixtures/save_v*.json` deliberately contain removed ids for the migration tests.
+- **Player weapons only affect what is on screen.** New weapon patterns must use `ctx.isVisible(x, z)`, `ctx.reachAlong(angle)` and `ctx.reachRadius()` (from `SceneManager.isOnScreen/getReachAlong/getReachRadius`); projectiles that leave the screen are removed. The camera sits behind the player, so the bottom of the screen is much closer than the top.
+- **Models, not procedural geometry.** Sculpted models live in `public/models` (built by `scripts/process-models.mjs` from originals kept outside the repo in `Documents/TerminatorSurvivors_models`; `.m.glb` is the phone variant) and load through `ModelLibrary`. Meshes show `createPlaceholder` (geometryUtils) only until their model loads; Deploy is disabled until then. Do not add hand-built fallback geometry. Rotation is applied before `fit`, so pick the fit axis after the turn.
+- **Phone budget.** Anything heavy per frame needs a setting in `RENDER_BUDGET` (`src/data/performance.ts`, `IS_MOBILE`): lights, ash, shadows, decals, grain, bloom, model variants. The camera near plane is 1.0 for depth precision, so nothing may sit within about a metre of the camera.
+- **Where tuning lives.** Weapons and passives `src/data/weapons.ts` (shared level curve plus `SIGNATURES` at levels 4 and 8); enemies `enemies.ts`; spawns, packs and threat levels `waves.ts`; offers, scrap, XP curve, boss minimum fight length, opening grace `balance.ts`. Do not hard-code numbers in systems.
+- **Sounds.** Every file must be listed in `SFX_WAV_MANIFEST` (`src/audio/AudioEngine.ts`), flat in `public/audio/effects`, mono 44.1 kHz WAV, pools of 3-4. Warning cues for boss telegraphs are synthesised (`playTelegraph`).
+- **Interface style.** Red is for danger only (health, bosses, damage). Chrome uses `--t-accent` / `.t-accent`; `.t-red` is for errors and defeat. Keep text short.
+- **Dev tools.** `/asset-lab.html` and `/mesh-preview.html` are served by the dev server only. Editing a file while a Playwright run drives the dev server reloads the page and ends the run.

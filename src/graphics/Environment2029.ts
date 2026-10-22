@@ -510,7 +510,7 @@ export class Environment2029 implements IEnvironment {
     void ModelLibrary.preload().then(() => this.applyModels());
   }
 
-  /** Swaps the procedural wrecks for the sculpted burnt-out car once it has loaded. */
+  /** Swaps the placeholder wrecks for the sculpted burnt-out car once it has loaded. */
   private applyModels(): void {
     const car = ModelLibrary.getMeshData('burnt_car');
     if (this.disposed || !car) return;
