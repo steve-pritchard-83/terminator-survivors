@@ -285,7 +285,7 @@ export class EndRunModal {
         return `
           <div class="t-row" style="justify-content:flex-start;">
             <span class="t-muted" style="width:46px;">${timeFormatted}</span>
-            <span class="t-red" style="width:50px;">LV ${t.level}</span>
+            <span class="t-accent" style="width:50px;">LV ${t.level}</span>
             <span>${t.choiceTitle}</span>
           </div>
         `;

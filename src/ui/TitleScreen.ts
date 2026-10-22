@@ -301,7 +301,7 @@ export class TitleScreen {
       } else if (isIos) {
         triggerInstallBtn.style.display = 'none';
         instructionsEl.innerHTML =
-          'To install on iPhone/iPad:<br/><span class="t-red">1.</span> Tap the Safari <strong>Share</strong> button <strong>[↑]</strong><br/><span class="t-red">2.</span> Select <strong>"Add to Home Screen"</strong> and launch from your home screen.';
+          'To install on iPhone/iPad:<br/><span class="t-accent">1.</span> Tap the Safari <strong>Share</strong> button <strong>[↑]</strong><br/><span class="t-red">2.</span> Select <strong>"Add to Home Screen"</strong> and launch from your home screen.';
       } else {
         triggerInstallBtn.style.display = 'none';
         instructionsEl.innerHTML =

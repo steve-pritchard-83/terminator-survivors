@@ -1,3 +1,5 @@
+import { GRADE } from './artDirection';
+
 // Rendering budgets. Phones get far fewer lights (every light in the scene is evaluated for every
 // lit pixel, even at zero intensity), lighter models, smaller textures and less ground clutter.
 
@@ -31,7 +33,17 @@ export const RENDER_BUDGET = IS_MOBILE
       /** Machine metalness is scaled by this: on a small dark screen pure chrome reads as black */
       metalScale: 0.6,
       /** Faint cool self-light on the machines (through their own texture) so they stand off the ground */
-      machineLift: 0.22
+      machineLift: 0.22,
+      /** Falling ash flakes (the rest of the pool is hidden) and how opaque they are */
+      ashParticles: 70,
+      ashOpacity: 0.4,
+      /** Scorch marks left on the ground by explosions */
+      scorchDecals: 20,
+      /** Contact shadows under enemies: how many, and how dark */
+      shadowMax: 90,
+      shadowOpacity: 0.5,
+      /** Film grain reads as noise on a small high-density screen */
+      grain: 0
     }
   : {
       flashLights: 8,
@@ -43,5 +55,11 @@ export const RENDER_BUDGET = IS_MOBILE
       lowFpsSeconds: 3,
       modelSuffix: '',
       metalScale: 1,
-      machineLift: 0
+      machineLift: 0,
+      ashParticles: 240,
+      ashOpacity: 0.7,
+      scorchDecals: 64,
+      shadowMax: 650,
+      shadowOpacity: 0.8,
+      grain: GRADE.grain
     };

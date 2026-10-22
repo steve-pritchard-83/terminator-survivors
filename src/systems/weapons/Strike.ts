@@ -22,7 +22,7 @@ export class Strike implements WeaponPattern {
           pz,
           count,
           28,
-          (e) => e.type === 'enemy',
+          (e) => e.type === 'enemy' && ctx.isVisible(e.x, e.z),
           ctx.scratch.orbitalTargets
         ) as ActiveEnemy[])
       : [];
@@ -31,8 +31,8 @@ export class Strike implements WeaponPattern {
 
     for (let i = 0; i < count; i++) {
       const target = targets[i] ?? {
-        x: px + (ctx.rng.next() - 0.5) * 16,
-        z: pz + (ctx.rng.next() - 0.5) * 16
+        x: px + (ctx.rng.next() - 0.5) * 2 * Math.min(8, ctx.reachRadius() * 0.6),
+        z: pz + (ctx.rng.next() - 0.5) * 2 * Math.min(8, ctx.reachRadius() * 0.6)
       };
       ctx.audio.playStrike();
       const ionRadius = baseRadius * areaMult;

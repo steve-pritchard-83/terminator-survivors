@@ -21,7 +21,7 @@ export const CameronGradingShader = {
     uAberration: { value: 0.0012 },
     uDamageFlash: { value: 0.0 },
     uLowHpPulse: { value: 0.0 },
-    uGrain: { value: GRADE.grain },
+    uGrain: { value: RENDER_BUDGET.grain },
     uVignette: { value: GRADE.vignette },
     uSaturation: { value: GRADE.saturation },
     uShadowTint: { value: new THREE.Vector3(...GRADE.shadowTint) },

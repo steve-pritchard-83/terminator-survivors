@@ -103,7 +103,7 @@ export class DogUnit implements WeaponPattern {
 
         for (let c = 0; c < candidates.length; c++) {
           const entity = candidates[c];
-          if (entity.type !== 'enemy') continue;
+          if (entity.type !== 'enemy' || !ctx.isVisible(entity.x, entity.z)) continue;
           const enemy = entity as ActiveEnemy;
           const edist = Math.hypot(enemy.x - dog.x, enemy.z - dog.z);
 

@@ -392,6 +392,10 @@ export interface GameDebugAPI {
   killAllEnemies: () => void;
   setPlayerHp: (hp: number) => void;
   startRunWith: (config: RunConfig) => void;
+  /** Ground distance from the player to the nearest screen edge, and whether a point is on screen */
+  getViewReach?: () => number;
+  getEnemies?: () => Array<{ id: number; archetype: string; x: number; z: number; hp: number; maxHp: number }>;
+  isOnScreen?: (x: number, z: number) => boolean;
   grantWeapon?: (id: WeaponId, level?: number) => void;
   grantPassive?: (id: PassiveId, level?: number) => void;
 }

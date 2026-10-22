@@ -154,7 +154,7 @@ export class RunController {
       this.togglePause();
     };
     this.host.uiManager.hudView.onEvolutionReady = () => {
-      this.showTipOnce('evolve', 'WEAPON READY TO EVOLVE. OPEN A DATA VAULT: BOSSES AND SOME ELITES DROP THEM.');
+      this.showTipOnce('evolve', 'READY TO EVOLVE. OPEN A DATA VAULT.');
     };
   }
 
@@ -195,7 +195,7 @@ export class RunController {
     this.host.audioEngine.init();
     this.host.audioEngine.playRunStart();
     this.host.audioEngine.startMusic();
-    this.showTipOnce('move', 'MOVE TO SURVIVE. KYLE AIMS AND FIRES ON HIS OWN.');
+    this.showTipOnce('move', 'MOVE TO DODGE. KYLE FIRES ON HIS OWN.');
     this.host.audioEngine.startAmbience();
 
     this.host.onRunStarted?.();
@@ -374,7 +374,7 @@ export class RunController {
       {
         rerollsLeft: this.host.runState.rerollsLeft,
         tip: firstLevelUp
-          ? 'WEAPONS FIRE ON THEIR OWN AND PASSIVES BOOST THEM. A LEVEL 8 WEAPON PLUS ITS PAIRED PASSIVE EVOLVES AT A DATA VAULT.'
+          ? 'LEVEL 8 WEAPON + ITS PASSIVE = EVOLUTION AT A DATA VAULT'
           : undefined,
         onReroll: () => {
           if (this.host.runState.useReroll()) {
@@ -430,9 +430,8 @@ export class RunController {
       if (enemy.archetype === 'skynet_tde_core') {
         this.endRun(true);
       }
-    } else if (enemy.isElite || enemy.state?.isElite) {
-      this.triggerHitStop(0.06, true);
     }
+    // Ordinary and elite kills never freeze the game: with packs they came so often that play felt choppy
   }
 
   /** Kyle's ability: four heavy pipe bombs thrown out in a cross. */

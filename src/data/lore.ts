@@ -1,5 +1,5 @@
 export const LORE = {
-  prologue: `The machines rose from the ashes of the nuclear fire. Their war to exterminate mankind had raged for decades, but the final battle would not be fought in the future. It would be fought here, in our present. Tonight...`,
+  prologue: `The war was meant to end in the future. Tonight it ends here.`,
   location: `LOS ANGELES, 2029 A.D. // SECTOR 44 RUINS`,
   quotes: [
     `"Listen, and understand! That Terminator is out there! It can't be bargained with. It can't be reasoned with. It doesn't feel pity, or remorse, or fear. And it absolutely will not stop, ever, until you are dead!"`,

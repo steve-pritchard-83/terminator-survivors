@@ -17,7 +17,8 @@ export class Nova implements WeaponPattern {
 
     ctx.audio.playEmpBlast();
     const isSupernova = params.isSupernova ?? false;
-    const empRadius = (params.baseRadius ?? 3.8) * areaMult;
+    // The pulse stops at the screen edge
+    const empRadius = Math.min((params.baseRadius ?? 3.8) * areaMult, ctx.reachRadius());
 
     ctx.spawnEmpShockwave(px, pz, empRadius, isSupernova);
     ctx.emit('camera:shake', { trauma: params.shakeTrauma ?? 0.22 });
@@ -25,6 +26,7 @@ export class Nova implements WeaponPattern {
     const hitEnemies = ctx.grid.queryRadius(px, pz, empRadius, ctx.scratch.empHit);
     for (let i = 0; i < hitEnemies.length; i++) {
       const target = hitEnemies[i];
+      if (!ctx.isVisible(target.x, target.z)) continue;
       const hitDir = { x: target.x - px, z: target.z - pz };
       const hit = ctx.applyDamageToTarget(target, dmg, def.knockback, hitDir);
       if (hit && target.type === 'enemy') {

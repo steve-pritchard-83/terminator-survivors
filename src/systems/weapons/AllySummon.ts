@@ -135,7 +135,7 @@ export class AllySummon implements WeaponPattern {
     // Firing plasma bursts at nearest enemy
     this.shootTimer -= dt;
     if (this.shootTimer <= 0) {
-      const nearest = ctx.grid.findNearest(this.x, this.z, 16.0, (e) => e.type === 'enemy') as ActiveEnemy | null;
+      const nearest = ctx.grid.findNearest(this.x, this.z, 16.0, (e) => e.type === 'enemy' && ctx.isVisible(e.x, e.z)) as ActiveEnemy | null;
       if (nearest) {
         const fireAngle = Math.atan2(nearest.x - this.x, nearest.z - this.z);
         this.mesh.rotation.y = fireAngle;

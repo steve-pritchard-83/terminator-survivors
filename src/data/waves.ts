@@ -110,19 +110,19 @@ export function buildWaveTimeline(params: BuildWaveTimelineParams = {}): WaveMin
     } else if (!params.bossOrder) {
       if (minute === 2) {
         boss = 'infiltrator_csm101';
-        alertBanner = 'WARNING // INFILTRATOR UNIT CSM-101 DETECTED';
+        alertBanner = 'INFILTRATOR CSM-101';
       } else if (minute === 4) {
         boss = 'hk_tank_goliath';
-        alertBanner = 'CRITICAL ALERT // HUNTER-KILLER TANK GOLIATH APPROACHING';
+        alertBanner = 'HK TANK GOLIATH';
       } else if (minute === 6) {
         boss = 'hk_aerial_squadron_leader';
-        alertBanner = 'AIR DEFENSE ALERT // HK-AERIAL COMMAND SQUADRON INBOUND';
+        alertBanner = 'HK AERIAL COMMAND';
       } else if (minute === 8) {
         boss = 't1000_prototype';
-        alertBanner = 'TACTICAL ANOMALY // LIQUID METAL PROTOTYPE T-1000 RELEASED';
+        alertBanner = 'T-1000';
       } else if (minute === 10) {
         boss = 'skynet_tde_core';
-        alertBanner = 'FINAL OBJECTIVE // SKYNET TIME DISPLACEMENT CORE BREACHED';
+        alertBanner = 'SKYNET CORE';
       }
     }
 

@@ -11,6 +11,7 @@ import { KyleReeseMesh } from '../graphics/meshes/KyleReeseMesh';
 import { EndoskeletonBatch } from '../graphics/meshes/EndoskeletonBatch';
 import { TitleFlyover } from '../graphics/TitleFlyover';
 import { ModelLibrary } from '../graphics/ModelLibrary';
+import { prewarmShaders } from '../graphics/ShaderPrewarm';
 import { PlayerSystem } from '../systems/PlayerSystem';
 import { WeaponSystem } from '../systems/WeaponSystem';
 import { EnemySystem } from '../systems/EnemySystem';
@@ -87,6 +88,8 @@ export class Game implements RunControllerHost, InputRouterHost, DebugAPIHost {
       if (cell) this.pickupSystem.applyCellModel(cell);
       const player = ModelLibrary.getPlayer();
       if (player && rifle) this.playerMesh.applyPlayerModel(player, rifle);
+      // Compile boss and ally shaders now, not in the middle of a fight
+      void prewarmShaders(this.sceneManager.renderer, this.sceneManager.scene, this.sceneManager.camera);
     });
     this.particles = new ParticleSystem();
     this.environment = createEnvironment();
@@ -98,6 +101,9 @@ export class Game implements RunControllerHost, InputRouterHost, DebugAPIHost {
     // 3. Gameplay Systems
     this.playerSystem = new PlayerSystem(this.runState, this.playerMesh, this.particles);
     this.weaponSystem = new WeaponSystem(this.runState, this.grid, this.audioEngine, this.particles, this.playerMesh);
+    this.weaponSystem.visibilityTest = (x, z, margin) => this.sceneManager.isOnScreen(x, z, margin);
+    this.weaponSystem.reachFn = () => this.sceneManager.getReachRadius();
+    this.weaponSystem.reachAlongFn = (angle) => this.sceneManager.getReachAlong(angle);
     this.enemySystem = new EnemySystem(this.runState, this.grid, this.audioEngine, this.particles, this.endoBatch);
     this.waveDirector = new WaveDirector(this.runState, this.enemySystem);
     this.pickupSystem = new PickupSystem(this.runState, this.audioEngine, this.particles);

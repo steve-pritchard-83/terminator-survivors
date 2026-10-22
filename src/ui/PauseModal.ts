@@ -259,7 +259,7 @@ export class PauseModal {
         const item = document.createElement('div');
         item.className = 't-row';
         item.innerHTML = `
-          <span style="display:flex; align-items:center; gap:6px;"><span class="t-red">${iconSvg}</span>${name}</span>
+          <span style="display:flex; align-items:center; gap:6px;"><span class="t-accent">${iconSvg}</span>${name}</span>
           <span class="t-muted">${badge}</span>
         `;
         arsenalList.appendChild(item);
@@ -311,7 +311,7 @@ export class PauseModal {
           <span class="t-muted">+</span>
           <span class="${passiveLv > 0 ? '' : 't-muted'}">${pDef.name}</span>
           <span class="t-muted">→</span>
-          <span class="t-red">${eDef.name}</span>
+          <span class="t-accent">${eDef.name}</span>
         </span>
         ${statusBadge}
       `;

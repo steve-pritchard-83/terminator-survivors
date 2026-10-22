@@ -150,6 +150,10 @@ export class DebugAPI {
       pauseGame: () => this.host.runController.pauseGame(),
       resumeGame: () => this.host.runController.resumeFromPause(),
 
+      getViewReach: () => this.host.sceneManager.getReachRadius(),
+      getEnemies: () =>
+        this.host.enemySystem.activeEnemies.map((e) => ({ id: e.id, archetype: e.archetype, x: e.x, z: e.z, hp: e.hp, maxHp: e.maxHp })),
+      isOnScreen: (x: number, z: number) => this.host.sceneManager.isOnScreen(x, z),
       getSceneCensus: (): SceneCensus => {
         let visibleLights = 0;
         let totalMeshes = 0;

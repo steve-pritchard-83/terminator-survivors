@@ -64,6 +64,12 @@ export interface WeaponFireContext {
     weaponId?: WeaponId
   ) => boolean;
   emit: <K extends keyof GameEventMap>(event: K, payload: GameEventMap[K]) => void;
+  /** True when a point is on screen (always true when no camera is attached, as in unit tests) */
+  isVisible: (x: number, z: number, margin?: number) => boolean;
+  /** Average ground distance from the player to the screen edges, in metres */
+  reachRadius: () => number;
+  /** Ground distance from the player to the screen edge in a direction (radians, 0 = +z), in metres */
+  reachAlong: (angle: number) => number;
   rng: typeof globalRNG;
   scratch: {
     empHit: SpatialEntity[];

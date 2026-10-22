@@ -101,7 +101,7 @@ export class SceneManager {
     const width = container.clientWidth || window.innerWidth;
     const height = container.clientHeight || window.innerHeight;
 
-    this.camera = new THREE.PerspectiveCamera(48, width / height, 0.1, 250);
+    this.camera = new THREE.PerspectiveCamera(48, width / height, 1.0, 250);
     this.camera.position.copy(this.cameraOffset);
     this.camera.lookAt(0, 0, 0);
 
@@ -202,6 +202,50 @@ export class SceneManager {
     const hit = this.raycaster.ray.intersectPlane(this.aimPlane, this.intersectPt);
     if (!hit) return null;
     return { x: this.intersectPt.x, z: this.intersectPt.z };
+  }
+
+  /**
+   * True when a point on the battlefield (at enemy height) is inside the visible screen. A margin above 1
+   * widens the test past the edges (1.1 = ten percent beyond).
+   */
+  public isOnScreen(x: number, z: number, margin = 1): boolean {
+    this.screenScratch.set(x, 0.9, z).project(this.camera);
+    return this.screenScratch.z < 1 && Math.abs(this.screenScratch.x) <= margin && Math.abs(this.screenScratch.y) <= margin;
+  }
+
+  /**
+   * How far the screen reaches over the ground from the player in the given direction (radians, 0 = +z),
+   * in metres. The camera sits behind the player, so the bottom of the screen is much closer than the top.
+   */
+  public getReachAlong(angle: number): number {
+    const target = this.currentCameraTarget;
+    const dx = Math.sin(angle);
+    const dz = Math.cos(angle);
+    let reach = 0;
+    for (let m = 0.5; m <= 40; m += 0.5) {
+      if (!this.isOnScreen(target.x + dx * m, target.z + dz * m)) break;
+      reach = m;
+    }
+    return reach;
+  }
+
+  /** The average distance from the player to the four screen edges over the ground, in metres. */
+  public getReachRadius(): number {
+    const cam = this.camera.position;
+    const target = this.currentCameraTarget;
+    let sum = 0;
+    let count = 0;
+    for (const [nx, ny] of [[0, -1], [0, 1], [-1, 0], [1, 0]] as const) {
+      this.screenScratch.set(nx, ny, 0.5).unproject(this.camera);
+      const dy = this.screenScratch.y - cam.y;
+      if (dy >= -1e-4) continue;
+      const t = -cam.y / dy;
+      const gx = cam.x + (this.screenScratch.x - cam.x) * t;
+      const gz = cam.z + (this.screenScratch.z - cam.z) * t;
+      sum += Math.hypot(gx - target.x, gz - target.z);
+      count++;
+    }
+    return count > 0 ? sum / count : 14;
   }
 
   public worldToScreen(

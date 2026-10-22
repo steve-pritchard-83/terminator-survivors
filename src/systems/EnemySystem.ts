@@ -21,6 +21,7 @@ import { type EnemyBehaviour, type EnemyContext, createEnemyBehaviourRegistry } 
 import type { IEnvironment } from '../graphics/environments';
 import { ENDO_STEP, OPENING_GRACE } from '../data/balance';
 import { ENEMY_SHADOW, PALETTE } from '../data/artDirection';
+import { RENDER_BUDGET } from '../data/performance';
 import { ProceduralTextures } from '../graphics/ProceduralTextures';
 import { buildBoltGeometry, createBoltMaterial } from '../graphics/PlasmaBolts';
 
@@ -73,7 +74,7 @@ export class EnemySystem {
       color: 0x000000,
       map: ProceduralTextures.getSoftGlowSprite(),
       transparent: true,
-      opacity: ENEMY_SHADOW.opacity,
+      opacity: RENDER_BUDGET.shadowOpacity,
       depthWrite: false
     });
     this.shadowMesh = new THREE.InstancedMesh(shadowGeo, shadowMat, ENEMY_SHADOW.maxCount);
@@ -281,7 +282,7 @@ export class EnemySystem {
   }
 
   private updateShadows(): void {
-    const count = Math.min(this.activeEnemies.length, ENEMY_SHADOW.maxCount);
+    const count = Math.min(this.activeEnemies.length, ENEMY_SHADOW.maxCount, RENDER_BUDGET.shadowMax);
     for (let i = 0; i < count; i++) {
       const enemy = this.activeEnemies[i];
       let r = Math.max(ENEMY_SHADOW.minRadius, enemy.radius * ENEMY_SHADOW.radiusScale) * (enemy.scale ?? 1);

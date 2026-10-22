@@ -2,7 +2,9 @@ import { globalEvents } from './EventBus';
 
 export class GameLoop {
   public static readonly FIXED_DT = 1 / 60;
-  private readonly maxFrameDelta = 0.1;
+  // At most three fixed steps per frame: after a hitch the game briefly slows rather than trying to catch
+  // up, which on a phone costs more time than it saves and turns one slow frame into a freeze
+  private readonly maxFrameDelta = 0.05;
 
   private isRunning = false;
   private animFrameId: number | null = null;

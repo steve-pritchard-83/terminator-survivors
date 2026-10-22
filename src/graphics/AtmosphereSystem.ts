@@ -3,6 +3,7 @@ import { globalEvents } from '../core/EventBus';
 import { vfxRNG } from '../core/RNG';
 import { ProceduralTextures } from './ProceduralTextures';
 import { PALETTE } from '../data/artDirection';
+import { RENDER_BUDGET } from '../data/performance';
 
 /** Share of falling particles that are glowing embers rather than grey ash. */
 const EMBER_SHARE = 0.14;
@@ -15,9 +16,9 @@ interface ScorchSlot {
 }
 
 export class AtmosphereSystem {
-  public static readonly MAX_DECALS = 64;
   public static readonly DECAL_LIFETIME = 20.0;
   public static readonly ASH_PARTICLE_COUNT = 240;
+  private readonly maxDecals = RENDER_BUDGET.scorchDecals;
 
   private readonly group = new THREE.Group();
   private readonly unbinds: (() => void)[] = [];
@@ -83,10 +84,12 @@ export class AtmosphereSystem {
       map: typeof document !== 'undefined' ? ProceduralTextures.getSoftGlowSprite() : null,
       size: 0.16,
       transparent: true,
-      opacity: 0.7,
+      opacity: RENDER_BUDGET.ashOpacity,
       depthWrite: false
     });
 
+    // Phones draw only part of the pool
+    this.ashGeo.setDrawRange(0, RENDER_BUDGET.ashParticles);
     this.ashPoints = new THREE.Points(this.ashGeo, this.ashMat);
     this.group.add(this.ashPoints);
 
@@ -96,7 +99,7 @@ export class AtmosphereSystem {
 
     const scorchTexture = this.createScorchCanvasTexture();
 
-    for (let i = 0; i < AtmosphereSystem.MAX_DECALS; i++) {
+    for (let i = 0; i < this.maxDecals; i++) {
       const mat = new THREE.MeshBasicMaterial({
         color: 0x0c0e12,
         map: scorchTexture,
@@ -180,7 +183,7 @@ export class AtmosphereSystem {
     if (!this.enabled) return;
 
     const slot = this.scorchSlots[this.nextScorchIdx];
-    this.nextScorchIdx = (this.nextScorchIdx + 1) % AtmosphereSystem.MAX_DECALS;
+    this.nextScorchIdx = (this.nextScorchIdx + 1) % this.maxDecals;
 
     slot.active = true;
     slot.life = 0;
@@ -250,7 +253,7 @@ export class AtmosphereSystem {
     }
 
     // 3. Update Scorch Decals (20 second lifetime with last 4s fadeout)
-    for (let i = 0; i < AtmosphereSystem.MAX_DECALS; i++) {
+    for (let i = 0; i < this.maxDecals; i++) {
       const slot = this.scorchSlots[i];
       if (!slot.active) continue;
 

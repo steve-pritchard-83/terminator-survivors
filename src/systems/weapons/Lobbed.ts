@@ -32,7 +32,8 @@ export class Lobbed implements WeaponPattern {
         const spread = params.arcSpread ?? 0.5;
         a = targetAngle + (ctx.rng.next() - 0.5) * spread;
       }
-      const dist = minDist + ctx.rng.next() * (maxDist - minDist);
+      // Lands on screen, however far the weapon could throw
+      const dist = Math.min(minDist + ctx.rng.next() * (maxDist - minDist), Math.max(2.5, ctx.reachAlong(a) * 0.9));
 
       ctx.spawnProjectile({
         weaponId: def.id,

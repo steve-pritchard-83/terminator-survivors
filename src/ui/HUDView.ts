@@ -3,6 +3,7 @@ import { LOADOUTS } from '../data/upgrades';
 import { DamageNumbers } from './DamageNumbers';
 import { globalEvents } from '../core/EventBus';
 import { icon, passiveIcon, weaponIcon } from './icons';
+import { IS_MOBILE } from '../data/performance';
 import { BASE_WEAPONS, PASSIVES } from '../data/weapons';
 import type { BaseWeaponId } from '../core/types';
 
@@ -68,14 +69,14 @@ export class HUDView {
       </div>
 
       <div class="hudm-alert" id="hud-boss-warning" data-testid="hud-boss-warning">
-        ${icon('bossAlert')}<span id="hud-boss-warning-text">THREAT DETECTED</span>
+        ${icon('bossAlert')}<span id="hud-boss-warning-text"></span>
       </div>
 
       <div class="hud-floating-text-layer" id="floating-text-layer" data-testid="floating-text-layer"></div>
 
       <div class="hudm-bottom">
         <div class="hudm-ability btn-mobile-ability" id="btn-mobile-ability" data-testid="hud-ability-status" style="display:none;">
-          ${icon('ability')}<span id="hud-ability-text"></span>
+          ${weaponIcon('pipe_bomb', { size: 18 })}<span id="hud-ability-text"></span>
         </div>
         <div class="hudm-hp">
           <span class="hudm-hp-icon">${icon('health')}</span>
@@ -229,10 +230,11 @@ export class HUDView {
         this.abilityText.textContent = `${runState.abilityCooldownTimer.toFixed(1)}s`;
         this.abilityEl.dataset.state = 'cooldown';
       } else {
-        this.abilityText.textContent = 'E';
+        // Phones tap the chip; keyboards also get the key
+        this.abilityText.textContent = IS_MOBILE ? 'BOMBS' : 'BOMBS · E';
         this.abilityEl.dataset.state = 'ready';
       }
-      this.abilityEl.title = ability.name;
+      this.abilityEl.title = `${ability.name}: ${ability.description}`;
     } else {
       this.abilityEl.style.display = 'none';
     }
@@ -248,7 +250,7 @@ export class HUDView {
   }
 
   public triggerBossWarning(bossName: string): void {
-    this.bossWarningText.textContent = `THREAT DETECTED: ${bossName.toUpperCase()}`;
+    this.bossWarningText.textContent = bossName.toUpperCase();
     this.bossWarningBanner.style.display = 'flex';
     if (this.bossWarningTimer !== null) window.clearTimeout(this.bossWarningTimer);
     this.bossWarningTimer = window.setTimeout(() => {

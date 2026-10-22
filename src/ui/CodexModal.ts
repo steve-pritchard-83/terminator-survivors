@@ -393,7 +393,7 @@ export class CodexModal {
       item.classList.toggle('is-selected', isSelected);
       item.innerHTML = `
         <div class="upgrade-card-title" style="font-size:12px;">${def?.name ?? wId}</div>
-        <div class="${isEvo ? 't-red' : 't-muted'}" style="font-size:10px; margin-top:2px;">
+        <div class="${isEvo ? 't-accent' : 't-muted'}" style="font-size:10px; margin-top:2px;">
           ${isEvo ? (isDiscovered ? 'EVOLVED' : 'CLASSIFIED') : 'STANDARD'}
         </div>
       `;
@@ -438,7 +438,7 @@ export class CodexModal {
           <div style="font-size:12px;">
             ${def.name} LV 8 + ${PASSIVES[def.pairedPassive]?.name ?? def.pairedPassive}
             <span class="t-muted">→</span>
-            <span class="t-red">${EVOLVED_WEAPONS[def.evolvesInto]?.name ?? def.evolvesInto}</span>
+            <span class="t-accent">${EVOLVED_WEAPONS[def.evolvesInto]?.name ?? def.evolvesInto}</span>
           </div>
         `
             : ''

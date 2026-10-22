@@ -11,22 +11,26 @@
 }
 
 /*
- * "Terminator vision": the T-800 POV HUD. Near-black panels, one red, off-white text, mono caps.
- * Amber is reserved for genuinely critical states (low HP, boss alert).
+ * "Terminator vision": the T-800 POV HUD. Near-black panels, neutral steel chrome, off-white text, mono caps.
+ * Red is for danger only (health, bosses, damage); amber for the most critical states (low HP, boss alert).
  */
 :root {
   --font-display: 'Terminator Real NFI', 'Share Tech Mono', monospace;
   --font-mono: 'Share Tech Mono', ui-monospace, monospace;
 
-  --t-bg: #0a0303;
-  --t-panel: rgba(10, 3, 3, 0.88);
+  --t-bg: #07090b;
+  --t-panel: rgba(8, 10, 12, 0.88);
+  /* Red means danger (health, bosses, damage); the interface itself is neutral steel */
   --t-red: #ff2a1a;
   --t-red-dim: #b3140c;
-  --t-line: #5a0a06;
+  --t-accent: #cdd7de;
+  --t-accent-dim: #56616b;
+  --t-xp: #5fc8ee;
+  --t-line: #2a3137;
   --t-text: #f2e9e4;
   --t-muted: rgba(242, 233, 228, 0.58);
   --t-amber: #ffb000;
-  --t-ink: #0a0303; /* text on a red fill */
+  --t-ink: #07090b; /* text on an accent fill */
   --ui-scale: 1;
 }
 
@@ -86,7 +90,7 @@ input {
 
 input[type='range'],
 input[type='checkbox'] {
-  accent-color: var(--t-red);
+  accent-color: var(--t-accent);
   cursor: pointer;
 }
 
@@ -97,7 +101,7 @@ input[type='checkbox'] {
 
 select {
   background: var(--t-bg);
-  border: 1px solid var(--t-red-dim);
+  border: 1px solid var(--t-accent-dim);
   border-radius: 0;
   padding: 6px 8px;
   min-height: 36px;
@@ -132,6 +136,10 @@ select {
   color: var(--t-muted);
 }
 
+.t-accent {
+  color: var(--t-accent);
+}
+
 .t-red {
   color: var(--t-red);
 }
@@ -145,7 +153,7 @@ select {
 
 .t-section-label {
   font-size: 12px;
-  color: var(--t-red);
+  color: var(--t-accent);
   letter-spacing: 0.14em;
   margin: 14px 0 6px;
 }
@@ -154,13 +162,13 @@ select {
   display: inline-block;
   font-size: 10px;
   padding: 1px 5px;
-  border: 1px solid var(--t-red-dim);
-  color: var(--t-red);
+  border: 1px solid var(--t-accent-dim);
+  color: var(--t-accent);
 }
 
 .t-tag-on {
-  background: var(--t-red);
-  border-color: var(--t-red);
+  background: var(--t-accent);
+  border-color: var(--t-accent);
   color: var(--t-ink);
 }
 
@@ -194,7 +202,7 @@ select {
 
 .t-bar > div {
   height: 100%;
-  background: var(--t-red);
+  background: var(--t-accent);
 }
 
 /* ===== Touch controls ===== */
@@ -215,8 +223,8 @@ select {
   width: 112px;
   height: 112px;
   border-radius: 50%;
-  border: 1px solid var(--t-red-dim);
-  background: rgba(10, 3, 3, 0.35);
+  border: 1px solid var(--t-accent-dim);
+  background: rgba(8, 10, 12, 0.35);
   transform: translate(-50%, -50%);
   pointer-events: none;
   display: none;
@@ -229,7 +237,7 @@ select {
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: var(--t-red);
+  background: var(--t-accent);
   transform: translate(-50%, -50%);
   pointer-events: none;
 }
@@ -240,7 +248,7 @@ select {
   inset: 0;
   /* The one scanline treatment for full-screen modals */
   background:
-    repeating-linear-gradient(0deg, rgba(255, 42, 26, 0.035) 0 1px, transparent 1px 3px),
+    repeating-linear-gradient(0deg, rgba(205, 215, 222, 0.03) 0 1px, transparent 1px 3px),
     rgba(5, 1, 1, 0.86);
   z-index: 80;
   display: flex;
@@ -256,7 +264,7 @@ select {
   max-width: 680px;
   max-height: 88vh;
   max-height: 88dvh;
-  border: 1px solid var(--t-red);
+  border: 1px solid var(--t-accent);
   background: var(--t-panel);
   padding: 20px 22px;
   display: flex;
@@ -268,7 +276,7 @@ select {
   overscroll-behavior: contain;
   touch-action: pan-y;
   scrollbar-width: thin;
-  scrollbar-color: var(--t-red-dim) transparent;
+  scrollbar-color: var(--t-accent-dim) transparent;
 }
 
 .t800-modal-box * {
@@ -280,12 +288,12 @@ select {
 }
 
 .t800-modal-box::-webkit-scrollbar-thumb {
-  background: var(--t-red-dim);
+  background: var(--t-accent-dim);
 }
 
 .t800-header {
   font-size: 18px;
-  color: var(--t-red);
+  color: var(--t-accent);
   letter-spacing: 0.18em;
   text-align: center;
   margin-bottom: 6px;
@@ -325,7 +333,7 @@ select {
   min-height: 44px;
   padding: 10px 14px;
   background: transparent;
-  border: 1px solid var(--t-red-dim);
+  border: 1px solid var(--t-accent-dim);
   border-radius: 0;
   cursor: pointer;
   flex-shrink: 0;
@@ -341,7 +349,7 @@ select {
 
 .upgrade-card:hover,
 [data-loadout-card]:hover {
-  border-color: var(--t-red);
+  border-color: var(--t-accent);
 }
 
 button.upgrade-card,
@@ -354,13 +362,13 @@ button[data-loadout-card] {
 [data-loadout-card].is-selected,
 .upgrade-card.controller-selected,
 [data-loadout-card].controller-selected {
-  border-color: var(--t-red);
-  box-shadow: inset 0 0 0 1px var(--t-red);
+  border-color: var(--t-accent);
+  box-shadow: inset 0 0 0 1px var(--t-accent);
 }
 
 .upgrade-card.controller-selected .upgrade-card-title,
 [data-loadout-card].controller-selected .card-name {
-  background: var(--t-red);
+  background: var(--t-accent);
   color: var(--t-ink);
   padding: 0 4px;
   margin-left: -4px;
@@ -402,7 +410,7 @@ button[data-loadout-card] {
 
 .upgrade-card-sub {
   font-size: 11px;
-  color: var(--t-red);
+  color: var(--t-accent);
 }
 
 .upgrade-card-desc {
@@ -423,8 +431,8 @@ button[data-loadout-card] {
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--t-red-dim);
-  color: var(--t-red);
+  border: 1px solid var(--t-accent-dim);
+  color: var(--t-accent);
 }
 
 .card-name {
@@ -441,7 +449,7 @@ button[data-loadout-card] {
   font-size: 14px;
   color: var(--t-text);
   background: transparent;
-  border: 1px solid var(--t-red);
+  border: 1px solid var(--t-accent);
   border-radius: 0;
   cursor: pointer;
   letter-spacing: 0.14em;
@@ -456,7 +464,7 @@ button[data-loadout-card] {
 }
 
 .btn-secondary {
-  border-color: var(--t-red-dim);
+  border-color: var(--t-accent-dim);
 }
 
 .btn-sm {
@@ -472,8 +480,8 @@ button[data-loadout-card] {
 .btn-primary.controller-selected,
 .btn-secondary.controller-selected,
 .btn-secondary.active {
-  background: var(--t-red);
-  border-color: var(--t-red);
+  background: var(--t-accent);
+  border-color: var(--t-accent);
   color: var(--t-ink);
 }
 
@@ -495,7 +503,7 @@ select:focus-visible,
 [data-loadout-card]:focus-visible,
 input.controller-selected,
 select.controller-selected {
-  outline: 2px solid var(--t-red);
+  outline: 2px solid var(--t-accent);
   outline-offset: 2px;
 }
 
@@ -533,7 +541,7 @@ select.controller-selected {
 
 .title-sub {
   font-size: clamp(12px, 2.2vw, 16px);
-  color: var(--t-red);
+  color: var(--t-accent);
   letter-spacing: 0.3em;
   margin-bottom: 16px;
   text-align: center;
@@ -578,7 +586,7 @@ select.controller-selected {
 .pwa-icon {
   width: 72px;
   height: 72px;
-  border: 1px solid var(--t-red-dim);
+  border: 1px solid var(--t-accent-dim);
   margin-bottom: 10px;
 }
 
@@ -599,7 +607,7 @@ select.controller-selected {
 
 .landscape-phone-icon {
   font-size: 44px;
-  color: var(--t-red);
+  color: var(--t-accent);
   animation: rotatePhone 2s infinite ease-in-out;
 }
 
@@ -627,11 +635,11 @@ select.controller-selected {
 }
 
 .pause-setting-row.controller-selected {
-  border-color: var(--t-red);
+  border-color: var(--t-accent);
 }
 
 .pause-setting-row.controller-selected label {
-  background: var(--t-red);
+  background: var(--t-accent);
   color: var(--t-ink);
   padding: 0 4px;
 }
@@ -665,7 +673,7 @@ select.controller-selected {
   padding: 4px 8px;
   font-size: 12px;
   background: transparent;
-  border: 1px solid var(--t-red-dim);
+  border: 1px solid var(--t-accent-dim);
   cursor: pointer;
 }
 
@@ -675,8 +683,8 @@ select.controller-selected {
 .remap-gp-btn.is-listening,
 .remap-key-btn.controller-selected,
 .remap-gp-btn.controller-selected {
-  background: var(--t-red);
-  border-color: var(--t-red);
+  background: var(--t-accent);
+  border-color: var(--t-accent);
   color: var(--t-ink);
 }
 
@@ -685,7 +693,7 @@ select.controller-selected {
   font-size: 11px;
   padding: 4px 8px;
   margin-bottom: 8px;
-  border: 1px solid var(--t-red-dim);
+  border: 1px solid var(--t-accent-dim);
   color: var(--t-text);
 }
 
@@ -752,7 +760,7 @@ select.controller-selected {
   font-size: 12px;
   line-height: 1.55;
   color: var(--t-text);
-  border-left: 1px solid var(--t-red);
+  border-left: 1px solid var(--t-accent);
   padding: 2px 0 2px 10px;
 }
 
@@ -968,12 +976,12 @@ select.controller-selected {
 .hudm-xp-fill {
   height: 100%;
   width: 0%;
-  background: var(--t-text);
+  background: var(--t-xp);
   transition: width 0.12s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .hudm-xp-pulse .hudm-xp-fill {
-  background: var(--t-red);
+  background: #ffffff;
 }
 
 .hudm-top {
@@ -997,7 +1005,7 @@ select.controller-selected {
 }
 
 .hudm-chip .gi {
-  color: var(--t-red);
+  color: var(--t-accent);
   width: 16px;
   height: 16px;
 }
@@ -1013,8 +1021,8 @@ select.controller-selected {
 .hudm-pause {
   pointer-events: auto;
   background: transparent;
-  border: 1px solid var(--t-red-dim);
-  color: var(--t-red);
+  border: 1px solid var(--t-accent-dim);
+  color: var(--t-accent);
   width: 44px;
   height: 44px;
   border-radius: 0;
@@ -1031,7 +1039,7 @@ select.controller-selected {
 }
 
 .hudm-pause:hover {
-  background: var(--t-red);
+  background: var(--t-accent);
   color: var(--t-ink);
 }
 
@@ -1064,8 +1072,8 @@ select.controller-selected {
 
 .hudm-bar {
   width: 100%;
-  background: rgba(10, 3, 3, 0.7);
-  border: 1px solid var(--t-red-dim);
+  background: rgba(8, 10, 12, 0.7);
+  border: 1px solid var(--t-accent-dim);
   overflow: hidden;
 }
 
@@ -1160,14 +1168,14 @@ select.controller-selected {
   gap: 6px;
   min-height: 32px;
   padding: 2px 10px;
-  background: rgba(10, 3, 3, 0.7);
-  border: 1px solid var(--t-red);
+  background: rgba(8, 10, 12, 0.7);
+  border: 1px solid var(--t-accent);
   color: var(--t-text);
   font-size: 13px;
 }
 
 .hudm-ability .gi {
-  color: var(--t-red);
+  color: var(--t-accent);
 }
 
 .hudm-ability[data-state='cooldown'] {
@@ -1176,7 +1184,7 @@ select.controller-selected {
 }
 
 .hudm-ability[data-state='active'] {
-  background: var(--t-red);
+  background: var(--t-accent);
   color: var(--t-ink);
 }
 
@@ -1193,7 +1201,7 @@ select.controller-selected {
   align-items: center;
   gap: 10px;
   background: var(--t-panel);
-  border: 1px solid var(--t-red-dim);
+  border: 1px solid var(--t-accent-dim);
   padding: 6px 12px;
   font-size: 12px;
   color: var(--t-text);
@@ -1209,7 +1217,7 @@ select.controller-selected {
 .hudm-controller .gi {
   width: 18px;
   height: 18px;
-  color: var(--t-red);
+  color: var(--t-accent);
 }
 
 .hudm-toast-title {
@@ -1316,22 +1324,22 @@ select.controller-selected {
 }
 
 .hudm-slot.is-evolved {
-  border-color: var(--t-red);
-  color: var(--t-red);
+  border-color: var(--t-accent);
+  color: var(--t-accent);
 }
 
 /* Level 8 with its passive: open a data vault to evolve */
 .hudm-slot.is-ready {
-  border-color: var(--t-red);
+  border-color: var(--t-accent);
   animation: hudm-ready 0.9s ease-in-out infinite alternate;
 }
 
 @keyframes hudm-ready {
   from {
-    box-shadow: 0 0 0 rgba(255, 40, 30, 0);
+    box-shadow: 0 0 0 rgba(205, 215, 222, 0);
   }
   to {
-    box-shadow: 0 0 8px rgba(255, 40, 30, 0.8);
+    box-shadow: 0 0 8px rgba(205, 215, 222, 0.8);
   }
 }
 
@@ -1347,13 +1355,13 @@ select.controller-selected {
 }
 
 .hudm-pips i.on {
-  background: var(--t-red);
+  background: var(--t-accent);
 }
 
 @media (prefers-reduced-motion: reduce) {
   .hudm-slot.is-ready {
     animation: none;
-    box-shadow: 0 0 6px rgba(255, 40, 30, 0.7);
+    box-shadow: 0 0 6px rgba(205, 215, 222, .7);
   }
 }
 
@@ -1365,7 +1373,7 @@ select.controller-selected {
   transform: translateX(-50%);
   max-width: min(560px, 86vw);
   padding: 6px 12px;
-  border: 1px solid var(--t-red-dim);
+  border: 1px solid var(--t-accent-dim);
   background: rgba(8, 2, 2, 0.78);
   color: var(--t-text);
   font-size: 12px;

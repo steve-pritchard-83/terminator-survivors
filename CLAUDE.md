@@ -41,6 +41,7 @@ Exposed during gameplay on `window.__GAME_DEBUG__` for testing and Playwright sp
 - `killAllEnemies()`: Eliminates all active enemies via `damageEnemy`
 - `setPlayerHp(hp)`: Sets player current HP
 - `startRunWith(config)`: Launches run with custom `RunConfig` (`loadoutId`, `seed`)
+- `getEnemies()`, `getViewReach()`, `isOnScreen(x, z)`: live enemy list, ground distance to the screen edge, and the on-screen test that limits player weapons to what is visible
 
 ## 4. Working Rules (keep it cheap)
 

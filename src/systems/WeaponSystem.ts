@@ -110,6 +110,10 @@ export class WeaponSystem {
   private currentFiringWeaponId: WeaponId | null = null;
   public readonly orbitersPattern: Orbiters;
   private readonly fireContext: WeaponFireContext;
+  /** On-screen test and screen reach from the camera: weapons only hit what the player can see */
+  public visibilityTest: ((x: number, z: number, margin?: number) => boolean) | null = null;
+  public reachFn: (() => number) | null = null;
+  public reachAlongFn: ((angle: number) => number) | null = null;
 
   private projectiles: Projectile[] = [];
   private readonly projectilePool: Projectile[] = [];
@@ -216,6 +220,9 @@ export class WeaponSystem {
       applyDamageToTarget: (target, damage, knockback, hitDir, weaponId) =>
         this.applyDamageToTarget(target, damage, knockback, hitDir, weaponId),
       emit: (evt, payload) => globalEvents.emit(evt, payload),
+      isVisible: (x, z, margin) => (this.visibilityTest ? this.visibilityTest(x, z, margin) : true),
+      reachRadius: () => (this.reachFn ? this.reachFn() : AUTO_AIM_RANGE),
+      reachAlong: (angle) => (this.reachAlongFn ? this.reachAlongFn(angle) : AUTO_AIM_RANGE),
       rng: globalRNG,
       scratch: {
         empHit: this.empHitScratch,
@@ -238,7 +245,7 @@ export class WeaponSystem {
 
     // Auto-aim target, found once per tick: weapons fire at it and the player turns to face it
     const nearest = this.runState.autoAimEnabled
-      ? (this.grid.findNearest(px, pz, AUTO_AIM_RANGE, (e) => e.type === 'enemy') as ActiveEnemy | null)
+      ? (this.grid.findNearest(px, pz, AUTO_AIM_RANGE, (e) => e.type === 'enemy' && this.fireContext.isVisible(e.x, e.z)) as ActiveEnemy | null)
       : null;
     this.runState.autoAimAngle = nearest ? Math.atan2(nearest.x - px, nearest.z - pz) : null;
 
@@ -576,8 +583,12 @@ export class WeaponSystem {
         p.pitchX ?? 0
       );
 
+      // A bullet that leaves the screen is gone; it never hits anything the player cannot see
+      const culled = !p.isAreaOnExpire && !this.fireContext.isVisible(p.x, p.z, 1.1);
+      if (culled) p.life = p.maxLife;
+
       // Hit detection
-      const hitCandidates = this.grid.queryRadius(p.x, p.z, p.radius, this.projectileHitScratch);
+      const hitCandidates = culled ? [] : this.grid.queryRadius(p.x, p.z, p.radius, this.projectileHitScratch);
       for (let c = 0; c < hitCandidates.length; c++) {
         const target = hitCandidates[c];
         if (!p.hitEnemyIds.has(target.id)) {
