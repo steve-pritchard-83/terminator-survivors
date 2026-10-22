@@ -39,7 +39,7 @@ export const ENEMY_CONFIGS: Record<EnemyArchetypeId, EnemyStatsConfig> = {
     radius: 0.75,
     isBoss: false,
     isFlying: false,
-    xpValue: 12,
+    xpValue: 16,
     color: 0x9ca8b8,
     mass: 6.0
   },
@@ -59,7 +59,7 @@ export const ENEMY_CONFIGS: Record<EnemyArchetypeId, EnemyStatsConfig> = {
   infiltrator_csm101: {
     archetype: 'infiltrator_csm101',
     name: 'Infiltrator Unit CSM-101',
-    maxHp: 570,
+    maxHp: 380,
     speed: 3.2,
     damage: 32,
     radius: 1.2,

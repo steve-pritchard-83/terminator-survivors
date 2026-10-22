@@ -59,7 +59,7 @@ export function buildGlowGeometry(size = 7): THREE.BufferGeometry {
 
 /** Burnt-out 1980s sedan: rust under soot, gutted cabin, chrome trim, tyres. */
 export function buildCarWreckGeometry(): THREE.BufferGeometry {
-  const bodyPaint = 0x4e3a2c; // rust under soot
+  const bodyPaint = 0x464a4e; // weathered grey under soot
   const bodyScorched = 0x24211f;
   const cabinInterior = 0x232a33;
   const chromeTrim = 0x5c6c7c;

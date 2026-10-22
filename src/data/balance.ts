@@ -92,14 +92,18 @@ export const T1000_TUNING = {
 export const UPGRADE_OFFERS = { ownedWeight: 3, guaranteePassiveAtLevel: 6, newWeaponUntil: 3 };
 
 // From this run time on, elites sometimes drop a data vault, so evolutions are not tied to boss kills.
-export const ELITE_VAULT = { fromSeconds: 300, chance: 0.1 };
+export const ELITE_VAULT = { fromSeconds: 180, chance: 0.15 };
 
 // The opening is gentler: player damage is scaled down for the first stretch of a run.
 export const OPENING_GRACE = { seconds: 90, damageScale: 0.55 };
 
 // Alloy scrap sources in a run. A win (about 2-3k) should fund a few Requisition upgrades, not the whole list.
 // Elite vaults pay no scrap (they are an evolution route, not a scrap source).
-export const SCRAP_DROP = { killChance: 0.05, killAmount: 2, crate: 8, vault: 120, boss: 40, levelUpCache: 25 };
+export const SCRAP_DROP = { killChance: 0.04, killAmount: 2, crate: 6, vault: 120, boss: 40, levelUpCache: 25 };
+
+// Past this level each level costs this much more per level above it (30 → ×1, 40 → ×1.8, 50 → ×2.6), so the
+// late game does not turn into a level-up every few seconds.
+export const LATE_XP = { fromLevel: 30, perLevel: 0.08 };
 
 // Shortest a boss fight can be, in seconds: damage against a boss is capped to a steady rate, so its
 // phases always play out however strong the build (weaker builds still take longer).

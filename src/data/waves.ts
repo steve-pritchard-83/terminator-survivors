@@ -16,7 +16,7 @@ export const RUN_DURATION_MINUTES = 10;
 export const ENEMY_LEASH_DISTANCE = 40;
 
 // While a boss is alive, regular waves are thinned so telegraphs and the player stay readable.
-export const BOSS_FIGHT_SPAWN = { enemyCapMultiplier: 0.6, intervalMultiplier: 1.4 };
+export const BOSS_FIGHT_SPAWN = { enemyCapMultiplier: 0.75, intervalMultiplier: 1.25 };
 
 // Stationary emplacements are never relocated by the leash; they despawn silently once left far behind.
 export const LEASH_EXEMPT_ARCHETYPES: ReadonlySet<string> = new Set(['plasma_turret']);

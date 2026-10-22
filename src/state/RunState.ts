@@ -16,13 +16,15 @@ import { globalRNG } from '../core/RNG';
 import { StateMachine, GAME_MODE_TRANSITIONS } from '../core/StateMachine';
 import { globalEvents } from '../core/EventBus';
 import { threatMultipliers } from '../data/waves';
-import { MAX_REVIVAL_CHANCE, REVIVE_INVULNERABILITY_SECONDS, SCRAP_DROP, UPGRADE_OFFERS } from '../data/balance';
+import { LATE_XP, MAX_REVIVAL_CHANCE, REVIVE_INVULNERABILITY_SECONDS, SCRAP_DROP, UPGRADE_OFFERS } from '../data/balance';
 
 export function getXpForNextLevel(level: number): number {
   if (level <= 2) {
     return Math.floor(10 + 8 * level + 2.5 * Math.pow(level, 1.65));
   }
-  return Math.floor(14 + 6.5 * level + 1.55 * Math.pow(level, 1.62));
+  const base = (l: number) => 14 + 6.5 * l + 1.55 * Math.pow(l, 1.62);
+  if (level <= LATE_XP.fromLevel) return Math.floor(base(level));
+  return Math.floor(base(level) * (1 + (level - LATE_XP.fromLevel) * LATE_XP.perLevel));
 }
 
 export function computeMitigatedDamage(rawDamage: number, armor: number): number {

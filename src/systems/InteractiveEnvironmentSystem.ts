@@ -56,9 +56,9 @@ export class InteractiveEnvironmentSystem {
   private readonly carWreckGeo = shared(buildCarWreckGeometry());
   private readonly carWreckMat = shared(createCarWreckMaterial());
   private readonly drumGeo = shared(new THREE.CylinderGeometry(0.38, 0.38, 0.85, 12));
-  private readonly drumMat = shared(new THREE.MeshStandardMaterial({ color: 0x7a1608, roughness: 0.55, metalness: 0.55 }));
+  private readonly drumMat = shared(new THREE.MeshStandardMaterial({ color: 0x4d5359, roughness: 0.68, metalness: 0.4 }));
   private readonly drumBandGeo = shared(new THREE.CylinderGeometry(0.39, 0.39, 0.12, 12));
-  private readonly drumBandMat = shared(new THREE.MeshStandardMaterial({ color: 0xb08820, roughness: 0.6, metalness: 0.4 }));
+  private readonly drumBandMat = shared(new THREE.MeshStandardMaterial({ color: 0x353a3f, roughness: 0.7, metalness: 0.35 }));
   private lastFlareDropTime = 0;
   private readonly unbinds: Array<() => void> = [];
 

@@ -43,6 +43,8 @@ interface ModelSpec {
   skinned?: boolean;
   /** Make the materials dark reflective metal (the films' machines); omit to keep the source look */
   metal?: { metalness: number; roughness: number };
+  /** Mute the model's own colours toward weathered grey (0 keeps them, 1 is fully grey) so it sits in the landscape */
+  grey?: number;
   /** true: sits on y = 0; false: centred on y = 0 */
   grounded: boolean;
   /** Split into a hull and a turret above this fraction of the height */
@@ -61,7 +63,7 @@ const SPECS: Record<string, ModelSpec> = {
   },
   hk_aerial: { url: './models/hk_aerial.glb', fit: { axis: 'z', size: 6.7 }, grounded: false, metal: MACHINE_METAL },
   // The wreck keeps its own rust textures
-  burnt_car: { url: './models/burnt_car.glb', fit: { axis: 'z', size: 4.4 }, grounded: true },
+  burnt_car: { url: './models/burnt_car.glb', fit: { axis: 'z', size: 4.4 }, grounded: true, grey: 0.78 },
   // Faces -x in the source
   t1_tracked: { url: './models/t1_tracked.glb', fit: { axis: 'z', size: 1.9 }, grounded: true, rotateY: Math.PI / 2 },
   t1000: { url: './models/t1000.glb', fit: { axis: 'y', size: 2.15 }, grounded: true },
@@ -121,6 +123,32 @@ const meshData = new Map<ModelName, { geometry: THREE.BufferGeometry; material: 
 let endoModel: EndoModel | null = null;
 let t600Model: EndoModel | null = null;
 let loading: Promise<void> | null = null;
+
+/**
+ * Pulls a model's own textures toward cool concrete grey, keeping their detail: saturation drops by `amount`
+ * and the result is slightly darkened, so rust and paint stop shouting against the ground.
+ */
+function greyMaterials(root: THREE.Object3D, amount: number): void {
+  root.traverse((o) => {
+    const mesh = o as THREE.Mesh;
+    if (!mesh.isMesh) return;
+    for (const m of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) {
+      const mat = m as THREE.MeshStandardMaterial;
+      if (!mat.isMeshStandardMaterial) continue;
+      mat.color.multiply(new THREE.Color(0xc4cad0));
+      mat.onBeforeCompile = (shader) => {
+        shader.fragmentShader = shader.fragmentShader.replace(
+          '#include <map_fragment>',
+          `#include <map_fragment>
+          float greyLuma = dot(diffuseColor.rgb, vec3(0.299, 0.587, 0.114));
+          diffuseColor.rgb = mix(diffuseColor.rgb, vec3(greyLuma) * vec3(0.92, 0.95, 1.0), ${amount.toFixed(2)});`
+        );
+      };
+      mat.customProgramCacheKey = () => `grey-${amount}`;
+      mat.needsUpdate = true;
+    }
+  });
+}
 
 function markShared(root: THREE.Object3D, metal?: ModelSpec['metal']): void {
   root.traverse((o) => {
@@ -228,6 +256,7 @@ export const ModelLibrary = {
             cache.set(spec.turretSplit.turret, turret);
           } else {
             markShared(model, spec.metal);
+            if (spec.grey) greyMaterials(model, spec.grey);
             cache.set(name as ModelName, model);
           }
         } catch {
