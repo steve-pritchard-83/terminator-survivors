@@ -117,5 +117,9 @@ export const XR_VIEW = {
    * The viewer is this many times life size, so the battlefield reads as a tabletop diorama: stereo depth
    * and head-movement parallax grow with it (1 = life scale, which looks flat from this distance)
    */
-  viewerScale: 2.6
+  viewerScale: 2.6,
+  /** Headset render cost: per-eye resolution (1 = native), foveation (0 none to 1 strongest edge saving), target refresh */
+  resolutionScale: 0.85,
+  foveation: 1,
+  frameRate: 72
 };

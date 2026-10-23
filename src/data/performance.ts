@@ -3,10 +3,10 @@ import { GRADE } from './artDirection';
 // Rendering budgets. Phones get far fewer lights (every light in the scene is evaluated for every
 // lit pixel, even at zero intensity), lighter models, smaller textures and less ground clutter.
 
-/** True on phones and tablets (touch-first devices), decided once at startup. */
+/** True on phones, tablets and standalone headsets (Quest's browser does not say Mobile), decided once at startup. */
 export const IS_MOBILE: boolean = (() => {
   if (typeof navigator === 'undefined') return false;
-  if (/iPhone|iPad|iPod|Android|Mobile/i.test(navigator.userAgent)) return true;
+  if (/iPhone|iPad|iPod|Android|Mobile|OculusBrowser|Quest/i.test(navigator.userAgent)) return true;
   // iPadOS reports itself as a Mac
   if (/Macintosh/i.test(navigator.userAgent) && (navigator.maxTouchPoints ?? 0) > 1) return true;
   return typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)')?.matches === true;

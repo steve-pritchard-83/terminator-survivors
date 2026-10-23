@@ -134,6 +134,10 @@ export class SceneManager {
     this.renderer.toneMappingExposure = LIGHTING.exposure;
     this.renderer.xr.enabled = true;
     this.renderer.xr.setReferenceSpaceType('local');
+    // Stereo at native headset resolution overloads a Quest 2's GPU: a little below native, with the
+    // edges of each eye drawn at lower detail, and a steady 72 Hz instead of chasing 90
+    this.renderer.xr.setFramebufferScaleFactor(XR_VIEW.resolutionScale);
+    this.renderer.xr.setFoveation(XR_VIEW.foveation);
     this.stereoCamera.eyeSep = 0.65; // Exaggerated tactical diorama depth for Quest 2 3D mode
 
     this.xrRig.position.copy(this.cameraOffset);
@@ -141,6 +145,8 @@ export class SceneManager {
     this.scene.add(this.xrRig);
 
     this.renderer.xr.addEventListener('sessionstart', () => {
+      const session = this.renderer.xr.getSession() as (XRSession & { updateTargetFrameRate?: (r: number) => Promise<void> }) | null;
+      void session?.updateTargetFrameRate?.(XR_VIEW.frameRate).catch(() => {});
       this.camera.position.set(0, 0, 0);
       this.camera.rotation.set(0, 0, 0);
       this.xrRig.add(this.camera);
