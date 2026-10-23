@@ -457,8 +457,14 @@ export class RunController {
 
   public pauseGame(): void {
     if (this.host.runState.mode !== 'playing') return;
-    // The Quest app has no visible pause menu; the Quest's own menu pauses it (startVrApp)
-    if (RunController.VR_APP && this.host.sceneManager.renderer.xr.isPresenting) return;
+    // The Quest app cannot show the flat pause menu: freeze the run with a banner in the headset instead
+    if (RunController.VR_APP && this.host.sceneManager.renderer.xr.isPresenting) {
+      this.host.saveManager?.flush?.();
+      this.host.runState.mode = 'paused';
+      this.host.audioEngine.playHudScanOpen();
+      this.host.sceneManager.setXrBanner('PAUSED · PRESS Y TO RESUME', 24 * 3600);
+      return;
+    }
     if (this.host.sceneManager.renderer.xr.isPresenting) {
       void this.host.sceneManager.renderer.xr.getSession()?.end();
     }
@@ -476,6 +482,7 @@ export class RunController {
     this.host.uiManager.pauseModal.hide();
     this.host.audioEngine.playHudScanClose();
     this.host.runState.mode = 'playing';
+    if (RunController.VR_APP) this.host.sceneManager.setXrBanner('', 0);
     if (
       typeof window !== 'undefined' &&
       (window.location.search.includes('vr=1') ||

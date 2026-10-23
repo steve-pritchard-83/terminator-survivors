@@ -106,3 +106,16 @@ export const GROUND_TILE = {
   /** Scattered loose skulls (fraction of the full carpet); skulls mostly gather in the bone patches now */
   skullCarpet: 0.25
 };
+
+/** The VR viewpoint over the battlefield (Quest). */
+export const XR_VIEW = {
+  /** Head position above and behind Kyle, in metres, and the downward tilt (radians) */
+  height: 8.5,
+  back: 7.5,
+  pitch: -0.6,
+  /**
+   * The viewer is this many times life size, so the battlefield reads as a tabletop diorama: stereo depth
+   * and head-movement parallax grow with it (1 = life scale, which looks flat from this distance)
+   */
+  viewerScale: 2.6
+};

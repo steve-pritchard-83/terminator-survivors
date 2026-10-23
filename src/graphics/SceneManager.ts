@@ -7,7 +7,7 @@ import { AtmosphereSystem } from './AtmosphereSystem';
 import { globalEvents } from '../core/EventBus';
 import type { QualityPreset } from '../core/types';
 import { getQualityProfile, detectPresetFromFps } from './qualityPresets';
-import { LIGHTING, PALETTE } from '../data/artDirection';
+import { LIGHTING, PALETTE, XR_VIEW } from '../data/artDirection';
 import { RENDER_BUDGET } from '../data/performance';
 
 export class SceneManager {
@@ -222,10 +222,11 @@ export class SceneManager {
     if (this.renderer.xr.isPresenting) {
       this.xrRig.position.set(
         this.currentCameraTarget.x + shakeX,
-        this.currentCameraTarget.y + 10.5,
-        this.currentCameraTarget.z + 9.5 + shakeZ
+        this.currentCameraTarget.y + XR_VIEW.height,
+        this.currentCameraTarget.z + XR_VIEW.back + shakeZ
       );
-      this.xrRig.rotation.set(-0.55, 0, 0);
+      this.xrRig.rotation.set(XR_VIEW.pitch, 0, 0);
+      this.xrRig.scale.setScalar(XR_VIEW.viewerScale);
       return;
     }
 
