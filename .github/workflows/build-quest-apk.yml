@@ -113,18 +113,20 @@ jobs:
             let appGradle = fs.readFileSync(appGradlePath, 'utf8');
             appGradle = appGradle.replace(
               'buildTypes {',
-              `signingConfigs {
-        questSideload {
-            storeFile file("quest-sideload.p12")
-            storePassword "${keystorePassword}"
-            keyAlias "androiddebugkey"
-            keyPassword "${keystorePassword}"
-        }
-    }
-    buildTypes {
-        debug {
-            signingConfig signingConfigs.questSideload
-        }`
+              [
+                'signingConfigs {',
+                '        questSideload {',
+                '            storeFile file("quest-sideload.p12")',
+                `            storePassword "${keystorePassword}"`,
+                '            keyAlias "androiddebugkey"',
+                `            keyPassword "${keystorePassword}"`,
+                '        }',
+                '    }',
+                '    buildTypes {',
+                '        debug {',
+                '            signingConfig signingConfigs.questSideload',
+                '        }'
+              ].join('\n')
             );
             fs.writeFileSync(appGradlePath, appGradle, 'utf8');
             console.log('Meta Quest 2 Immersive WebXR TWA project generated successfully.');
