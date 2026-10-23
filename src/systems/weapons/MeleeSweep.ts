@@ -79,7 +79,7 @@ export class MeleeSweep implements WeaponPattern {
       }
 
       const hitDir = { x: dx, z: dz };
-      const hit = ctx.applyDamageToTarget(target, dmg, def.knockback, hitDir);
+      const hit = ctx.applyDamageToTarget(target, dmg, def.knockback, hitDir, def.id);
       if (hit) {
         ctx.particles.spawnPlasmaImpact(target.x, 0.6, target.z);
         ctx.audio.playEndoHit();

@@ -150,11 +150,18 @@ export class PlayerSystem {
       this.reticleGroup.position.set(aimPos.x, 0.02, aimPos.z);
     } else if (targetAngle !== null) {
       this.reticleGroup.visible = true;
-      const aimDist = 5.0;
+      const aimDist = this.runState.autoAimDist ?? 5.0;
       this.reticleGroup.position.set(
         nextX + Math.sin(targetAngle) * aimDist,
         0.02,
         nextZ + Math.cos(targetAngle) * aimDist
+      );
+    } else if (this.runState.autoAimAngle !== null && this.runState.autoAimDist !== null) {
+      this.reticleGroup.visible = true;
+      this.reticleGroup.position.set(
+        nextX + Math.sin(this.runState.autoAimAngle) * this.runState.autoAimDist,
+        0.02,
+        nextZ + Math.cos(this.runState.autoAimAngle) * this.runState.autoAimDist
       );
     } else {
       this.reticleGroup.visible = false;

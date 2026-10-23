@@ -12,6 +12,7 @@ import { disposeObject3D } from '../graphics/dispose';
 import type { IEnvironment } from '../graphics/environments/IEnvironment';
 import { buildCarWreckGeometry, createCarWreckMaterial } from '../graphics/EnvironmentDetail';
 import { ModelLibrary } from '../graphics/ModelLibrary';
+import { ENEMY_LEASH_DISTANCE, ENEMY_RELOCATE_MAX_DIST, ENEMY_RELOCATE_MIN_DIST } from '../data/waves';
 
 const shared = <T extends { userData: Record<string, unknown> }>(resource: T): T => {
   resource.userData = { shared: true };
@@ -60,6 +61,7 @@ export class InteractiveEnvironmentSystem {
   private readonly drumBandGeo = shared(new THREE.CylinderGeometry(0.39, 0.39, 0.12, 12));
   private readonly drumBandMat = shared(new THREE.MeshStandardMaterial({ color: 0x353a3f, roughness: 0.7, metalness: 0.35 }));
   private lastFlareDropTime = 0;
+  private readonly carCollidersScratch: Array<{ x: number; z: number; radius: number }> = [];
   private readonly unbinds: Array<() => void> = [];
 
   constructor(
@@ -332,15 +334,35 @@ export class InteractiveEnvironmentSystem {
     this.audio.playFlareLaunch();
   }
 
-  public update(dt: number, environment?: IEnvironment): void {
+  public update(dt: number, _environment?: IEnvironment): void {
     const px = this.runState.playerPos.x;
     const pz = this.runState.playerPos.z;
     const time = this.runState.timeSeconds;
 
-    // 1. Re-insert active fuel drums into grid so weapon hits detect them
+    // 1. Recycle fuel drums and destructible cars left far behind as the player crosses the wasteland
     for (const drum of this.fuelDrums) {
-      if (!drum.isDetonating) {
-        this.grid.insert(drum);
+      if (drum.isDetonating) continue;
+      if (Math.hypot(px - drum.x, pz - drum.z) > ENEMY_LEASH_DISTANCE) {
+        const heading = this.runState.isMoving ? this.runState.playerMoveAngle : this.runState.playerFacing;
+        const angle = heading + (globalRNG.next() - 0.5) * (Math.PI * 0.7);
+        const dist = ENEMY_RELOCATE_MIN_DIST + globalRNG.next() * (ENEMY_RELOCATE_MAX_DIST - ENEMY_RELOCATE_MIN_DIST);
+        drum.x = px + Math.sin(angle) * dist;
+        drum.z = pz + Math.cos(angle) * dist;
+        drum.hp = drum.maxHp;
+        drum.mesh.position.set(drum.x, 0, drum.z);
+      }
+    }
+
+    for (const car of this.cars) {
+      if (car.isDestroyed) continue;
+      if (Math.hypot(px - car.x, pz - car.z) > ENEMY_LEASH_DISTANCE) {
+        const heading = this.runState.isMoving ? this.runState.playerMoveAngle : this.runState.playerFacing;
+        const angle = heading + (globalRNG.next() - 0.5) * (Math.PI * 0.7);
+        const dist = ENEMY_RELOCATE_MIN_DIST + globalRNG.next() * (ENEMY_RELOCATE_MAX_DIST - ENEMY_RELOCATE_MIN_DIST);
+        car.x = px + Math.sin(angle) * dist;
+        car.z = pz + Math.cos(angle) * dist;
+        car.hp = car.maxHp;
+        car.mesh.position.set(car.x, 0, car.z);
       }
     }
 
@@ -412,9 +434,14 @@ export class InteractiveEnvironmentSystem {
   }
 
   public getCarColliders(): Array<{ x: number; z: number; radius: number }> {
-    return this.cars
-      .filter((c) => !c.isDestroyed)
-      .map((c) => ({ x: c.x, z: c.z, radius: c.radius }));
+    this.carCollidersScratch.length = 0;
+    for (let i = 0; i < this.cars.length; i++) {
+      const c = this.cars[i];
+      if (!c.isDestroyed) {
+        this.carCollidersScratch.push(c);
+      }
+    }
+    return this.carCollidersScratch;
   }
 
   public clear(): void {

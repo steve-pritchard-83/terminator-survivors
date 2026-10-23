@@ -326,6 +326,12 @@ export class PickupSystem {
 
       // Magnet attraction & floating bob for data cores
       if (p.kind === 'core') {
+        // Relocate distant uncollected cores (>48m away) closer to the perimeter so kiting builds don't lose XP
+        if (!p.attracted && dist > 48.0) {
+          const angle = Math.atan2(-dx, -dz) + (globalRNG.next() - 0.5) * 0.5;
+          p.x = px + Math.sin(angle) * 22.0;
+          p.z = pz + Math.cos(angle) * 22.0;
+        }
         const bobY = 0.36 + Math.sin(this.runState.timeSeconds * 4.5 + p.id) * 0.08;
         if (dist <= magnetRadius || p.attracted) {
           if (!p.attracted) {

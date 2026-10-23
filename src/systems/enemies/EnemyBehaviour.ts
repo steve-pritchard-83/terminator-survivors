@@ -28,6 +28,7 @@ export interface EnemyContext {
   scheduleBlast?: (x: number, z: number, radius: number, damage: number, delaySeconds: number) => void;
   group: THREE.Group;
   timeSeconds: number;
+  obstacles?: Array<{ x: number; z: number; radius: number }>;
 }
 
 export interface EnemyBehaviour {

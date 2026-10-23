@@ -3,7 +3,7 @@ import type { EnemyArchetypeId } from '../core/types';
 import { ENEMY_CODEX, WEAPON_CODEX } from '../data/lore';
 import { ENEMY_CONFIGS } from '../data/enemies';
 import { iconLabel } from './icons';
-import { ALL_WEAPONS, BASE_WEAPONS, EVOLVED_WEAPONS, PASSIVES } from '../data/weapons';
+import { ALL_WEAPONS, BASE_WEAPONS, EVOLUTION_LEVEL, EVOLVED_WEAPONS, PASSIVES } from '../data/weapons';
 import { ACHIEVEMENTS, TOTAL_ACHIEVEMENTS } from '../data/achievements';
 import type { SaveManager } from '../state/SaveManager';
 import type { AudioEngine } from '../audio/AudioEngine';
@@ -436,7 +436,7 @@ export class CodexModal {
             ? `
           <div class="t-section-label">EVOLUTION</div>
           <div style="font-size:12px;">
-            ${def.name} LV 8 + ${PASSIVES[def.pairedPassive]?.name ?? def.pairedPassive}
+            ${def.name} LV ${EVOLUTION_LEVEL} + ${PASSIVES[def.pairedPassive]?.name ?? def.pairedPassive}
             <span class="t-muted">→</span>
             <span class="t-accent">${EVOLVED_WEAPONS[def.evolvesInto]?.name ?? def.evolvesInto}</span>
           </div>

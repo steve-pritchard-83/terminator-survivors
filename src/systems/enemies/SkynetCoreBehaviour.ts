@@ -158,12 +158,29 @@ export class SkynetCoreBehaviour implements EnemyBehaviour {
         ctx.audio.playEmpBlast();
         ctx.emit('camera:shake', { trauma: 0.7 });
 
-        // Pull player towards core
+        // Pull player towards core while respecting obstacle colliders
         const distToCore = Math.hypot(px - enemy.x, pz - enemy.z);
         if (distToCore < 16.0 && distToCore > 0.5) {
           const pullForce = 4.0;
-          ctx.runState.playerPos.x += ((enemy.x - px) / distToCore) * pullForce;
-          ctx.runState.playerPos.z += ((enemy.z - pz) / distToCore) * pullForce;
+          let nextX = px + ((enemy.x - px) / distToCore) * pullForce;
+          let nextZ = pz + ((enemy.z - pz) / distToCore) * pullForce;
+          const playerRadius = 0.55;
+          if (ctx.obstacles) {
+            for (let i = 0; i < ctx.obstacles.length; i++) {
+              const obs = ctx.obstacles[i];
+              const odx = nextX - obs.x;
+              const odz = nextZ - obs.z;
+              const odist = Math.hypot(odx, odz);
+              const minDist = playerRadius + obs.radius;
+              if (odist < minDist && odist > 0.001) {
+                const overlap = minDist - odist;
+                nextX += (odx / odist) * overlap;
+                nextZ += (odz / odist) * overlap;
+              }
+            }
+          }
+          ctx.runState.playerPos.x = nextX;
+          ctx.runState.playerPos.z = nextZ;
           ctx.applyPlayerDamage(ENEMY_ATTACK_DAMAGE.corePull);
         }
       } else {

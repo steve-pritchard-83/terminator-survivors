@@ -145,7 +145,7 @@ export interface PassiveDefinition {
   name: string;
   codeName: string;
   maxLevel: number;
-  evolvesWeapon: BaseWeaponId;
+  evolvesWeapon: BaseWeaponId | BaseWeaponId[];
   iconColor: string;
   descriptionPerLevel: string;
   statPerLevel: Partial<PlayerComputedStats>;

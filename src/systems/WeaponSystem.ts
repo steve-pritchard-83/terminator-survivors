@@ -252,6 +252,7 @@ export class WeaponSystem {
       if (boss && Math.hypot(boss.x - px, boss.z - pz) <= BOSS_FOCUS.range && this.fireContext.isVisible(boss.x, boss.z)) nearest = boss;
     }
     this.runState.autoAimAngle = nearest ? Math.atan2(nearest.x - px, nearest.z - pz) : null;
+    this.runState.autoAimDist = nearest ? Math.hypot(nearest.x - px, nearest.z - pz) : null;
 
     // 1. Process weapon cooldowns & firing triggers
     for (const [wId, slot] of this.runState.weapons.entries()) {

@@ -652,7 +652,7 @@ export const PASSIVES: Record<PassiveId, PassiveDefinition> = {
     name: 'High-Brass Shells',
     codeName: 'MIGHT BOOSTER',
     maxLevel: 5,
-    evolvesWeapon: 'ithaca_37',
+    evolvesWeapon: ['ithaca_37', 'coltan_knife'],
     iconColor: '#ff9900',
     descriptionPerLevel: '+12% damage to all weapons.',
     statPerLevel: { mightMultiplier: 0.12 }

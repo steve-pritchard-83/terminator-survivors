@@ -23,6 +23,7 @@ import {
   HIT_STOP_GLOBAL_COOLDOWN,
   PLAYER_HIT_SHAKE
 } from '../data/balance';
+import { EVOLUTION_LEVEL } from '../data/weapons';
 
 export interface RunControllerHost {
   readonly runState: RunState;
@@ -390,7 +391,7 @@ export class RunController {
       {
         rerollsLeft: this.host.runState.rerollsLeft,
         tip: firstLevelUp
-          ? 'LEVEL 8 WEAPON + ITS PASSIVE = EVOLUTION AT A DATA VAULT'
+          ? `LEVEL ${EVOLUTION_LEVEL} WEAPON + ITS PASSIVE = EVOLUTION AT A DATA VAULT`
           : undefined,
         onReroll: () => {
           if (this.host.runState.useReroll()) {
@@ -478,7 +479,7 @@ export class RunController {
     this.host.sceneManager.addScreenShake(0.35);
   }
 
-  /** Arrows at the screen edge toward an off-screen boss and the nearest data vault. */
+  /** Arrows at the screen edge toward an off-screen boss and the nearest data vault or supply flare. */
   private updatePointers(): void {
     const hud = this.host.uiManager.hudView;
     const scene = this.host.sceneManager;
@@ -494,6 +495,13 @@ export class RunController {
       if (d < best) {
         best = d;
         vault = p;
+      }
+    }
+    const flare = this.host.interactiveEnv?.activeFlare;
+    if (flare?.active) {
+      const d = (flare.x - px) ** 2 + (flare.z - pz) ** 2;
+      if (d < best) {
+        vault = flare;
       }
     }
     hud.setPointer('vault', vault ? scene.getEdgePointer(vault.x, vault.z, inset) : null);

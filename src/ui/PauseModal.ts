@@ -278,7 +278,7 @@ export class PauseModal {
       } else if (isReady) {
         statusBadge = '<span class="t-tag t-tag-on">READY</span>';
       } else if (weaponLv > 0 || passiveLv > 0) {
-        statusBadge = `<span class="t-muted">W ${weaponLv}/8 · P ${passiveLv}/1</span>`;
+        statusBadge = `<span class="t-muted">W ${weaponLv}/${EVOLUTION_LEVEL} · P ${passiveLv}/1</span>`;
       }
 
       row.innerHTML = `

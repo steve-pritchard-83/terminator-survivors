@@ -23,6 +23,18 @@ describe('level-up offers', () => {
     }
   });
 
+  it('shows multi-weapon synergy hints for might_shells (ithaca_37 and coltan_knife)', () => {
+    globalRNG.setSeed(42);
+    const rs = new RunState();
+    rs.initRun('reese_2029', {});
+    rs.weapons.set('coltan_knife', { id: 'coltan_knife', level: UPGRADE_OFFERS.guaranteePassiveAtLevel, evolved: false, cooldownTimer: 0 });
+    const offered = rs.generateUpgradeChoices();
+    const passive = offered.find((c) => c.id === 'might_shells');
+    expect(passive).toBeDefined();
+    expect(passive?.synergyHint).toContain('COMPLETES EVOLUTION');
+    expect(passive?.synergyHint).toContain('Hyperalloy Combat Blade');
+  });
+
   it('favours upgrades to owned items over new ones', () => {
     let withOwned = 0;
     const runs = 300;

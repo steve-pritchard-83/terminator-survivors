@@ -77,6 +77,8 @@ export class RunState {
   public playerMoveAngle = 0; // radians
   /** Direction to the auto-aim target (nearest enemy in range), or null when there is none. Set by WeaponSystem. */
   public autoAimAngle: number | null = null;
+  /** Distance (m) to the locked auto-aim target, or null when there is none. Set by WeaponSystem. */
+  public autoAimDist: number | null = null;
   public isMoving = false;
   public abilityCooldownTimer = 0;
   public abilityActiveDuration = 0;
@@ -147,6 +149,7 @@ export class RunState {
     this.playerPos = { x: 0, z: 0 };
     this.playerFacing = 0;
     this.autoAimAngle = null;
+    this.autoAimDist = null;
     this.playerMoveAngle = 0;
     this.isMoving = false;
     this.abilityCooldownTimer = 0;
@@ -370,6 +373,11 @@ export class RunState {
       }
     }
 
+    const formatEvolves = (evolves: BaseWeaponId | BaseWeaponId[]): string => {
+      const ids = Array.isArray(evolves) ? evolves : [evolves];
+      return ids.map((id) => BASE_WEAPONS[id]?.name ?? id).join(' / ');
+    };
+
     // 2. Existing upgradable passives (Level < maxLevel)
     for (const [pId, lv] of this.passives.entries()) {
       const def = PASSIVES[pId];
@@ -383,7 +391,7 @@ export class RunState {
           currentLevel: lv,
           nextLevel: nextLv,
           description: def.descriptionPerLevel,
-          synergyHint: `Evolves: ${BASE_WEAPONS[def.evolvesWeapon]?.name ?? ''}`,
+          synergyHint: `Evolves: ${formatEvolves(def.evolvesWeapon)}`,
           accentColor: def.iconColor
         });
       }
@@ -424,7 +432,7 @@ export class RunState {
             currentLevel: 0,
             nextLevel: 1,
             description: def.descriptionPerLevel,
-            synergyHint: `Evolves: ${BASE_WEAPONS[def.evolvesWeapon]?.name ?? ''}`,
+            synergyHint: `Evolves: ${formatEvolves(def.evolvesWeapon)}`,
             accentColor: def.iconColor
           });
         }
@@ -432,16 +440,19 @@ export class RunState {
     }
 
     // Passives that would complete an evolution for a weapon the player is levelling
-    const evolutionPassives = new Map<string, BaseWeaponId>();
+    const evolutionPassives = new Map<string, BaseWeaponId[]>();
     for (const [wId, slot] of this.weapons.entries()) {
       const def = BASE_WEAPONS[wId as BaseWeaponId];
       if (!def || slot.evolved || !def.pairedPassive || this.passives.has(def.pairedPassive)) continue;
-      evolutionPassives.set(def.pairedPassive, wId as BaseWeaponId);
+      const list = evolutionPassives.get(def.pairedPassive) ?? [];
+      list.push(wId as BaseWeaponId);
+      evolutionPassives.set(def.pairedPassive, list);
     }
     for (const c of choices) {
-      const forWeapon = c.kind === 'passive' ? evolutionPassives.get(c.id) : undefined;
-      if (forWeapon) {
-        c.synergyHint = `COMPLETES EVOLUTION: ${EVOLVED_WEAPONS[BASE_WEAPONS[forWeapon].evolvesInto!]?.name ?? ''}`;
+      const forWeapons = c.kind === 'passive' ? evolutionPassives.get(c.id) : undefined;
+      if (forWeapons && forWeapons.length > 0) {
+        const names = forWeapons.map((w) => EVOLVED_WEAPONS[BASE_WEAPONS[w].evolvesInto!]?.name ?? w).join(' / ');
+        c.synergyHint = `COMPLETES EVOLUTION: ${names}`;
       } else if (c.kind === 'weapon' && c.nextLevel === EVOLUTION_LEVEL) {
         const def = BASE_WEAPONS[c.id as BaseWeaponId];
         if (def?.pairedPassive && this.passives.has(def.pairedPassive)) c.synergyHint = 'EVOLUTION READY AT THE NEXT DATA VAULT';
@@ -455,8 +466,8 @@ export class RunState {
     const pool = [...choices];
     for (let i = pool.length - 1; i >= 0 && shuffled.length < count; i--) {
       const c = pool[i];
-      const forWeapon = c.kind === 'passive' ? evolutionPassives.get(c.id) : undefined;
-      if (forWeapon && (this.weapons.get(forWeapon)?.level ?? 0) >= UPGRADE_OFFERS.guaranteePassiveAtLevel) {
+      const forWeapons = c.kind === 'passive' ? evolutionPassives.get(c.id) : undefined;
+      if (forWeapons && forWeapons.some((w) => (this.weapons.get(w)?.level ?? 0) >= UPGRADE_OFFERS.guaranteePassiveAtLevel)) {
         shuffled.push(pool.splice(i, 1)[0]);
       }
     }

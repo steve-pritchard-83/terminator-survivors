@@ -114,6 +114,17 @@ export default defineConfig({
                 maxAgeSeconds: 60 * 60 * 24 * 30
               }
             }
+          },
+          {
+            urlPattern: /\.mp4$/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'terminator-video-cache',
+              expiration: {
+                maxEntries: 4,
+                maxAgeSeconds: 60 * 60 * 24 * 30
+              }
+            }
           }
         ]
       }

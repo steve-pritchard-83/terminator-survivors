@@ -43,7 +43,7 @@ export class Strike implements WeaponPattern {
       for (let h = 0; h < hit.length; h++) {
         const ent = hit[h];
         const hitDir = { x: ent.x - target.x, z: ent.z - target.z };
-        ctx.applyDamageToTarget(ent, dmg, def.knockback, hitDir);
+        ctx.applyDamageToTarget(ent, dmg, def.knockback, hitDir, def.id);
       }
       ctx.particles.spawnExplosion(target.x, 0.2, target.z, 1.4);
     }

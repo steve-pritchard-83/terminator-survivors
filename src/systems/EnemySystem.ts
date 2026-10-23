@@ -180,6 +180,7 @@ export class EnemySystem {
     const px = this.runState.playerPos.x;
     const pz = this.runState.playerPos.z;
     this.context.timeSeconds = timeSeconds;
+    this.context.obstacles = obstacles;
     this.updatePendingBlasts(dt);
     this.updateEndoSteps(dt, px, pz);
 
