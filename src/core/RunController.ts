@@ -483,6 +483,7 @@ export class RunController {
   }
 
   public resumeFromPause(): void {
+    console.info('[vr-app] resume called', new Error().stack?.split('\n').slice(1, 4).join(' / '));
     if (this.host.runState.mode !== 'paused') return;
     this.host.uiManager.pauseModal.hide();
     this.host.audioEngine.playHudScanClose();
@@ -576,8 +577,10 @@ export class RunController {
       }
       this.host.audioEngine.playUiClick();
       this.drawVrPause();
+      console.info('[vr-app] pause stick', x.toFixed(2), y.toFixed(2), '->', rows[p.selected]);
     }
     if (gp.isButtonJustPressed(XBOX_BUTTON.A) || gp.isButtonJustPressed(XBOX_BUTTON.X)) {
+      console.info('[vr-app] pause select', row, 'stick', x.toFixed(2), y.toFixed(2));
       if (row === 'resume') {
         this.resumeFromPause();
       } else if (row === 'autoaim') {
