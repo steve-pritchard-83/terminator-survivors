@@ -514,6 +514,13 @@ export class GamepadManager {
     return { x: stick.x, z: stick.y };
   }
 
+  /** Left/right on whichever thumbstick is pushed further (menus in VR, where either hand may steer). */
+  public getStickX(): number {
+    const l = this.currentAxes[XBOX_AXIS.LEFT_X] ?? 0;
+    const r = this.currentAxes[XBOX_AXIS.RIGHT_X] ?? 0;
+    return Math.abs(l) >= Math.abs(r) ? l : r;
+  }
+
   public getAimAngle(): number | null {
     const vec = this.getAimVector();
     if (!vec) return null;

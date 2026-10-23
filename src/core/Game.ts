@@ -171,6 +171,7 @@ export class Game implements RunControllerHost, InputRouterHost, DebugAPIHost {
 
   private fixedUpdate(dt: number): void {
     const input = this.inputRouter.update(dt);
+    this.runController.updateVrMenus();
 
     const onTitle = this.runState.mode === 'title';
     this.titleFlyover.update(dt, onTitle);

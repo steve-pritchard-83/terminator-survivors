@@ -10,6 +10,36 @@ import { getQualityProfile, detectPresetFromFps } from './qualityPresets';
 import { LIGHTING, PALETTE, XR_VIEW } from '../data/artDirection';
 import { RENDER_BUDGET } from '../data/performance';
 
+/** What the VR centre panel shows */
+export interface XrPanel {
+  title: string;
+  cards?: Array<{ title: string; sub: string; line: string; hint?: string }>;
+  selected?: number;
+  footer?: string;
+}
+
+/** Centred, word-wrapped text, at most `maxLines` lines (the last one trimmed with an ellipsis). */
+function wrapText(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, width: number, lineHeight: number, maxLines: number): void {
+  const words = text.split(' ');
+  const lines: string[] = [];
+  let line = '';
+  for (const w of words) {
+    const next = line ? `${line} ${w}` : w;
+    if (ctx.measureText(next).width > width && line) {
+      lines.push(line);
+      line = w;
+    } else {
+      line = next;
+    }
+  }
+  if (line) lines.push(line);
+  if (lines.length > maxLines) {
+    lines.length = maxLines;
+    lines[maxLines - 1] = `${lines[maxLines - 1].slice(0, -1)}…`;
+  }
+  lines.forEach((l, i) => ctx.fillText(l, x, y + i * lineHeight));
+}
+
 export class SceneManager {
   public readonly scene: THREE.Scene;
   public readonly camera: THREE.PerspectiveCamera;
@@ -49,6 +79,95 @@ export class SceneManager {
   private lastXrHudText = '';
   private xrBannerText = '';
   private xrBannerUntil = 0;
+
+  private xrPanel: THREE.Sprite | null = null;
+  private xrPanelCanvas: HTMLCanvasElement | null = null;
+  private xrPanelTex: THREE.CanvasTexture | null = null;
+
+  /**
+   * The large panel in front of the viewer in VR (pause, level-up choices, run result); null hides it.
+   * Cards are drawn side by side and the selected one is outlined.
+   */
+  public setXrPanel(panel: XrPanel | null): void {
+    if (!panel) {
+      if (this.xrPanel) this.xrPanel.visible = false;
+      return;
+    }
+    if (typeof document === 'undefined') return;
+    if (!this.xrPanel || !this.xrPanelCanvas || !this.xrPanelTex) {
+      this.xrPanelCanvas = document.createElement('canvas');
+      this.xrPanelCanvas.width = 1024;
+      this.xrPanelCanvas.height = 512;
+      this.xrPanelTex = new THREE.CanvasTexture(this.xrPanelCanvas);
+      this.xrPanelTex.colorSpace = THREE.SRGBColorSpace;
+      const mat = new THREE.SpriteMaterial({ map: this.xrPanelTex, transparent: true, depthTest: false, depthWrite: false });
+      this.xrPanel = new THREE.Sprite(mat);
+      this.xrPanel.scale.set(XR_VIEW.panelWidth, XR_VIEW.panelWidth / 2, 1);
+      this.xrPanel.renderOrder = 1000;
+      this.scene.add(this.xrPanel);
+    }
+    const ctx = this.xrPanelCanvas.getContext('2d');
+    if (!ctx) return;
+    const W = 1024;
+    const H = 512;
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = 'rgba(7, 9, 11, 0.86)';
+    ctx.fillRect(6, 6, W - 12, H - 12);
+    ctx.strokeStyle = '#cdd7de';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(6, 6, W - 12, H - 12);
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#f2e9e4';
+    ctx.font = 'bold 54px monospace';
+    ctx.fillText(panel.title, W / 2, 84);
+    const cards = panel.cards ?? [];
+    if (cards.length > 0) {
+      const gap = 18;
+      const cw = (W - 60 - gap * (cards.length - 1)) / cards.length;
+      cards.forEach((c, i) => {
+        const x = 30 + i * (cw + gap);
+        const y = 120;
+        const h = 300;
+        const sel = i === panel.selected;
+        ctx.fillStyle = sel ? 'rgba(95, 200, 238, 0.18)' : 'rgba(42, 49, 55, 0.6)';
+        ctx.fillRect(x, y, cw, h);
+        ctx.strokeStyle = sel ? '#5fc8ee' : '#56616b';
+        ctx.lineWidth = sel ? 6 : 2;
+        ctx.strokeRect(x, y, cw, h);
+        ctx.fillStyle = sel ? '#ffffff' : '#cdd7de';
+        ctx.font = 'bold 30px monospace';
+        wrapText(ctx, c.title.toUpperCase(), x + cw / 2, y + 52, cw - 24, 34, 2);
+        ctx.fillStyle = '#5fc8ee';
+        ctx.font = 'bold 26px monospace';
+        ctx.fillText(c.sub, x + cw / 2, y + 140);
+        ctx.fillStyle = '#cdd7de';
+        ctx.font = '22px monospace';
+        wrapText(ctx, c.line, x + cw / 2, y + 188, cw - 24, 26, 3);
+        if (c.hint) {
+          ctx.fillStyle = '#ffb000';
+          ctx.font = 'bold 18px monospace';
+          wrapText(ctx, c.hint, x + cw / 2, y + 276, cw - 20, 20, 1);
+        }
+      });
+    }
+    if (panel.footer) {
+      ctx.fillStyle = '#56c8ee';
+      ctx.font = 'bold 30px monospace';
+      ctx.fillText(panel.footer, W / 2, cards.length > 0 ? 470 : 300);
+    }
+    this.xrPanelTex.needsUpdate = true;
+    this.xrPanel.visible = true;
+    this.placeXrPanel();
+  }
+
+  private placeXrPanel(): void {
+    if (!this.xrPanel?.visible) return;
+    this.xrPanel.position.set(
+      this.currentCameraTarget.x,
+      XR_VIEW.panelHeight,
+      this.currentCameraTarget.z + XR_VIEW.panelForward
+    );
+  }
 
   public setXrBanner(text: string, durationSec = 3.5): void {
     this.xrBannerText = text;
@@ -233,6 +352,7 @@ export class SceneManager {
       );
       this.xrRig.rotation.set(XR_VIEW.pitch, 0, 0);
       this.xrRig.scale.setScalar(XR_VIEW.viewerScale);
+      this.placeXrPanel();
       return;
     }
 

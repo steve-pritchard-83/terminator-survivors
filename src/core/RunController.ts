@@ -1,4 +1,5 @@
 import type { RunState } from '../state/RunState';
+import { XBOX_BUTTON } from '../input/GamepadManager';
 import type { SaveManager } from '../state/SaveManager';
 import type { AudioEngine } from '../audio/AudioEngine';
 import type { UIManager } from '../ui/UIManager';
@@ -392,10 +393,11 @@ export class RunController {
     this.host.uiManager.hudView.hide();
     if (RunController.VR_APP && this.host.sceneManager.renderer.xr.isPresenting) {
       this.host.audioEngine.playRunEnd(victory);
-      this.host.sceneManager.setXrBanner(
-        `${victory ? 'MISSION ACCOMPLISHED' : 'TERMINATED'} · ${this.host.runState.kills} KILLS · REDEPLOYING`,
-        VR_APP_REDEPLOY_SECONDS
-      );
+      this.vrChoice = null;
+      this.host.sceneManager.setXrPanel({
+        title: victory ? 'MISSION ACCOMPLISHED' : 'TERMINATED',
+        footer: `${this.host.runState.kills} KILLS · LV ${this.host.runState.level} · REDEPLOYING`
+      });
       if (this.vrAppRestartTimer !== null) window.clearTimeout(this.vrAppRestartTimer);
       this.vrAppRestartTimer = window.setTimeout(() => {
         this.vrAppRestartTimer = null;
@@ -404,6 +406,7 @@ export class RunController {
         this.host.weaponSystem.clear();
         this.host.particles.clear();
         this.host.runState.mode = 'title';
+        this.host.sceneManager.setXrPanel(null);
         this.startRunWith({});
       }, VR_APP_REDEPLOY_SECONDS * 1000);
       return;
@@ -462,7 +465,8 @@ export class RunController {
       this.host.saveManager?.flush?.();
       this.host.runState.mode = 'paused';
       this.host.audioEngine.playHudScanOpen();
-      this.host.sceneManager.setXrBanner('PAUSED · PRESS Y TO RESUME', 24 * 3600);
+      this.host.sceneManager.setXrPanel({ title: 'PAUSED', footer: 'PRESS Y TO RESUME' });
+      console.info('[vr-app] paused');
       return;
     }
     if (this.host.sceneManager.renderer.xr.isPresenting) {
@@ -482,7 +486,10 @@ export class RunController {
     this.host.uiManager.pauseModal.hide();
     this.host.audioEngine.playHudScanClose();
     this.host.runState.mode = 'playing';
-    if (RunController.VR_APP) this.host.sceneManager.setXrBanner('', 0);
+    if (RunController.VR_APP) {
+      this.host.sceneManager.setXrPanel(null);
+      console.info('[vr-app] resumed');
+    }
     if (
       typeof window !== 'undefined' &&
       (window.location.search.includes('vr=1') ||
@@ -518,22 +525,63 @@ export class RunController {
     this.host.uiManager.hudView.showTip(text);
   }
 
-  public showLevelUpModal(level: number, choices: UpgradeChoice[]): void {
-    // When playing in immersive 3D VR (where HTML modals are hidden outside the stereo headset view),
-    // automatically apply the top weighted upgrade choice and announce it on the 3D Holo-HUD so play never stalls!
-    if (this.host.sceneManager.renderer.xr.isPresenting && choices.length > 0) {
-      const pick = choices[0];
+  private vrChoice: { level: number; choices: UpgradeChoice[]; selected: number; stickHeld: boolean } | null = null;
+
+  private drawVrChoice(): void {
+    const v = this.vrChoice;
+    if (!v) return;
+    this.host.sceneManager.setXrPanel({
+      title: `LEVEL ${v.level}`,
+      selected: v.selected,
+      cards: v.choices.map((c) => ({
+        title: c.title,
+        sub: c.subtitle,
+        line: c.description.startsWith('★') ? c.description.split(' · ')[0] : c.description.split(' · ').slice(0, 2).join(' · '),
+        hint: c.synergyHint && /EVOLUTION/.test(c.synergyHint) ? 'EVOLUTION' : undefined
+      })),
+      footer: 'STICK TO CHOOSE · TRIGGER TO TAKE'
+    });
+  }
+
+  /** The VR level-up picker: either thumbstick moves between cards, a trigger or A/X takes the card. */
+  public updateVrMenus(): void {
+    const v = this.vrChoice;
+    if (!v || this.host.runState.mode !== 'levelup') return;
+    const gp = this.host.inputManager.gamepadManager;
+    const x = gp.getStickX();
+    if (Math.abs(x) < 0.35) {
+      v.stickHeld = false;
+    } else if (!v.stickHeld) {
+      v.stickHeld = true;
+      v.selected = (v.selected + (x > 0 ? 1 : -1) + v.choices.length) % v.choices.length;
+      this.host.audioEngine.playUiClick();
+      this.drawVrChoice();
+    }
+    if (gp.isButtonJustPressed(XBOX_BUTTON.A) || gp.isButtonJustPressed(XBOX_BUTTON.X)) {
+      const pick = v.choices[v.selected];
+      this.vrChoice = null;
+      this.host.sceneManager.setXrPanel(null);
       this.host.audioEngine.playUpgradeApplied();
       this.host.runState.recordLevelUp(pick.title);
       this.host.runState.applyUpgrade(pick);
-      this.host.sceneManager.setXrBanner(`LV ${level}: ${pick.title.toUpperCase()} (${pick.subtitle})`, 3.5);
+      console.info('[vr-app] took', pick.title);
       if (this.host.runState.pendingLevelUps > 0) {
         this.host.runState.pendingLevelUps--;
-        const nextChoices = this.host.runState.generateUpgradeChoices();
-        this.showLevelUpModal(this.host.runState.level, nextChoices);
+        this.showLevelUpModal(this.host.runState.level, this.host.runState.generateUpgradeChoices());
       } else {
         this.host.runState.mode = 'playing';
       }
+    }
+  }
+
+  public showLevelUpModal(level: number, choices: UpgradeChoice[]): void {
+    // In VR the flat cards cannot be seen: the choices go on the headset's centre panel instead
+    if (this.host.sceneManager.renderer.xr.isPresenting && choices.length > 0) {
+      this.host.runState.mode = 'levelup';
+      this.host.audioEngine.playLevelUp();
+      this.vrChoice = { level, choices, selected: 0, stickHeld: true };
+      this.drawVrChoice();
+      console.info('[vr-app] level-up', level, choices.map((c) => c.title).join(' | '));
       return;
     }
     this.host.runState.mode = 'levelup';

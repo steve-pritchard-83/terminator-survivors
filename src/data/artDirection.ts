@@ -125,5 +125,9 @@ export const XR_VIEW = {
   /** The in-headset status strip: width in metres, and where it sits (toward the viewer from Kyle, and above the ground) */
   hudWidth: 2.2,
   hudForward: 2.8,
-  hudHeight: 0.5
+  hudHeight: 0.5,
+  /** The centre panel (pause, level-up choices, run result): width in metres and where it floats */
+  panelWidth: 3.4,
+  panelForward: 3.6,
+  panelHeight: 4
 };
