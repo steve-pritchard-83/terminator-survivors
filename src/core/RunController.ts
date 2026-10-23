@@ -257,10 +257,22 @@ export class RunController {
     this.host.audioEngine.startAmbience();
 
     this.host.onRunStarted?.();
+
+    if (
+      typeof window !== 'undefined' &&
+      (window.location.search.includes('vr=1') ||
+        /OculusBrowser|Quest|Pacific|VR/i.test(window.navigator?.userAgent ?? '')) &&
+      !this.host.sceneManager.renderer.xr.isPresenting
+    ) {
+      this.toggleVrSession();
+    }
   }
 
   public endRun(victory: boolean, defeatReason?: string): void {
     if (this.host.runState.mode === 'gameover' || this.host.runState.mode === 'victory') return;
+    if (this.host.sceneManager.renderer.xr.isPresenting) {
+      void this.host.sceneManager.renderer.xr.getSession()?.end();
+    }
     this.host.runState.mode = victory ? 'victory' : 'gameover';
     this.host.audioEngine.stopMusic();
     this.host.audioEngine.stopAmbience();
@@ -382,6 +394,9 @@ export class RunController {
 
   public pauseGame(): void {
     if (this.host.runState.mode !== 'playing') return;
+    if (this.host.sceneManager.renderer.xr.isPresenting) {
+      void this.host.sceneManager.renderer.xr.getSession()?.end();
+    }
     this.host.saveManager?.flush?.();
     this.host.runState.mode = 'paused';
     this.host.audioEngine.playHudScanOpen();
@@ -396,6 +411,14 @@ export class RunController {
     this.host.uiManager.pauseModal.hide();
     this.host.audioEngine.playHudScanClose();
     this.host.runState.mode = 'playing';
+    if (
+      typeof window !== 'undefined' &&
+      (window.location.search.includes('vr=1') ||
+        /OculusBrowser|Quest|Pacific|VR/i.test(window.navigator?.userAgent ?? '')) &&
+      !this.host.sceneManager.renderer.xr.isPresenting
+    ) {
+      this.toggleVrSession();
+    }
   }
 
   public abortToTitle(): void {

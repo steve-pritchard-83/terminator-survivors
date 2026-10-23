@@ -81,6 +81,10 @@ export class GamepadManager {
     this.xrSessionProvider = provider;
   }
 
+  public isXrActive(): boolean {
+    return Boolean(this.xrSessionProvider?.());
+  }
+
   constructor() {
     if (typeof window !== 'undefined') {
       window.addEventListener('gamepadconnected', this.onGamepadConnected);
@@ -240,6 +244,17 @@ export class GamepadManager {
       this.currentAxes.push(gp.axes[i] || 0);
     }
 
+    // On a single Quest Touch controller in navigator.getGamepads(), axes[0]/axes[1] are 0 (touchpad)
+    // and the physical thumbstick is at axes[2]/axes[3]. Promote it to LEFT_X/LEFT_Y so movement works.
+    if (this.isQuestTouchId(gp.id) && this.currentAxes.length >= 4) {
+      if (Math.hypot(this.currentAxes[2], this.currentAxes[3]) > Math.hypot(this.currentAxes[0], this.currentAxes[1])) {
+        this.currentAxes[0] = this.currentAxes[2];
+        this.currentAxes[1] = this.currentAxes[3];
+        this.currentAxes[2] = 0;
+        this.currentAxes[3] = 0;
+      }
+    }
+
     // Meta Quest Touch dual-controller synthesis: if two Quest Touch controllers are connected,
     // combine Left Touch thumbstick (move) and Right Touch thumbstick (aim) + buttons across both hands.
     if (typeof navigator !== 'undefined' && typeof navigator.getGamepads === 'function') {
@@ -249,8 +264,12 @@ export class GamepadManager {
           const other = allPads[p];
           if (!other || !other.connected || other.index === gp.index) continue;
           if (this.isQuestTouchId(other.id) || this.isQuestTouchId(gp.id)) {
-            const ox = other.axes[2] ?? other.axes[0] ?? 0;
-            const oy = other.axes[3] ?? other.axes[1] ?? 0;
+            const ox = Math.hypot(other.axes[2] ?? 0, other.axes[3] ?? 0) >= Math.hypot(other.axes[0] ?? 0, other.axes[1] ?? 0)
+              ? (other.axes[2] ?? 0)
+              : (other.axes[0] ?? 0);
+            const oy = Math.hypot(other.axes[2] ?? 0, other.axes[3] ?? 0) >= Math.hypot(other.axes[0] ?? 0, other.axes[1] ?? 0)
+              ? (other.axes[3] ?? 0)
+              : (other.axes[1] ?? 0);
             if (Math.hypot(ox, oy) > Math.hypot(this.currentAxes[2] ?? 0, this.currentAxes[3] ?? 0)) {
               this.currentAxes[2] = ox;
               this.currentAxes[3] = oy;
@@ -319,20 +338,30 @@ export class GamepadManager {
     this.buttonValues = new Array(17).fill(0);
     this.currentAxes = [0, 0, 0, 0];
 
+    let hasLeftHand = false;
+    let hasRightHand = false;
+    for (let i = 0; i < sources.length; i++) {
+      if (sources[i]?.gamepad && sources[i]?.handedness === 'left') hasLeftHand = true;
+      if (sources[i]?.gamepad && sources[i]?.handedness === 'right') hasRightHand = true;
+    }
+    const hasBothHands = hasLeftHand && hasRightHand;
+
     for (let i = 0; i < sources.length; i++) {
       const src = sources[i];
       const gp = src?.gamepad;
       if (!gp) continue;
 
-      // xr-standard puts thumbstick on axes[2], axes[3] (fallback to 0, 1 if only 2 axes exist)
-      const sx = gp.axes.length >= 4 ? (gp.axes[2] ?? 0) : (gp.axes[0] ?? 0);
-      const sy = gp.axes.length >= 4 ? (gp.axes[3] ?? 0) : (gp.axes[1] ?? 0);
+      // Pick whichever axis pair (axes[2,3] on xr-standard vs axes[0,1]) has greater deflection
+      const a01 = Math.hypot(gp.axes[0] ?? 0, gp.axes[1] ?? 0);
+      const a23 = Math.hypot(gp.axes[2] ?? 0, gp.axes[3] ?? 0);
+      const sx = a23 >= a01 ? (gp.axes[2] ?? 0) : (gp.axes[0] ?? 0);
+      const sy = a23 >= a01 ? (gp.axes[3] ?? 0) : (gp.axes[1] ?? 0);
 
       if (src.handedness === 'left') {
         this.currentAxes[XBOX_AXIS.LEFT_X] = sx;
         this.currentAxes[XBOX_AXIS.LEFT_Y] = sy;
-        // Left X button (buttons[4]) or Left Squeeze (buttons[1]) -> Ability
-        if (gp.buttons[4]?.pressed || gp.buttons[1]?.pressed) {
+        // Left Trigger (buttons[0]), Squeeze (buttons[1]), or X button (buttons[4]) -> Ability
+        if (gp.buttons[0]?.pressed || gp.buttons[1]?.pressed || gp.buttons[4]?.pressed) {
           this.currentButtons[XBOX_BUTTON.X] = true;
           this.buttonValues[XBOX_BUTTON.X] = 1;
         }
@@ -342,8 +371,14 @@ export class GamepadManager {
           this.buttonValues[XBOX_BUTTON.MENU] = 1;
         }
       } else if (src.handedness === 'right') {
-        this.currentAxes[XBOX_AXIS.RIGHT_X] = sx;
-        this.currentAxes[XBOX_AXIS.RIGHT_Y] = sy;
+        if (hasBothHands) {
+          this.currentAxes[XBOX_AXIS.RIGHT_X] = sx;
+          this.currentAxes[XBOX_AXIS.RIGHT_Y] = sy;
+        } else {
+          // Single-controller play: Right Touch thumbstick moves Kyle while auto-aim handles targeting
+          this.currentAxes[XBOX_AXIS.LEFT_X] = sx;
+          this.currentAxes[XBOX_AXIS.LEFT_Y] = sy;
+        }
         // Right A button (buttons[4]) or Right Trigger (buttons[0]) -> Confirm / Ability
         if (gp.buttons[4]?.pressed || gp.buttons[0]?.pressed) {
           this.currentButtons[XBOX_BUTTON.A] = true;
@@ -571,6 +606,31 @@ export class GamepadManager {
         });
       }
       return;
+    }
+
+    // Support WebXR session inputSources haptics (Meta Quest Touch controllers)
+    const xrSession = this.xrSessionProvider?.() ?? null;
+    if (xrSession && xrSession.inputSources) {
+      for (let i = 0; i < xrSession.inputSources.length; i++) {
+        const gp = xrSession.inputSources[i]?.gamepad as any;
+        if (!gp) continue;
+        const actuator = gp.vibrationActuator;
+        if (actuator && typeof actuator.playEffect === 'function') {
+          try {
+            actuator.playEffect('dual-rumble', { startDelay: 0, duration, strongMagnitude: strong, weakMagnitude: weak })?.catch?.(() => {});
+          } catch {
+            // Ignore
+          }
+        } else if (Array.isArray(gp.hapticActuators)) {
+          for (const h of gp.hapticActuators) {
+            try {
+              h?.pulse?.(Math.max(strong, weak), duration)?.catch?.(() => {});
+            } catch {
+              // Ignore
+            }
+          }
+        }
+      }
     }
 
     if (typeof navigator === 'undefined' || typeof navigator.getGamepads !== 'function') return;

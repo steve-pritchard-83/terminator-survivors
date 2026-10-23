@@ -143,7 +143,11 @@ export class TitleScreen {
     this.dailyBtn.disabled = true;
     void ModelLibrary.preload().then(() => {
       startButton.disabled = false;
-      startButton.innerHTML = iconLabel('play', 'DEPLOY');
+      const isQuestVr =
+        typeof window !== 'undefined' &&
+        (window.location.search.includes('vr=1') ||
+          /OculusBrowser|Quest|Pacific|VR/i.test(window.navigator?.userAgent ?? ''));
+      startButton.innerHTML = iconLabel('play', isQuestVr ? 'DEPLOY 3D VR' : 'DEPLOY');
       this.dailyBtn.disabled = false;
     });
     this.bunkerBtn = this.container.querySelector('#btn-bunker-shop')!;
@@ -286,6 +290,7 @@ export class TitleScreen {
     const ua = window.navigator?.userAgent ?? '';
     const isCapacitorOrWebView =
       Boolean((window as Window & { Capacitor?: unknown }).Capacitor) ||
+      window.location.search.includes('vr=1') ||
       /; wv\)|Version\/\d+\.\d+ Chrome\/.*Mobile/i.test(ua) ||
       /OculusBrowser|Quest|Pacific|VR/i.test(ua) ||
       (window.location.hostname === 'localhost' && window.location.protocol === 'https:');

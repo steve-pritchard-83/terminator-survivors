@@ -72,6 +72,7 @@ export class InputManager {
   }
 
   private onWindowPointerMove = (e: PointerEvent): void => {
+    if (this.gamepadManager.isXrActive()) return;
     if (e.pointerType === 'mouse' && window.innerWidth > 900) {
       if (Math.abs(e.movementX) > 1 || Math.abs(e.movementY) > 1) {
         this.lastActiveDevice = 'mouse_keyboard';
@@ -81,6 +82,7 @@ export class InputManager {
   };
 
   private onWindowPointerDown = (e: PointerEvent): void => {
+    if (this.gamepadManager.isXrActive()) return;
     if (e.pointerType === 'mouse' && window.innerWidth > 900) {
       this.lastActiveDevice = 'mouse_keyboard';
       this.mouseScreenPos = { x: e.clientX, y: e.clientY };

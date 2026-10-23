@@ -32,54 +32,112 @@ jobs:
           npm ci
           npm run build
 
-      - name: Generate Native Android / Meta Quest 2 Capacitor Wrapper
+      - name: Generate Meta Quest 2 Immersive WebXR TWA Project (@meta-quest/bubblewrap-core)
+        env:
+          QUEST_KEYSTORE_B64: ${{ secrets.QUEST_KEYSTORE_B64 }}
+          QUEST_KEYSTORE_PASSWORD: ${{ secrets.QUEST_KEYSTORE_PASSWORD }}
         run: |
-          npm install --no-save @capacitor/core @capacitor/cli @capacitor/android
-          npx cap init "Terminator Survivors 2029" "com.techcom.terminatorsurvivors" --web-dir dist
-          npx cap add android
-          # Configure AndroidManifest.xml for Meta Quest 2 landscape panel & immersive fullscreen
-          python3 - << 'EOF'
-          import pathlib, re
-          manifest_path = pathlib.Path("android/app/src/main/AndroidManifest.xml")
-          txt = manifest_path.read_text(encoding="utf-8")
-          # Ensure landscape orientation and configChanges on MainActivity
-          txt = txt.replace(
-              'android:name=".MainActivity"',
-              'android:name=".MainActivity"\n            android:screenOrientation="landscape"\n            android:hardwareAccelerated="true"'
-          )
-          # Add Meta Quest freeform window default size metadata inside <activity>
-          quest_meta = """
-                <layout
-                    android:defaultWidth="1280dp"
-                    android:defaultHeight="720dp"
-                    android:minWidth="800dp"
-                    android:minHeight="480dp" />
-          """
-          txt = txt.replace('</intent-filter>', '</intent-filter>' + quest_meta, 1)
-          manifest_path.write_text(txt, encoding="utf-8")
+          npm install --no-save @meta-quest/bubblewrap-core jimp@0.22.7
+          node - << 'EOF'
+          const fs = require('fs');
+          const path = require('path');
+          const Jimp = require('jimp');
+          const { TwaManifest, TwaGenerator, ConsoleLog } = require('@meta-quest/bubblewrap-core');
 
-          # Allow external intents (e.g. Meta Quest Browser WebXR handoff) inside MainActivity
-          main_java = pathlib.Path("android/app/src/main/java/com/techcom/terminatorsurvivors/MainActivity.java")
-          if main_java.exists():
-              main_java.write_text("""package com.techcom.terminatorsurvivors;
+          async function generate() {
+            const manifest = new TwaManifest({
+              packageId: 'com.techcom.terminatorsurvivors',
+              host: 'terminator-survivors.vercel.app',
+              name: 'Terminator Survivors 2029',
+              launcherName: 'T-Survivors',
+              display: 'fullscreen',
+              themeColor: '#0a0303',
+              themeColorDark: '#000000',
+              navigationColor: '#000000',
+              navigationColorDark: '#000000',
+              navigationDividerColor: '#000000',
+              navigationDividerColorDark: '#000000',
+              backgroundColor: '#0a0303',
+              enableNotifications: false,
+              enableSiteSettingsShortcut: false,
+              startUrl: '/?vr=1',
+              iconUrl: 'https://terminator-survivors.vercel.app/icons/icon-512.png',
+              maskableIconUrl: 'https://terminator-survivors.vercel.app/icons/icon-maskable-512.png',
+              splashScreenFadeOutDuration: 300,
+              appVersion: '1.10.0',
+              appVersionCode: 3,
+              signingKey: { path: './android.keystore', alias: 'androiddebugkey' },
+              fallbackType: 'customtabs',
+              isMetaQuest: true,
+              horizonOSAppMode: 'immersive',
+              orientation: 'landscape',
+              minSdkVersion: 29
+            });
 
-          import android.content.Intent;
-          import android.net.Uri;
-          import android.os.Bundle;
-          import com.getcapacitor.BridgeActivity;
+            const generator = new TwaGenerator();
+            const localIconPath = path.resolve('public/icons/icon-512.png');
+            generator.imageHelper.fetchIcon = async (url) => ({
+              url,
+              data: await Jimp.read(localIconPath)
+            });
 
-          public class MainActivity extends BridgeActivity {
-              @Override
-              public void onCreate(Bundle savedInstanceState) {
-                  super.onCreate(savedInstanceState);
-              }
+            const outDir = path.resolve('android-quest');
+            await generator.createTwaProject(outDir, manifest, new ConsoleLog());
+
+            // 1. Ensure mavenCentral() is present in root build.gradle for com.meta.androidbrowserhelper:2.5.0
+            const rootGradlePath = path.join(outDir, 'build.gradle');
+            let rootGradle = fs.readFileSync(rootGradlePath, 'utf8');
+            rootGradle = rootGradle.replace(/google\(\)/g, 'google()\n        mavenCentral()');
+            fs.writeFileSync(rootGradlePath, rootGradle, 'utf8');
+
+            // 2. Inject com.oculus.supportedDevices and INTERNET permission into AndroidManifest.xml
+            const manifestXmlPath = path.join(outDir, 'app/src/main/AndroidManifest.xml');
+            let manifestXml = fs.readFileSync(manifestXmlPath, 'utf8');
+            manifestXml = manifestXml.replace(
+              '<uses-permission android:name="com.oculus.permission.HAND_TRACKING" />',
+              '<uses-permission android:name="android.permission.INTERNET" />\n    <uses-permission android:name="com.oculus.permission.HAND_TRACKING" />'
+            );
+            manifestXml = manifestXml.replace(
+              '<meta-data\n                android:name="com.oculus.ossplash.background"',
+              '<meta-data\n                android:name="com.oculus.supportedDevices"\n                android:value="quest2|questpro|quest3|quest3s" />\n             <meta-data\n                android:name="com.oculus.ossplash.background"'
+            );
+            fs.writeFileSync(manifestXmlPath, manifestXml, 'utf8');
+
+            // 3. Write the signing keystore (from repository secrets) matching public/.well-known/assetlinks.json
+            const keystoreB64 = process.env.QUEST_KEYSTORE_B64;
+            const keystorePassword = process.env.QUEST_KEYSTORE_PASSWORD;
+            if (!keystoreB64 || !keystorePassword) throw new Error('QUEST_KEYSTORE_B64 and QUEST_KEYSTORE_PASSWORD secrets are required');
+            fs.writeFileSync(path.join(outDir, 'app/quest-sideload.p12'), Buffer.from(keystoreB64, 'base64'));
+
+            const appGradlePath = path.join(outDir, 'app/build.gradle');
+            let appGradle = fs.readFileSync(appGradlePath, 'utf8');
+            appGradle = appGradle.replace(
+              'buildTypes {',
+              `signingConfigs {
+        questSideload {
+            storeFile file("quest-sideload.p12")
+            storePassword "${keystorePassword}"
+            keyAlias "androiddebugkey"
+            keyPassword "${keystorePassword}"
+        }
+    }
+    buildTypes {
+        debug {
+            signingConfig signingConfigs.questSideload
+        }`
+            );
+            fs.writeFileSync(appGradlePath, appGradle, 'utf8');
+            console.log('Meta Quest 2 Immersive WebXR TWA project generated successfully.');
           }
-          """, encoding="utf-8")
-          EOF
-          npx cap copy android
 
-      - name: Build Sideloadable APK (Debug-Signed for Quest 2 Unknown Sources)
-        working-directory: android
+          generate().catch((err) => {
+            console.error(err);
+            process.exit(1);
+          });
+          EOF
+
+      - name: Build Sideloadable APK (Signed for Quest 2 Unknown Sources & Digital Asset Links)
+        working-directory: android-quest
         run: |
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
@@ -96,12 +154,14 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: quest2-latest
-          name: "Meta Quest 2 Sideload APK (Latest Build)"
+          name: "Meta Quest 2 Sideload APK (Latest 3D WebXR Build)"
           body: |
-            ### Meta Quest 2 Native Sideload APK (`terminator-survivors-quest2.apk`)
+            ### Meta Quest 2 Native 3D WebXR Sideload APK (`terminator-survivors-quest2.apk`)
+            Built with **`@meta-quest/bubblewrap-core`** (`com.meta.androidbrowserhelper:2.5.0`, `horizonOSAppMode: "immersive"`, `com.oculus.browser.WebXRCustomTabActivity`).
             - **Install via SideQuest:** Drag and drop `terminator-survivors-quest2.apk` into SideQuest.
             - **Install via ADB:** `adb install -r terminator-survivors-quest2.apk`
-            - **Where to find on Quest 2:** Open **App Library** -> filter dropdown (top-right) -> **Unknown Sources** -> **Terminator Survivors 2029**.
+            - **Where to find on Quest 2:** Open **App Library** -> filter dropdown (top-right) -> **Unknown Sources** -> **T-Survivors / Terminator Survivors 2029**.
+            - **3D VR Launch:** Click **DEPLOY 3D VR** on the Title Screen to immediately enter stereoscopic 3D WebXR with full Quest Touch thumbstick & button controls.
           files: terminator-survivors-quest2.apk
           prerelease: false
         env:

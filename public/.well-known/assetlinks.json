@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.techcom.terminatorsurvivors",
+      "sha256_cert_fingerprints": [
+        "9F:6D:3E:33:A1:0D:95:64:61:61:35:E2:C0:9C:A6:44:56:30:1D:4A:3A:4C:89:20:2F:E8:EF:4D:BB:A1:E3:4D"
+      ]
+    }
+  }
+]

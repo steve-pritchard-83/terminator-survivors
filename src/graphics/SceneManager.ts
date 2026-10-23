@@ -137,10 +137,12 @@ export class SceneManager {
     this.stereoCamera.eyeSep = 0.65; // Exaggerated tactical diorama depth for Quest 2 3D mode
 
     this.xrRig.position.copy(this.cameraOffset);
-    this.xrRig.lookAt(0, 0, 0);
+    this.xrRig.rotation.set(-0.55, 0, 0);
     this.scene.add(this.xrRig);
 
     this.renderer.xr.addEventListener('sessionstart', () => {
+      this.camera.position.set(0, 0, 0);
+      this.camera.rotation.set(0, 0, 0);
       this.xrRig.add(this.camera);
     });
     this.renderer.xr.addEventListener('sessionend', () => {
@@ -217,21 +219,22 @@ export class SceneManager {
       shakeZ = Math.cos(t * 0.055) * shake;
     }
 
+    if (this.renderer.xr.isPresenting) {
+      this.xrRig.position.set(
+        this.currentCameraTarget.x + shakeX,
+        this.currentCameraTarget.y + 10.5,
+        this.currentCameraTarget.z + 9.5 + shakeZ
+      );
+      this.xrRig.rotation.set(-0.55, 0, 0);
+      return;
+    }
+
     this.camera.position.set(
       this.currentCameraTarget.x + this.cameraOffset.x + shakeX,
       this.currentCameraTarget.y + this.cameraOffset.y,
       this.currentCameraTarget.z + this.cameraOffset.z + shakeZ
     );
     this.camera.lookAt(this.currentCameraTarget);
-
-    if (this.renderer.xr.isPresenting) {
-      this.xrRig.position.set(
-        this.currentCameraTarget.x + shakeX,
-        this.currentCameraTarget.y + 11.5,
-        this.currentCameraTarget.z + 9.5 + shakeZ
-      );
-      this.xrRig.lookAt(this.currentCameraTarget.x, 0, this.currentCameraTarget.z);
-    }
   }
 
   public toggleStereo3D(): boolean {
