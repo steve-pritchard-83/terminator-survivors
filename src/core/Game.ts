@@ -89,6 +89,8 @@ export class Game implements RunControllerHost, InputRouterHost, DebugAPIHost {
       if (player && rifle) this.playerMesh.applyPlayerModel(player, rifle);
       // Compile boss and ally shaders now, not in the middle of a fight
       void prewarmShaders(this.sceneManager.renderer, this.sceneManager.scene, this.sceneManager.camera);
+      // Opened as the Quest app: straight into VR (nothing flat can be seen there)
+      this.runController.startVrApp();
     });
     this.particles = new ParticleSystem();
     this.environment = createEnvironment();

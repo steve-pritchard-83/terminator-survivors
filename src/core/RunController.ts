@@ -43,6 +43,9 @@ export interface RunControllerHost {
   onRunStarted?: () => void;
 }
 
+/** Seconds the result banner shows in the Quest app before the next run starts */
+const VR_APP_REDEPLOY_SECONDS = 6;
+
 export class RunController {
   public activeBoss: { name: string; hp: number; maxHp: number } | null = null;
   public readonly achievementTracker: AchievementTracker;
@@ -175,6 +178,48 @@ export class RunController {
     };
   }
 
+  /**
+   * Opened as the Quest app (the APK starts at ?vr=1), the headset shows only the VR view: the flat title,
+   * pause and results pages can never be seen. So the game enters VR as soon as it is ready, starts a run,
+   * stays in VR between runs and pauses while the Quest's own menu is open.
+   */
+  public static readonly VR_APP = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('vr') === '1';
+  private vrAppRestartTimer: number | null = null;
+
+  public startVrApp(): void {
+    if (!RunController.VR_APP) return;
+    const xrNav = (navigator as Navigator & { xr?: { requestSession?: (mode: string, opts?: object) => Promise<unknown> } }).xr;
+    if (!xrNav?.requestSession) return;
+    const renderer = this.host.sceneManager.renderer;
+    void xrNav
+      .requestSession('immersive-vr', { optionalFeatures: ['local-floor'] })
+      .then(async (raw) => {
+        const session = raw as XRSession;
+        await renderer.xr.setSession(session as never);
+        session.addEventListener('visibilitychange', () => {
+          // The Quest menu (or a system prompt) covers the game: hold the run until it closes
+          if (session.visibilityState !== 'visible' && this.host.runState.mode === 'playing') {
+            this.host.saveManager?.flush?.();
+            this.host.runState.mode = 'paused';
+          } else if (session.visibilityState === 'visible' && this.host.runState.mode === 'paused') {
+            this.host.runState.mode = 'playing';
+          }
+        });
+        if (this.host.runState.mode === 'title') this.startRunWith({});
+      })
+      .catch((err) => {
+        // Refused without a user gesture: try again on the next trigger press or tap
+        console.error('[vr-app] could not enter VR:', err);
+        const retry = (): void => {
+          window.removeEventListener('pointerdown', retry);
+          window.removeEventListener('keydown', retry);
+          this.startVrApp();
+        };
+        window.addEventListener('pointerdown', retry, { once: true });
+        window.addEventListener('keydown', retry, { once: true });
+      });
+  }
+
   public toggleVrSession(): void {
     const renderer = this.host.sceneManager.renderer;
     const xrNav = (
@@ -270,7 +315,7 @@ export class RunController {
 
   public endRun(victory: boolean, defeatReason?: string): void {
     if (this.host.runState.mode === 'gameover' || this.host.runState.mode === 'victory') return;
-    if (this.host.sceneManager.renderer.xr.isPresenting) {
+    if (this.host.sceneManager.renderer.xr.isPresenting && !RunController.VR_APP) {
       void this.host.sceneManager.renderer.xr.getSession()?.end();
     }
     this.host.runState.mode = victory ? 'victory' : 'gameover';
@@ -345,6 +390,24 @@ export class RunController {
     this.host.uiManager.vaultModal.hide();
     this.host.uiManager.hudView.damageNumbers.clear();
     this.host.uiManager.hudView.hide();
+    if (RunController.VR_APP && this.host.sceneManager.renderer.xr.isPresenting) {
+      this.host.audioEngine.playRunEnd(victory);
+      this.host.sceneManager.setXrBanner(
+        `${victory ? 'MISSION ACCOMPLISHED' : 'TERMINATED'} · ${this.host.runState.kills} KILLS · REDEPLOYING`,
+        VR_APP_REDEPLOY_SECONDS
+      );
+      if (this.vrAppRestartTimer !== null) window.clearTimeout(this.vrAppRestartTimer);
+      this.vrAppRestartTimer = window.setTimeout(() => {
+        this.vrAppRestartTimer = null;
+        this.host.enemySystem.clear();
+        this.host.pickupSystem.clear();
+        this.host.weaponSystem.clear();
+        this.host.particles.clear();
+        this.host.runState.mode = 'title';
+        this.startRunWith({});
+      }, VR_APP_REDEPLOY_SECONDS * 1000);
+      return;
+    }
     const showSummary = (): void => {
       const lastConfig: RunConfig = this.host.runState.daily
         ? { daily: true }
@@ -394,6 +457,8 @@ export class RunController {
 
   public pauseGame(): void {
     if (this.host.runState.mode !== 'playing') return;
+    // The Quest app has no visible pause menu; the Quest's own menu pauses it (startVrApp)
+    if (RunController.VR_APP && this.host.sceneManager.renderer.xr.isPresenting) return;
     if (this.host.sceneManager.renderer.xr.isPresenting) {
       void this.host.sceneManager.renderer.xr.getSession()?.end();
     }
