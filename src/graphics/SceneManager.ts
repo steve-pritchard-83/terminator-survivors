@@ -15,6 +15,8 @@ export interface XrPanel {
   title: string;
   cards?: Array<{ title: string; sub: string; line: string; hint?: string }>;
   selected?: number;
+  /** A vertical menu instead of cards; `selected` highlights a row */
+  items?: string[];
   footer?: string;
 }
 
@@ -150,10 +152,23 @@ export class SceneManager {
         }
       });
     }
+    const items = panel.items ?? [];
+    items.forEach((label, i) => {
+      const y = 130 + i * 62;
+      const sel = i === panel.selected;
+      ctx.fillStyle = sel ? 'rgba(95, 200, 238, 0.18)' : 'rgba(42, 49, 55, 0.5)';
+      ctx.fillRect(212, y, 600, 52);
+      ctx.strokeStyle = sel ? '#5fc8ee' : '#56616b';
+      ctx.lineWidth = sel ? 5 : 2;
+      ctx.strokeRect(212, y, 600, 52);
+      ctx.fillStyle = sel ? '#ffffff' : '#cdd7de';
+      ctx.font = 'bold 30px monospace';
+      ctx.fillText(label, W / 2, y + 37);
+    });
     if (panel.footer) {
       ctx.fillStyle = '#56c8ee';
       ctx.font = 'bold 30px monospace';
-      ctx.fillText(panel.footer, W / 2, cards.length > 0 ? 470 : 300);
+      ctx.fillText(panel.footer, W / 2, cards.length > 0 || items.length > 0 ? 476 : 300);
     }
     this.xrPanelTex.needsUpdate = true;
     this.xrPanel.visible = true;

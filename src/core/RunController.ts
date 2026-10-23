@@ -465,7 +465,8 @@ export class RunController {
       this.host.saveManager?.flush?.();
       this.host.runState.mode = 'paused';
       this.host.audioEngine.playHudScanOpen();
-      this.host.sceneManager.setXrPanel({ title: 'PAUSED', footer: 'PRESS Y TO RESUME' });
+      this.vrPause = { selected: 0, stickHeld: true };
+      this.drawVrPause();
       console.info('[vr-app] paused');
       return;
     }
@@ -487,6 +488,7 @@ export class RunController {
     this.host.audioEngine.playHudScanClose();
     this.host.runState.mode = 'playing';
     if (RunController.VR_APP) {
+      this.vrPause = null;
       this.host.sceneManager.setXrPanel(null);
       console.info('[vr-app] resumed');
     }
@@ -527,6 +529,75 @@ export class RunController {
 
   private vrChoice: { level: number; choices: UpgradeChoice[]; selected: number; stickHeld: boolean } | null = null;
 
+  private vrPause: { selected: number; stickHeld: boolean } | null = null;
+  private static readonly VR_PAUSE_ROWS = ['resume', 'music', 'sfx', 'autoaim', 'abort'] as const;
+
+  private drawVrPause(): void {
+    if (!this.vrPause) return;
+    const s = this.host.saveManager.getData().settings;
+    const pct = (v: number) => `${Math.round(v * 100)}%`;
+    this.host.sceneManager.setXrPanel({
+      title: 'PAUSED',
+      selected: this.vrPause.selected,
+      items: [
+        'RESUME',
+        `MUSIC  ◀ ${pct(s.musicVolume)} ▶`,
+        `EFFECTS  ◀ ${pct(s.sfxVolume)} ▶`,
+        `AUTO-AIM  ${this.host.runState.autoAimEnabled ? 'ON' : 'OFF'}`,
+        'ABORT MISSION'
+      ],
+      footer: 'STICK TO MOVE · TRIGGER TO SELECT · Y RESUMES'
+    });
+  }
+
+  /** The VR pause menu: up/down picks a row, left/right changes a volume, trigger or A/X selects. */
+  private updateVrPause(): void {
+    const p = this.vrPause;
+    if (!p || this.host.runState.mode !== 'paused') return;
+    const gp = this.host.inputManager.gamepadManager;
+    const rows = RunController.VR_PAUSE_ROWS;
+    const x = gp.getStickX();
+    const y = gp.getStickY();
+    const row = rows[p.selected];
+    if (Math.abs(x) < 0.35 && Math.abs(y) < 0.35) {
+      p.stickHeld = false;
+    } else if (!p.stickHeld) {
+      p.stickHeld = true;
+      if (Math.abs(y) >= Math.abs(x)) {
+        p.selected = (p.selected + (y > 0 ? 1 : -1) + rows.length) % rows.length;
+      } else if (row === 'music' || row === 'sfx') {
+        const data = this.host.saveManager.getData();
+        const key = row === 'music' ? 'musicVolume' : 'sfxVolume';
+        const v = Math.max(0, Math.min(1, Math.round((data.settings[key] + (x > 0 ? 0.1 : -0.1)) * 10) / 10));
+        data.settings[key] = v;
+        if (row === 'music') this.host.audioEngine.setMusicVolume(v);
+        else this.host.audioEngine.setSfxVolume(v);
+        this.host.saveManager.save();
+      }
+      this.host.audioEngine.playUiClick();
+      this.drawVrPause();
+    }
+    if (gp.isButtonJustPressed(XBOX_BUTTON.A) || gp.isButtonJustPressed(XBOX_BUTTON.X)) {
+      if (row === 'resume') {
+        this.resumeFromPause();
+      } else if (row === 'autoaim') {
+        const enabled = !this.host.runState.autoAimEnabled;
+        this.host.runState.autoAimEnabled = enabled;
+        this.host.saveManager.getData().settings.autoAim = enabled;
+        this.host.saveManager.save();
+        this.host.audioEngine.playUiClick();
+        this.drawVrPause();
+      } else if (row === 'abort') {
+        // No title screen in the headset: abandon this run and deploy a fresh one
+        console.info('[vr-app] abort');
+        this.vrPause = null;
+        this.host.sceneManager.setXrPanel(null);
+        this.abortToTitle();
+        this.startRunWith({});
+      }
+    }
+  }
+
   private drawVrChoice(): void {
     const v = this.vrChoice;
     if (!v) return;
@@ -545,6 +616,7 @@ export class RunController {
 
   /** The VR level-up picker: either thumbstick moves between cards, a trigger or A/X takes the card. */
   public updateVrMenus(): void {
+    this.updateVrPause();
     const v = this.vrChoice;
     if (!v || this.host.runState.mode !== 'levelup') return;
     const gp = this.host.inputManager.gamepadManager;

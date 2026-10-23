@@ -521,6 +521,13 @@ export class GamepadManager {
     return Math.abs(l) >= Math.abs(r) ? l : r;
   }
 
+  /** Up/down on whichever thumbstick is pushed further (positive is down). */
+  public getStickY(): number {
+    const l = this.currentAxes[XBOX_AXIS.LEFT_Y] ?? 0;
+    const r = this.currentAxes[XBOX_AXIS.RIGHT_Y] ?? 0;
+    return Math.abs(l) >= Math.abs(r) ? l : r;
+  }
+
   public getAimAngle(): number | null {
     const vec = this.getAimVector();
     if (!vec) return null;
