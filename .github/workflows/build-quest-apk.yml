@@ -1,0 +1,90 @@
+name: Build Meta Quest 2 APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-quest-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Setup Java 21 for Android Gradle
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Install Dependencies & Build Web Bundle
+        run: |
+          npm ci
+          npm run build
+
+      - name: Generate Native Android / Meta Quest 2 Capacitor Wrapper
+        run: |
+          npm install --no-save @capacitor/core @capacitor/cli @capacitor/android
+          npx cap init "Terminator Survivors 2029" "com.techcom.terminatorsurvivors" --web-dir dist
+          npx cap add android
+          # Configure AndroidManifest.xml for Meta Quest 2 landscape panel & immersive fullscreen
+          python3 - << 'EOF'
+          import pathlib, re
+          manifest_path = pathlib.Path("android/app/src/main/AndroidManifest.xml")
+          txt = manifest_path.read_text(encoding="utf-8")
+          # Ensure landscape orientation and configChanges on MainActivity
+          txt = txt.replace(
+              'android:name=".MainActivity"',
+              'android:name=".MainActivity"\n            android:screenOrientation="landscape"\n            android:hardwareAccelerated="true"'
+          )
+          # Add Meta Quest freeform window default size metadata inside <activity>
+          quest_meta = """
+                <layout
+                    android:defaultWidth="1280dp"
+                    android:defaultHeight="720dp"
+                    android:minWidth="800dp"
+                    android:minHeight="480dp" />
+          """
+          txt = txt.replace('</intent-filter>', '</intent-filter>' + quest_meta, 1)
+          manifest_path.write_text(txt, encoding="utf-8")
+          EOF
+          npx cap copy android
+
+      - name: Build Sideloadable APK (Debug-Signed for Quest 2 Unknown Sources)
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+          cp app/build/outputs/apk/debug/app-debug.apk ../terminator-survivors-quest2.apk
+
+      - name: Upload Quest 2 APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: terminator-survivors-quest2-apk
+          path: terminator-survivors-quest2.apk
+          retention-days: 30
+
+      - name: Publish Latest Quest 2 APK Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: quest2-latest
+          name: "Meta Quest 2 Sideload APK (Latest Build)"
+          body: |
+            ### Meta Quest 2 Native Sideload APK (`terminator-survivors-quest2.apk`)
+            - **Install via SideQuest:** Drag and drop `terminator-survivors-quest2.apk` into SideQuest.
+            - **Install via ADB:** `adb install -r terminator-survivors-quest2.apk`
+            - **Where to find on Quest 2:** Open **App Library** -> filter dropdown (top-right) -> **Unknown Sources** -> **Terminator Survivors 2029**.
+          files: terminator-survivors-quest2.apk
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

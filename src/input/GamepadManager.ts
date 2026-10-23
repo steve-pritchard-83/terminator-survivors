@@ -87,7 +87,12 @@ export class GamepadManager {
     return /xbox|x-input|xinput|045e|microsoft/i.test(id);
   }
 
+  private isQuestTouchId(id: string): boolean {
+    return /oculus|quest|meta|touch|xr-standard/i.test(id);
+  }
+
   private cleanGamepadName(id: string): string {
+    if (this.isQuestTouchId(id)) return 'META QUEST TOUCH';
     if (this.isXboxId(id)) {
       if (/wireless|series|one/i.test(id)) return 'XBOX WIRELESS CONTROLLER';
       if (/360/i.test(id)) return 'XBOX 360 CONTROLLER';
@@ -221,6 +226,34 @@ export class GamepadManager {
     this.currentAxes = [];
     for (let i = 0; i < gp.axes.length; i++) {
       this.currentAxes.push(gp.axes[i] || 0);
+    }
+
+    // Meta Quest Touch dual-controller synthesis: if two Quest Touch controllers are connected,
+    // combine Left Touch thumbstick (move) and Right Touch thumbstick (aim) + buttons across both hands.
+    if (typeof navigator !== 'undefined' && typeof navigator.getGamepads === 'function') {
+      const allPads = navigator.getGamepads();
+      if (allPads) {
+        for (let p = 0; p < allPads.length; p++) {
+          const other = allPads[p];
+          if (!other || !other.connected || other.index === gp.index) continue;
+          if (this.isQuestTouchId(other.id) || this.isQuestTouchId(gp.id)) {
+            const ox = other.axes[2] ?? other.axes[0] ?? 0;
+            const oy = other.axes[3] ?? other.axes[1] ?? 0;
+            if (Math.hypot(ox, oy) > Math.hypot(this.currentAxes[2] ?? 0, this.currentAxes[3] ?? 0)) {
+              this.currentAxes[2] = ox;
+              this.currentAxes[3] = oy;
+            }
+            for (let b = 0; b < other.buttons.length; b++) {
+              const btn = other.buttons[b];
+              const isDown = typeof btn === 'object' ? btn.pressed || btn.value > 0.25 : Boolean(btn);
+              if (isDown) {
+                this.currentButtons[b] = true;
+                this.buttonValues[b] = Math.max(this.buttonValues[b] ?? 0, typeof btn === 'object' ? btn.value : 1);
+              }
+            }
+          }
+        }
+      }
     }
 
     // Track active user input this frame
