@@ -282,6 +282,15 @@ export class TitleScreen {
 
   private isInstalledStandalone(): boolean {
     if (typeof window === 'undefined') return false;
+    // Native Capacitor APK, Android WebView (; wv), or Meta Quest headset never needs a PWA install prompt
+    const ua = window.navigator?.userAgent ?? '';
+    const isCapacitorOrWebView =
+      Boolean((window as Window & { Capacitor?: unknown }).Capacitor) ||
+      /; wv\)|Version\/\d+\.\d+ Chrome\/.*Mobile/i.test(ua) ||
+      /OculusBrowser|Quest|Pacific|VR/i.test(ua) ||
+      (window.location.hostname === 'localhost' && window.location.protocol === 'https:');
+    if (isCapacitorOrWebView) return true;
+
     const standaloneMedia = window.matchMedia?.('(display-mode: standalone)')?.matches ?? false;
     const standaloneFullscreen =
       window.matchMedia?.('(display-mode: fullscreen)')?.matches ?? false;

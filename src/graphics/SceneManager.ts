@@ -47,6 +47,14 @@ export class SceneManager {
   private xrHudCanvas: HTMLCanvasElement | null = null;
   private xrHudTex: THREE.CanvasTexture | null = null;
   private lastXrHudText = '';
+  private xrBannerText = '';
+  private xrBannerUntil = 0;
+
+  public setXrBanner(text: string, durationSec = 3.5): void {
+    this.xrBannerText = text;
+    this.xrBannerUntil = (typeof performance !== 'undefined' ? performance.now() : Date.now()) + durationSec * 1000;
+    this.lastXrHudText = '';
+  }
 
   public getQualityGovernorState(): {
     pixelRatio: number;
@@ -253,7 +261,9 @@ export class SceneManager {
     this.xrHudSprite.position.set(this.currentCameraTarget.x, 2.6, this.currentCameraTarget.z - 1.2);
 
     const sec = Math.floor(timeSec);
-    const key = `${Math.round(hp)}/${maxHp}|${level}|${sec}|${bossName ?? ''}|${Math.round((bossPct ?? 0) * 100)}`;
+    const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
+    const banner = now < this.xrBannerUntil ? this.xrBannerText : '';
+    const key = `${Math.round(hp)}/${maxHp}|${level}|${sec}|${bossName ?? ''}|${Math.round((bossPct ?? 0) * 100)}|${banner}`;
     if (key === this.lastXrHudText) return;
     this.lastXrHudText = key;
 
@@ -280,14 +290,18 @@ export class SceneManager {
     ctx.font = 'bold 20px monospace';
     ctx.fillText(`LV ${level}   ${mm}:${ss}`, 280, 38);
 
-    if (bossName && bossPct !== undefined) {
+    if (banner) {
+      ctx.fillStyle = '#ffb000';
+      ctx.font = 'bold 15px monospace';
+      ctx.fillText(banner.slice(0, 42), 22, 70);
+    } else if (bossName && bossPct !== undefined) {
       ctx.fillStyle = '#ff2a1a';
       ctx.font = 'bold 15px monospace';
       ctx.fillText(`${bossName.slice(0, 22)} (${Math.round(bossPct * 100)}%)`, 22, 70);
     } else {
       ctx.fillStyle = '#5fc8ee';
       ctx.font = '15px monospace';
-      ctx.fillText(`HP ${Math.round(hp)}/${maxHp} · 3D TACTICAL VIEW`, 22, 70);
+      ctx.fillText(`HP ${Math.round(hp)}/${maxHp} · 3D VR DIORAMA`, 22, 70);
     }
     this.xrHudTex.needsUpdate = true;
   }

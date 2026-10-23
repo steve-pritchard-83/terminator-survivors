@@ -169,14 +169,26 @@ export class RunController {
     };
     this.host.uiManager.hudView.onToggleVrSession = () => {
       const renderer = this.host.sceneManager.renderer;
-      const xrNav = (navigator as Navigator & { xr?: { requestSession?: (mode: string, opts?: object) => Promise< unknown > } }).xr;
+      const xrNav = (navigator as Navigator & { xr?: { isSessionSupported?: (m: string) => Promise<boolean>; requestSession?: (mode: string, opts?: object) => Promise<unknown> } }).xr;
       if (renderer.xr.isPresenting) {
         void renderer.xr.getSession()?.end();
-      } else if (xrNav?.requestSession) {
+        return;
+      }
+      if (xrNav?.requestSession) {
         void xrNav
           .requestSession('immersive-vr', { optionalFeatures: ['local-floor', 'bounded-floor'] })
-          .then((session) => renderer.xr.setSession(session as never))
-          .catch(() => {});
+          .then((session) => {
+            renderer.xr.setSession(session as never);
+            this.host.uiManager.hudView.showTip('3D VR ACTIVE — PRESS A/X TO SELECT UPGRADES', 4);
+          })
+          .catch(() => {
+            // If WebXR is blocked inside the Android 2D WebView wrapper, open in Meta Quest Browser's native WebXR engine
+            window.open('https://terminator-survivors.vercel.app/?vr=1', '_system');
+          });
+      } else {
+        // Inside Capacitor 2D Android WebView on Quest: hand off to Meta Quest Browser which has native OpenXR stereo rendering
+        this.host.uiManager.hudView.showTip('OPENING META QUEST WEBXR 3D ENGINE...', 4);
+        window.location.href = 'intent://terminator-survivors.vercel.app/?vr=1#Intent;scheme=https;package=com.oculus.browser;end';
       }
     };
     this.host.uiManager.hudView.onEvolutionReady = () => {
@@ -400,6 +412,23 @@ export class RunController {
   }
 
   public showLevelUpModal(level: number, choices: UpgradeChoice[]): void {
+    // When playing in immersive 3D VR (where HTML modals are hidden outside the stereo headset view),
+    // automatically apply the top weighted upgrade choice and announce it on the 3D Holo-HUD so play never stalls!
+    if (this.host.sceneManager.renderer.xr.isPresenting && choices.length > 0) {
+      const pick = choices[0];
+      this.host.audioEngine.playUpgradeApplied();
+      this.host.runState.recordLevelUp(pick.title);
+      this.host.runState.applyUpgrade(pick);
+      this.host.sceneManager.setXrBanner(`LV ${level}: ${pick.title.toUpperCase()} (${pick.subtitle})`, 3.5);
+      if (this.host.runState.pendingLevelUps > 0) {
+        this.host.runState.pendingLevelUps--;
+        const nextChoices = this.host.runState.generateUpgradeChoices();
+        this.showLevelUpModal(this.host.runState.level, nextChoices);
+      } else {
+        this.host.runState.mode = 'playing';
+      }
+      return;
+    }
     this.host.runState.mode = 'levelup';
     const firstLevelUp = !this.host.saveManager.hasSeenTip('levelup');
     if (firstLevelUp) this.host.saveManager.markTipSeen('levelup');
@@ -441,6 +470,21 @@ export class RunController {
     evolvedWeapon?: WeaponId,
     alloyBonus = 0
   ): void {
+    if (this.host.sceneManager.renderer.xr.isPresenting) {
+      if (evolvedWeapon) {
+        this.host.audioEngine.playEvolution();
+        this.host.sceneManager.setXrBanner(`WEAPON EVOLVED: ${evolvedWeapon.toUpperCase()}`, 4.0);
+      } else {
+        this.host.audioEngine.playUpgradeApplied();
+        this.host.runState.pendingLevelUps += 3;
+        if (this.host.runState.pendingLevelUps > 0) {
+          this.host.runState.pendingLevelUps--;
+          const choices = this.host.runState.generateUpgradeChoices();
+          this.showLevelUpModal(this.host.runState.level, choices);
+        }
+      }
+      return;
+    }
     this.host.runState.mode = 'vault';
     if (evolvedWeapon) this.host.audioEngine.playEvolution();
     this.host.uiManager.vaultModal.show(upgradesAwarded, evolvedWeapon, alloyBonus, () => {
