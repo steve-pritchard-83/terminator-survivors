@@ -39,6 +39,15 @@ export class SceneManager {
   private highFpsDuration = 0;
   private qualityCooldownTimer = 0;
 
+  // Stereoscopic 3D Side-by-Side (SBS) & WebXR VR Diorama support (Meta Quest 2)
+  public stereo3DEnabled = false;
+  private readonly stereoCamera = new THREE.StereoCamera();
+  public readonly xrRig = new THREE.Group();
+  private xrHudSprite: THREE.Sprite | null = null;
+  private xrHudCanvas: HTMLCanvasElement | null = null;
+  private xrHudTex: THREE.CanvasTexture | null = null;
+  private lastXrHudText = '';
+
   public getQualityGovernorState(): {
     pixelRatio: number;
     lowFpsDuration: number;
@@ -115,6 +124,21 @@ export class SceneManager {
     this.renderer.setPixelRatio(isAutomated ? 1 : Math.min(window.devicePixelRatio || 1, 2));
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = LIGHTING.exposure;
+    this.renderer.xr.enabled = true;
+    this.stereoCamera.eyeSep = 0.65; // Exaggerated tactical diorama depth for Quest 2 3D mode
+
+    this.xrRig.position.copy(this.cameraOffset);
+    this.xrRig.lookAt(0, 0, 0);
+    this.scene.add(this.xrRig);
+
+    this.renderer.xr.addEventListener('sessionstart', () => {
+      this.xrRig.add(this.camera);
+    });
+    this.renderer.xr.addEventListener('sessionend', () => {
+      this.scene.remove(this.camera);
+      this.camera.position.copy(this.cameraOffset);
+      this.camera.lookAt(this.currentCameraTarget);
+    });
 
     container.appendChild(this.renderer.domElement);
 
@@ -190,6 +214,82 @@ export class SceneManager {
       this.currentCameraTarget.z + this.cameraOffset.z + shakeZ
     );
     this.camera.lookAt(this.currentCameraTarget);
+
+    if (this.renderer.xr.isPresenting) {
+      this.xrRig.position.set(
+        this.currentCameraTarget.x + shakeX,
+        this.currentCameraTarget.y + 11.5,
+        this.currentCameraTarget.z + 9.5 + shakeZ
+      );
+      this.xrRig.lookAt(this.currentCameraTarget.x, 0, this.currentCameraTarget.z);
+    }
+  }
+
+  public toggleStereo3D(): boolean {
+    this.stereo3DEnabled = !this.stereo3DEnabled;
+    document.body.classList.toggle('stereo-sbs-active', this.stereo3DEnabled);
+    this.onResize();
+    return this.stereo3DEnabled;
+  }
+
+  /** Updates the floating 3D holographic status bar above Kyle when in WebXR or 3D mode. */
+  public updateXrHoloHud(hp: number, maxHp: number, level: number, timeSec: number, bossName?: string, bossPct?: number): void {
+    if (!this.renderer.xr.isPresenting && !this.stereo3DEnabled) {
+      if (this.xrHudSprite) this.xrHudSprite.visible = false;
+      return;
+    }
+    if (!this.xrHudCanvas || !this.xrHudSprite || !this.xrHudTex) {
+      this.xrHudCanvas = document.createElement('canvas');
+      this.xrHudCanvas.width = 512;
+      this.xrHudCanvas.height = 96;
+      this.xrHudTex = new THREE.CanvasTexture(this.xrHudCanvas);
+      const mat = new THREE.SpriteMaterial({ map: this.xrHudTex, transparent: true, depthTest: false, depthWrite: false });
+      this.xrHudSprite = new THREE.Sprite(mat);
+      this.xrHudSprite.scale.set(5.2, 0.98, 1);
+      this.xrHudSprite.renderOrder = 999;
+      this.scene.add(this.xrHudSprite);
+    }
+    this.xrHudSprite.visible = true;
+    this.xrHudSprite.position.set(this.currentCameraTarget.x, 2.6, this.currentCameraTarget.z - 1.2);
+
+    const sec = Math.floor(timeSec);
+    const key = `${Math.round(hp)}/${maxHp}|${level}|${sec}|${bossName ?? ''}|${Math.round((bossPct ?? 0) * 100)}`;
+    if (key === this.lastXrHudText) return;
+    this.lastXrHudText = key;
+
+    const ctx = this.xrHudCanvas.getContext('2d');
+    if (!ctx) return;
+    ctx.clearRect(0, 0, 512, 96);
+    ctx.fillStyle = 'rgba(7, 9, 11, 0.82)';
+    ctx.fillRect(8, 8, 496, 80);
+    ctx.strokeStyle = '#cdd7de';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(8, 8, 496, 80);
+
+    // HP Bar
+    const hpRatio = Math.max(0, Math.min(1, hp / Math.max(1, maxHp)));
+    ctx.fillStyle = '#2a3137';
+    ctx.fillRect(22, 22, 240, 18);
+    ctx.fillStyle = hpRatio < 0.25 ? '#ffb000' : '#ff2a1a';
+    ctx.fillRect(22, 22, Math.round(240 * hpRatio), 18);
+
+    // Level & Clock
+    const mm = Math.floor(sec / 60).toString().padStart(2, '0');
+    const ss = (sec % 60).toString().padStart(2, '0');
+    ctx.fillStyle = '#f2e9e4';
+    ctx.font = 'bold 20px monospace';
+    ctx.fillText(`LV ${level}   ${mm}:${ss}`, 280, 38);
+
+    if (bossName && bossPct !== undefined) {
+      ctx.fillStyle = '#ff2a1a';
+      ctx.font = 'bold 15px monospace';
+      ctx.fillText(`${bossName.slice(0, 22)} (${Math.round(bossPct * 100)}%)`, 22, 70);
+    } else {
+      ctx.fillStyle = '#5fc8ee';
+      ctx.font = '15px monospace';
+      ctx.fillText(`HP ${Math.round(hp)}/${maxHp} · 3D TACTICAL VIEW`, 22, 70);
+    }
+    this.xrHudTex.needsUpdate = true;
   }
 
   public screenToWorldGround(clientX: number, clientY: number): { x: number; z: number } | null {
@@ -408,6 +508,36 @@ export class SceneManager {
   public render(dt: number, timeSeconds: number): void {
     this.dynamicLighting.update(dt);
     this.atmosphere.update(dt, this.currentCameraTarget.x, this.currentCameraTarget.z);
+    if (this.renderer.xr.isPresenting) {
+      this.renderer.render(this.scene, this.camera);
+      return;
+    }
+    if (this.stereo3DEnabled) {
+      this.scene.updateMatrixWorld();
+      if (this.camera.parent === null) this.camera.updateMatrixWorld();
+      this.stereoCamera.update(this.camera);
+      const size = new THREE.Vector2();
+      this.renderer.getSize(size);
+      const halfW = size.width / 2;
+      const h = size.height;
+      const prevAutoClear = this.renderer.autoClear;
+      this.renderer.autoClear = false;
+      this.renderer.setScissorTest(true);
+      this.renderer.clear();
+
+      this.renderer.setScissor(0, 0, halfW, h);
+      this.renderer.setViewport(0, 0, halfW, h);
+      this.renderer.render(this.scene, this.stereoCamera.cameraL);
+
+      this.renderer.setScissor(halfW, 0, halfW, h);
+      this.renderer.setViewport(halfW, 0, halfW, h);
+      this.renderer.render(this.scene, this.stereoCamera.cameraR);
+
+      this.renderer.setScissorTest(false);
+      this.renderer.setViewport(0, 0, size.width, h);
+      this.renderer.autoClear = prevAutoClear;
+      return;
+    }
     this.postProcessing.update(dt, timeSeconds);
     this.postProcessing.render();
   }

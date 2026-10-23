@@ -129,6 +129,7 @@ export class Game implements RunControllerHost, InputRouterHost, DebugAPIHost {
     if (import.meta.env.DEV || import.meta.env.VITE_E2E === '1') {
       this.debugAPI = new DebugAPI(this);
     }
+    this.gameLoop.setXrRenderer(this.sceneManager.renderer);
     SettingsApplier.apply(settings, this.audioEngine);
     globalEvents.emit('settings:updated', settings);
     this.gameLoop.start();
@@ -212,6 +213,15 @@ export class Game implements RunControllerHost, InputRouterHost, DebugAPIHost {
     if (this.runState.mode === 'playing') {
       const interp = this.playerSystem.setInterpolatedPosition(alpha, this.prevPlayerPos);
       this.sceneManager.updateCamera(interp.x, interp.z, dt);
+      const boss = this.activeBoss;
+      this.sceneManager.updateXrHoloHud(
+        this.runState.hp,
+        this.runState.maxHp,
+        this.runState.level,
+        this.runState.timeSeconds,
+        boss?.name,
+        boss && boss.maxHp > 0 ? boss.hp / boss.maxHp : undefined
+      );
       this.uiManager.hudView.updateDamageNumbers(dt);
     } else {
       const p = this.runState.mode === 'title' ? this.titleFlyover.panPos : this.runState.playerPos;

@@ -37,6 +37,8 @@ export class HUDView {
   /** Called the first time any weapon is ready to evolve in a run */
   public onEvolutionReady: (() => void) | null = null;
   public onPauseClicked: (() => void) | null = null;
+  public onToggleStereo3D: (() => boolean) | null = null;
+  public onToggleVrSession: (() => void) | null = null;
   private lastXp = 0;
   private lastLevel = 1;
   private xpPulseTimer: number | null = null;
@@ -57,7 +59,11 @@ export class HUDView {
       <div class="hudm-top">
         <div class="hudm-chip" data-testid="hud-level"><span id="hud-level-text">LV 1</span></div>
         <div class="hudm-chip hudm-clock" data-testid="hud-timer"><span id="hud-clock-text">00:00</span></div>
-        <button class="hudm-pause" data-testid="btn-hud-pause" id="btn-hud-pause" aria-label="Pause">${icon('pause')}</button>
+        <div style="display:flex; gap:6px; align-items:center;">
+          <button class="hudm-pause" id="btn-hud-vr" aria-label="Enter 3D VR" title="Enter 3D VR Diorama Mode" style="display:none; width:auto; padding:0 10px; font-size:11px;">VR</button>
+          <button class="hudm-pause" id="btn-hud-3d" aria-label="Toggle 3D Stereo" title="Toggle Side-by-Side 3D Stereo Mode" style="width:auto; padding:0 10px; font-size:11px;">3D</button>
+          <button class="hudm-pause" data-testid="btn-hud-pause" id="btn-hud-pause" aria-label="Pause">${icon('pause')}</button>
+        </div>
       </div>
 
       <div class="hudm-build" id="hud-build" data-testid="hud-build" aria-label="Equipped weapons and passives"></div>
@@ -131,6 +137,24 @@ export class HUDView {
     this.pauseBtn.addEventListener('click', () => {
       this.onPauseClicked?.();
     });
+
+    const btn3d = this.container.querySelector('#btn-hud-3d') as HTMLButtonElement | null;
+    btn3d?.addEventListener('click', () => {
+      const active = this.onToggleStereo3D?.() ?? false;
+      btn3d.classList.toggle('t-tag-on', active);
+      btn3d.textContent = active ? '3D ON' : '3D';
+    });
+
+    const btnVr = this.container.querySelector('#btn-hud-vr') as HTMLButtonElement | null;
+    if (btnVr && typeof navigator !== 'undefined' && 'xr' in navigator) {
+      const xr = (navigator as Navigator & { xr?: { isSessionSupported?: (m: string) => Promise<boolean> } }).xr;
+      void xr?.isSessionSupported?.('immersive-vr').then((supported) => {
+        if (supported) {
+          btnVr.style.display = 'flex';
+          btnVr.addEventListener('click', () => this.onToggleVrSession?.());
+        }
+      }).catch(() => {});
+    }
   }
 
   public showAchievementNotification(title: string, rewardDesc: string): void {

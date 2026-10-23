@@ -159,6 +159,26 @@ export class RunController {
     this.host.uiManager.hudView.onPauseClicked = () => {
       this.togglePause();
     };
+    this.host.uiManager.hudView.onToggleStereo3D = () => {
+      const active = this.host.sceneManager.toggleStereo3D();
+      this.host.uiManager.hudView.showTip(
+        active ? '3D STEREO (SBS) ENABLED — SWITCH QUEST PANEL TO 3D SBS' : '2D STANDARD VIEW RESTORED',
+        4
+      );
+      return active;
+    };
+    this.host.uiManager.hudView.onToggleVrSession = () => {
+      const renderer = this.host.sceneManager.renderer;
+      const xrNav = (navigator as Navigator & { xr?: { requestSession?: (mode: string, opts?: object) => Promise< unknown > } }).xr;
+      if (renderer.xr.isPresenting) {
+        void renderer.xr.getSession()?.end();
+      } else if (xrNav?.requestSession) {
+        void xrNav
+          .requestSession('immersive-vr', { optionalFeatures: ['local-floor', 'bounded-floor'] })
+          .then((session) => renderer.xr.setSession(session as never))
+          .catch(() => {});
+      }
+    };
     this.host.uiManager.hudView.onEvolutionReady = () => {
       this.showTipOnce('evolve', 'READY TO EVOLVE. OPEN A DATA VAULT.');
     };

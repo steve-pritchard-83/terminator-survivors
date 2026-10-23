@@ -8,6 +8,7 @@ export class GameLoop {
 
   private isRunning = false;
   private animFrameId: number | null = null;
+  private xrRenderer: { setAnimationLoop: (cb: ((time: number) => void) | null) => void } | null = null;
   private lastTime = 0;
   private accumulator = 0;
   public hitStopTimer = 0;
@@ -42,16 +43,34 @@ export class GameLoop {
     this.hitStopTimer = Math.min(0.12, this.hitStopTimer + clamped);
   }
 
+  public setXrRenderer(renderer: { setAnimationLoop: (cb: ((time: number) => void) | null) => void }): void {
+    this.xrRenderer = renderer;
+    if (this.isRunning) {
+      if (this.animFrameId !== null) {
+        cancelAnimationFrame(this.animFrameId);
+        this.animFrameId = null;
+      }
+      this.xrRenderer.setAnimationLoop(this.tick);
+    }
+  }
+
   public start(): void {
     if (this.isRunning) return;
     this.isRunning = true;
     this.lastTime = performance.now();
     this.accumulator = 0;
-    this.tick(this.lastTime);
+    if (this.xrRenderer) {
+      this.xrRenderer.setAnimationLoop(this.tick);
+    } else {
+      this.tick(this.lastTime);
+    }
   }
 
   public stop(): void {
     this.isRunning = false;
+    if (this.xrRenderer) {
+      this.xrRenderer.setAnimationLoop(null);
+    }
     if (this.animFrameId !== null) {
       cancelAnimationFrame(this.animFrameId);
       this.animFrameId = null;
@@ -96,6 +115,8 @@ export class GameLoop {
     const alpha = this.accumulator / GameLoop.FIXED_DT;
     this.onRender(alpha, deltaSeconds);
 
-    this.animFrameId = requestAnimationFrame(this.tick);
+    if (!this.xrRenderer) {
+      this.animFrameId = requestAnimationFrame(this.tick);
+    }
   };
 }
