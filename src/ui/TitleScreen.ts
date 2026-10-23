@@ -418,6 +418,8 @@ export class TitleScreen {
   }
 
   public show(): void {
+    this.pwaModal.style.display = 'none';
+    this.pwaA11y.deactivate();
     this.renderThreat();
     this.renderDaily();
     this.container.style.display = 'flex';

@@ -85,6 +85,7 @@ export class HUDView {
         <div class="hudm-hp">
           <span class="hudm-hp-icon">${icon('health')}</span>
           <div class="hudm-bar hudm-bar-hp"><div class="hudm-hp-fill" id="hud-hp-fill"></div></div>
+          <span class="hudm-revives" id="hud-revives" style="display:none; font-size:11px; color:var(--t-accent); white-space:nowrap;"></span>
         </div>
       </div>
 
@@ -219,6 +220,15 @@ export class HUDView {
     const hpPercent = Math.max(0, Math.min(100, (runState.hp / runState.maxHp) * 100));
     this.hpFill.style.width = `${hpPercent}%`;
     this.hpFill.classList.toggle('hud-low-hp-pulse', runState.hp > 0 && runState.hp / runState.maxHp < 0.25);
+    const revivesEl = this.container.querySelector('#hud-revives') as HTMLElement | null;
+    if (revivesEl) {
+      if (runState.revivalsLeft > 0) {
+        revivesEl.style.display = 'inline';
+        revivesEl.textContent = `♥×${runState.revivalsLeft}`;
+      } else {
+        revivesEl.style.display = 'none';
+      }
+    }
 
     // Timer (MM:SS)
     const sec = Math.floor(runState.timeSeconds);

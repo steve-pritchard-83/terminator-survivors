@@ -329,23 +329,34 @@ export class Environment2029 implements IEnvironment {
       metalness: 0.12
     });
 
-    // 6. Build Scorched Blast Craters with glowing ember core
-    const ashBlack = 0x12171e;
-    const scorchDark = 0x1a212a;
-    const emberRed = 0xff3b11;
-    const emberAmber = 0xff8800;
+    // 6. Build Scorched Blast Craters: sunken ring rim with dark ash pit (no stacked boxes)
+    const ashBlack = 0x0a0d11;
+    const scorchOuter = 0x262422;
+    const scorchInner = 0x171615;
+    const outerRim = new THREE.RingGeometry(1.45, 2.55, 18);
+    outerRim.rotateX(-Math.PI / 2);
+    const innerRim = new THREE.RingGeometry(0.85, 1.55, 18);
+    innerRim.rotateX(-Math.PI / 2);
+    const pitDisc = new THREE.CircleGeometry(0.95, 16);
+    pitDisc.rotateX(-Math.PI / 2);
     const craterParts: THREE.BufferGeometry[] = [
-      bakePart(new THREE.CylinderGeometry(2.1, 2.45, 0.14, 12), 0, 0.07, 0, 0, 0, 0, scorchDark),
-      bakePart(new THREE.CylinderGeometry(1.5, 1.95, 0.1, 12), 0, 0.04, 0, 0, 0, 0, ashBlack),
-      bakePart(new THREE.CylinderGeometry(0.65, 0.95, 0.05, 10), 0, 0.02, 0, 0, 0, 0, emberRed),
-      bakePart(new THREE.BoxGeometry(0.42, 0.05, 0.42), 0, 0.03, 0, 0, 0.5, 0, emberAmber)
+      bakePart(outerRim, 0, 0.015, 0, 0, 0, 0, scorchOuter),
+      bakePart(innerRim, 0, 0.025, 0, 0, 0, 0, scorchInner),
+      bakePart(pitDisc, 0, 0.012, 0, 0, 0, 0, ashBlack),
+      // Low broken rim ejecta chunks around the perimeter
+      bakePart(new THREE.BoxGeometry(0.48, 0.12, 0.32), 1.85, 0.06, 0.35, 0.1, 0.4, -0.18, scorchOuter),
+      bakePart(new THREE.BoxGeometry(0.42, 0.1, 0.28), -1.75, 0.05, -0.45, -0.12, -0.5, 0.15, scorchOuter),
+      bakePart(new THREE.BoxGeometry(0.38, 0.11, 0.3), 0.25, 0.055, -1.8, 0.15, 0.2, 0.1, scorchInner)
     ];
     const craterGeo = mergeParts(craterParts);
     const craterMat = new THREE.MeshStandardMaterial({
       color: 0xffffff,
       vertexColors: true,
-      roughness: 0.85,
-      metalness: 0.15
+      roughness: 0.94,
+      metalness: 0.05,
+      polygonOffset: true,
+      polygonOffsetFactor: -1,
+      polygonOffsetUnits: -2
     });
 
     const totalSkulls = SKULL_CAPACITY;

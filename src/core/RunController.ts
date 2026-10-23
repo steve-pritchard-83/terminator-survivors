@@ -290,6 +290,9 @@ export class RunController {
     this.host.uiManager.hudView.damageNumbers.clear();
     this.host.uiManager.hudView.hide();
     const showSummary = (): void => {
+      const lastConfig: RunConfig = this.host.runState.daily
+        ? { daily: true }
+        : { loadoutId: this.host.runState.loadoutId, threat: this.host.runState.threat };
       this.host.uiManager.endRunModal.show(
         victory,
         this.host.runState.timeSeconds,
@@ -299,11 +302,20 @@ export class RunController {
         this.host.runState.seed,
         () => {
           this.host.audioEngine.playHudScanClose();
+          this.host.enemySystem.clear();
+          this.host.pickupSystem.clear();
+          this.host.weaponSystem.clear();
+          this.host.particles.clear();
           this.host.runState.mode = 'title';
           this.host.uiManager.titleScreen.show();
         },
         runRecord,
-        defeatReason
+        defeatReason,
+        () => {
+          this.host.audioEngine.playHudScanClose();
+          this.host.runState.mode = 'title';
+          this.startRunWith(lastConfig);
+        }
       );
     };
 
@@ -544,8 +556,31 @@ export class RunController {
     const lethalStatus = this.host.runState.resolveLethalDamage();
     if (lethalStatus === 'revived') {
       this.host.sceneManager.postProcessing.triggerEmpGlitch();
+      this.host.sceneManager.addScreenShake(0.45);
       this.host.audioEngine.playEmpBlast();
       this.host.audioEngine.playRevive();
+      const px = this.host.runState.playerPos.x;
+      const pz = this.host.runState.playerPos.z;
+      this.host.weaponSystem.spawnEmpShockwave(px, pz, 8.5, true);
+      // Knock back and stun nearby enemies so the player doesn't revive trapped inside a pack
+      for (const enemy of this.host.enemySystem.activeEnemies) {
+        const edx = enemy.x - px;
+        const edz = enemy.z - pz;
+        const dist = Math.hypot(edx, edz);
+        if (dist < 8.5 && dist > 0.001) {
+          const push = (enemy.isBoss ? 10 : 28) / Math.max(0.5, enemy.mass ?? 1);
+          enemy.vx = (enemy.vx ?? 0) + (edx / dist) * push;
+          enemy.vz = (enemy.vz ?? 0) + (edz / dist) * push;
+          enemy.slowTimer = Math.max(enemy.slowTimer, 2.5);
+        }
+      }
+      this.host.uiManager.hudView.showTip('SECOND WIND — DEFIBRILLATOR ENGAGED', 3.5);
+      globalEvents.emit('pickup:reward', {
+        x: px,
+        z: pz,
+        text: 'REVIVED! +50% HP',
+        color: '#00ff88'
+      });
       globalEvents.emit('player:revived', { remaining: this.host.runState.revivalsLeft });
     } else if (lethalStatus === 'dead') {
       this.host.audioEngine.playPlayerTerminated();

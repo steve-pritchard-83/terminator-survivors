@@ -2,9 +2,11 @@ import type { SaveManager } from '../state/SaveManager';
 import type { GamepadManager } from '../input/GamepadManager';
 
 /** Ignore skip input for this long so button-mashing at the moment of victory doesn't skip it. */
-const SKIP_LOCK_MS = 1500;
+const SKIP_LOCK_MS = 1200;
 /** If playback has not started after this long (slow network, unsupported codec), go to the results. */
-const START_TIMEOUT_MS = 8000;
+const START_TIMEOUT_MS = 6000;
+/** Hard maximum playback time so a stalled stream never traps the player on the video overlay. */
+const MAX_PLAY_MS = 16000;
 
 export interface EndVideoOptions {
   /** Path of the movie under public/, e.g. './video/victory.mp4' */
@@ -27,7 +29,9 @@ export class EndVideo {
   private startedAt = 0;
   private playedAny = false;
   private startTimer: number | null = null;
+  private maxPlayTimer: number | null = null;
   private hintTimer: number | null = null;
+  private skipBtn: HTMLButtonElement;
   private prepared = false;
 
   constructor(
@@ -48,15 +52,26 @@ export class EndVideo {
     this.video.style.cssText = 'width:100%; height:100%; object-fit:contain; background:#000;';
 
     this.skipHint = document.createElement('div');
-    this.skipHint.textContent = 'TAP / ENTER / A TO SKIP';
+    this.skipHint.textContent = 'TAP / ENTER / SPACE TO SKIP';
     this.skipHint.style.cssText =
       'position:absolute; right:18px; bottom:14px; font-family:var(--font-mono, monospace); font-size:12px; letter-spacing:2px; color:rgba(242,233,228,0.65); opacity:0; transition:opacity 0.4s; pointer-events:none;';
 
-    this.container.append(this.video, this.skipHint);
+    this.skipBtn = document.createElement('button');
+    this.skipBtn.type = 'button';
+    this.skipBtn.className = 'btn-secondary btn-sm';
+    this.skipBtn.textContent = 'SKIP >>';
+    this.skipBtn.style.cssText = 'position:absolute; right:18px; top:18px; z-index:410;';
+    this.skipBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.finish(true);
+    });
+
+    this.container.append(this.video, this.skipHint, this.skipBtn);
     root.appendChild(this.container);
 
     this.video.addEventListener('ended', () => this.finish(true));
     this.video.addEventListener('error', () => this.finish(this.playedAny));
+    this.video.addEventListener('stalled', () => this.finish(this.playedAny));
     this.video.addEventListener('playing', () => {
       this.playedAny = true;
       if (this.startTimer !== null) {
@@ -108,6 +123,7 @@ export class EndVideo {
     this.video.volume = Math.max(0, Math.min(1, settings.masterVolume));
 
     this.startTimer = window.setTimeout(() => this.finish(this.playedAny), START_TIMEOUT_MS);
+    this.maxPlayTimer = window.setTimeout(() => this.finish(this.playedAny), MAX_PLAY_MS);
 
     const attempt = this.video.play();
     if (attempt) {
@@ -142,8 +158,10 @@ export class EndVideo {
     if (!this.visible) return;
     this.visible = false;
     if (this.startTimer !== null) window.clearTimeout(this.startTimer);
+    if (this.maxPlayTimer !== null) window.clearTimeout(this.maxPlayTimer);
     if (this.hintTimer !== null) window.clearTimeout(this.hintTimer);
     this.startTimer = null;
+    this.maxPlayTimer = null;
     this.hintTimer = null;
     this.video.pause();
     this.container.style.display = 'none';

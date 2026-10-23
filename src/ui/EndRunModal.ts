@@ -22,6 +22,7 @@ export class EndRunModal {
   private activeTab: EndRunTab = 'debrief';
 
   private onReturnCallback: (() => void) | null = null;
+  private onRestartCallback: (() => void) | null = null;
   private readonly saveManager?: SaveManager;
   private readonly audioEngine?: AudioEngine;
   private readonly a11y: ModalA11y;
@@ -80,12 +81,15 @@ export class EndRunModal {
         </div>
 
         <div class="btn-row" style="margin-top:12px;">
-          <button class="btn-primary" id="btn-return-bunker" aria-label="Continue">
-            ${iconLabel('back', 'CONTINUE')}
+          <button class="btn-primary" id="btn-deploy-again" data-testid="btn-deploy-again" aria-label="Deploy Again">
+            ${iconLabel('play', 'DEPLOY AGAIN')}
+          </button>
+          <button class="btn-secondary" id="btn-return-bunker" data-testid="btn-return-bunker" aria-label="Return to Menu">
+            ${iconLabel('back', 'MAIN MENU')}
           </button>
         </div>
         <div class="t-hint" id="end-controller-hint" style="display:none;">
-          [LB / RB] TABS &nbsp; [A / B] CONTINUE
+          [LB / RB] TABS &nbsp; [A] DEPLOY AGAIN &nbsp; [B] MAIN MENU
         </div>
       </div>
     `;
@@ -144,6 +148,15 @@ export class EndRunModal {
       });
     });
 
+    this.container.querySelector('#btn-deploy-again')?.addEventListener('click', () => {
+      this.hide();
+      if (this.onRestartCallback) {
+        this.onRestartCallback();
+      } else {
+        this.onReturnCallback?.();
+      }
+    });
+
     this.container.querySelector('#btn-return-bunker')?.addEventListener('click', () => {
       this.hide();
       this.onReturnCallback?.();
@@ -175,9 +188,11 @@ export class EndRunModal {
     seed: number | undefined,
     onReturn: () => void,
     details?: RunHistoryRecord,
-    defeatReason?: string
+    defeatReason?: string,
+    onRestart?: () => void
   ): void {
     this.onReturnCallback = onReturn;
+    this.onRestartCallback = onRestart ?? null;
     this.container.style.display = 'flex';
     this.switchTab('debrief');
 
@@ -373,8 +388,14 @@ export class EndRunModal {
       return true;
     }
 
-    if (gp.isMenuConfirmPressed() || gp.isMenuCancelPressed()) {
+    if (gp.isMenuConfirmPressed()) {
       gp.playRumble(80, 0.35, 0.5);
+      const btn = this.container.querySelector('#btn-deploy-again') as HTMLElement | null;
+      btn?.click();
+      return true;
+    }
+    if (gp.isMenuCancelPressed()) {
+      gp.playRumble(60, 0.25, 0.35);
       const btn = this.container.querySelector('#btn-return-bunker') as HTMLElement | null;
       btn?.click();
       return true;
