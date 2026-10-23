@@ -75,6 +75,11 @@ export class GamepadManager {
 
   // Test override mock
   private mockGamepad: Gamepad | null = null;
+  private xrSessionProvider: (() => XRSession | null) | null = null;
+
+  public setXrSessionProvider(provider: () => XRSession | null): void {
+    this.xrSessionProvider = provider;
+  }
 
   constructor() {
     if (typeof window !== 'undefined') {
@@ -195,6 +200,13 @@ export class GamepadManager {
   }
 
   public update(_dt: number): void {
+    // 1. Check active WebXR session inputSources first (Meta Quest 2 Touch controllers in immersive-vr)
+    const xrSession = this.xrSessionProvider?.() ?? null;
+    if (xrSession && xrSession.inputSources && xrSession.inputSources.length > 0) {
+      this.updateFromXrInputSources(xrSession.inputSources);
+      return;
+    }
+
     const gp = this.getActiveGamepad();
     if (!gp) {
       this.lastButtons = [];
@@ -277,6 +289,101 @@ export class GamepadManager {
     const pausePressed = this.isButtonJustPressed(this.menuIndex);
 
     if (pausePressed) {
+      this.pauseRequested = true;
+      this.onPauseCallback?.();
+    }
+  }
+
+  /**
+   * Reads Meta Quest Touch controllers directly from WebXR `session.inputSources`.
+   * In the W3C `xr-standard` mapping:
+   * - axes[2], axes[3] are the Thumbstick X/Y
+   * - buttons[0] = Index Trigger, buttons[1] = Grip Squeeze, buttons[3] = Thumbstick Click,
+   *   buttons[4] = A / X button, buttons[5] = B / Y button
+   */
+  private updateFromXrInputSources(sources: XRInputSourceArray): void {
+    if (!this.isConnected) {
+      this.isConnected = true;
+      this.isXbox = true;
+      this.gamepadName = 'META QUEST TOUCH (VR)';
+      this.onConnectCallback?.({
+        connected: true,
+        id: 'xr-standard',
+        isXbox: true,
+        name: this.gamepadName
+      });
+    }
+
+    this.lastButtons = [...this.currentButtons];
+    this.currentButtons = new Array(17).fill(false);
+    this.buttonValues = new Array(17).fill(0);
+    this.currentAxes = [0, 0, 0, 0];
+
+    for (let i = 0; i < sources.length; i++) {
+      const src = sources[i];
+      const gp = src?.gamepad;
+      if (!gp) continue;
+
+      // xr-standard puts thumbstick on axes[2], axes[3] (fallback to 0, 1 if only 2 axes exist)
+      const sx = gp.axes.length >= 4 ? (gp.axes[2] ?? 0) : (gp.axes[0] ?? 0);
+      const sy = gp.axes.length >= 4 ? (gp.axes[3] ?? 0) : (gp.axes[1] ?? 0);
+
+      if (src.handedness === 'left') {
+        this.currentAxes[XBOX_AXIS.LEFT_X] = sx;
+        this.currentAxes[XBOX_AXIS.LEFT_Y] = sy;
+        // Left X button (buttons[4]) or Left Squeeze (buttons[1]) -> Ability
+        if (gp.buttons[4]?.pressed || gp.buttons[1]?.pressed) {
+          this.currentButtons[XBOX_BUTTON.X] = true;
+          this.buttonValues[XBOX_BUTTON.X] = 1;
+        }
+        // Left Y button (buttons[5]) -> Menu/Pause
+        if (gp.buttons[5]?.pressed) {
+          this.currentButtons[XBOX_BUTTON.MENU] = true;
+          this.buttonValues[XBOX_BUTTON.MENU] = 1;
+        }
+      } else if (src.handedness === 'right') {
+        this.currentAxes[XBOX_AXIS.RIGHT_X] = sx;
+        this.currentAxes[XBOX_AXIS.RIGHT_Y] = sy;
+        // Right A button (buttons[4]) or Right Trigger (buttons[0]) -> Confirm / Ability
+        if (gp.buttons[4]?.pressed || gp.buttons[0]?.pressed) {
+          this.currentButtons[XBOX_BUTTON.A] = true;
+          this.buttonValues[XBOX_BUTTON.A] = 1;
+          this.currentButtons[XBOX_BUTTON.RB] = true;
+          this.buttonValues[XBOX_BUTTON.RB] = 1;
+        }
+        // Right B button (buttons[5]) or Right Squeeze (buttons[1]) -> Cancel / Ability
+        if (gp.buttons[5]?.pressed || gp.buttons[1]?.pressed) {
+          this.currentButtons[XBOX_BUTTON.B] = true;
+          this.buttonValues[XBOX_BUTTON.B] = 1;
+          this.currentButtons[XBOX_BUTTON.Y] = true;
+          this.buttonValues[XBOX_BUTTON.Y] = 1;
+        }
+      } else {
+        // Unknown handedness: map to left stick if larger
+        if (Math.hypot(sx, sy) > Math.hypot(this.currentAxes[0], this.currentAxes[1])) {
+          this.currentAxes[0] = sx;
+          this.currentAxes[1] = sy;
+        }
+      }
+    }
+
+    const lx = this.currentAxes[XBOX_AXIS.LEFT_X] ?? 0;
+    const ly = this.currentAxes[XBOX_AXIS.LEFT_Y] ?? 0;
+    const rx = this.currentAxes[XBOX_AXIS.RIGHT_X] ?? 0;
+    const ry = this.currentAxes[XBOX_AXIS.RIGHT_Y] ?? 0;
+    this.hasInputThisFrame =
+      Math.hypot(lx, ly) > 0.14 || Math.hypot(rx, ry) > 0.14 || this.currentButtons.some(Boolean);
+
+    if (
+      this.isButtonJustPressed(XBOX_BUTTON.Y) ||
+      this.isButtonJustPressed(XBOX_BUTTON.X) ||
+      this.isButtonJustPressed(XBOX_BUTTON.RB)
+    ) {
+      this.abilityRequested = true;
+      this.onAbilityCallback?.();
+    }
+
+    if (this.isButtonJustPressed(XBOX_BUTTON.MENU)) {
       this.pauseRequested = true;
       this.onPauseCallback?.();
     }

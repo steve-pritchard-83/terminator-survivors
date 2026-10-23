@@ -168,32 +168,44 @@ export class RunController {
       return active;
     };
     this.host.uiManager.hudView.onToggleVrSession = () => {
-      const renderer = this.host.sceneManager.renderer;
-      const xrNav = (navigator as Navigator & { xr?: { isSessionSupported?: (m: string) => Promise<boolean>; requestSession?: (mode: string, opts?: object) => Promise<unknown> } }).xr;
-      if (renderer.xr.isPresenting) {
-        void renderer.xr.getSession()?.end();
-        return;
-      }
-      if (xrNav?.requestSession) {
-        void xrNav
-          .requestSession('immersive-vr', { optionalFeatures: ['local-floor', 'bounded-floor'] })
-          .then((session) => {
-            renderer.xr.setSession(session as never);
-            this.host.uiManager.hudView.showTip('3D VR ACTIVE — PRESS A/X TO SELECT UPGRADES', 4);
-          })
-          .catch(() => {
-            // If WebXR is blocked inside the Android 2D WebView wrapper, open in Meta Quest Browser's native WebXR engine
-            window.open('https://terminator-survivors.vercel.app/?vr=1', '_system');
-          });
-      } else {
-        // Inside Capacitor 2D Android WebView on Quest: hand off to Meta Quest Browser which has native OpenXR stereo rendering
-        this.host.uiManager.hudView.showTip('OPENING META QUEST WEBXR 3D ENGINE...', 4);
-        window.location.href = 'intent://terminator-survivors.vercel.app/?vr=1#Intent;scheme=https;package=com.oculus.browser;end';
-      }
+      this.toggleVrSession();
     };
     this.host.uiManager.hudView.onEvolutionReady = () => {
       this.showTipOnce('evolve', 'READY TO EVOLVE. OPEN A DATA VAULT.');
     };
+  }
+
+  public toggleVrSession(): void {
+    const renderer = this.host.sceneManager.renderer;
+    const xrNav = (
+      navigator as Navigator & {
+        xr?: {
+          isSessionSupported?: (m: string) => Promise<boolean>;
+          requestSession?: (mode: string, opts?: object) => Promise<unknown>;
+        };
+      }
+    ).xr;
+
+    if (renderer.xr.isPresenting) {
+      void renderer.xr.getSession()?.end();
+      return;
+    }
+
+    if (xrNav?.requestSession) {
+      void xrNav
+        .requestSession('immersive-vr')
+        .then((session) => {
+          renderer.xr.setSession(session as never);
+          this.host.uiManager.hudView.showTip('3D VR ACTIVE — USE THUMBSTICKS TO MOVE & AIM', 4);
+        })
+        .catch((err) => {
+          this.host.uiManager.hudView.showTip(`VR ERROR: ${err?.message ?? 'OPEN IN QUEST BROWSER'}`, 5);
+        });
+    } else {
+      // Android WebView in sideloaded 2D APK does not expose navigator.xr: launch Meta Quest Browser in WebXR mode
+      this.host.uiManager.hudView.showTip('OPENING IN META QUEST BROWSER FOR 3D WEBXR...', 5);
+      window.open('https://terminator-survivors.vercel.app/?vr=1', '_blank');
+    }
   }
 
   public startRunWith(config: RunConfig): void {

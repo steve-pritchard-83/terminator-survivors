@@ -57,6 +57,24 @@ jobs:
           """
           txt = txt.replace('</intent-filter>', '</intent-filter>' + quest_meta, 1)
           manifest_path.write_text(txt, encoding="utf-8")
+
+          # Allow external intents (e.g. Meta Quest Browser WebXR handoff) inside MainActivity
+          main_java = pathlib.Path("android/app/src/main/java/com/techcom/terminatorsurvivors/MainActivity.java")
+          if main_java.exists():
+              main_java.write_text("""package com.techcom.terminatorsurvivors;
+
+          import android.content.Intent;
+          import android.net.Uri;
+          import android.os.Bundle;
+          import com.getcapacitor.BridgeActivity;
+
+          public class MainActivity extends BridgeActivity {
+              @Override
+              public void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+              }
+          }
+          """, encoding="utf-8")
           EOF
           npx cap copy android
 

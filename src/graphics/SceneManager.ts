@@ -133,6 +133,7 @@ export class SceneManager {
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = LIGHTING.exposure;
     this.renderer.xr.enabled = true;
+    this.renderer.xr.setReferenceSpaceType('local');
     this.stereoCamera.eyeSep = 0.65; // Exaggerated tactical diorama depth for Quest 2 3D mode
 
     this.xrRig.position.copy(this.cameraOffset);
@@ -143,7 +144,7 @@ export class SceneManager {
       this.xrRig.add(this.camera);
     });
     this.renderer.xr.addEventListener('sessionend', () => {
-      this.scene.remove(this.camera);
+      this.xrRig.remove(this.camera);
       this.camera.position.copy(this.cameraOffset);
       this.camera.lookAt(this.currentCameraTarget);
     });

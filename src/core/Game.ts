@@ -74,6 +74,7 @@ export class Game implements RunControllerHost, InputRouterHost, DebugAPIHost {
     appContainer.appendChild(canvasContainer);
 
     this.sceneManager = new SceneManager(canvasContainer);
+    this.inputManager.gamepadManager.setXrSessionProvider(() => this.sceneManager.renderer.xr.getSession());
     // Sculpted models stream in; placeholder shapes show until then (Deploy waits for the models)
     void ModelLibrary.preload().then(() => {
       const rifle = ModelLibrary.getMeshData('plasma_rifle');
