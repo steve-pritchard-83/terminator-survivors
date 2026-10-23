@@ -264,12 +264,13 @@ export class SceneManager {
       this.xrHudTex = new THREE.CanvasTexture(this.xrHudCanvas);
       const mat = new THREE.SpriteMaterial({ map: this.xrHudTex, transparent: true, depthTest: false, depthWrite: false });
       this.xrHudSprite = new THREE.Sprite(mat);
-      this.xrHudSprite.scale.set(5.2, 0.98, 1);
+      this.xrHudSprite.scale.set(XR_VIEW.hudWidth, XR_VIEW.hudWidth * (96 / 512), 1);
       this.xrHudSprite.renderOrder = 999;
       this.scene.add(this.xrHudSprite);
     }
     this.xrHudSprite.visible = true;
-    this.xrHudSprite.position.set(this.currentCameraTarget.x, 2.6, this.currentCameraTarget.z - 1.2);
+    // Low and between the viewer and Kyle, at the bottom of the view rather than over the fight
+    this.xrHudSprite.position.set(this.currentCameraTarget.x, XR_VIEW.hudHeight, this.currentCameraTarget.z + XR_VIEW.hudForward);
 
     const sec = Math.floor(timeSec);
     const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
@@ -281,7 +282,7 @@ export class SceneManager {
     const ctx = this.xrHudCanvas.getContext('2d');
     if (!ctx) return;
     ctx.clearRect(0, 0, 512, 96);
-    ctx.fillStyle = 'rgba(7, 9, 11, 0.82)';
+    ctx.fillStyle = 'rgba(7, 9, 11, 0.55)';
     ctx.fillRect(8, 8, 496, 80);
     ctx.strokeStyle = '#cdd7de';
     ctx.lineWidth = 2;

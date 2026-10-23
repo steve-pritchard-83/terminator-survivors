@@ -216,6 +216,13 @@ export class Game implements RunControllerHost, InputRouterHost, DebugAPIHost {
     if (this.runState.mode === 'playing') {
       const interp = this.playerSystem.setInterpolatedPosition(alpha, this.prevPlayerPos);
       this.sceneManager.updateCamera(interp.x, interp.z, dt);
+      this.uiManager.hudView.updateDamageNumbers(dt);
+    } else {
+      const p = this.runState.mode === 'title' ? this.titleFlyover.panPos : this.runState.playerPos;
+      this.sceneManager.updateCamera(p.x, p.z, dt);
+    }
+    // In VR the status strip is the only interface, so it also shows while paused and between runs
+    if (this.runState.mode !== 'title') {
       const boss = this.activeBoss;
       this.sceneManager.updateXrHoloHud(
         this.runState.hp,
@@ -225,10 +232,6 @@ export class Game implements RunControllerHost, InputRouterHost, DebugAPIHost {
         boss?.name,
         boss && boss.maxHp > 0 ? boss.hp / boss.maxHp : undefined
       );
-      this.uiManager.hudView.updateDamageNumbers(dt);
-    } else {
-      const p = this.runState.mode === 'title' ? this.titleFlyover.panPos : this.runState.playerPos;
-      this.sceneManager.updateCamera(p.x, p.z, dt);
     }
     this.sceneManager.render(dt, this.runState.timeSeconds);
   }

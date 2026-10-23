@@ -119,7 +119,11 @@ export const XR_VIEW = {
    */
   viewerScale: 2.6,
   /** Headset render cost: per-eye resolution (1 = native), foveation (0 none to 1 strongest edge saving), target refresh */
-  resolutionScale: 0.85,
+  resolutionScale: 0.7,
   foveation: 1,
-  frameRate: 72
+  frameRate: 72,
+  /** The in-headset status strip: width in metres, and where it sits (toward the viewer from Kyle, and above the ground) */
+  hudWidth: 2.2,
+  hudForward: 2.8,
+  hudHeight: 0.5
 };
